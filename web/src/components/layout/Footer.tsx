@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LogoMark } from "@/components/brand/Logo";
 import { ExternalIcon } from "@/components/icons";
+import { outboundHref } from "@/lib/outbound";
 import { CONTACT_EMAIL, TISTORY_FEATURED_URL, displayUrl } from "@/lib/site-links";
 
 const CONTENT_LINKS = [
@@ -52,10 +53,11 @@ export function Footer({ showCommunity = false }: { showCommunity?: boolean }) {
                 {l.label}
               </Link>
             ))}
+            {/* 경유 링크 — 블로그로 넘어간 클릭을 센다(src/lib/outbound.ts) */}
             <a
-              href={TISTORY_FEATURED_URL}
+              href={outboundHref("tistory")}
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener"
               className="flex items-center gap-1 text-xs text-muted transition-colors hover:text-gold-400"
             >
               티스토리 블로그
@@ -82,9 +84,9 @@ export function Footer({ showCommunity = false }: { showCommunity?: boolean }) {
           <p className="text-[11px] text-gray-600">
             운영 · 서동필 · {CONTACT_EMAIL} ·{" "}
             <a
-              href={TISTORY_FEATURED_URL}
+              href={outboundHref("tistory")}
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener"
               className="hover:text-gold-400"
             >
               {displayUrl(TISTORY_FEATURED_URL)}

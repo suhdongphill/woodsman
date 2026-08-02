@@ -51,7 +51,7 @@
     {
       "binding": "DB",
       "database_name": "woodsman-db",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "e0ef7847-236c-48bb-945e-e0f95fe0cbeb",
       // Prisma는 마이그레이션을 폴더별 migration.sql로 만든다.
       // 이 패턴을 지정하지 않으면 wrangler가 파일을 하나도 못 찾고 조용히 넘어간다.
       "migrations_dir": "prisma/migrations",

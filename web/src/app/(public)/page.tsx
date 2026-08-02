@@ -8,10 +8,10 @@ import { CapitalFlowChart } from "@/features/portfolio/ui/CapitalFlowChart";
 import { JournalTimeline } from "@/features/portfolio/ui/JournalTimeline";
 import { StockCard } from "@/features/stocks/ui/StockCard";
 import { AdSlot } from "@/components/analytics/AdSlot";
-import { ArrowRightIcon, ChevronRightIcon, ExternalIcon } from "@/components/icons";
+import { ArrowRightIcon, ChevronRightIcon } from "@/components/icons";
+import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { formatDate, formatNumber, formatPct } from "@/lib/format";
 import { summarizePerformance } from "@/lib/performance";
-import { TISTORY_FEATURED_URL, displayUrl } from "@/lib/site-links";
 import {
   accountSnapshots,
   featuredStocks,
@@ -231,24 +231,8 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* 티스토리 원문 — 주소를 그대로 보여준다 */}
-        <a
-          href={TISTORY_FEATURED_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group mt-4 flex items-center justify-between gap-4 rounded-2xl border border-gold-600/30 bg-gradient-to-r from-gold-500/10 to-transparent p-5 transition-colors hover:border-gold-500/60"
-        >
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium tracking-[0.12em] text-gold-400">TISTORY</p>
-            <h3 className="mt-1.5 text-[15px] font-semibold text-white group-hover:text-gold-400 transition-colors">
-              티스토리 원문 블로그에서 이어 읽기
-            </h3>
-            <p className="mt-1.5 truncate font-mono text-[12.5px] text-muted">
-              {displayUrl(TISTORY_FEATURED_URL)}
-            </p>
-          </div>
-          <ExternalIcon size={18} className="shrink-0 text-gold-400" />
-        </a>
+        {/* 티스토리 유도 — 인사이트를 훑은 직후가 가장 잘 넘어가는 자리 */}
+        <TistoryCta variant="compact" className="mt-4" />
       </section>
 
       {/* ─── 최근 투자일지 + 주목 종목 ─── */}

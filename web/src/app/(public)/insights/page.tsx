@@ -5,6 +5,7 @@ import { PostCard } from "@/features/posts/ui/PostCard";
 import { EmptyState } from "@/components/ui/Card";
 import { FileTextIcon } from "@/components/icons";
 import { AdSlot } from "@/components/analytics/AdSlot";
+import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { posts } from "@/lib/mock";
 
 export const metadata: Metadata = {
@@ -49,7 +50,10 @@ export default function InsightsPage() {
           </div>
         )}
 
-        {/* 광고 — 목록을 다 훑은 자리. 페이지네이션과 떨어뜨려 오조작을 피한다. */}
+        {/* 목록을 다 훑은 자리 — 블로그 유도가 먼저, 광고는 그 아래로. */}
+        <TistoryCta variant="compact" className="mt-8" />
+
+        {/* 광고 — 페이지네이션과 떨어뜨려 오조작을 피한다. */}
         <AdSlot placement="feed-end" />
 
         {/* 페이지네이션 목업 */}

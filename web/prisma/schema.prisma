@@ -2,12 +2,16 @@
 // 주의: SQLite(로컬) / Cloudflare D1(운영) 대상이므로 enum·@db.Text를 쓰지 않는다.
 //       상태·유형 값은 String으로 저장하고 zod(src/features/*/schema)에서 검증한다.
 
-generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
-  // Cloudflare D1은 드라이버 어댑터(@prisma/adapter-d1)로만 붙는다.
-  previewFeatures = ["driverAdapters"]
-}
+/// ⚠ **클라이언트 생성기를 두지 않는다.** Prisma는 이 프로젝트에서
+///    **스키마 정의와 마이그레이션 생성** 도구로만 쓴다.
+///
+///    런타임 쿼리는 D1 바인딩을 직접 쓴다(`src/lib/d1.ts`). 이유:
+///    OpenNext가 만든 Worker 번들에 Prisma의 WASM 쿼리 엔진이 포함되지 않아
+///    첫 쿼리에서 죽는다(opennextjs-cloudflare #471 / prisma #23457, 2026-08 미해결).
+///    바이너리 엔진(prisma-client-js)은 Workers에 실행 파일이 없어 애초에 불가능하다.
+///
+///    이 파일은 여전히 **스키마의 원본**이다. 컬럼을 바꾸면
+///    `npm run db:migrate`로 마이그레이션을 만들고, 쿼리는 각 기능의 repository에서 고친다.
 
 datasource db {
   provider = "sqlite"
@@ -309,6 +313,24 @@ model AiCache {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+/// 아웃바운드 클릭 집계 — "티스토리로 몇 명이 넘어갔나".
+/// 이 사이트의 1순위 목적이 블로그 트래픽 유도라 성과 지표가 된다.
+/// 개인 식별 정보(IP·UA·쿠키)는 저장하지 않고 날짜별 합계만 센다.
+model OutboundClick {
+  id String @id @default(cuid())
+
+  /// 대상 키 (src/lib/outbound.ts의 OUTBOUND_TARGETS)
+  target String
+  /// 집계 날짜 (KST 기준 YYYY-MM-DD)
+  date   String
+  count  Int    @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([target, date])
+  @@index([date])
 }
 
 // ────────────── 외부 블로그 RSS ──────────────

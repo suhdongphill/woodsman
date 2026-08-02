@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/Card";
 import { PostCard } from "@/features/posts/ui/PostCard";
 import { CommentSection } from "@/features/comments/ui/CommentSection";
 import { AdSlot } from "@/components/analytics/AdSlot";
+import { TistoryCta } from "@/features/site/ui/TistoryCta";
+import { outboundPostHref } from "@/lib/outbound";
 import { ClockIcon, EyeIcon, ExternalIcon, TagIcon, ChevronRightIcon } from "@/components/icons";
 import { formatDate } from "@/lib/format";
 import { getCommentsByPostId, getPostBySlug, posts, siteConfig, getStock } from "@/lib/mock";
@@ -24,10 +26,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = getPostBySlug(slug);
   if (!post) return { title: "글을 찾을 수 없습니다" };
+
   return {
     title: post.title,
     description: post.excerpt,
     openGraph: { title: post.title, description: post.excerpt, type: "article" },
+    /**
+     * 티스토리에서 가져온 글은 **원문이 정본**이다. canonical을 원문으로 넘겨
+     * 검색엔진이 둘을 중복으로 보고 서로 순위를 깎는 일을 막는다.
+     * (우리가 순위를 가져가는 게 아니라, 원문으로 트래픽이 모이는 게 목적이다.)
+     */
+    alternates:
+      post.source === "TISTORY" && post.externalUrl
+        ? { canonical: post.externalUrl }
+        : undefined,
   };
 }
 
@@ -41,6 +53,7 @@ export default async function InsightDetailPage({ params }: Props) {
   const related = posts.filter((p) => p.id !== post.id && p.category === post.category).slice(0, 3);
   const stock = post.ticker ? getStock(post.ticker) : undefined;
   const tags = post.tags?.split(",").filter(Boolean) ?? [];
+  const isFromTistory = post.source === "TISTORY" && Boolean(post.externalUrl);
 
   return (
     <article className="mx-auto max-w-3xl px-4 sm:px-6 py-10">
@@ -94,18 +107,18 @@ export default async function InsightDetailPage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: post.bodyHtml ?? "" }}
       />
 
-      {/* 티스토리 원문 링크 */}
-      {post.source === "TISTORY" && post.externalUrl && (
+      {/* 티스토리 원문 링크 — 이 글 자체의 원문. 경유 링크로 클릭을 센다. */}
+      {isFromTistory && (
         <Card className="mt-8 flex items-center justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-[13px] text-white font-medium">티스토리에서 원문 이어 읽기</p>
-            <p className="text-[11px] text-gray-500 mt-0.5 break-all">{post.externalUrl}</p>
+            <p className="mt-0.5 break-all text-[11px] text-gray-500">{post.externalUrl}</p>
           </div>
           <a
-            href={post.externalUrl}
+            href={outboundPostHref(post.slug)}
             target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 text-[#1a1400] text-xs font-semibold hover:bg-gold-400 transition-colors"
+            rel="noopener"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-gold-500 px-3.5 py-2 text-xs font-semibold text-[#1a1400] transition-colors hover:bg-gold-400"
           >
             원문 보기
             <ExternalIcon size={13} />
@@ -125,7 +138,13 @@ export default async function InsightDetailPage({ params }: Props) {
         </div>
       )}
 
-      {/* 광고 — 본문을 다 읽은 자리. 태그 아래, 댓글 위. */}
+      {/*
+        글을 다 읽은 자리 — 이 사이트의 1순위 목적(블로그 트래픽)이 먼저 온다.
+        원문이 이미 티스토리인 글은 위에서 링크를 줬으므로 중복해서 붙이지 않는다.
+      */}
+      {!isFromTistory && <TistoryCta />}
+
+      {/* 광고는 CTA 아래로 — 자리 경쟁에서 트래픽 유도가 이긴다. */}
       <AdSlot placement="article-end" />
 
       {/* 댓글 — 커뮤니티를 열기 전까지는 안내만 나온다 */}

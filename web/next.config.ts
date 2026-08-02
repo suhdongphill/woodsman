@@ -1,39 +1,21 @@
 import type { NextConfig } from "next";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 /**
- * Prisma 생성 클라이언트를 파일 트레이싱에서 제외한다.
- *
- * 배경: `src/generated/prisma/runtime/library.js`에는 dotenv가 번들돼 있고,
- * 그 안의 `path.join(os.homedir(), …)`를 Next의 트레이서(@vercel/nft)가 정적으로
- * 평가해 홈 디렉터리 전체를 glob 한다. Windows에서는 `C:\Users\<계정>\Application Data`
- * 정션이 접근 거부(EPERM)라 빌드가 통째로 실패한다.
- *
- * node_modules 안의 파일은 Next가 기본으로 트레이싱에서 빼기 때문에 이 문제가 없는데,
- * 우리는 클라이언트를 `src/` 아래에 생성하므로 그 규칙을 비껴간다. 같은 취급을
- * 직접 지정해 준다(웹팩이 어차피 번들하므로 트레이싱 대상일 필요가 없다).
- *
- * Next가 TraceEntryPointsPlugin을 `traceIgnores: []`로 하드코딩해 넘기고 설정 키를
- * 노출하지 않아, 플러그인 인스턴스를 찾아 패턴을 넣는다. Next 업그레이드로 이 훅이
- * 안 먹으면 빌드가 다시 EPERM으로 실패하므로 조용히 망가지지는 않는다.
+ * 예전에 있던 두 가지 우회(웹팩 WASM 실험 플래그 + Prisma 생성물 파일트레이싱 제외)는
+ * 런타임에서 Prisma를 걷어내면서 **전부 불필요해져 지웠다**.
+ * 문제를 우회하는 설정이 계속 쌓이면 나중에 왜 있는지 아무도 모르게 된다.
+ * (경위는 web/CHANGELOG.md와 src/lib/d1.ts 주석에 남겨 두었다.)
  */
-function isTracePlugin(p: unknown): p is { traceIgnores: string[] } {
-  return (
-    typeof p === "object" &&
-    p !== null &&
-    p.constructor?.name === "TraceEntryPointsPlugin" &&
-    Array.isArray((p as { traceIgnores?: unknown }).traceIgnores)
-  );
-}
-
-const nextConfig: NextConfig = {
-  webpack: (config, { isServer }) => {
-    if (!isServer) return config;
-
-    const plugin = config.plugins?.find(isTracePlugin);
-    plugin?.traceIgnores.push("**/src/generated/prisma/**");
-
-    return config;
-  },
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
+
+/**
+ * `next dev`에도 Cloudflare 바인딩(로컬 D1)을 붙인다.
+ *
+ * 이게 없으면 로컬은 DB 없이 돌고 배포만 D1을 쓰게 되는데, 그 경로 차이가
+ * "로컬은 되는데 배포만 죽는" 사고를 만든다(2026-08-02 실제 사고).
+ * 로컬과 운영이 같은 방식으로 DB에 붙게 맞춘다.
+ */
+void initOpenNextCloudflareForDev();

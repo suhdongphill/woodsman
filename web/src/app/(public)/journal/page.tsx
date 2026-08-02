@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatBar";
 import { JournalTimeline } from "@/features/portfolio/ui/JournalTimeline";
 import { AdSlot } from "@/components/analytics/AdSlot";
+import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { formatDate, formatPct } from "@/lib/format";
 import { summarizePerformance } from "@/lib/performance";
 import { accountSnapshots, journalEntries } from "@/lib/mock";
@@ -62,7 +63,14 @@ export default function JournalPage() {
           <JournalTimeline entries={entries} />
         </div>
 
-        {/* 광고 — 기록을 다 읽은 자리 */}
+        {/* 기록을 다 읽은 자리 — 블로그 유도 먼저 */}
+        <TistoryCta
+          variant="compact"
+          className="mt-10"
+          headline="판단의 배경은 블로그에 더 길게 씁니다"
+        />
+
+        {/* 광고 — CTA 아래 */}
         <AdSlot placement="content-bottom" />
 
         <p className="mt-10 text-[11px] leading-relaxed text-gray-600">

@@ -4,6 +4,7 @@ import { Card, CardTitle } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatBar";
 import { Badge } from "@/components/ui/Badge";
 import { ChevronRightIcon, AlertIcon } from "@/components/icons";
+import { OutboundStats } from "@/features/site/ui/OutboundStats";
 import { cx, formatDateTime, formatPct } from "@/lib/format";
 import { adminStats, comments, aiProviders, posts } from "@/lib/mock";
 
@@ -14,6 +15,9 @@ const QUICK = [
   { href: "/admin/feeds", label: "RSS 가져오기", desc: "티스토리 큐레이션" },
 ];
 
+/** 티스토리 유입 집계를 DB에서 읽으므로 정적 생성하지 않는다. */
+export const dynamic = "force-dynamic";
+
 export default function AdminDashboardPage() {
   const pending = comments.filter((c) => c.status === "PENDING" || c.reported);
   const maxVisitor = Math.max(...adminStats.weeklyVisitors);
@@ -23,8 +27,13 @@ export default function AdminDashboardPage() {
     <AdminShell>
       <AdminPageHeader
         title="대시보드"
-        description="사이트 활동 요약입니다. (Phase 0 목업 데이터)"
+        description="사이트 활동 요약입니다. (방문·댓글·AI는 Phase 0 목업, 티스토리 유입은 실데이터)"
       />
+
+      {/* 1순위 지표를 맨 위에 둔다 — 이 사이트의 목적이 블로그 트래픽 유도다. */}
+      <div className="mb-7">
+        <OutboundStats />
+      </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-7">
         <StatTile
