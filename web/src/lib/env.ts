@@ -26,11 +26,16 @@ const serverEnvSchema = z.object({
   /** Google AdSense 퍼블리셔 ID(ca-pub-...). 없으면 광고 스크립트를 넣지 않는다. */
   ADSENSE_CLIENT_ID: optionalSecret,
 
+  /**
+   * AI 제공자 키. 이름은 `src/lib/ai/catalog.ts`의 apiKeyEnv와 1:1로 맞춰야 한다
+   * (여기에 없으면 `npm run ai:sync`가 Cloudflare로 올리지 못한다).
+   */
   NVIDIA_API_KEY: optionalSecret,
   GROQ_API_KEY: optionalSecret,
   GEMINI_API_KEY: optionalSecret,
   OPENROUTER_API_KEY: optionalSecret,
   ANTHROPIC_API_KEY: optionalSecret,
+  OPENAI_API_KEY: optionalSecret,
 
   AUTH_GOOGLE_ID: optionalSecret,
   AUTH_GOOGLE_SECRET: optionalSecret,

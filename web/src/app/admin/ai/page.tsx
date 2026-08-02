@@ -1,192 +1,103 @@
 import type { Metadata } from "next";
 import { AdminPageHeader, AdminShell } from "@/components/layout/AdminPageHeader";
 import { Card, CardTitle } from "@/components/ui/Card";
-import { Table, Th, Td, Tr } from "@/components/ui/Table";
-import { Badge } from "@/components/ui/Badge";
-import { Toggle } from "@/components/ui/Toggle";
-import { Button } from "@/components/ui/Button";
-import { PlusIcon, EditIcon, AlertIcon } from "@/components/icons";
+import { ProviderTable } from "@/features/ai/ui/ProviderTable";
+import { TaskRouting } from "@/features/ai/ui/TaskRouting";
+import { KeySetupGuide } from "@/features/ai/ui/KeySetupGuide";
+import { loadAiConfig, loadProviderUsage } from "@/features/ai/repository";
+import { AI_PROVIDERS } from "@/lib/ai/catalog";
+import { hasEnvKey } from "@/lib/env";
+import { requireAdmin } from "@/lib/session";
 import { cx } from "@/lib/format";
-import { aiConfig, aiProviders } from "@/lib/mock";
 
 export const metadata: Metadata = { title: "AI 제공자" };
 
-export default function AdminAiPage() {
-  const sorted = [...aiProviders].sort((a, b) => a.priority - b.priority);
-  const globalPct = (aiConfig.tokensUsedThisMonth / aiConfig.globalMonthlyTokenCap) * 100;
+/**
+ * ⚠ 정적 생성 금지. 키 보유 여부와 사용량은 런타임 값이라
+ * 빌드 시점에 굳으면 "키를 넣었는데 화면은 계속 미설정"이 된다.
+ */
+export const dynamic = "force-dynamic";
+
+export default async function AdminAiPage() {
+  await requireAdmin("/admin/ai");
+
+  const [usage, config] = await Promise.all([loadProviderUsage(), loadAiConfig()]);
+
+  // ⚠ 키 '값'은 이 경계를 넘지 않는다. 아래로는 존재 여부만 내려간다.
+  const connectedEnv = AI_PROVIDERS.filter((p) => hasEnvKey(p.apiKeyEnv)).map((p) => p.apiKeyEnv);
+  const connectedIds = AI_PROVIDERS.filter((p) => connectedEnv.includes(p.apiKeyEnv)).map(
+    (p) => p.id,
+  );
+  const missing = AI_PROVIDERS.filter((p) => !connectedEnv.includes(p.apiKeyEnv)).map(
+    (p) => p.apiKeyEnv,
+  );
+
+  const globalPct = (config.tokensUsedThisMonth / config.globalMonthlyTokenCap) * 100;
+  const freeConnected = AI_PROVIDERS.filter(
+    (p) => p.free && connectedEnv.includes(p.apiKeyEnv),
+  ).length;
 
   return (
     <AdminShell>
       <AdminPageHeader
         title="AI 제공자"
-        description="무료 제공자를 우선순위 앞에 두고, 실패·한도 초과 시 다음 제공자로 폴백합니다. API 키는 서버 .env에만 존재하며 화면에서 편집할 수 없습니다."
-        action={
-          <Button variant="gold" size="sm">
-            <PlusIcon size={14} />
-            제공자 추가
-          </Button>
-        }
+        description="무료 제공자를 앞에 세우고, 작업이 요구하는 급을 만족하는 가장 싼 모델을 고릅니다. API 키는 서버 .env에만 있고 화면에서 편집할 수 없습니다."
       />
 
-      <div className="grid lg:grid-cols-2 gap-5 mb-7">
+      <div className="mb-7 grid gap-4 lg:grid-cols-3">
         <Card>
-          <CardTitle>실행 정책</CardTitle>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-[13.5px] text-white">AI 실행 권한</p>
-                <p className="text-[11.5px] text-muted mt-1">
-                  비용 방어를 위해 기본값은 관리자 전용입니다.
-                </p>
-              </div>
-              <select
-                defaultValue={aiConfig.allowedRole}
-                className="bg-[#12141c] border border-border rounded-xl px-3 py-2 text-sm text-ink shrink-0"
-              >
-                <option value="ADMIN">ADMIN</option>
-                <option value="USER">USER</option>
-              </select>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-[13.5px] text-white">결과 캐시 TTL</p>
-                <p className="text-[11.5px] text-muted mt-1">
-                  같은 질의는 이 시간 동안 재호출하지 않습니다.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <input
-                  type="number"
-                  defaultValue={aiConfig.cacheTtlHours}
-                  className="w-20 bg-[#12141c] border border-border rounded-xl px-3 py-2 text-sm text-white text-right"
-                />
-                <span className="text-xs text-muted">시간</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-[13.5px] text-white">월 토큰 하드캡(전역)</p>
-                <p className="text-[11.5px] text-muted mt-1">
-                  초과 시 모든 AI 호출이 즉시 차단됩니다.
-                </p>
-              </div>
-              <input
-                type="number"
-                defaultValue={aiConfig.globalMonthlyTokenCap}
-                className="w-32 bg-[#12141c] border border-border rounded-xl px-3 py-2 text-sm text-white text-right shrink-0"
-              />
-            </div>
-          </div>
+          <p className="text-[11px] text-muted">연결된 제공자</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums text-white">
+            {connectedIds.length}
+            <span className="ml-1 text-sm font-normal text-gray-500">/ {AI_PROVIDERS.length}</span>
+          </p>
+          <p className="mt-1.5 text-[11px] text-gray-600">
+            그중 무료 <span className="text-emerald-400">{freeConnected}곳</span>
+            {freeConnected === 0 && " — 무료 키를 먼저 등록하면 유료 호출이 줄어듭니다"}
+          </p>
         </Card>
 
         <Card>
-          <CardTitle>이번 달 사용량</CardTitle>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-white tabular-nums">
-              {(aiConfig.tokensUsedThisMonth / 1000).toFixed(0)}K
+          <p className="text-[11px] text-muted">이번 달 전역 사용량</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums text-white">
+            {(config.tokensUsedThisMonth / 1000).toFixed(0)}K
+            <span className="ml-1 text-sm font-normal text-gray-500">
+              / {(config.globalMonthlyTokenCap / 1000).toFixed(0)}K
             </span>
-            <span className="text-sm text-muted">
-              / {(aiConfig.globalMonthlyTokenCap / 1000).toFixed(0)}K 토큰
-            </span>
-          </div>
-          <div className="mt-3 h-2.5 rounded-full bg-[#12141c] overflow-hidden">
+          </p>
+          <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-[#12141c]">
             <div
               className={cx(
                 "h-full rounded-full",
-                globalPct > 80 ? "bg-red-400" : globalPct > 50 ? "bg-yellow-400" : "bg-emerald-500",
+                globalPct > 80 ? "bg-red-400" : globalPct > 50 ? "bg-gold-500" : "bg-emerald-500",
               )}
               style={{ width: `${Math.min(100, globalPct)}%` }}
             />
           </div>
-          <ul className="mt-5 space-y-2.5">
-            {sorted.map((p) => {
-              const cap = p.monthlyTokenCap;
-              const pct = cap ? (p.tokensUsedThisMonth / cap) * 100 : 0;
-              return (
-                <li key={p.id} className="flex items-center gap-2.5">
-                  <span className="text-[12px] text-gray-300 w-32 shrink-0 truncate">
-                    {p.name}
-                  </span>
-                  <div className="flex-1 h-1.5 rounded-full bg-[#12141c] overflow-hidden">
-                    <div
-                      className={cx("h-full rounded-full", p.free ? "bg-emerald-500" : "bg-gold-500")}
-                      style={{ width: `${Math.min(100, pct)}%` }}
-                    />
-                  </div>
-                  <span className="text-[11px] text-gray-500 tabular-nums w-20 text-right">
-                    {(p.tokensUsedThisMonth / 1000).toFixed(0)}K
-                    {cap ? ` / ${(cap / 1000).toFixed(0)}K` : ""}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-          <p className="mt-4 pt-3 border-t border-border/70 flex items-start gap-2 text-[11px] text-gray-600">
-            <AlertIcon size={13} className="text-yellow-500 shrink-0 mt-0.5" />
-            모든 AI 호출은 서버 라우트를 경유합니다. 키가 브라우저로 전달되지 않습니다.
+          <p className="mt-1.5 text-[11px] text-gray-600">초과하면 모든 AI 호출이 차단됩니다.</p>
+        </Card>
+
+        <Card>
+          <p className="text-[11px] text-muted">실행 권한 · 캐시</p>
+          <p className="mt-1 text-2xl font-bold text-white">{config.allowedRole}</p>
+          <p className="mt-1.5 text-[11px] text-gray-600">
+            같은 질의는 {config.cacheTtlHours}시간 동안 재호출하지 않습니다. 비용 방어를 위해
+            기본값은 관리자 전용입니다.
           </p>
         </Card>
       </div>
 
-      <Table>
-        <thead>
-          <tr>
-            <Th className="w-14 text-center">순서</Th>
-            <Th>제공자</Th>
-            <Th className="w-44">모델</Th>
-            <Th className="w-36">API 키(env)</Th>
-            <Th className="w-24 text-center">연결</Th>
-            <Th className="w-20 text-center">활성</Th>
-            <Th className="w-16 text-right">편집</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map((p) => (
-            <Tr key={p.id}>
-              <Td className="text-center tabular-nums text-gray-500">{p.priority}</Td>
-              <Td>
-                <div className="flex items-center gap-2">
-                  <span className="text-white text-[13px]">{p.name}</span>
-                  {p.free ? <Badge tone="emerald">무료</Badge> : <Badge tone="gold">유료</Badge>}
-                </div>
-                <span className="text-[11px] text-gray-600 font-mono">
-                  {p.baseUrl ?? "anthropic sdk"}
-                </span>
-              </Td>
-              <Td className="font-mono text-[11.5px] text-gray-400">{p.model}</Td>
-              <Td className="font-mono text-[11.5px] text-gray-400">{p.apiKeyEnv}</Td>
-              <Td className="text-center">
-                {p.connected ? (
-                  <Badge tone="emerald">연결됨</Badge>
-                ) : (
-                  <Badge tone="neutral">미설정</Badge>
-                )}
-              </Td>
-              <Td>
-                <div className="flex justify-center">
-                  <Toggle defaultOn={p.enabled} size="sm" />
-                </div>
-              </Td>
-              <Td>
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-cardHover transition-colors"
-                    aria-label="편집"
-                  >
-                    <EditIcon size={15} />
-                  </button>
-                </div>
-              </Td>
-            </Tr>
-          ))}
-        </tbody>
-      </Table>
+      <Card className="mb-7">
+        <CardTitle>작업별 라우팅</CardTitle>
+        <TaskRouting connectedEnv={connectedEnv} usage={usage} />
+      </Card>
 
-      <p className="mt-5 text-[11px] text-gray-600 leading-relaxed">
-        폴백 순서: 우선순위(숫자 오름차순) → 활성 &amp; 연결됨 &amp; 월 캡 미초과인 제공자를 차례로
-        시도합니다. 키 값 자체는 DB에 저장하지 않고 env 변수명만 기록합니다.
-      </p>
+      <div className="mb-7">
+        <h2 className="mb-3 text-sm font-semibold text-white">제공자</h2>
+        <ProviderTable usage={usage} connected={connectedIds} />
+      </div>
+
+      <KeySetupGuide missing={missing} />
     </AdminShell>
   );
 }

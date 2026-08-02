@@ -45,7 +45,9 @@
 
   /**
    * D1 — 운영 데이터베이스.
-   * 로컬 개발은 여전히 prisma/dev.db(파일 SQLite)를 쓴다. 분기는 src/lib/db.ts에 있다.
+   * 로컬 개발(`next dev`)도 같은 바인딩을 쓴다(wrangler의 로컬 D1). 경로가 갈리지 않는다 —
+   * "로컬은 되는데 배포만 죽는" 사고를 막기 위해 일부러 하나로 통일했다.
+   * 로컬 DB 준비: `npm run db:setup`
    */
   "d1_databases": [
     {

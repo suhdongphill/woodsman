@@ -2,6 +2,7 @@
  * 시드 데이터(순수 값·빌더).
  * DB 접근 없이 테스트할 수 있도록 prisma/seed.ts와 분리한다.
  */
+import { AI_PROVIDERS } from "./ai/catalog";
 import { TISTORY_RSS_URL } from "./site-links";
 
 export type SeedModelHolding = {
@@ -382,59 +383,25 @@ export const seedAiConfig = {
   globalMonthlyTokenCap: 1_000_000,
 };
 
-/** 기본 AI 제공자 목록. 키 '값'은 저장하지 않고 env 변수명만 기록한다. */
-export const aiProviderCatalog = [
-  {
-    name: "NVIDIA NIM",
-    kind: "OPENAI_COMPAT" as const,
-    baseUrl: "https://integrate.api.nvidia.com/v1",
-    model: "meta/llama-3.3-70b-instruct",
-    apiKeyEnv: "NVIDIA_API_KEY",
-    free: true,
-    priority: 0,
-    monthlyTokenCap: 500_000,
-  },
-  {
-    name: "Groq",
-    kind: "OPENAI_COMPAT" as const,
-    baseUrl: "https://api.groq.com/openai/v1",
-    model: "llama-3.3-70b-versatile",
-    apiKeyEnv: "GROQ_API_KEY",
-    free: true,
-    priority: 1,
-    monthlyTokenCap: 300_000,
-  },
-  {
-    name: "Google Gemini (무료티어)",
-    kind: "OPENAI_COMPAT" as const,
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-    model: "gemini-2.0-flash",
-    apiKeyEnv: "GEMINI_API_KEY",
-    free: true,
-    priority: 2,
-    monthlyTokenCap: 300_000,
-  },
-  {
-    name: "OpenRouter (무료 모델)",
-    kind: "OPENAI_COMPAT" as const,
-    baseUrl: "https://openrouter.ai/api/v1",
-    model: "meta-llama/llama-3.3-70b-instruct:free",
-    apiKeyEnv: "OPENROUTER_API_KEY",
-    free: true,
-    priority: 3,
-    monthlyTokenCap: 300_000,
-  },
-  {
-    name: "Anthropic Claude",
-    kind: "ANTHROPIC" as const,
-    baseUrl: undefined,
-    model: "claude-sonnet-5",
-    apiKeyEnv: "ANTHROPIC_API_KEY",
-    free: false,
-    priority: 9,
-    monthlyTokenCap: 200_000,
-  },
-];
+/**
+ * 기본 AI 제공자 목록. 키 '값'은 저장하지 않고 env 변수명만 기록한다.
+ *
+ * ⚠ 목록을 여기에 다시 적지 않는다. **출처는 `src/lib/ai/catalog.ts` 하나**다.
+ * 예전에는 두 곳에 따로 적혀 있어서 카탈로그에 제공자를 추가해도 시드에는 안 들어갔다.
+ * (priority = 카탈로그 순서. 카탈로그가 무료를 앞에 두므로 폴백 순서가 그대로 따라온다.)
+ */
+export const aiProviderCatalog = AI_PROVIDERS.map((p, index) => ({
+  name: p.label,
+  kind: p.kind,
+  baseUrl: p.baseUrl,
+  /** 기본 모델 = 카탈로그의 첫 모델. 실제 호출 모델은 작업별로 routing.ts가 고른다. */
+  model: p.models[0].id,
+  apiKeyEnv: p.apiKeyEnv,
+  free: p.free,
+  priority: index,
+  /** ⚠ 유료 제공자는 상한을 반드시 둔다. 없으면 실수 한 번이 그대로 청구서가 된다. */
+  monthlyTokenCap: p.free ? 300_000 : 200_000,
+}));
 
 /**
  * env에 키가 존재하는 제공자만 enabled=true로 만든다(무료가 우선순위 앞).

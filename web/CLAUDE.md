@@ -18,7 +18,8 @@
 - 수정도 모듈 단위로 나눠 진행한다.
 
 현재 순수 모듈: `access` `site-policy` `site-status` `performance` `outbound` `ads`
-`auth-providers` `site-url` `site-links` `format` — 전부 테스트가 있다.
+`auth-providers` `site-url` `site-links` `format`
+`ai/catalog` `ai/persona` `ai/context` `ai/routing` — 전부 테스트가 있다.
 
 ## 2. 변경은 로그로 남긴다 (필수)
 
@@ -63,6 +64,10 @@
 
 - ⚠ 시크릿은 **서버 전용**. `NEXT_PUBLIC_` 접두사 금지. `src/lib/env.ts`를 클라이언트에서 import 금지.
 - ⚠ AI API 키를 **DB에 저장하지 않는다.** env 변수명만 기록하고 화면엔 "연결됨/미설정"만.
+  키 등록 경로는 `.env` → `npm run ai:sync` 하나뿐이다. 화면에 입력칸을 만들지 않는다.
+- ⚠ AI 프롬프트는 `src/lib/ai/persona.ts`의 공통 규범(`WOODSMAN_DOCTRINE`)을 항상 앞에 붙인다.
+  매수 권유·목표주가·방향 단정 금지는 `/disclaimer`의 문장과 연결돼 있다. 약화시키지 않는다.
+- ⚠ 유료 AI 제공자에는 **월 토큰 상한을 반드시 둔다.** 상한이 없으면 실수 한 번이 청구서가 된다.
 - ⚠ 가입은 **항상 USER**. `role`을 폼·API로 받지 않는다. ADMIN은 시드로만 만든다.
 - ⚠ 로그인 실패 사유를 구분해 알려주지 않는다(계정 존재 여부 노출 방지).
 - ⚠ 리다이렉트 대상은 **등록된 것만**. 쿼리로 받은 URL로 이동하지 않는다(오픈 리다이렉트).

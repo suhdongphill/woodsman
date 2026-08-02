@@ -17,6 +17,7 @@
     "db:migrate:local": "wrangler d1 migrations apply woodsman-db --local",
     "db:seed": "npm run d1:seed:generate && wrangler d1 execute woodsman-db --local --file=./prisma/seed.d1.sql -y",
     "cf:setup": "node --env-file=.env --import tsx scripts/cf-setup.mjs",
+    "ai:sync": "node --env-file=.env --import tsx scripts/sync-ai-secrets.mjs",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
