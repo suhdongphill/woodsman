@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatBar";
 import { JournalTimeline } from "@/features/portfolio/ui/JournalTimeline";
+import { AdSlot } from "@/components/analytics/AdSlot";
 import { formatDate, formatPct } from "@/lib/format";
 import { summarizePerformance } from "@/lib/performance";
 import { accountSnapshots, journalEntries } from "@/lib/mock";
@@ -60,6 +61,9 @@ export default function JournalPage() {
         <div className="mt-8">
           <JournalTimeline entries={entries} />
         </div>
+
+        {/* 광고 — 기록을 다 읽은 자리 */}
+        <AdSlot placement="content-bottom" />
 
         <p className="mt-10 text-[11px] leading-relaxed text-gray-600">
           ※ 개인의 매매 기록이며 투자 권유가 아닙니다. 같은 종목을 같은 시점에 매매해도 결과는

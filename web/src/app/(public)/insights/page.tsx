@@ -4,6 +4,7 @@ import { Chip } from "@/components/ui/Badge";
 import { PostCard } from "@/features/posts/ui/PostCard";
 import { EmptyState } from "@/components/ui/Card";
 import { FileTextIcon } from "@/components/icons";
+import { AdSlot } from "@/components/analytics/AdSlot";
 import { posts } from "@/lib/mock";
 
 export const metadata: Metadata = {
@@ -47,6 +48,9 @@ export default function InsightsPage() {
             ))}
           </div>
         )}
+
+        {/* 광고 — 목록을 다 훑은 자리. 페이지네이션과 떨어뜨려 오조작을 피한다. */}
+        <AdSlot placement="feed-end" />
 
         {/* 페이지네이션 목업 */}
         <div className="flex items-center justify-center gap-1.5 mt-10">

@@ -7,6 +7,7 @@ import { PostCard } from "@/features/posts/ui/PostCard";
 import { CapitalFlowChart } from "@/features/portfolio/ui/CapitalFlowChart";
 import { JournalTimeline } from "@/features/portfolio/ui/JournalTimeline";
 import { StockCard } from "@/features/stocks/ui/StockCard";
+import { AdSlot } from "@/components/analytics/AdSlot";
 import { ArrowRightIcon, ChevronRightIcon, ExternalIcon } from "@/components/icons";
 import { formatDate, formatNumber, formatPct } from "@/lib/format";
 import { summarizePerformance } from "@/lib/performance";
@@ -288,6 +289,11 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* 광고 — 콘텐츠를 다 훑은 자리. 첫 화면은 광고 없이 콘텐츠로 시작한다. */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <AdSlot placement="content-bottom" />
+      </div>
 
       {/* 광고·검색 심사에서도 첫 페이지에 고지가 보여야 한다 */}
       <div className="mx-auto max-w-6xl px-4 sm:px-6 pb-14">

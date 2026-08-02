@@ -1,4 +1,5 @@
 import Script from "next/script";
+import { adsenseClientId } from "@/lib/ads";
 
 /**
  * Google AdSense 스크립트 슬롯.
@@ -10,12 +11,12 @@ import Script from "next/script";
  * 박지 않고 환경변수로 두는 이유는, 계정이 바뀌거나 심사 중 잠시 내려야 할 때
  * 재배포 없이 대시보드에서 끄고 켜기 위해서다.
  *
- * 광고 위치(ins 태그)는 심사 통과 후에 붙인다 — 승인 전에 빈 광고 슬롯을 깔아두면
- * 레이아웃만 망가지고 얻는 게 없다.
+ * 광고 자리(ins 태그)는 `AdSlot` 컴포넌트가 그린다 — 배치 의도와 정책은
+ * `src/lib/ads.ts` 주석 참고. 슬롯 ID가 없으면 자리도 그리지 않는다.
  */
 export function AdSense() {
-  const clientId = process.env.ADSENSE_CLIENT_ID?.trim();
-  if (!clientId || !/^ca-pub-\d{10,}$/.test(clientId)) return null;
+  const clientId = adsenseClientId();
+  if (!clientId) return null;
 
   return (
     <Script

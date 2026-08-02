@@ -5,6 +5,7 @@ import { Badge, PostTypeBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { PostCard } from "@/features/posts/ui/PostCard";
 import { CommentSection } from "@/features/comments/ui/CommentSection";
+import { AdSlot } from "@/components/analytics/AdSlot";
 import { ClockIcon, EyeIcon, ExternalIcon, TagIcon, ChevronRightIcon } from "@/components/icons";
 import { formatDate } from "@/lib/format";
 import { getCommentsByPostId, getPostBySlug, posts, siteConfig, getStock } from "@/lib/mock";
@@ -123,6 +124,9 @@ export default async function InsightDetailPage({ params }: Props) {
           ))}
         </div>
       )}
+
+      {/* 광고 — 본문을 다 읽은 자리. 태그 아래, 댓글 위. */}
+      <AdSlot placement="article-end" />
 
       {/* 댓글 — 커뮤니티를 열기 전까지는 안내만 나온다 */}
       <CommentSection
