@@ -10,7 +10,13 @@ import { describe, expect, it } from "vitest";
 import { AI_PROVIDERS, allApiKeyEnvNames, findModel, findProvider } from "./catalog";
 import { renderCompanyAnalysisInput, renderPortfolioContext, type PortfolioContext } from "./context";
 import { PERSONAS, WOODSMAN_DOCTRINE, buildSystemPrompt, listPersonas } from "./persona";
-import { estimateCostUsd, isOverCap, primaryRoute, routeCandidates } from "./routing";
+import {
+  estimateCostUsd,
+  isOverCap,
+  primaryRoute,
+  routeCandidates,
+  worstCaseWaitMs,
+} from "./routing";
 import { isPlausibleKey, maskKey, quoteEnvValue, upsertEnvLine } from "../env-file";
 import { serverEnvSchema } from "../env";
 import type { StockSummary } from "../types";
@@ -163,6 +169,40 @@ describe("라우팅", () => {
     expect(
       isOverCap({ providerId: "groq", enabled: true, tokensUsedThisMonth: 9e9, monthlyTokenCap: null }),
     ).toBe(false);
+  });
+});
+
+describe("제한 시간", () => {
+  it("⚠ 모든 제공자에 제한 시간이 있다 — 하나라도 없으면 화면이 무한정 멈춘다", () => {
+    for (const p of AI_PROVIDERS) {
+      expect(p.timeoutMs, p.id).toBeGreaterThan(0);
+      expect(p.timeoutMs, p.id).toBeLessThanOrEqual(180_000);
+    }
+  });
+
+  it("빠른 제공자는 짧게, 추론 모델은 길게 잡는다", () => {
+    const groq = AI_PROVIDERS.find((p) => p.id === "groq")!;
+    const deepseek = AI_PROVIDERS.find((p) => p.id === "deepseek")!;
+    expect(groq.timeoutMs).toBeLessThan(deepseek.timeoutMs);
+
+    // 모델 지정값이 제공자 기본값을 이긴다
+    const reasoner = findModel("deepseek", "deepseek-reasoner")!;
+    expect(reasoner.timeoutMs).toBeGreaterThan(deepseek.timeoutMs);
+  });
+
+  it("후보마다 제한 시간이 실려 나온다", () => {
+    const candidates = routeCandidates({ task: "chart-read", env: KEYS });
+    expect(candidates.length).toBeGreaterThan(0);
+    for (const c of candidates) {
+      expect(c.timeoutMs, c.providerId).toBeGreaterThan(0);
+    }
+  });
+
+  it("최악 대기 시간은 후보들의 합이다", () => {
+    const candidates = routeCandidates({ task: "chart-read", env: KEYS });
+    const expected = candidates.reduce((sum, c) => sum + c.timeoutMs, 0);
+    expect(worstCaseWaitMs(candidates)).toBe(expected);
+    expect(worstCaseWaitMs([])).toBe(0);
   });
 });
 

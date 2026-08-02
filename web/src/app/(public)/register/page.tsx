@@ -8,6 +8,7 @@ import { SocialButtons } from "@/features/auth/ui/SocialButtons";
 import { safeNextPath } from "@/lib/access";
 import { currentUser } from "@/lib/session";
 import { getSitePolicy } from "@/lib/site-settings";
+import { CONTACT_EMAIL } from "@/lib/site-links";
 
 export const metadata: Metadata = {
   title: "회원가입",
@@ -110,7 +111,7 @@ function SignupClosed() {
           </li>
           <li className="flex gap-2.5">
             <CheckIcon size={15} className="mt-0.5 shrink-0 text-emerald-400" />
-            <span>의견이나 질문은 이메일(suhdp71@gmail.com)로 받고 있습니다.</span>
+            <span>의견이나 질문은 이메일({CONTACT_EMAIL})로 받고 있습니다.</span>
           </li>
         </ul>
 

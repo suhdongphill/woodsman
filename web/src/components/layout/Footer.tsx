@@ -2,7 +2,7 @@ import Link from "next/link";
 import { LogoMark } from "@/components/brand/Logo";
 import { ExternalIcon } from "@/components/icons";
 import { outboundHref } from "@/lib/outbound";
-import { CONTACT_EMAIL, TISTORY_FEATURED_URL, displayUrl } from "@/lib/site-links";
+import { CONTACT_EMAIL } from "@/lib/site-links";
 
 const CONTENT_LINKS = [
   { href: "/portfolio", label: "대표 포트폴리오" },
@@ -89,7 +89,7 @@ export function Footer({ showCommunity = false }: { showCommunity?: boolean }) {
               rel="noopener"
               className="hover:text-gold-400"
             >
-              {displayUrl(TISTORY_FEATURED_URL)}
+              티스토리 블로그
             </a>
           </p>
         </div>

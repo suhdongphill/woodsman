@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { AlertIcon } from "@/components/icons";
 import type { ProviderUsage } from "@/lib/ai/routing";
-import { estimateCostUsd, routeCandidates } from "@/lib/ai/routing";
+import { estimateCostUsd, routeCandidates, worstCaseWaitMs } from "@/lib/ai/routing";
 import { PERSONAS, type AiTask } from "@/lib/ai/persona";
 
 /** 1회 호출의 대략적 규모 — 비용 감을 잡기 위한 것이지 정확한 청구액이 아니다. */
@@ -67,6 +67,12 @@ export function TaskRouting({
                     )}
                     <span className="ml-1 text-gray-600">
                       · 입력 {SAMPLE_IN / 1000}K / 출력 {SAMPLE_OUT / 1000}K 기준
+                    </span>
+                  </p>
+                  <p className="mt-1 text-[11px] text-gray-500">
+                    제한 시간 {Math.round(primary.timeoutMs / 1000)}초
+                    <span className="ml-1 text-gray-600">
+                      · 넘으면 끊고 다음 제공자로 넘어갑니다 (최악 {Math.round(worstCaseWaitMs(candidates) / 1000)}초)
                     </span>
                   </p>
                 </div>

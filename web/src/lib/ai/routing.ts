@@ -29,6 +29,12 @@ export type RouteCandidate = {
   apiKeyEnv: string;
   model: ModelSpec;
   free: boolean;
+  /**
+   * 이 후보 한 번 호출의 제한 시간(ms).
+   * ⚠ 넘으면 끊고 **다음 후보로 넘어간다.** 느린 제공자 하나가 화면을 붙잡고 있으면
+   *    사용자는 고장으로 받아들인다 — 기다리는 것보다 다음 것을 부르는 편이 낫다.
+   */
+  timeoutMs: number;
 };
 
 /** 제공자별 사용량 — DB(AiProvider)에서 온다. */
@@ -94,11 +100,25 @@ export function routeCandidates({
       apiKeyEnv: provider.apiKeyEnv,
       model,
       free: provider.free,
+      timeoutMs: resolveTimeoutMs(provider, model),
     });
   }
 
   // 무료 먼저. 그 안에서는 카탈로그 순서(=선호 순서)를 유지한다.
   return candidates.sort((a, b) => Number(b.free) - Number(a.free));
+}
+
+/**
+ * 이 호출을 얼마나 기다릴 것인가.
+ * 모델에 지정된 값이 있으면 그게 이긴다(추론 모델은 첫 토큰이 늦다).
+ */
+export function resolveTimeoutMs(provider: Provider, model: ModelSpec): number {
+  return model.timeoutMs ?? provider.timeoutMs;
+}
+
+/** 후보 전체를 한 번씩 시도할 때의 최악 대기 시간. 화면이 "얼마나 걸릴 수 있는지" 알린다. */
+export function worstCaseWaitMs(candidates: RouteCandidate[]): number {
+  return candidates.reduce((sum, c) => sum + c.timeoutMs, 0);
 }
 
 /** 1순위 후보. 없으면 null. */

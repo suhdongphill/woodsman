@@ -261,6 +261,30 @@ model SiteConfig {
   heroTitle    String?
   heroSubtitle String?
 
+  /// PAPER | LIVE — 모의 투자인지 실계좌인지.
+  /// 매매·납입은 가상이어도 종목 시세는 실제라, "무엇이 가상이고 무엇이 실제인지"를 화면에 밝힌다.
+  /// ⚠ 기본값은 PAPER. 읽지 못했을 때 실계좌로 보이면 공신력이 무너진다.
+  /// src/lib/data-mode.ts 참고.
+  dataMode String @default("PAPER")
+
+  /// 문의 메일 — 비어 있으면 코드의 기본값(src/lib/site-links.ts)을 쓴다
+  contactEmail String?
+
+  /// USD→KRW 환산율. ⚠ 원화·달러 종목을 한 축에서 비교하려면 반드시 필요하다.
+  /// 없으면 달러 종목이 원화 종목에 파묻혀 비중이 통째로 틀린다(실제로 그랬다).
+  /// 실시간 시세가 아니라 운영자가 지정하는 기준 환율이고, 화면에 그렇게 밝힌다.
+  usdKrwRate Float @default(1350)
+
+  /// 티스토리 — 대문 · 대표 글 · RSS. 처음 개발할 때 코드에 박아 둔 값을 화면에서 고칠 수 있게 한다.
+  tistoryBlogUrl     String?
+  tistoryFeaturedUrl String?
+  tistoryRssUrl      String?
+
+  /// 대표 글을 URL이 아니라 '콘텐츠'로 보여주기 위한 제목·요약.
+  /// 주소를 그대로 노출하면 읽는 사람에게 아무 정보가 없다.
+  featuredTitle   String?
+  featuredExcerpt String?
+
   updatedAt DateTime @updatedAt
 }
 

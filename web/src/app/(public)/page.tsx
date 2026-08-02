@@ -12,15 +12,10 @@ import { ArrowRightIcon, ChevronRightIcon } from "@/components/icons";
 import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { formatDate, formatNumber, formatPct } from "@/lib/format";
 import { summarizePerformance } from "@/lib/performance";
-import {
-  accountSnapshots,
-  featuredStocks,
-  functionAllocation,
-  journalEntries,
-  posts,
-  rebalances,
-  siteConfig,
-} from "@/lib/mock";
+import { DataModeNotice } from "@/components/ui/DataModeNotice";
+import { getSiteBasics } from "@/lib/site-settings";
+import { loadPublishedJournal, loadSnapshots } from "@/features/journal/repository";
+import { featuredStocks, functionAllocation, posts, rebalances } from "@/lib/mock";
 
 /**
  * 홈.
@@ -51,16 +46,26 @@ const PRINCIPLES = [
   },
 ];
 
-export default function HomePage() {
+/** ⚠ 정적 생성 금지 — 기록을 올려도 홈이 안 바뀐다. */
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const [snapshots, allJournal, basics] = await Promise.all([
+    loadSnapshots(),
+    loadPublishedJournal(),
+    getSiteBasics(),
+  ]);
+  const recentJournal = allJournal.slice(0, 3);
+  const journalCount = allJournal.length;
+
   const alloc = functionAllocation();
   const segments = [
     { label: "성장", value: alloc.GROWTH, color: FUNCTION_COLOR.GROWTH },
     { label: "인컴", value: alloc.INCOME, color: FUNCTION_COLOR.INCOME },
     { label: "방어", value: alloc.DEFENSE, color: FUNCTION_COLOR.DEFENSE },
   ];
-  const perf = summarizePerformance(accountSnapshots);
+  const perf = summarizePerformance(snapshots);
   const latestInsights = posts.filter((p) => p.type !== "NOTICE").slice(0, 3);
-  const recentJournal = journalEntries.filter((e) => e.published).slice(0, 3);
 
   return (
     <>
@@ -81,10 +86,10 @@ export default function HomePage() {
                 CULTIVATING WEALTH LIKE A FOREST
               </span>
               <h1 className="mt-5 text-3xl sm:text-4xl lg:text-[42px] font-bold text-white leading-[1.25] tracking-tight">
-                {siteConfig.heroTitle}
+                {basics.heroTitle}
               </h1>
               <p className="mt-4 text-[15px] text-muted leading-relaxed max-w-xl">
-                {siteConfig.heroSubtitle}
+                {basics.heroSubtitle}
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <LinkButton href="/portfolio" variant="gold" size="lg">
@@ -105,7 +110,7 @@ export default function HomePage() {
                 <div>
                   <dt className="text-[11px] text-gray-500">투자일지</dt>
                   <dd className="text-xl font-bold text-white tabular-nums mt-0.5">
-                    {journalEntries.length}건
+                    {journalCount}건
                   </dd>
                 </div>
                 <div>
@@ -162,6 +167,9 @@ export default function HomePage() {
       {/* ─── 자금 흐름 ─── */}
       {perf && (
         <section className="mx-auto max-w-6xl px-4 sm:px-6 py-14">
+          {/* ⚠ 계좌 숫자가 나오는 자리에는 모의/실계좌를 반드시 밝힌다 */}
+          <DataModeNotice mode={basics.dataMode} className="mb-5" compact />
+
           <SectionHeader
             title="넣은 돈과 불어난 돈"
             subtitle="매달 납입한 원금 위로 평가액이 얼마나 떠 있는지 — 벌어진 폭이 곧 성과입니다."
@@ -177,7 +185,7 @@ export default function HomePage() {
           />
           <Card>
             <CapitalFlowChart
-              snapshots={accountSnapshots}
+              snapshots={snapshots}
               rebalances={rebalances.map((r) => ({ date: r.date, memo: r.memo }))}
             />
           </Card>
@@ -232,7 +240,12 @@ export default function HomePage() {
         </div>
 
         {/* 티스토리 유도 — 인사이트를 훑은 직후가 가장 잘 넘어가는 자리 */}
-        <TistoryCta variant="compact" className="mt-4" />
+        <TistoryCta
+          variant="compact"
+          className="mt-4"
+          postTitle={basics.featuredTitle}
+          postExcerpt={basics.featuredExcerpt}
+        />
       </section>
 
       {/* ─── 최근 투자일지 + 주목 종목 ─── */}

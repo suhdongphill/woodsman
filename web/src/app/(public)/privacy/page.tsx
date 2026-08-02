@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PolicyList, PolicyPage, PolicySection } from "@/components/layout/PolicyPage";
+import { CONTACT_EMAIL } from "@/lib/site-links";
 
 export const metadata: Metadata = {
   title: "개인정보 처리방침",
@@ -113,7 +114,7 @@ export default function PrivacyPage() {
           items={[
             "책임자 · 서동필 (Woodsman 운영자)",
             <>
-              연락처 · <span className="text-gold-400">suhdp71@gmail.com</span>
+              연락처 · <span className="text-gold-400">{CONTACT_EMAIL}</span>
             </>,
           ]}
         />

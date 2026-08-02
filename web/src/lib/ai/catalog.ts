@@ -37,6 +37,11 @@ export type ModelSpec = {
   context: number;
   /** 이 모델이 잘하는 일 — 라우팅 판단의 근거 */
   strength: "deep" | "balanced" | "cheap";
+  /**
+   * 이 모델 한 번 호출의 제한 시간(ms). 넘으면 끊고 다음 후보로 넘어간다.
+   * ⚠ 없으면 제공자 기본값(`Provider.timeoutMs`)을 쓴다.
+   */
+  timeoutMs?: number;
 };
 
 export type Provider = {
@@ -51,6 +56,11 @@ export type Provider = {
   free: boolean;
   /** 키 발급 페이지 (관리자 화면에서 안내) */
   consoleUrl: string;
+  /**
+   * 이 제공자의 기본 제한 시간(ms).
+   * ⚠ 무제한으로 두면 느린 제공자 하나가 화면 전체를 멈춘다. 반드시 값을 둔다.
+   */
+  timeoutMs: number;
   models: ModelSpec[];
   note?: string;
 };
@@ -70,6 +80,7 @@ export const AI_PROVIDERS: readonly Provider[] = [
     apiKeyEnv: "NVIDIA_API_KEY",
     free: true,
     consoleUrl: "https://build.nvidia.com/",
+    timeoutMs: 20_000,
     note: "가입 시 무료 크레딧. 차트 요약·정형 출력에 충분하다.",
     models: [
       {
@@ -89,6 +100,7 @@ export const AI_PROVIDERS: readonly Provider[] = [
     apiKeyEnv: "GROQ_API_KEY",
     free: true,
     consoleUrl: "https://console.groq.com/keys",
+    timeoutMs: 12_000,
     note: "속도가 가장 빠르다. 짧은 요약·분류에 1순위.",
     models: [
       {
@@ -108,6 +120,7 @@ export const AI_PROVIDERS: readonly Provider[] = [
     apiKeyEnv: "GEMINI_API_KEY",
     free: true,
     consoleUrl: "https://aistudio.google.com/apikey",
+    timeoutMs: 20_000,
     note: "무료 티어의 일일 한도가 넉넉하다.",
     models: [
       {
@@ -127,6 +140,7 @@ export const AI_PROVIDERS: readonly Provider[] = [
     apiKeyEnv: "OPENROUTER_API_KEY",
     free: true,
     consoleUrl: "https://openrouter.ai/keys",
+    timeoutMs: 25_000,
     note: "여러 무료 모델을 한 키로 돌려쓸 수 있다. 다른 무료 제공자가 막혔을 때의 보험.",
     models: [
       {
@@ -148,11 +162,14 @@ export const AI_PROVIDERS: readonly Provider[] = [
     // 유료로 둔다. 대신 카탈로그에서 Claude보다 앞에 놓아 먼저 시도되게 한다.
     free: false,
     consoleUrl: "https://platform.deepseek.com/api_keys",
+    timeoutMs: 90_000,
     note: "저렴한 유료. 긴 추론이 필요한 작업을 Claude보다 먼저 시도한다. 요금은 콘솔에서 확인 후 상한을 정하세요.",
     models: [
       {
         id: "deepseek-reasoner",
         label: "DeepSeek Reasoner",
+        // 추론 모델이라 첫 토큰까지 오래 걸린다. 제공자 기본값보다 더 준다.
+        timeoutMs: 120_000,
         // ⚠ 공개 요금을 직접 확인하지 않았다. 숫자를 지어내지 않는다.
         price: null,
         context: 128_000,
@@ -174,11 +191,13 @@ export const AI_PROVIDERS: readonly Provider[] = [
     apiKeyEnv: "ANTHROPIC_API_KEY",
     free: false,
     consoleUrl: "https://console.anthropic.com/settings/keys",
+    timeoutMs: 60_000,
     note: "기업분석처럼 긴 글·높은 품질이 필요한 작업 전용. 무료 제공자가 다 실패했을 때만 부른다.",
     models: [
       {
         id: "claude-opus-5",
         label: "Claude Opus 5",
+        timeoutMs: 90_000,
         price: { inputPerMTok: 5, outputPerMTok: 25 },
         context: 1_000_000,
         strength: "deep",
@@ -207,6 +226,7 @@ export const AI_PROVIDERS: readonly Provider[] = [
     apiKeyEnv: "OPENAI_API_KEY",
     free: false,
     consoleUrl: "https://platform.openai.com/api-keys",
+    timeoutMs: 45_000,
     note: "요금은 계정 등급에 따라 다르다 — 콘솔에서 확인 후 상한을 정하세요.",
     models: [
       { id: "gpt-4.1-mini", label: "GPT-4.1 mini", price: null, context: 128_000, strength: "cheap" },

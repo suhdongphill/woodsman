@@ -41,7 +41,13 @@ function lit(v) {
 }
 
 /** KST 자정 기준 시각 (seed.ts와 같은 규칙) */
-const kst = (date) => new Date(`${date}T00:00:00+09:00`);
+/**
+ * 날짜만 있는 값(YYYY-MM-DD)을 DATETIME으로 저장할 때 쓴다.
+ * ⚠ 정오(UTC)로 고정한다. KST 자정(=UTC 전날 15시)으로 넣으면 읽을 때 앞 10자를 자르는
+ *    화면에서 **하루가 밀려 보인다**(2026-07-28 기록이 07-27로 표시됐다).
+ *    저장·조회 양쪽이 같은 규칙을 쓰도록 features/journal/repository.ts와 맞춰 둔다.
+ */
+const kst = (date) => new Date(`${date}T12:00:00.000Z`);
 const now = new Date("2026-08-02T00:00:00+09:00");
 
 const lines = [];

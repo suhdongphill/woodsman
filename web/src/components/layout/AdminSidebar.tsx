@@ -17,6 +17,7 @@ import {
   CloseIcon,
   ExternalIcon,
   ClockIcon,
+  GearIcon,
 } from "@/components/icons";
 import { cx } from "@/lib/format";
 
@@ -29,6 +30,7 @@ const MENU = [
   { href: "/admin/ai", label: "AI 제공자", icon: BotIcon },
   { href: "/admin/feeds", label: "RSS 피드", icon: RssIcon },
   { href: "/admin/home", label: "홈 편집", icon: HomeIcon },
+  { href: "/admin/settings", label: "사이트 기본값", icon: GearIcon },
   { href: "/admin/users", label: "사용자", icon: UsersIcon },
 ];
 

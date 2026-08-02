@@ -18,8 +18,9 @@
 - 수정도 모듈 단위로 나눠 진행한다.
 
 현재 순수 모듈: `access` `site-policy` `site-status` `performance` `outbound` `ads`
-`auth-providers` `site-url` `site-links` `format`
-`ai/catalog` `ai/persona` `ai/context` `ai/routing` — 전부 테스트가 있다.
+`auth-providers` `site-url` `site-links` `format` `env-file` `site-basics`
+`data-mode` `allocation` `ai/catalog` `ai/persona` `ai/context` `ai/routing`
+— 전부 테스트가 있다.
 
 ## 2. 변경은 로그로 남긴다 (필수)
 
@@ -68,6 +69,11 @@
 - ⚠ AI 프롬프트는 `src/lib/ai/persona.ts`의 공통 규범(`WOODSMAN_DOCTRINE`)을 항상 앞에 붙인다.
   매수 권유·목표주가·방향 단정 금지는 `/disclaimer`의 문장과 연결돼 있다. 약화시키지 않는다.
 - ⚠ 유료 AI 제공자에는 **월 토큰 상한을 반드시 둔다.** 상한이 없으면 실수 한 번이 청구서가 된다.
+- ⚠ 계좌 숫자를 보여주는 화면에는 **모의/실계좌 표시를 반드시 붙인다**(`DataModeNotice`).
+  기본값은 모의(`PAPER`)다. 설정을 못 읽었다고 실계좌로 보이면 공신력이 무너진다.
+- ⚠ 통화가 섞인 값을 그냥 더하지 않는다. 비중·합계는 `allocation.holdingValueKrw()`로
+  **원화로 환산한 뒤** 계산한다. 환산을 빼먹어 성장 버킷이 0.1%로 나온 적이 있다.
+- ⚠ 날짜만 있는 값은 **정오(UTC)**로 저장한다. 자정으로 넣으면 화면에서 하루가 밀린다.
 - ⚠ 가입은 **항상 USER**. `role`을 폼·API로 받지 않는다. ADMIN은 시드로만 만든다.
 - ⚠ 로그인 실패 사유를 구분해 알려주지 않는다(계정 존재 여부 노출 방지).
 - ⚠ 리다이렉트 대상은 **등록된 것만**. 쿼리로 받은 URL로 이동하지 않는다(오픈 리다이렉트).
@@ -80,6 +86,9 @@
 ```bash
 npm run check    # typecheck → lint → test → build
 ```
+
+⚠ **`npm run dev`를 먼저 끈다.** 띄운 채로 빌드하면 Windows에서 `.next`가 깨져
+화면 전체가 500이 된다(EPERM / `_buildManifest.js` 없음). 여러 번 당했다.
 
 - 전부 통과해야 커밋한다.
 - 화면을 바꿨으면 **실제로 띄워서 눈으로 본다.** 차트 색을 반대로 칠한 적이 있는데

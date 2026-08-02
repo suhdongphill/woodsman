@@ -8,7 +8,9 @@ import { AdSlot } from "@/components/analytics/AdSlot";
 import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { formatDate, formatPct } from "@/lib/format";
 import { summarizePerformance } from "@/lib/performance";
-import { accountSnapshots, journalEntries } from "@/lib/mock";
+import { DataModeNotice } from "@/components/ui/DataModeNotice";
+import { getSiteBasics } from "@/lib/site-settings";
+import { loadPublishedJournal, loadSnapshots } from "@/features/journal/repository";
 
 export const metadata: Metadata = {
   title: "투자일지",
@@ -16,9 +18,16 @@ export const metadata: Metadata = {
     "매수·매도·리밸런싱을 언제 왜 했는지, 체결 수량과 단가까지 함께 남기는 기록입니다. 잘못된 판단도 지우지 않습니다.",
 };
 
-export default function JournalPage() {
-  const entries = journalEntries.filter((e) => e.published);
-  const perf = summarizePerformance(accountSnapshots);
+/** ⚠ 정적 생성 금지 — 관리자가 일지를 올려도 화면이 안 바뀐다. */
+export const dynamic = "force-dynamic";
+
+export default async function JournalPage() {
+  const [entries, snapshots, basics] = await Promise.all([
+    loadPublishedJournal(),
+    loadSnapshots(),
+    getSiteBasics(),
+  ]);
+  const perf = summarizePerformance(snapshots);
 
   const counts = {
     trade: entries.filter((e) => e.action === "BUY" || e.action === "SELL").length,
@@ -35,6 +44,8 @@ export default function JournalPage() {
       />
 
       <div className="mx-auto max-w-3xl px-4 sm:px-6 py-10">
+        <DataModeNotice mode={basics.dataMode} className="mb-5" />
+
         <div className="grid gap-3 sm:grid-cols-3">
           <StatTile label="매매 기록" value={`${counts.trade}건`} sub="매수 · 매도" />
           <StatTile label="리밸런싱" value={`${counts.rebalance}회`} tone="gold" sub="정기 조정" />

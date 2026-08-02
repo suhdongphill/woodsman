@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PolicyList, PolicyPage, PolicySection } from "@/components/layout/PolicyPage";
+import { CONTACT_EMAIL } from "@/lib/site-links";
 
 export const metadata: Metadata = {
   title: "투자 판단 책임 고지",
@@ -82,7 +83,7 @@ export default function DisclaimerPage() {
 
       <PolicySection title="6. 문의">
         <p>
-          내용의 오류 지적이나 정정 요청은 <span className="text-gold-400">suhdp71@gmail.com</span>
+          내용의 오류 지적이나 정정 요청은 <span className="text-gold-400">{CONTACT_EMAIL}</span>
           으로 보내주시면 확인 후 반영하겠습니다.
         </p>
       </PolicySection>

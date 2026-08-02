@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PolicyList, PolicyPage, PolicySection } from "@/components/layout/PolicyPage";
 import { RoadmapTimeline } from "@/features/site/ui/RoadmapTimeline";
 import { BETA_NOTICE, VISION, isBeta } from "@/lib/site-status";
+import { CONTACT_EMAIL } from "@/lib/site-links";
 
 export const metadata: Metadata = {
   title: "사이트 소개",
@@ -129,7 +130,7 @@ export default function AboutPage() {
 
       <PolicySection title="문의">
         <p>
-          의견·반론·오류 지적은 <span className="text-gold-400">suhdp71@gmail.com</span>으로 받고
+          의견·반론·오류 지적은 <span className="text-gold-400">{CONTACT_EMAIL}</span>으로 받고
           있습니다. 댓글은 콘텐츠가 충분히 쌓이면 열 예정입니다.
         </p>
       </PolicySection>

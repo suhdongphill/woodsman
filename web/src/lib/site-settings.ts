@@ -10,6 +10,12 @@
 import { cache } from "react";
 import { queryOne, toBool } from "./d1";
 import { CLOSED_SITE_POLICY, resolveSitePolicy, type SitePolicy } from "./site-policy";
+import {
+  DEFAULT_SITE_BASICS,
+  resolveSiteBasics,
+  type SiteBasics,
+  type SiteBasicsRow,
+} from "./site-basics";
 
 type SiteConfigRow = {
   signupEnabled: number;
@@ -35,5 +41,26 @@ export const getSitePolicy = cache(async (): Promise<SitePolicy> => {
   } catch (error) {
     console.error("[site-settings] SiteConfig 조회 실패 — 닫힌 정책으로 동작합니다.", error);
     return CLOSED_SITE_POLICY;
+  }
+});
+
+/**
+ * 사이트 기본값(문의 메일·티스토리·홈 문구·모의/실계좌).
+ *
+ * ⚠ 실패해도 **모의 투자(PAPER)** 기본값으로 떨어진다. 설정을 못 읽었다는 이유로
+ * 화면이 실계좌처럼 보이면 안 된다.
+ */
+export const getSiteBasics = cache(async (): Promise<SiteBasics> => {
+  try {
+    const row = await queryOne<SiteBasicsRow>(
+      `SELECT dataMode, usdKrwRate, contactEmail, tistoryBlogUrl, tistoryFeaturedUrl, tistoryRssUrl,
+              featuredTitle, featuredExcerpt, heroTitle, heroSubtitle
+         FROM SiteConfig WHERE id = ?`,
+      ["singleton"],
+    );
+    return resolveSiteBasics(row);
+  } catch (error) {
+    console.error("[site-settings] 사이트 기본값 조회 실패 — 코드 기본값으로 동작합니다.", error);
+    return DEFAULT_SITE_BASICS;
   }
 });

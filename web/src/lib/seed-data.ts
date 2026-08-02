@@ -3,6 +3,7 @@
  * DB 접근 없이 테스트할 수 있도록 prisma/seed.ts와 분리한다.
  */
 import { AI_PROVIDERS } from "./ai/catalog";
+import { DEFAULT_SITE_BASICS } from "./site-basics";
 import { TISTORY_RSS_URL } from "./site-links";
 
 export type SeedModelHolding = {
@@ -372,9 +373,20 @@ export const seedSiteConfig = {
   requireLoginToComment: true,
   moderationOn: false,
   bannedWords: "욕설,비방,광고",
-  heroTitle: "원칙대로 심고, 기다리고, 불린다",
-  heroSubtitle:
-    "성장·인컴·방어로 나눈 계좌를 그대로 공개합니다. 매달 얼마를 넣었고 지금 얼마가 되었는지, 그 사이에 무엇을 사고팔았는지까지 기록으로 남깁니다.",
+
+  // ⚠ 모의 투자로 시작한다. 실계좌 기록을 올리기 전까지 실계좌로 표시되면 안 된다.
+  //    (`/admin/settings`에서 바꾼다. 판단 로직은 src/lib/data-mode.ts)
+  dataMode: DEFAULT_SITE_BASICS.dataMode,
+  usdKrwRate: DEFAULT_SITE_BASICS.usdKrwRate,
+
+  contactEmail: DEFAULT_SITE_BASICS.contactEmail,
+  tistoryBlogUrl: DEFAULT_SITE_BASICS.tistoryBlogUrl,
+  tistoryFeaturedUrl: DEFAULT_SITE_BASICS.tistoryFeaturedUrl,
+  tistoryRssUrl: DEFAULT_SITE_BASICS.tistoryRssUrl,
+  featuredTitle: DEFAULT_SITE_BASICS.featuredTitle,
+  featuredExcerpt: DEFAULT_SITE_BASICS.featuredExcerpt,
+  heroTitle: DEFAULT_SITE_BASICS.heroTitle,
+  heroSubtitle: DEFAULT_SITE_BASICS.heroSubtitle,
 };
 
 export const seedAiConfig = {

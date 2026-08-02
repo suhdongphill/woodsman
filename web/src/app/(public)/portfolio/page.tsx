@@ -8,22 +8,21 @@ import { FUNCTION_COLOR, FUNCTION_LABEL } from "@/components/ui/Badge";
 import { HoldingCard } from "@/features/portfolio/ui/HoldingCard";
 import { CapitalFlowChart } from "@/features/portfolio/ui/CapitalFlowChart";
 import { JournalTimeline } from "@/features/portfolio/ui/JournalTimeline";
+import { AllocationProgress } from "@/features/portfolio/ui/AllocationProgress";
 import { ChevronRightIcon } from "@/components/icons";
 import { formatDate, formatNumber, formatPct } from "@/lib/format";
 import { summarizePerformance } from "@/lib/performance";
-import {
-  accountSnapshots,
-  functionAllocation,
-  journalEntries,
-  modelHoldings,
-  rebalances,
-} from "@/lib/mock";
+import { fillProgressPct, holdingValueKrw, summarizeAllocation } from "@/lib/allocation";
+import { DataModeNotice } from "@/components/ui/DataModeNotice";
+import { getSiteBasics } from "@/lib/site-settings";
+import { loadPublishedJournal, loadSnapshots } from "@/features/journal/repository";
+import { functionAllocation, modelHoldings, rebalances } from "@/lib/mock";
 import type { FunctionType } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "대표 포트폴리오",
   description:
-    "납입원금 대비 평가액 추이, 성장·인컴·방어 기능별 배분, 종목별 편입 논리(thesis)를 실제 운용 계좌 기준으로 공개합니다.",
+    "납입원금 대비 평가액 추이, 성장·인컴·방어 기능별 배분, 종목별 편입 논리(thesis)를 그대로 공개합니다. 목표 비중을 단계적으로 채워 가는 과정을 기록합니다.",
 };
 
 const ORDER: FunctionType[] = ["GROWTH", "INCOME", "DEFENSE"];
@@ -34,26 +33,46 @@ const BUCKET_DESC: Record<FunctionType, string> = {
   DEFENSE: "지수·현금으로 최악을 막고 리밸런싱 탄약을 보관한다.",
 };
 
-export default function PortfolioPage() {
+/** ⚠ 정적 생성 금지 — 기록을 올려도 화면이 안 바뀐다. */
+export const dynamic = "force-dynamic";
+
+export default async function PortfolioPage() {
+  const [snapshots, recentJournal, basics] = await Promise.all([
+    loadSnapshots(),
+    loadPublishedJournal(3),
+    getSiteBasics(),
+  ]);
+
   const published = modelHoldings.filter((h) => h.published);
   const alloc = functionAllocation();
+
+  // 목표 비중 대비 현재 비중 — 한 번에 완성되지 않는다는 사실을 그대로 보여준다.
+  const allocationRows = summarizeAllocation(
+    published.map((h) => ({
+      functionType: h.functionType,
+      targetWeight: h.targetWeight,
+      // ⚠ 반드시 원화로 환산해서 넘긴다 — 통화를 섞으면 비중이 통째로 틀린다.
+      marketValue: holdingValueKrw(h, basics.usdKrwRate),
+    })),
+  );
+  const fillPct = fillProgressPct(allocationRows);
   const segments = ORDER.map((f) => ({
     label: FUNCTION_LABEL[f],
     value: alloc[f],
     color: FUNCTION_COLOR[f],
   }));
-  const perf = summarizePerformance(accountSnapshots);
-  const recentJournal = journalEntries.slice(0, 3);
+  const perf = summarizePerformance(snapshots);
 
   return (
     <>
       <PageHeader
         eyebrow="MODEL PORTFOLIO"
         title="대표 포트폴리오"
-        description="실제로 운용 중인 계좌입니다. 매달 얼마를 넣었고 지금 얼마가 되었는지, 각 종목이 맡은 '기능'과 편입 논리까지 그대로 공개합니다."
+        description="매달 얼마를 넣었고 지금 얼마가 되었는지, 각 종목이 맡은 '기능'과 편입 논리까지 그대로 공개합니다."
       />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 space-y-12">
+        <DataModeNotice mode={basics.dataMode} />
         {/* ─── 자금 흐름: 넣은 돈과 불어난 돈 ─── */}
         {perf && (
           <section>
@@ -65,7 +84,7 @@ export default function PortfolioPage() {
             <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
               <Card className="min-w-0">
                 <CapitalFlowChart
-                  snapshots={accountSnapshots}
+                  snapshots={snapshots}
                   rebalances={rebalances.map((r) => ({ date: r.date, memo: r.memo }))}
                 />
               </Card>
@@ -155,6 +174,13 @@ export default function PortfolioPage() {
             />
           </div>
         </section>
+
+        {/* 목표 대비 현재 — 한 번에 완성되지 않는다는 사실을 그대로 */}
+        <AllocationProgress
+          rows={allocationRows}
+          fillPct={fillPct}
+          usdKrwRate={basics.usdKrwRate}
+        />
 
         {/* 기능별 종목 */}
         {ORDER.map((f) => {

@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/Card";
 import { LockIcon, MessageIcon, AlertIcon } from "@/components/icons";
 import { formatDateTime } from "@/lib/format";
 import type { Comment, Post, SiteConfig } from "@/lib/types";
+import { CONTACT_EMAIL } from "@/lib/site-links";
 
 /**
  * 댓글 영역.
@@ -150,7 +151,7 @@ function CommentsClosedNotice() {
           댓글은 아직 열지 않았습니다.
         </p>
         <p className="text-[12px] text-gray-500">
-          의견·반론은 <span className="text-gold-400">suhdp71@gmail.com</span>으로 보내주세요.
+          의견·반론은 <span className="text-gold-400">{CONTACT_EMAIL}</span>으로 보내주세요.
         </p>
       </Card>
     </section>
