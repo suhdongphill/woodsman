@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
+import { AdSense } from "@/components/analytics/AdSense";
+import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const notoSansKr = Noto_Sans_KR({
@@ -10,6 +12,8 @@ const notoSansKr = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
+  // OG·canonical이 절대 URL이어야 해서 기준 주소를 못 박는다(SITE_URL).
+  metadataBase: new URL(siteUrl()),
   title: {
     default: "Woodsman — 계좌를 공개하는 투자 기록",
     template: "%s | Woodsman",
@@ -34,7 +38,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className={notoSansKr.variable}>
-      <body className="font-sans bg-bg text-ink antialiased">{children}</body>
+      <body className="font-sans bg-bg text-ink antialiased">
+        {children}
+        <AdSense />
+      </body>
     </html>
   );
 }

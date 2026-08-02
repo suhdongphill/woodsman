@@ -38,6 +38,15 @@ yarn-error.log*
 prisma/*.db
 prisma/*.db-journal
 
+# D1 시드 SQL — 관리자 비밀번호 해시가 들어가므로 커밋하지 않는다
+prisma/seed.d1.sql
+
+# cloudflare
+.open-next/
+.wrangler/
+cloudflare-env.d.ts
+.dev.vars
+
 # prisma generated client
 /src/generated/
 

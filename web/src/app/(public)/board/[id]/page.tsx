@@ -11,9 +11,11 @@ import { getSitePolicy } from "@/lib/site-settings";
 
 type Props = { params: Promise<{ id: string }> };
 
-export async function generateStaticParams() {
-  return posts.map((p) => ({ id: p.id }));
-}
+/**
+ * 개방 여부를 DB에서 읽으므로 정적 생성하지 않는다(`/board`와 같은 이유).
+ * generateStaticParams를 두면 빌드 때 전부 404로 굳어버린다.
+ */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;

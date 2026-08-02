@@ -2,6 +2,8 @@
  * 사이트 개방 정책 회귀 테스트.
  * 여기가 깨지면 "받지 않기로 한 가입 창구가 열렸다"는 뜻이다.
  */
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { siteConfig } from "./mock";
 import { seedSiteConfig } from "./seed-data";
@@ -63,6 +65,36 @@ describe("내비게이션 노출", () => {
     const signup = resolveSitePolicy({ signupEnabled: true });
     expect(showAuthEntry(signup)).toBe(true);
     expect(showCommunityNav(signup)).toBe(false);
+  });
+});
+
+describe("정책을 읽는 페이지는 정적 생성하지 않는다", () => {
+  // 개방 여부는 런타임에 바뀐다. 정적으로 구우면 빌드 시점의 "닫힘"이 그대로 굳어
+  // 관리자가 스위치를 켜도 페이지가 열리지 않는다 — 조용히 망가지는 종류의 버그라 여기서 막는다.
+  const APP = join(process.cwd(), "src", "app");
+
+  function walk(dir: string): string[] {
+    return readdirSync(dir).flatMap((name) => {
+      const p = join(dir, name);
+      return statSync(p).isDirectory() ? walk(p) : [p];
+    });
+  }
+
+  const pages = walk(APP)
+    .filter((f) => /page\.tsx$/.test(f))
+    .map((f) => ({ file: f, body: readFileSync(f, "utf8") }))
+    .filter((p) => p.body.includes("getSitePolicy"));
+
+  it("정책을 읽는 페이지를 실제로 찾았다", () => {
+    expect(pages.length).toBeGreaterThan(0);
+  });
+
+  it("generateStaticParams와 함께 쓰지 않는다", () => {
+    for (const p of pages) {
+      const staticParams = p.body.includes("generateStaticParams");
+      const forcedDynamic = /export const dynamic\s*=\s*"force-dynamic"/.test(p.body);
+      expect(staticParams && !forcedDynamic, p.file).toBe(false);
+    }
   });
 });
 

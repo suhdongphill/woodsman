@@ -10,7 +10,7 @@
  */
 import { AuthError } from "next-auth";
 import { hash } from "bcryptjs";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { signIn, signOut } from "@/lib/auth";
 import { safeNextPath } from "@/lib/access";
 import { emptyAuthFormState, type AuthFormState } from "./form-state";
@@ -67,6 +67,7 @@ export async function registerAction(
   const passwordHash = await hash(password, 12);
 
   try {
+    const db = await getDb();
     await db.user.create({ data: { name, email, passwordHash, role: "USER" } });
   } catch {
     // email @unique 위반(동시 가입 포함) — 사유를 구체적으로 나누지 않는다.

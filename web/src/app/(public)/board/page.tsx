@@ -16,6 +16,12 @@ export const metadata: Metadata = {
 const CATEGORIES = ["전체", "포트폴리오 전략", "종목분석", "인컴 투자", "공지"];
 
 /**
+ * 개방 여부를 DB에서 읽으므로 정적 생성하면 안 된다.
+ * 빌드 시점의 "닫힘" 판정이 그대로 구워져, 나중에 스위치를 켜도 열리지 않는다.
+ */
+export const dynamic = "force-dynamic";
+
+/**
  * 커뮤니티가 닫혀 있으면 404로 응답한다.
  * 링크만 숨기고 페이지를 남겨두면 검색엔진과 광고 심사에 '빈 커뮤니티'가 노출된다.
  * 관리자가 `SiteConfig.communityEnabled`를 켜면 이 화면이 그대로 살아난다.

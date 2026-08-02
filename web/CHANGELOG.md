@@ -10,6 +10,64 @@
 
 ---
 
+## 2026-08-02 — Cloudflare 배포 · 자동화 · 수익화 준비
+
+GitHub 공개 저장소로 올리고, push하면 자동 배포되도록 파이프라인을 붙였습니다.
+
+### `wrangler.jsonc` · `open-next.config.ts` (신규) — Workers 배포
+
+- Next.js는 그대로 안 올라가서 `@opennextjs/cloudflare`가 `.open-next/worker.js`로 변환합니다.
+- ⚠ `migrations_pattern`을 지정해야 합니다. Prisma는 마이그레이션을
+  `prisma/migrations/<타임스탬프>/migration.sql`로 만드는데, wrangler 기본 패턴은
+  `*.sql`이라 **하나도 못 찾고 "No migrations to apply"로 조용히 넘어갑니다.**
+- ⚠ 대시보드의 Worker 이름과 `name`이 같아야 빌드가 성공합니다.
+
+### `lib/db.ts` — 로컬/운영 이중 지원
+
+- ⚠ `db` 싱글턴 export를 **`getDb()` 비동기 함수로** 바꿨습니다. D1 바인딩은 요청
+  컨텍스트에서만 보여 모듈 최상단에서 클라이언트를 만들 수 없습니다.
+- 판단 기준은 "D1 바인딩이 실제로 붙어 있는가" 하나입니다. `NODE_ENV` 같은 값으로
+  추측하면 로컬은 되는데 배포만 죽는 상황을 만듭니다.
+- `auth.ts`는 `NextAuth(async () => config)` 형태로 바꿔 요청마다 DB를 얻습니다.
+
+### `scripts/generate-d1-seed.mjs` (신규) — D1 시드
+
+- `npm run db:seed`는 파일 SQLite에 직접 쓰므로 원격 D1에는 못 씁니다. 같은
+  시드 데이터로 SQL을 만들어 `wrangler d1 execute`로 밀어 넣습니다.
+- ⚠ 산출물 `prisma/seed.d1.sql`에는 **관리자 비밀번호 해시**가 들어갑니다. gitignore 대상.
+- 로컬 D1(`--local`)에 마이그레이션 + 시드를 실제로 돌려 검증했습니다.
+
+### ⚠ 정책을 읽는 페이지의 정적 생성 버그 (수정)
+
+- `/board`, `/board/[id]`, `/insights/[slug]`가 `generateStaticParams`로 **정적 생성**되면서
+  `getSitePolicy()`를 호출하고 있었습니다. 즉 빌드 시점의 "커뮤니티 닫힘" 판정이 그대로
+  구워져, **나중에 관리자가 스위치를 켜도 페이지가 열리지 않습니다.**
+- `export const dynamic = "force-dynamic"`로 바꾸고 `generateStaticParams`를 제거했습니다.
+- 같은 실수가 재발하지 않도록 `site-policy.test.ts`가 소스를 훑어
+  "정책을 읽는 페이지 + generateStaticParams" 조합을 금지합니다.
+- `robots.ts`도 같은 이유로 동적입니다 — `SITE_URL`이 런타임 값이라, 정적으로 구우면
+  "전체 색인 금지"가 박제됩니다.
+
+### `.github/workflows/deploy.yml` (신규) — 자동 배포
+
+- main에 push → 품질 게이트(typecheck·lint·test) 통과 → D1 마이그레이션 → 빌드·배포.
+- ⚠ 게이트를 통과해야만 배포합니다. 안 그러면 "배포는 됐는데 깨진" 상태를 나중에 압니다.
+- ⚠ 마이그레이션을 배포보다 **먼저** 적용합니다. 새 컬럼을 기대하는 코드가 옛 스키마를
+  만나면 배포 직후 500이 납니다.
+- OpenNext가 Windows를 완전히 지원하지 않는다고 경고합니다. CI(Linux)에서 배포하는
+  이 방식이 로컬 배포보다 안전합니다.
+
+### `app/robots.ts` · `sitemap.ts` · `ads.txt/route.ts` · `components/analytics/AdSense.tsx` (신규)
+
+- ⚠ `SITE_URL`이 비어 있으면 robots가 **전체 차단**입니다. 도메인이 정해지기 전에
+  미리보기 주소(`*.workers.dev`)가 색인되면 나중에 정리하기 어렵습니다.
+- sitemap은 닫힌 영역(커뮤니티)과 티스토리 원문 링크 글을 제외합니다 — 404나 중복을
+  색인 요청하지 않기 위해서입니다.
+- `ADSENSE_CLIENT_ID`가 없으면 광고 스크립트도 `/ads.txt`도 나가지 않습니다.
+  자리표시자를 커밋해 두면 그대로 배포될 위험이 있어 아예 환경변수로만 받습니다.
+
+---
+
 ## 2026-08-02 — 콘텐츠 사이트로 전환 (베타)
 
 가입자를 받는 커뮤니티 플랫폼에서 **운영자 1인이 계좌와 판단을 공개하는 블로그**로

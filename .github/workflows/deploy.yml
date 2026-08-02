@@ -1,0 +1,78 @@
+name: Deploy to Cloudflare Workers
+
+# main에 push되면 품질 게이트를 통과한 경우에만 배포한다.
+# 게이트를 건너뛰면 "배포는 됐는데 사이트가 깨진" 상태를 나중에 발견하게 된다.
+on:
+  push:
+    branches: [main]
+  # 대시보드에서 손으로 한 번 돌리고 싶을 때
+  workflow_dispatch:
+
+concurrency:
+  # 연달아 push하면 앞의 배포는 취소한다(마지막 커밋만 올라가면 된다).
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: web
+
+jobs:
+  check:
+    name: 품질 게이트
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+
+      # Prisma 클라이언트는 gitignore 대상이라 CI에서 새로 만든다.
+      - run: npx prisma generate
+
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+
+  deploy:
+    name: Cloudflare 배포
+    needs: check
+    runs-on: ubuntu-latest
+    # 시크릿이 없으면(포크 PR 등) 배포를 건너뛴다.
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+      - run: npx prisma generate
+
+      # DB 스키마 변경분을 D1에 먼저 반영한다.
+      # 앱이 새 컬럼을 기대하는데 DB가 옛 스키마면 배포 직후 500이 난다.
+      - name: D1 마이그레이션 적용
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: web
+          command: d1 migrations apply woodsman-db --remote
+
+      # OpenNext로 변환 후 배포. AUTH_SECRET 등 런타임 시크릿은
+      # Cloudflare 대시보드(Settings → Variables and Secrets)에 넣어 둔 값을 쓴다.
+      - name: 빌드 & 배포
+        run: npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # 빌드 타임에만 필요한 값 — 런타임 시크릿과 별개다.
+          DATABASE_URL: "file:./build.db"

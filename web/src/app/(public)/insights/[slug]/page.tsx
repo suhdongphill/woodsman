@@ -12,9 +12,12 @@ import { getSitePolicy } from "@/lib/site-settings";
 
 type Props = { params: Promise<{ slug: string }> };
 
-export async function generateStaticParams() {
-  return posts.map((p) => ({ slug: p.slug }));
-}
+/**
+ * 댓글 개방 여부를 DB에서 읽으므로 정적 생성하지 않는다.
+ * 정적으로 구우면 관리자가 댓글을 열어도 이미 배포된 페이지는 계속 "닫힘"으로 남는다.
+ * (Phase 4에서 글도 DB로 옮기면 어차피 동적이 된다.)
+ */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;

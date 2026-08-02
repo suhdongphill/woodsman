@@ -20,6 +20,10 @@ const eslintConfig = [
       "next-env.d.ts",
       // Prisma가 생성하는 클라이언트 — 우리가 손대지 않는 코드
       "src/generated/**",
+      // OpenNext·wrangler 빌드 산출물 (Cloudflare 배포용, 생성물)
+      ".open-next/**",
+      ".wrangler/**",
+      "cloudflare-env.d.ts",
     ],
   },
 ];

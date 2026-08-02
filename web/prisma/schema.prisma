@@ -5,6 +5,8 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
+  // Cloudflare D1은 드라이버 어댑터(@prisma/adapter-d1)로만 붙는다.
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {

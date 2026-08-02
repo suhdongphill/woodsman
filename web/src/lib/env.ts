@@ -21,6 +21,10 @@ const serverEnvSchema = z.object({
 
   /** 운영 배포 주소. 비워두면 요청 Host를 쓴다(로컬 개발). */
   AUTH_URL: optionalSecret,
+  /** 검색엔진에 알릴 정식 주소. 비어 있으면 robots가 전체 차단으로 동작한다. */
+  SITE_URL: optionalSecret,
+  /** Google AdSense 퍼블리셔 ID(ca-pub-...). 없으면 광고 스크립트를 넣지 않는다. */
+  ADSENSE_CLIENT_ID: optionalSecret,
 
   NVIDIA_API_KEY: optionalSecret,
   GROQ_API_KEY: optionalSecret,

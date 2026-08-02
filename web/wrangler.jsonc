@@ -1,0 +1,44 @@
+/**
+ * Cloudflare Workers 배포 설정.
+ *
+ * Next.js는 그대로 올라가지 않아 OpenNext 어댑터(`@opennextjs/cloudflare`)가
+ * `.open-next/worker.js`로 변환한 결과물을 올린다.
+ *
+ * 주의
+ * - `name`은 Cloudflare 대시보드의 Worker 이름과 **같아야** 빌드가 성공한다.
+ * - `nodejs_compat`는 필수. Prisma·bcrypt·Auth.js가 Node API를 쓴다.
+ * - D1 `database_id`는 계정마다 다르다. `wrangler d1 create woodsman-db`로 만든 뒤
+ *   출력된 id를 여기에 채워 넣는다(아래 자리표시자 교체).
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "woodsman",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-09-23",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+
+  "observability": {
+    "enabled": true
+  },
+
+  /**
+   * D1 — 운영 데이터베이스.
+   * 로컬 개발은 여전히 prisma/dev.db(파일 SQLite)를 쓴다. 분기는 src/lib/db.ts에 있다.
+   */
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "woodsman-db",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      // Prisma는 마이그레이션을 폴더별 migration.sql로 만든다.
+      // 이 패턴을 지정하지 않으면 wrangler가 파일을 하나도 못 찾고 조용히 넘어간다.
+      "migrations_dir": "prisma/migrations",
+      "migrations_pattern": "prisma/migrations/*/migration.sql"
+    }
+  ]
+}
