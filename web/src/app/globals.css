@@ -1,0 +1,235 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════
+   Woodsman 디자인 토큰 — 기존 index.html tailwind.config 그대로 이식
+   bg #0f1117 / card #1a1d27 / cardHover #222633 / border #2a2e3a
+   text #e5e7eb / muted #9ca3af / gold #c9a657(400 #d8bd7a)
+   emerald #2f9e63 · 500 #36a06a · 400(밝게) #56b98a
+   ═══════════════════════════════════════════════════════════════ */
+@theme {
+  --color-bg: #0f1117;
+  --color-card: #1a1d27;
+  --color-cardHover: #222633;
+  --color-border: #2a2e3a;
+  --color-ink: #e5e7eb;
+  --color-muted: #9ca3af;
+
+  /* gold */
+  --color-gold: #c9a657;
+  --color-gold-400: #d8bd7a;
+  --color-gold-500: #c9a657;
+  --color-gold-600: #a8863f;
+
+  /* emerald — 기본 팔레트를 지우고 Woodsman 값으로 대체 */
+  --color-emerald-*: initial;
+  --color-emerald: #2f9e63;
+  --color-emerald-200: #c3e6d2;
+  --color-emerald-400: #56b98a;
+  --color-emerald-500: #36a06a;
+  --color-emerald-600: #2d7a4f;
+  --color-emerald-700: #2a6a46;
+  --color-emerald-900: #16402b;
+  --color-emeraldDark: #25744b;
+
+  /* forest */
+  --color-forest: #2d7a4f;
+  --color-forest-400: #4ca677;
+  --color-forest-500: #2d7a4f;
+  --color-forest-600: #246b44;
+
+  --font-sans: var(--font-noto-sans-kr), "Noto Sans KR", sans-serif;
+
+  --radius-card: 16px;
+}
+
+/* ═══ 전역 스타일 (기존 index.html <style> 이식) ═══ */
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: #0f1117;
+  color: #e5e7eb;
+  -webkit-font-smoothing: antialiased;
+}
+
+.modal-backdrop {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0f1117;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2e3a;
+  border-radius: 3px;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+.skeleton {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  background: #2a2e3a;
+  border-radius: 8px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.pulse-glow {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+.toast-in {
+  animation: toastIn 0.3s ease-out;
+}
+.toast-out {
+  animation: toastOut 0.3s ease-in forwards;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-up {
+  animation: fadeUp 0.4s ease-out both;
+}
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 28px;
+}
+
+/* 본문(HTML 콘텐츠) 타이포 */
+.prose-woodsman h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 1.75rem 0 0.75rem;
+}
+.prose-woodsman h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 1.5rem 0 0.5rem;
+}
+.prose-woodsman p {
+  font-size: 0.9375rem;
+  line-height: 1.85;
+  color: #d1d5db;
+  margin-bottom: 1rem;
+}
+.prose-woodsman ul {
+  margin: 0 0 1rem 0;
+  padding-left: 1.1rem;
+  list-style: disc;
+}
+.prose-woodsman li {
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  color: #d1d5db;
+  margin-bottom: 0.35rem;
+}
+.prose-woodsman strong {
+  color: #fff;
+  font-weight: 600;
+}
+.prose-woodsman blockquote {
+  border-left: 3px solid #c9a657;
+  padding: 0.25rem 0 0.25rem 1rem;
+  color: #9ca3af;
+  margin: 1rem 0;
+}
+.prose-woodsman a {
+  color: #d8bd7a;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

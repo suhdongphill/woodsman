@@ -1,0 +1,357 @@
+// Woodsman 데이터 모델
+// 주의: SQLite(로컬) / Cloudflare D1(운영) 대상이므로 enum·@db.Text를 쓰지 않는다.
+//       상태·유형 값은 String으로 저장하고 zod(src/features/*/schema)에서 검증한다.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────── 인증 ───────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+
+  /// 자체 로그인(Credentials)용 해시. 소셜 전용 계정은 null.
+  passwordHash String?
+  /// ADMIN | USER
+  role         String  @default("USER")
+
+  accounts  Account[]
+  sessions  Session[]
+  comments  Comment[]
+  portfolio Portfolio?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ────────────── 관리자 대표(모델) 포트폴리오: 공개 ──────────────
+
+model ModelHolding {
+  id     String  @id @default(cuid())
+  name   String
+  ticker String?
+  market String?
+
+  /// GROWTH | INCOME | DEFENSE
+  functionType String
+
+  targetWeight Float?
+  avgCost      Float?
+  shares       Float?
+  /// KRW | USD
+  currency     String  @default("KRW")
+
+  /// 편입 논리 (sanitize된 HTML 또는 텍스트)
+  thesis  String?
+  canslim Float?
+  blogUrl String?
+
+  order     Int      @default(0)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, order])
+  @@index([functionType])
+}
+
+model Rebalance {
+  id        String   @id @default(cuid())
+  date      DateTime
+  memo      String
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+/// 계좌 스냅샷 — "원금 대비 평가액" 곡선의 한 점.
+/// 운용자가 자기 계좌를 공개하는 콘텐츠이므로, 판단(JournalEntry)과 결과(여기)를
+/// 같은 시간축에 올려 원칙대로 한 투자가 실제로 성과를 냈는지 보여준다.
+model AccountSnapshot {
+  id String @id @default(cuid())
+
+  /// 스냅샷 기준일 (월 1회 기록을 기본으로 한다)
+  date DateTime @unique
+
+  /// 그날까지 넣은 순수 납입원금 누계
+  principal Float
+  /// 그날의 총 평가액
+  value     Float
+  /// 누적 배당·이자 (평가액과 별개로 따로 보여 준다)
+  income    Float @default(0)
+
+  memo      String?
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+/// 투자일지 — 매수·매도·리밸런싱·관찰 기록. 브이로그처럼 시간순으로 쌓인다.
+model JournalEntry {
+  id   String   @id @default(cuid())
+  date DateTime
+
+  /// BUY | SELL | REBALANCE | NOTE
+  action String
+
+  title String
+  /// 근거·판단 (sanitize된 HTML 또는 텍스트)
+  body  String
+
+  /// 관련 종목 (선택)
+  ticker String?
+  name   String?
+
+  /// 체결 정보 (선택 — NOTE에는 없다)
+  shares   Float?
+  price    Float?
+  currency String? @default("KRW")
+
+  /// 연결 인사이트 글 slug (선택)
+  postSlug String?
+
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, date])
+  @@index([ticker])
+}
+
+// ────────────── 콘텐츠(관리자 전용 작성) ──────────────
+
+model Post {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  /// INSIGHT | ANALYSIS | NOTICE
+  type     String
+  category String?
+
+  title        String
+  excerpt      String?
+  bodyHtml     String?
+  thumbnailUrl String?
+
+  /// SELF | TISTORY
+  source      String  @default("SELF")
+  /// 티스토리 원문 URL
+  externalUrl String?
+  /// 연결 종목(선택)
+  ticker      String?
+  /// CSV: "반도체,1등주"
+  tags        String?
+
+  /// 글별 댓글 on/off (🔒)
+  commentsEnabled Boolean @default(true)
+
+  published   Boolean   @default(false)
+  viewCount   Int       @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  comments Comment[]
+
+  @@index([published, publishedAt])
+  @@index([type])
+  @@index([ticker])
+}
+
+// ────────────── 댓글 ──────────────
+
+model Comment {
+  id     String @id @default(cuid())
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  authorName String?
+  body       String
+
+  /// VISIBLE | PENDING | HIDDEN
+  status   String  @default("VISIBLE")
+  reported Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([postId, status])
+  @@index([status, reported])
+  @@index([userId])
+}
+
+// ────────────── 사이트/댓글 전역 설정 ──────────────
+
+model SiteConfig {
+  id String @id @default("singleton")
+
+  /// 공개 회원가입을 받을지. 지금은 운영자 1인 블로그라 기본 false.
+  /// 커뮤니티 코드는 남겨 두고 이 스위치로만 연다 — src/lib/site-policy.ts 참고.
+  signupEnabled    Boolean @default(false)
+  /// 게시판·커뮤니티 노출 여부. 기본 false.
+  communityEnabled Boolean @default(false)
+
+  commentsGloballyEnabled Boolean @default(true)
+  requireLoginToComment   Boolean @default(true)
+  /// 승인 후 노출
+  moderationOn            Boolean @default(false)
+  /// CSV
+  bannedWords             String?
+
+  heroTitle    String?
+  heroSubtitle String?
+
+  updatedAt DateTime @updatedAt
+}
+
+// ────────────── AI 제공자 (무료 우선 폴백) ──────────────
+
+model AiProvider {
+  id   String @id @default(cuid())
+  /// 표시명 (예: NVIDIA NIM, Groq, Claude)
+  name String @unique
+
+  /// ANTHROPIC | OPENAI_COMPAT
+  kind    String
+  /// OPENAI_COMPAT 엔드포인트
+  baseUrl String?
+  model   String
+
+  /// 키가 담긴 env 변수명. 키 '값'은 DB에 저장하지 않는다.
+  apiKeyEnv String
+
+  free     Boolean @default(false)
+  enabled  Boolean @default(true)
+  /// 폴백 순서(작을수록 우선)
+  priority Int     @default(0)
+
+  monthlyTokenCap     Int?
+  tokensUsedThisMonth Int  @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([enabled, priority])
+}
+
+model AiConfig {
+  id String @id @default("singleton")
+
+  /// AI 실행 주체: ADMIN | USER
+  allowedRole           String @default("ADMIN")
+  cacheTtlHours         Int    @default(24)
+  globalMonthlyTokenCap Int    @default(1000000)
+  tokensUsedThisMonth   Int    @default(0)
+
+  updatedAt DateTime @updatedAt
+}
+
+model AiCache {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  payload   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// ────────────── 외부 블로그 RSS ──────────────
+
+model Feed {
+  id            String    @id @default(cuid())
+  name          String
+  url           String    @unique
+  active        Boolean   @default(true)
+  lastFetchedAt DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([active])
+}
+
+// ────────────── 개인 포트폴리오 (비공개, Phase 8) ──────────────
+
+model Portfolio {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  holdings  Holding[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Holding {
+  id          String    @id @default(cuid())
+  portfolioId String
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  ticker   String
+  name     String
+  avgCost  Float
+  shares   Float
+  /// KRW | USD
+  currency String  @default("KRW")
+  industry String?
+  /// 확대 | 유지 | 축소
+  weight   String?
+  /// 투자 아이디어(기존 앱 investIdea)
+  memo     String?
+
+  addedAt DateTime @default(now())
+
+  @@index([portfolioId])
+}
