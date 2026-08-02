@@ -34,6 +34,7 @@ const serverEnvSchema = z.object({
   GROQ_API_KEY: optionalSecret,
   GEMINI_API_KEY: optionalSecret,
   OPENROUTER_API_KEY: optionalSecret,
+  DEEPSEEK_API_KEY: optionalSecret,
   ANTHROPIC_API_KEY: optionalSecret,
   OPENAI_API_KEY: optionalSecret,
 

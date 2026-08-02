@@ -3,14 +3,19 @@
 /**
  * AI 제공자 설정 서버 액션.
  *
- * ⚠ 여기서 API 키를 받지 않는다. 키는 `.env` → `npm run ai:sync` 경로로만 들어간다.
- * 화면에서 키를 받으면 (1) 폼 값이 로그·에러 리포트에 섞이고 (2) DB에 남고
- * (3) 관리자 세션 하나로 전체 키가 털린다. 조작할 수 있는 건 **켜고 끄기와 상한**뿐이다.
+ * 키 등록은 **로컬 개발 서버에서만** 받는다(`saveAiKeyAction`).
+ * 받은 값은 `.env` 파일에 바로 쓰고, ⚠ **DB에는 절대 저장하지 않는다.**
+ * 배포본(Workers)은 파일 시스템이 없어 이 경로가 애초에 동작하지 않는다 —
+ * 거기에는 `npm run ai:sync`로 시크릿을 올린다.
+ *
+ * 그 외 조작할 수 있는 것은 **켜고 끄기와 월 상한**뿐이다.
  */
 import { revalidatePath } from "next/cache";
 import { setProviderCap, setProviderEnabled } from "./repository";
+import { saveAiKeyToEnvFile } from "./env-writer";
 import { allApiKeyEnvNames } from "@/lib/ai/catalog";
 import { requireAdmin } from "@/lib/session";
+import type { KeyFormState } from "./key-form-state";
 
 /** 카탈로그에 있는 env 이름만 허용 — 폼 값으로 임의 컬럼을 건드리지 못하게. */
 function assertKnownEnv(name: string): string {
@@ -42,4 +47,27 @@ export async function updateCapAction(formData: FormData): Promise<void> {
 
   await setProviderCap(apiKeyEnv, cap);
   revalidatePath("/admin/ai");
+}
+
+/**
+ * 키를 `.env`에 기록한다. **로컬 개발 서버 전용.**
+ *
+ * ⚠ 성공/실패 메시지에 키 값을 넣지 않는다. 폼 상태는 클라이언트로 내려간다.
+ * ⚠ 저장 후 자동으로 서버에 올리지 않는다 — 배포본 반영은 `npm run ai:sync`가
+ *    사람이 의도해서 돌리는 별도 단계다(실수로 운영에 올라가는 걸 막는다).
+ */
+export async function saveAiKeyAction(
+  _prev: KeyFormState,
+  formData: FormData,
+): Promise<KeyFormState> {
+  await requireAdmin("/admin/ai");
+
+  const name = String(formData.get("apiKeyEnv") ?? "");
+  const value = String(formData.get("apiKey") ?? "");
+
+  const result = await saveAiKeyToEnvFile(name, value);
+  if (!result.ok) return { error: result.message };
+
+  revalidatePath("/admin/ai");
+  return { savedName: result.name };
 }

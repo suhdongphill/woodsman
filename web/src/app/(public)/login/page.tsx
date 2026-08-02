@@ -33,7 +33,12 @@ export default async function LoginPage({
   const next = safeNextPath((await searchParams).next);
   const [user, policy] = await Promise.all([currentUser(), getSitePolicy()]);
 
-  if (user) redirect(next);
+  if (user) {
+    // 이미 로그인한 관리자가 로고를 더블클릭하면 홈으로 되돌려 보내지 않는다.
+    // 그러면 "아무 일도 일어나지 않았다"로 보여서 진입점이 고장 난 줄 알게 된다.
+    // 갈 곳을 따로 지정하지 않았을 때만 관리자 화면으로 보낸다.
+    redirect(next === "/" && user.role === "ADMIN" ? "/admin" : next);
+  }
 
   return (
     <div className="mx-auto max-w-md px-4 sm:px-6 py-16">

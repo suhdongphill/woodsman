@@ -14,10 +14,13 @@ import { toggleProviderAction, updateCapAction } from "../actions";
 export function ProviderTable({
   usage,
   connected,
+  canWriteEnv,
 }: {
   usage: ProviderUsage[];
   /** env에 키가 채워진 제공자 id 집합 (키 '값'은 넘기지 않는다) */
   connected: string[];
+  /** 로컬 개발 서버인가 — 안내 문구가 갈린다 */
+  canWriteEnv: boolean;
 }) {
   const usageById = new Map(usage.map((u) => [u.providerId, u]));
 
@@ -85,7 +88,11 @@ export function ProviderTable({
               <Td>
                 <code className="text-[11.5px] text-gray-300">{p.apiKeyEnv}</code>
                 <p className="mt-1 text-[10.5px] text-gray-600">
-                  {isConnected ? "서버에 값이 있습니다" : ".env에 추가 후 ai:sync"}
+                  {isConnected
+                    ? "값이 들어 있습니다"
+                    : canWriteEnv
+                      ? "아래 '키 등록'에서 입력"
+                      : ".env에 추가 후 ai:sync"}
                 </p>
               </Td>
 
@@ -103,7 +110,7 @@ export function ProviderTable({
                   />
                   <button
                     type="submit"
-                    className="text-[11px] px-2 py-1 rounded-lg border border-border text-gray-400 hover:text-white hover:border-gold-600/50 transition-colors"
+                    className="shrink-0 whitespace-nowrap text-[11px] px-2 py-1 rounded-lg border border-border text-gray-400 hover:text-white hover:border-gold-600/50 transition-colors"
                   >
                     저장
                   </button>

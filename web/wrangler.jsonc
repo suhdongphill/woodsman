@@ -36,7 +36,12 @@
    *
    * 대시보드에서 보려면: Workers & Pages → woodsman → Settings → Domains & Routes
    */
-  "routes": [{ "pattern": "portfolio-solutions.net", "custom_domain": true }],
+  // www도 이 Worker로 받는다. 받지 않으면 옛 앱이 계속 뜬다(2026-08-02에 실제로 그랬다).
+  // 받은 뒤 next.config.ts가 정본(apex)으로 301 이동시킨다 — 중복 색인 방지.
+  "routes": [
+    { "pattern": "portfolio-solutions.net", "custom_domain": true },
+    { "pattern": "www.portfolio-solutions.net", "custom_domain": true }
+  ],
 
   /**
    * D1 — 운영 데이터베이스.

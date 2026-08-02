@@ -11,6 +11,7 @@ import { AI_PROVIDERS, allApiKeyEnvNames, findModel, findProvider } from "./cata
 import { renderCompanyAnalysisInput, renderPortfolioContext, type PortfolioContext } from "./context";
 import { PERSONAS, WOODSMAN_DOCTRINE, buildSystemPrompt, listPersonas } from "./persona";
 import { estimateCostUsd, isOverCap, primaryRoute, routeCandidates } from "./routing";
+import { isPlausibleKey, maskKey, quoteEnvValue, upsertEnvLine } from "../env-file";
 import { serverEnvSchema } from "../env";
 import type { StockSummary } from "../types";
 
@@ -175,6 +176,67 @@ describe("비용 추정", () => {
   it("가격을 모르면 null — 0으로 속이지 않는다", () => {
     const groq = findModel("groq", "llama-3.3-70b-versatile")!;
     expect(estimateCostUsd(groq, 1_000_000, 1_000_000)).toBeNull();
+  });
+});
+
+describe(".env 기록", () => {
+  it("없던 키를 끝에 붙인다", () => {
+    const out = upsertEnvLine('AUTH_SECRET="x"\n', "GROQ_API_KEY", "dummy-key-abc123");
+    expect(out).toBe('AUTH_SECRET="x"\nGROQ_API_KEY="dummy-key-abc123"\n');
+  });
+
+  it("이미 있는 키는 그 줄만 바꾼다(주변 주석·순서 보존)", () => {
+    const before = ['# AI 키', 'GROQ_API_KEY="old"', '# 아래는 인증', 'AUTH_SECRET="x"'].join("\n");
+    const out = upsertEnvLine(before, "GROQ_API_KEY", "new_value_1234567");
+
+    expect(out).toContain("# AI 키");
+    expect(out).toContain("# 아래는 인증");
+    expect(out).not.toContain("old");
+    expect(out.split("\n")[1]).toBe('GROQ_API_KEY="new_value_1234567"');
+    expect(out.match(/GROQ_API_KEY/g)).toHaveLength(1);
+  });
+
+  it("이름이 접두사로 겹쳐도 다른 키를 건드리지 않는다", () => {
+    // OPENAI_API_KEY 와 OPENROUTER_API_KEY 처럼 헷갈리는 조합
+    const before = 'OPENAI_API_KEY="a"\nOPENROUTER_API_KEY="b"\n';
+    const out = upsertEnvLine(before, "OPENAI_API_KEY", "changed_value_123");
+    expect(out).toContain('OPENROUTER_API_KEY="b"');
+    expect(out).toContain('OPENAI_API_KEY="changed_value_123"');
+  });
+
+  it("줄바꿈이 없는 파일 끝에도 안전하게 붙인다", () => {
+    expect(upsertEnvLine('AUTH_SECRET="x"', "GROQ_API_KEY", "dummy-key-abcdefghij")).toBe(
+      'AUTH_SECRET="x"\nGROQ_API_KEY="dummy-key-abcdefghij"\n',
+    );
+    expect(upsertEnvLine("", "GROQ_API_KEY", "dummy-key-abcdefghij")).toBe(
+      'GROQ_API_KEY="dummy-key-abcdefghij"\n',
+    );
+  });
+
+  it("따옴표·역슬래시가 든 값을 깨뜨리지 않는다", () => {
+    expect(quoteEnvValue('a"b\\c')).toBe('"a\\"b\\\\c"');
+  });
+
+  it("앞뒤 공백은 떼고 저장한다(붙여넣기 사고의 대부분)", () => {
+    expect(upsertEnvLine("", "GROQ_API_KEY", "  dummy-key-abcdefghij  \n")).toBe(
+      'GROQ_API_KEY="dummy-key-abcdefghij"\n',
+    );
+  });
+
+  it("공백이 섞였거나 너무 짧은 값은 거른다", () => {
+    expect(isPlausibleKey("dummy-key-1234567890")).toBe(true);
+    expect(isPlausibleKey("short")).toBe(false);
+    expect(isPlausibleKey("dummy key 1234567890")).toBe(false);
+    expect(isPlausibleKey("")).toBe(false);
+  });
+
+  it("마스킹이 키 전체를 드러내지 않는다", () => {
+    const key = "dummy-key-abcdefghijklmnop";
+    const masked = maskKey(key);
+    expect(masked).not.toContain("efghijklmn");
+    // 어느 계정 키인지 알아볼 만큼만 남긴다 — 앞 4자.
+    expect(masked.startsWith(key.slice(0, 4))).toBe(true);
+    expect(maskKey("short")).toBe("••••••••");
   });
 });
 

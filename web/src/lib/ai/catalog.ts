@@ -15,7 +15,14 @@
  * 같은 질의를 캐시하는 것**이다. 그 판단은 `routing.ts`에 있다.
  */
 
-export type ProviderId = "nvidia" | "groq" | "gemini" | "openrouter" | "anthropic" | "openai";
+export type ProviderId =
+  | "nvidia"
+  | "groq"
+  | "gemini"
+  | "openrouter"
+  | "deepseek"
+  | "anthropic"
+  | "openai";
 
 /** API 형식 — 호출 코드가 갈리는 지점 */
 export type ProviderKind = "ANTHROPIC" | "OPENAI_COMPAT";
@@ -128,6 +135,35 @@ export const AI_PROVIDERS: readonly Provider[] = [
         price: null,
         context: 128_000,
         strength: "cheap",
+      },
+    ],
+  },
+  {
+    id: "deepseek",
+    label: "DeepSeek",
+    kind: "OPENAI_COMPAT",
+    baseUrl: "https://api.deepseek.com/v1",
+    apiKeyEnv: "DEEPSEEK_API_KEY",
+    // 무료 티어가 아니라 '아주 싼 유료'다. free로 표시하면 상한 없이 돌게 되므로
+    // 유료로 둔다. 대신 카탈로그에서 Claude보다 앞에 놓아 먼저 시도되게 한다.
+    free: false,
+    consoleUrl: "https://platform.deepseek.com/api_keys",
+    note: "저렴한 유료. 긴 추론이 필요한 작업을 Claude보다 먼저 시도한다. 요금은 콘솔에서 확인 후 상한을 정하세요.",
+    models: [
+      {
+        id: "deepseek-reasoner",
+        label: "DeepSeek Reasoner",
+        // ⚠ 공개 요금을 직접 확인하지 않았다. 숫자를 지어내지 않는다.
+        price: null,
+        context: 128_000,
+        strength: "deep",
+      },
+      {
+        id: "deepseek-chat",
+        label: "DeepSeek Chat",
+        price: null,
+        context: 128_000,
+        strength: "balanced",
       },
     ],
   },

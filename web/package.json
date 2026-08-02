@@ -18,6 +18,8 @@
     "db:seed": "npm run d1:seed:generate && wrangler d1 execute woodsman-db --local --file=./prisma/seed.d1.sql -y",
     "cf:setup": "node --env-file=.env --import tsx scripts/cf-setup.mjs",
     "ai:sync": "node --env-file=.env --import tsx scripts/sync-ai-secrets.mjs",
+    "admin:set": "node --env-file=.env --import tsx scripts/set-admin.mjs",
+    "admin:apply": "node --env-file=.env --import tsx scripts/set-admin.mjs --from-env",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
