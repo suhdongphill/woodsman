@@ -19,6 +19,7 @@
     "db:seed": "node --env-file=.env --import tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset --force --skip-seed && npm run db:seed",
+    "cf:setup": "node --env-file=.env --import tsx scripts/cf-setup.mjs",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",

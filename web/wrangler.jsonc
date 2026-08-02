@@ -27,6 +27,23 @@
   },
 
   /**
+   * 커스텀 도메인 — `portfolio-solutions.net`으로 기존 앱을 교체할 때 켠다.
+   *
+   * 지금은 꺼 둔다. 첫 배포는 `woodsman.<계정>.workers.dev`로 받아 실제로 도는지
+   * 확인한 뒤에 도메인을 옮기는 편이 안전하다. 바로 가로채면 새 배포가 실패했을 때
+   * 기존 사이트까지 같이 내려간다.
+   *
+   * 켜는 법: 아래 주석을 풀고 `npm run cf:deploy`.
+   * (또는 대시보드에서 Workers & Pages → woodsman → Settings → Domains & Routes → Add)
+   *
+   * ⚠ 도메인을 옮긴 뒤에는 Cloudflare 시크릿의 AUTH_URL·SITE_URL도
+   *    https://portfolio-solutions.net 으로 맞춰야 로그인과 검색 색인이 정상 동작한다.
+   */
+  // "routes": [
+  //   { "pattern": "portfolio-solutions.net", "custom_domain": true }
+  // ],
+
+  /**
    * D1 — 운영 데이터베이스.
    * 로컬 개발은 여전히 prisma/dev.db(파일 SQLite)를 쓴다. 분기는 src/lib/db.ts에 있다.
    */
