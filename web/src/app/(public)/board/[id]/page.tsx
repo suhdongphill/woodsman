@@ -6,7 +6,8 @@ import { CommentSection } from "@/features/comments/ui/CommentSection";
 import { BoardRow } from "@/components/ui/BoardRow";
 import { ClockIcon, EyeIcon, ChevronRightIcon, ExternalIcon } from "@/components/icons";
 import { formatDate } from "@/lib/format";
-import { getCommentsByPostId, getPostById, posts, siteConfig } from "@/lib/mock";
+import { getCommentsByPostId, siteConfig } from "@/lib/mock";
+import { findPost, loadPublishedPosts } from "@/features/posts/repository";
 import { getSitePolicy } from "@/lib/site-settings";
 
 type Props = { params: Promise<{ id: string }> };
@@ -19,7 +20,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const post = getPostById(id);
+  const post = await findPost(id);
   if (!post) return { title: "글을 찾을 수 없습니다" };
   return { title: post.title, description: post.excerpt };
 }
@@ -30,11 +31,11 @@ export default async function BoardDetailPage({ params }: Props) {
   if (!policy.communityEnabled) notFound();
 
   const { id } = await params;
-  const post = getPostById(id);
-  if (!post) notFound();
+  const post = await findPost(id);
+  if (!post || !post.published) notFound();
 
   const comments = getCommentsByPostId(post.id);
-  const others = posts.filter((p) => p.id !== post.id).slice(0, 5);
+  const others = (await loadPublishedPosts(20)).filter((p) => p.id !== post.id).slice(0, 5);
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-10">

@@ -24,6 +24,7 @@ const BASE_NAV = [
   { href: "/insights", label: "인사이트" },
   { href: "/portfolio", label: "포트폴리오" },
   { href: "/journal", label: "투자일지" },
+  { href: "/macro", label: "거시 지표" },
   { href: "/stocks", label: "종목분석" },
 ];
 

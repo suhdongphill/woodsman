@@ -58,8 +58,9 @@ web/
 ### 순수 모듈 목록 (전부 테스트 있음, 179개)
 
 `access` `site-policy` `site-status` `site-url` `site-links` `site-basics` `data-mode`
-`allocation` `performance` `outbound` `ads` `auth-providers` `format` `env-file`
-`ai/catalog` `ai/persona` `ai/context` `ai/routing`
+`allocation` `manual-price` `performance` `outbound` `ads` `auth-providers` `format` `env-file`
+`markdown` `sanitize-html` `seo` `sections` `macro/{registry,series,signal,parse}`
+`bubble/{catalog,score}` `ai/{catalog,persona,context,routing,retrieval}`
 
 ---
 
@@ -91,9 +92,12 @@ Prisma 스키마 `web/prisma/schema.prisma`가 원본. 주요 모델:
 | `SiteConfig` | 사이트 스위치 + **기본값**(모의/실계좌, 환율, 홈 문구, 티스토리, 문의 메일) | 사용 중 |
 | `JournalEntry` | 투자일지 | **DB 연결 완료** (2026-08-02) |
 | `AccountSnapshot` | 월 1회 계좌 스냅샷 → 자금흐름 곡선 | **DB 연결 완료** |
-| `ModelHolding` | 대표 포트폴리오 종목 | ⚠ **아직 목업** — 다음 작업 |
-| `Rebalance` | 리밸런싱 기록 | ⚠ 아직 목업 |
-| `Post` / `Comment` | 콘텐츠·댓글 | ⚠ 아직 목업 (커뮤니티는 잠금 상태) |
+| `ModelHolding` | 대표 포트폴리오 종목 | **DB 연결 완료** (2026-08-06) |
+| `Rebalance` | 리밸런싱 기록 | **DB 연결 완료** (2026-08-06) |
+| `Post` | 콘텐츠 (본문 원본 + 형식 + 쌓일 섹션) | **DB 연결 완료** (2026-08-06) |
+| `Comment` | 댓글 | ⚠ 아직 목업 (커뮤니티는 잠금 상태) |
+| `MacroPoint` / `MacroIngest` | 거시 지표 시계열·수집 이력 | **DB 연결 완료** (2026-08-06) |
+| `BubbleReading` / `BubbleTriggerState` | 버블 모니터 채점·트리거 | **DB 연결 완료** (2026-08-06) |
 | `AiProvider` / `AiConfig` / `AiCache` | AI 제공자 상태·정책 | 상태만 DB, 카탈로그는 코드 |
 | `OutboundClick` | 티스토리 유입 집계 | 사용 중 (성과 지표) |
 | `Feed` | 티스토리 RSS | 스키마만 |
@@ -112,32 +116,36 @@ Prisma 스키마 `web/prisma/schema.prisma`가 원본. 주요 모델:
 | P2.7 | 도메인 이전 · 검색 색인 개방 | ✅ |
 | P2.8 | AI 모듈(카탈로그·페르소나·컨텍스트·라우팅·키 등록·제한 시간) | ✅ |
 | **P3** | **투자일지·계좌 스냅샷 DB화 + 관리자 CRUD** | ✅ (2026-08-02) |
-| **P4** | **대표 포트폴리오(ModelHolding) DB화 + CRUD** | ⏭ **다음 작업** |
-| P5 | 티스토리 RSS 수집 → Post DB화 | 대기 |
+| **P4** | **대표 포트폴리오(ModelHolding) DB화 + CRUD** | ✅ (2026-08-06) |
+| **P5** | **Post DB화 + 3모드 편집기(보기/MD/HTML) + 섹션 프레임** | ✅ (2026-08-06) |
+| **P9** | **거시 지표 대시보드 — 볼트 화면 이식 + FRED/Yahoo 자동 수집** | ✅ (2026-08-06) |
+| **P10** | **버블 모니터(5레이어 28지표) + 사이트 로컬 RAG** | ✅ (2026-08-06) |
+| P5.5 | 티스토리 RSS 수집 → Post 자동 등록 | ⏭ **다음 작업** |
 | P6 | AI 실제 호출 연결(지금은 라우팅·프롬프트까지만) | 대기 |
 | P7 | AdSense 승인 후 광고 배치 | 대기(콘텐츠 축적 필요) |
 | P8 | 커뮤니티 개방(가입·댓글) — ⚠ `/privacy` 먼저 갱신 | 조건부 |
 
 ---
 
-## 6. 다음 세션에서 바로 할 일 (P4)
+## 6. 다음 세션에서 바로 할 일 (P5)
 
-**대표 포트폴리오가 아직 목업이라 목표 비중을 화면에서 조정할 수 없다.**
-투자일지와 똑같은 문제이고, 해법도 같다.
+**P4는 끝났다** — 대표 포트폴리오·리밸런싱이 D1로 옮겨졌고 `/admin/model-portfolio`에서
+실제로 편집된다. 현재가는 관리자가 손으로 넣고, 기준일(`priceAsOf`)이 값과 함께 저장·표시된다
+(`lib/manual-price.ts`). 목표 비중 합계가 100%가 아니면 경고하되 **막지는 않는다.**
 
-1. `features/portfolio/repository.ts` — `ModelHolding` · `Rebalance` D1 CRUD
-   - `loadPublishedHoldings()` / `loadAllHoldings()` / `saveHolding()` / `deleteHolding()`
-2. `features/portfolio/schema.ts` — 입력 검증
-   - ⚠ **목표 비중 합계가 100%인지 검사**하고, 아니면 화면에 경고(막지는 않는다 — 작성 중일 수 있다)
-3. `features/portfolio/actions.ts` + 폼 → `/admin/model-portfolio` 실제 편집
-4. 공개 `/portfolio`·홈이 DB를 읽도록 교체 (`functionAllocation()` 목업 제거)
-   - ⚠ 현재 비중은 **`holdingValueKrw()`로 환산 후** 계산할 것
-5. 시세(`price`)는 아직 목업 값이다. 실시세 연동 전까지는 **관리자가 직접 입력**하는 필드로 두고,
-   화면에 "수기 입력 기준일"을 밝힌다 — 자동으로 갱신되는 것처럼 보이면 안 된다.
+다음은 **콘텐츠(Post)가 아직 목업**이라는 것이다. 인사이트 목록·상세가 `lib/mock.ts`를
+읽고 있어 글을 쓸 수도, 티스토리 글을 끌어올 수도 없다. 1순위 목적이 티스토리 유입인데
+연결 통로가 목업인 셈이다.
 
-**참고**: 투자일지 구현(`features/journal/*`)이 그대로 본보기다. 같은 모양으로 만들면 된다.
+1. `features/posts/repository.ts` — `Post` D1 CRUD (투자일지·포트폴리오와 같은 모양)
+2. `features/feeds/*` — `Feed`(티스토리 RSS) 수집 → `Post`(source=TISTORY) 저장
+   - ⚠ 티스토리 원문은 **canonical을 원문으로**. 전문을 복제하지 않는다(요약 + 원문 링크).
+   - 유입 측정은 이미 있는 `/go/*`를 그대로 쓴다.
+3. 공개 `/insights`·`/insights/[slug]`를 DB로 교체 (`force-dynamic`)
+4. 댓글(`Comment`)은 커뮤니티가 잠겨 있으므로 목업 그대로 둔다 — P8에서 함께 연다.
 
----
+**참고**: `features/journal/*`와 `features/portfolio/*`가 그대로 본보기다.
+repository → schema → actions → ui 순서로 같은 모양을 만들면 된다.
 
 ## 7. 운영 절차
 
@@ -156,4 +164,4 @@ npm run admin:apply    # .env에 적힌 값으로 관리자 계정 반영 (비�
 
 ---
 
-*문서 버전 v2.0 · 2026-08-02 · 이전 버전: `woodsman_개발요구서_v1.md`(구상 단계 기록)*
+*문서 버전 v2.1 · 2026-08-06(P4 완료 반영) · 이전 버전: `woodsman_개발요구서_v1.md`(구상 단계 기록)*

@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui/Card";
 import { FileTextIcon } from "@/components/icons";
 import { AdSlot } from "@/components/analytics/AdSlot";
 import { TistoryCta } from "@/features/site/ui/TistoryCta";
-import { posts } from "@/lib/mock";
+import { loadPublishedPosts } from "@/features/posts/repository";
 
 export const metadata: Metadata = {
   title: "인사이트",
@@ -15,8 +15,11 @@ export const metadata: Metadata = {
 
 const CATEGORIES = ["전체", "포트폴리오 전략", "종목분석", "인컴 투자", "공지"];
 
-export default function InsightsPage() {
-  const list = posts;
+/** ⚠ 정적 생성 금지 — 글을 발행해도 목록이 안 바뀐다. */
+export const dynamic = "force-dynamic";
+
+export default async function InsightsPage() {
+  const list = await loadPublishedPosts();
 
   return (
     <>

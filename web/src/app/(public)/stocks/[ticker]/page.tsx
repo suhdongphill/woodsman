@@ -9,7 +9,9 @@ import { CanslimPanel } from "@/features/ai/ui/CanslimPanel";
 import { PostCard } from "@/features/posts/ui/PostCard";
 import { ExternalIcon, ChevronRightIcon } from "@/components/icons";
 import { cx, formatNumber, formatPct, profitColor } from "@/lib/format";
-import { getStock, mockSeries, modelHoldings, posts, stocks } from "@/lib/mock";
+import { getStock, mockSeries } from "@/lib/mock";
+import { loadPublishedPosts } from "@/features/posts/repository";
+import { findPublishedHoldingByTicker } from "@/features/portfolio/repository";
 
 type Props = { params: Promise<{ ticker: string }> };
 
@@ -47,9 +49,12 @@ const CANSLIM_SCORES: Record<string, Record<string, number>> = {
   DEFAULT: { C: 6, A: 6, N: 5, S: 6, L: 5, I: 6, M: 6 },
 };
 
-export async function generateStaticParams() {
-  return stocks.map((s) => ({ ticker: s.ticker }));
-}
+/**
+ * ⚠ 정적 생성 금지 — 이 화면은 대표 포트폴리오(DB)를 읽는다.
+ *    `generateStaticParams`로 굳혀 두면 종목을 편입·제외해도 "편입 안 됨"이 그대로 남는다.
+ *    (차트·뉴스·시세는 아직 목업이다. 실데이터 연결은 P6/P7.)
+ */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { ticker } = await params;
@@ -69,8 +74,10 @@ export default async function StockDetailPage({ params }: Props) {
   const up = stock.changePct >= 0;
   const series = mockSeries(stock.price);
   const scores = CANSLIM_SCORES[stock.ticker] ?? CANSLIM_SCORES.DEFAULT;
-  const holding = modelHoldings.find((h) => h.ticker === stock.ticker);
-  const related = posts.filter((p) => p.ticker === stock.ticker).slice(0, 2);
+  const holding = await findPublishedHoldingByTicker(stock.ticker);
+  const related = (await loadPublishedPosts(50))
+    .filter((p) => p.ticker === stock.ticker)
+    .slice(0, 2);
 
   return (
     <>
@@ -154,7 +161,7 @@ export default async function StockDetailPage({ params }: Props) {
                 </Badge>
                 <span className="text-xs text-muted">목표비중</span>
                 <span className="text-sm font-bold text-gold-400 tabular-nums">
-                  {holding.targetWeight}%
+                  {holding.targetWeight != null ? `${holding.targetWeight}%` : "—"}
                 </span>
               </div>
               {holding.thesis && (

@@ -16,10 +16,18 @@ export type SeedModelHolding = {
   avgCost?: number;
   shares?: number;
   currency: "KRW" | "USD";
+  /**
+   * 현재가 — ⚠ 관리자가 손으로 넣는 값이다(실시세 연동 없음).
+   * 시드는 아래 `SEED_PRICE_AS_OF` 하루의 종가를 그대로 쓴다. 값이 있으면 기준일도 반드시 있다.
+   */
+  price?: number;
   canslim?: number;
   thesis: string;
   order: number;
 };
+
+/** 시드 시세의 기준일. ⚠ 화면은 이 날짜를 "…기준"으로 그대로 보여준다. */
+export const SEED_PRICE_AS_OF = "2026-07-28";
 
 export const seedModelHoldings: SeedModelHolding[] = [
   {
@@ -32,6 +40,7 @@ export const seedModelHoldings: SeedModelHolding[] = [
     avgCost: 142.5,
     shares: 40,
     currency: "USD",
+    price: 191.2,
     canslim: 8.4,
     order: 1,
     thesis:
@@ -47,6 +56,7 @@ export const seedModelHoldings: SeedModelHolding[] = [
     avgCost: 98.3,
     shares: 60,
     currency: "USD",
+    price: 148.7,
     canslim: 7.9,
     order: 2,
     thesis:
@@ -62,6 +72,7 @@ export const seedModelHoldings: SeedModelHolding[] = [
     avgCost: 96.4,
     shares: 120,
     currency: "USD",
+    price: 99.1,
     order: 3,
     thesis:
       "표면금리 10%대, 만기 보유 시 현금흐름이 확정적. 헤알 변동 리스크를 피하려 달러표시로만 담는다. 인컴 버킷의 기준 수익률(hurdle)을 제공하는 자리.",
@@ -76,6 +87,7 @@ export const seedModelHoldings: SeedModelHolding[] = [
     avgCost: 27.8,
     shares: 180,
     currency: "USD",
+    price: 26.4,
     canslim: 5.2,
     order: 4,
     thesis:
@@ -91,6 +103,7 @@ export const seedModelHoldings: SeedModelHolding[] = [
     avgCost: 11800,
     shares: 900,
     currency: "KRW",
+    price: 12450,
     order: 5,
     thesis:
       "통행료·요금 기반 인프라 현금흐름은 물가에 연동된다. 금리 하락 국면에서 가격 회복 + 반기 배당의 이중 수익. 원화 인컴의 기본값.",
@@ -105,6 +118,7 @@ export const seedModelHoldings: SeedModelHolding[] = [
     avgCost: 34200,
     shares: 320,
     currency: "KRW",
+    price: 36980,
     canslim: 6.1,
     order: 6,
     thesis:
@@ -425,3 +439,46 @@ export function buildAiProviderSeeds(hasKey: (envName: string) => boolean) {
     enabled: hasKey(p.apiKeyEnv),
   }));
 }
+
+/**
+ * 버블 모니터 초기 채점 — 옵시디언 볼트의 2026-08 점검 결과를 옮긴 것.
+ *
+ * ⚠ 점수만 옮기고 **근거 문장은 비워 둔다.** 볼트의 서술은 그때의 자료를 인용한 것이라,
+ *    사이트에 그대로 붙이면 출처 없이 떠도는 문장이 된다. 근거는 `/admin/bubble`에서
+ *    다시 적는다(그게 이 모니터의 값이다).
+ */
+export const seedBubbleReadings: { key: string; points: 0 | 1 | 2; asOf: string }[] = [
+  // L1 CAPEX 펀더멘털 — 전부 과열
+  { key: "capex_yoy", points: 2, asOf: "2026-03-31" },
+  { key: "capex_to_ocf", points: 2, asOf: "2026-03-31" },
+  { key: "roi_gap", points: 2, asOf: "2026-03-31" },
+  { key: "debt_funded", points: 2, asOf: "2026-03-31" },
+  { key: "circular_flag", points: 2, asOf: "2026-07-22" },
+  { key: "capex_accel", points: 2, asOf: "2026-07-02" },
+  { key: "rpo_concentration", points: 2, asOf: "2026-07-02" },
+  // L2 밸류에이션·집중도
+  { key: "kr_fwd_pe", points: 0, asOf: "2026-05-01" },
+  { key: "semi_ps", points: 2, asOf: "2026-03-28" },
+  { key: "nvda_ev_sales", points: 1, asOf: "2026-04-26" },
+  { key: "concentration", points: 1, asOf: "2026-06-30" },
+  { key: "peg", points: 0, asOf: "2026-07-29" },
+  // L3 실물 수급 — 아직 진짜 수요
+  { key: "hbm_asp_trend", points: 0, asOf: "2026-07-20" },
+  { key: "dram_momentum", points: 1, asOf: "2026-07-18" },
+  { key: "capex_guidance", points: 1, asOf: "2026-07-20" },
+  { key: "equip_billings_yoy", points: 0, asOf: "2026-03-31" },
+  { key: "memory_inventory", points: 1, asOf: "2026-05-28" },
+  { key: "tsmc_rev_yoy", points: 0, asOf: "2026-06-30" },
+  // L4 신용·유동성 — 아직 조용
+  { key: "hy_oas", points: 0, asOf: "2026-07-30" },
+  { key: "vix", points: 0, asOf: "2026-07-30" },
+  { key: "move", points: 0, asOf: "2026-07-31" },
+  { key: "tga_4w", points: 1, asOf: "2026-07-29" },
+  { key: "hyper_ig_leverage", points: 2, asOf: "2026-07-02" },
+  // L5 센티먼트 — 이미 버블 문법
+  { key: "retail_froth", points: 2, asOf: "2026-07-22" },
+  { key: "analyst_dispersion", points: 1, asOf: "2026-07-20" },
+  { key: "narrative_flag", points: 2, asOf: "2026-07-22" },
+  { key: "insider_sell", points: 0, asOf: "2026-08-03" },
+  { key: "ipo_froth", points: 2, asOf: "2026-07-22" },
+];

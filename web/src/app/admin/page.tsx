@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/Badge";
 import { ChevronRightIcon, AlertIcon } from "@/components/icons";
 import { OutboundStats } from "@/features/site/ui/OutboundStats";
 import { cx, formatDateTime, formatPct } from "@/lib/format";
-import { adminStats, comments, aiProviders, posts } from "@/lib/mock";
+import { adminStats, comments, aiProviders } from "@/lib/mock";
+import { loadAllPosts } from "@/features/posts/repository";
 
 const QUICK = [
   { href: "/admin/posts", label: "새 글 작성", desc: "인사이트·분석·공지" },
@@ -18,7 +19,8 @@ const QUICK = [
 /** 티스토리 유입 집계를 DB에서 읽으므로 정적 생성하지 않는다. */
 export const dynamic = "force-dynamic";
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  const posts = await loadAllPosts(20);
   const pending = comments.filter((c) => c.status === "PENDING" || c.reported);
   const maxVisitor = Math.max(...adminStats.weeklyVisitors);
   const tokenPct = (adminStats.aiTokensUsed / adminStats.aiTokenCap) * 100;
@@ -192,9 +194,11 @@ export default function AdminDashboardPage() {
               </Link>
             ))}
           </div>
-          <p className="mt-5 pt-4 border-t border-border/70 text-[11px] text-gray-600">
-            최근 발행 · {posts[0].title}
-          </p>
+          {posts.length > 0 && (
+            <p className="mt-5 pt-4 border-t border-border/70 text-[11px] text-gray-600">
+              최근 글 · {posts[0].title}
+            </p>
+          )}
         </Card>
       </div>
     </AdminShell>

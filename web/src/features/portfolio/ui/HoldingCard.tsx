@@ -30,8 +30,9 @@ export function HoldingCard({ holding: h }: { holding: ModelHolding }) {
               <p className="text-sm font-semibold text-white tabular-nums">
                 {formatNumber(h.price!, cur)}
               </p>
-              <p className={cx("text-xs tabular-nums", profitColor(h.changePct ?? 0))}>
-                {formatPct(h.changePct ?? 0)}
+              {/* ⚠ 등락률이 아니라 '언제 적은 값인가'를 쓴다 — 실시간 시세가 아니다. */}
+              <p className="text-[11px] tabular-nums text-gray-500">
+                {h.priceAsOf ? `${h.priceAsOf} 기준` : "기준일 없음"}
               </p>
             </>
           ) : (

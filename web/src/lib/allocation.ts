@@ -108,3 +108,22 @@ export function underweightBuckets(rows: AllocationRow[]): AllocationRow[] {
 export function targetSumPct(rows: AllocationRow[]): number {
   return round1(rows.reduce((sum, r) => sum + r.targetPct, 0));
 }
+
+/** 종목 목록의 목표 비중 합계. 버킷으로 묶기 전에 바로 쓴다(관리자 편집 화면). */
+export function sumTargetWeights(items: { targetWeight?: number }[]): number {
+  return round1(items.reduce((sum, i) => sum + (i.targetWeight ?? 0), 0));
+}
+
+/**
+ * 목표 비중 합계에 대한 경고 문구. 맞으면 null.
+ *
+ * ⚠ **저장을 막지 않는다.** 종목을 하나씩 넣는 중에는 합계가 100%가 아닌 게 정상이다.
+ *    막아 버리면 중간 저장을 못 해 작업이 통째로 날아간다. 말해 주기만 한다.
+ */
+export function targetSumWarning(sumPct: number): string | null {
+  const diff = round1(sumPct - 100);
+  if (diff === 0) return null;
+  return diff > 0
+    ? `목표 비중 합계가 ${sumPct}%로 ${diff}%p 넘칩니다. 작성 중이면 그대로 두어도 됩니다.`
+    : `목표 비중 합계가 ${sumPct}%로 ${Math.abs(diff)}%p 모자랍니다. 작성 중이면 그대로 두어도 됩니다.`;
+}

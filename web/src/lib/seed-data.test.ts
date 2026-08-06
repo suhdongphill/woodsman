@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  SEED_PRICE_AS_OF,
   aiProviderCatalog,
   buildAiProviderSeeds,
   seedComments,
@@ -31,6 +32,12 @@ describe("대표 포트폴리오 시드", () => {
     }
     const orders = seedModelHoldings.map((h) => h.order);
     expect(new Set(orders).size).toBe(orders.length);
+  });
+
+  it("⚠ 시드 현재가는 수기 값이라 기준일이 함께 정의돼 있다", () => {
+    expect(SEED_PRICE_AS_OF).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // 값이 있는 종목이 하나도 없으면 비중이 전부 0으로 깔린다(구성 완료 0%).
+    expect(seedModelHoldings.some((h) => h.price != null)).toBe(true);
   });
 
   it("리밸런싱 날짜는 YYYY-MM-DD 형식이다", () => {

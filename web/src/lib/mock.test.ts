@@ -1,58 +1,29 @@
 import { describe, expect, it } from "vitest";
+import * as mock from "./mock";
 import {
   aiProviders,
   comments,
-  functionAllocation,
   getCommentsByPostId,
-  getPostById,
-  getPostBySlug,
   getStock,
   mockSeries,
-  modelHoldings,
-  posts,
 } from "./mock";
 
-describe("대표 포트폴리오 목업", () => {
-  it("공개 종목의 기능별 목표비중 합이 100%다", () => {
-    const a = functionAllocation();
-    expect(a.GROWTH + a.INCOME + a.DEFENSE).toBe(100);
-  });
-
-  it("모든 보유 종목은 기능 분류를 갖는다", () => {
-    for (const h of modelHoldings) {
-      expect(["GROWTH", "INCOME", "DEFENSE"]).toContain(h.functionType);
-    }
-  });
-
-  it("성장 버킷에는 TSMC와 엔비디아가 있다", () => {
-    const growth = modelHoldings.filter((h) => h.functionType === "GROWTH").map((h) => h.ticker);
-    expect(growth).toContain("TSM");
-    expect(growth).toContain("NVDA");
+describe("대표 포트폴리오는 목업에서 내려왔다", () => {
+  it("⚠ 목업을 다시 export하지 않는다 — 화면이 이걸 읽으면 관리자 편집이 무효가 된다", () => {
+    // 2026-08-06: 대표 포트폴리오·리밸런싱은 D1로 옮겼다(features/portfolio/repository.ts).
+    // 시드 데이터는 lib/seed-data.ts에 있다. 여기에 되살리면 같은 사고가 반복된다.
+    expect("modelHoldings" in mock).toBe(false);
+    expect("rebalances" in mock).toBe(false);
+    expect("functionAllocation" in mock).toBe(false);
   });
 });
 
-describe("콘텐츠 목업", () => {
-  it("slug가 중복되지 않는다", () => {
-    const slugs = posts.map((p) => p.slug);
-    expect(new Set(slugs).size).toBe(slugs.length);
-  });
-
-  it("slug/id로 글을 찾을 수 있다", () => {
-    expect(getPostBySlug("tsmc-2nm-cycle")?.ticker).toBe("TSM");
-    expect(getPostById("p_1")?.type).toBe("INSIGHT");
-    expect(getPostBySlug("없는-slug")).toBeUndefined();
-  });
-
-  it("티스토리 출처 글은 원문 링크를 갖는다", () => {
-    for (const p of posts.filter((x) => x.source === "TISTORY")) {
-      expect(p.externalUrl).toMatch(/^https:\/\//);
-    }
-  });
-
-  it("댓글 잠금 글은 댓글 수가 0이다", () => {
-    for (const p of posts.filter((x) => !x.commentsEnabled)) {
-      expect(p.commentCount).toBe(0);
-    }
+describe("콘텐츠도 목업에서 내려왔다", () => {
+  it("⚠ 글 목업을 다시 export하지 않는다 — 화면이 이걸 읽으면 편집이 무효가 된다", () => {
+    // 2026-08-06: Post는 D1로 옮겼다(features/posts/repository.ts).
+    expect("posts" in mock).toBe(false);
+    expect("allPosts" in mock).toBe(false);
+    expect("getPostBySlug" in mock).toBe(false);
   });
 });
 

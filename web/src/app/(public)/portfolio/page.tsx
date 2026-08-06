@@ -13,11 +13,14 @@ import { ChevronRightIcon } from "@/components/icons";
 import { formatDate, formatNumber, formatPct } from "@/lib/format";
 import { summarizePerformance } from "@/lib/performance";
 import { fillProgressPct, holdingValueKrw, summarizeAllocation } from "@/lib/allocation";
+import { summarizeManualPrices } from "@/lib/manual-price";
 import { DataModeNotice } from "@/components/ui/DataModeNotice";
 import { getSiteBasics } from "@/lib/site-settings";
 import { loadPublishedJournal, loadSnapshots } from "@/features/journal/repository";
-import { functionAllocation, modelHoldings, rebalances } from "@/lib/mock";
-import type { FunctionType } from "@/lib/types";
+import { loadPublishedHoldings, loadRebalances } from "@/features/portfolio/repository";
+import { loadSectionPosts } from "@/features/posts/repository";
+import { SectionFrame } from "@/features/posts/ui/SectionFrame";
+import type { FunctionType, ModelHolding } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "대표 포트폴리오",
@@ -36,15 +39,23 @@ const BUCKET_DESC: Record<FunctionType, string> = {
 /** ⚠ 정적 생성 금지 — 기록을 올려도 화면이 안 바뀐다. */
 export const dynamic = "force-dynamic";
 
+/** 버킷 안의 종목 이름 — 예전엔 "TSMC · 엔비디아"가 코드에 박혀 있었다(DB를 고쳐도 안 바뀜). */
+function bucketNames(holdings: ModelHolding[], f: FunctionType): string {
+  const names = holdings.filter((h) => h.functionType === f).map((h) => h.name);
+  if (!names.length) return "아직 비어 있음";
+  return names.length > 3 ? `${names.slice(0, 3).join(" · ")} 외 ${names.length - 3}` : names.join(" · ");
+}
+
 export default async function PortfolioPage() {
-  const [snapshots, recentJournal, basics] = await Promise.all([
+  const [snapshots, recentJournal, basics, published, rebalances, sectionPosts] =
+    await Promise.all([
     loadSnapshots(),
     loadPublishedJournal(3),
     getSiteBasics(),
+    loadPublishedHoldings(),
+    loadRebalances(),
+    loadSectionPosts("PORTFOLIO", 5),
   ]);
-
-  const published = modelHoldings.filter((h) => h.published);
-  const alloc = functionAllocation();
 
   // 목표 비중 대비 현재 비중 — 한 번에 완성되지 않는다는 사실을 그대로 보여준다.
   const allocationRows = summarizeAllocation(
@@ -56,12 +67,16 @@ export default async function PortfolioPage() {
     })),
   );
   const fillPct = fillProgressPct(allocationRows);
+  const targetPct = (f: FunctionType) =>
+    allocationRows.find((r) => r.functionType === f)?.targetPct ?? 0;
   const segments = ORDER.map((f) => ({
     label: FUNCTION_LABEL[f],
-    value: alloc[f],
+    value: targetPct(f),
     color: FUNCTION_COLOR[f],
   }));
   const perf = summarizePerformance(snapshots);
+  // ⚠ 현재가는 수기 입력이다. 기준일을 밝히지 않으면 자동 시세처럼 읽힌다.
+  const prices = summarizeManualPrices(published, new Date().toISOString().slice(0, 10));
 
   return (
     <>
@@ -157,20 +172,20 @@ export default async function PortfolioPage() {
             <StatTile label="공개 종목" value={`${published.length}개`} sub="현금성 포함" />
             <StatTile
               label="성장 버킷"
-              value={`${alloc.GROWTH}%`}
+              value={`${targetPct("GROWTH")}%`}
               tone="up"
-              sub="TSMC · 엔비디아"
+              sub={bucketNames(published, "GROWTH")}
             />
             <StatTile
               label="인컴 버킷"
-              value={`${alloc.INCOME}%`}
+              value={`${targetPct("INCOME")}%`}
               tone="gold"
-              sub="채권 · 배당주 · 인프라"
+              sub={bucketNames(published, "INCOME")}
             />
             <StatTile
               label="최근 리밸런싱"
-              value={formatDate(rebalances[0].date)}
-              sub={`총 ${rebalances.length}회`}
+              value={rebalances.length ? formatDate(rebalances[0].date) : "—"}
+              sub={rebalances.length ? `총 ${rebalances.length}회` : "기록 없음"}
             />
           </div>
         </section>
@@ -181,6 +196,13 @@ export default async function PortfolioPage() {
           fillPct={fillPct}
           usdKrwRate={basics.usdKrwRate}
         />
+
+        {/* ⚠ 현재가는 손으로 적는 값이다. 기준일을 밝히지 않으면 자동 시세로 읽힌다. */}
+        {published.length > 0 && (
+          <p className="rounded-xl border border-border bg-card px-4 py-3 text-[12px] leading-relaxed text-gray-400">
+            {prices.note}
+          </p>
+        )}
 
         {/* 기능별 종목 */}
         {ORDER.map((f) => {
@@ -196,7 +218,7 @@ export default async function PortfolioPage() {
                       style={{ backgroundColor: FUNCTION_COLOR[f] }}
                     />
                     {FUNCTION_LABEL[f]} 버킷
-                    <span className="text-sm font-normal text-gold-400">{alloc[f]}%</span>
+                    <span className="text-sm font-normal text-gold-400">{targetPct(f)}%</span>
                   </span>
                 }
                 subtitle={BUCKET_DESC[f]}
@@ -209,6 +231,9 @@ export default async function PortfolioPage() {
             </section>
           );
         })}
+
+        {/* 이 화면에 대해 쓴 글 — 발행할 때마다 쌓인다 */}
+        <SectionFrame section="PORTFOLIO" posts={sectionPosts} />
 
         {/* 최근 투자일지 — 결과 옆에 판단을 둔다 */}
         <section>

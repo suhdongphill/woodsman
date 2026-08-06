@@ -10,7 +10,8 @@ import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { outboundPostHref } from "@/lib/outbound";
 import { ClockIcon, EyeIcon, ExternalIcon, TagIcon, ChevronRightIcon } from "@/components/icons";
 import { formatDate } from "@/lib/format";
-import { getCommentsByPostId, getPostBySlug, posts, siteConfig, getStock } from "@/lib/mock";
+import { getCommentsByPostId, getStock, siteConfig } from "@/lib/mock";
+import { findPostBySlug, loadPublishedPosts } from "@/features/posts/repository";
 import { getSitePolicy } from "@/lib/site-settings";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -24,8 +25,8 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
-  if (!post) return { title: "글을 찾을 수 없습니다" };
+  const post = await findPostBySlug(slug);
+  if (!post || !post.published) return { title: "글을 찾을 수 없습니다" };
 
   return {
     title: post.title,
@@ -45,12 +46,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function InsightDetailPage({ params }: Props) {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
-  if (!post) notFound();
+  const post = await findPostBySlug(slug);
+  if (!post || !post.published) notFound();
 
-  const policy = await getSitePolicy();
+  const [policy, all] = await Promise.all([getSitePolicy(), loadPublishedPosts(50)]);
   const comments = getCommentsByPostId(post.id);
-  const related = posts.filter((p) => p.id !== post.id && p.category === post.category).slice(0, 3);
+  const related = all.filter((p) => p.id !== post.id && p.category === post.category).slice(0, 3);
   const stock = post.ticker ? getStock(post.ticker) : undefined;
   const tags = post.tags?.split(",").filter(Boolean) ?? [];
   const isFromTistory = post.source === "TISTORY" && Boolean(post.externalUrl);

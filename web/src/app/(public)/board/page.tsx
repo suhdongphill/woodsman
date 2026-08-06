@@ -6,7 +6,8 @@ import { Chip } from "@/components/ui/Badge";
 import { BoardRow } from "@/components/ui/BoardRow";
 import { EmptyState } from "@/components/ui/Card";
 import { SearchIcon, MessageIcon, LockIcon } from "@/components/icons";
-import { posts, siteConfig } from "@/lib/mock";
+import { siteConfig } from "@/lib/mock";
+import { loadPublishedPosts } from "@/features/posts/repository";
 
 export const metadata: Metadata = {
   title: "커뮤니티",
@@ -30,6 +31,7 @@ export default async function BoardPage() {
   const policy = await getSitePolicy();
   if (!policy.communityEnabled) notFound();
 
+  const posts = await loadPublishedPosts(100);
   const notices = posts.filter((p) => p.type === "NOTICE");
   const list = posts.filter((p) => p.type !== "NOTICE");
 

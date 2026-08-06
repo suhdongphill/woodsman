@@ -1,177 +1,158 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { AdminPageHeader, AdminShell } from "@/components/layout/AdminPageHeader";
-import { Table, Th, Td, Tr } from "@/components/ui/Table";
-import { Badge, PostTypeBadge, Chip } from "@/components/ui/Badge";
-import { Toggle } from "@/components/ui/Toggle";
-import { Button } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
-import { PlusIcon, EditIcon, TrashIcon, SearchIcon, ExternalIcon } from "@/components/icons";
+import { Table, Th, Td, Tr } from "@/components/ui/Table";
+import { Badge, PostTypeBadge } from "@/components/ui/Badge";
+import { EditIcon, TrashIcon, ExternalIcon } from "@/components/icons";
 import { formatDate } from "@/lib/format";
-import { allPosts } from "@/lib/mock";
+import { requireAdmin } from "@/lib/session";
+import { loadAllPosts, findPost } from "@/features/posts/repository";
+import { deletePostAction } from "@/features/posts/actions";
+import { PostEditor } from "@/features/posts/ui/PostEditor";
+import { SECTION_LABEL } from "@/lib/sections";
 
 export const metadata: Metadata = { title: "콘텐츠" };
 
-const TABS = ["전체", "인사이트", "종목분석", "공지", "작성중"];
+/** ⚠ 정적 생성 금지 — 글을 저장해도 화면이 안 바뀌는 사고가 난다. */
+export const dynamic = "force-dynamic";
 
-export default function AdminPostsPage() {
+/**
+ * 콘텐츠 관리.
+ *
+ * ⚠ 전에는 이 화면이 `lib/mock.ts`를 읽고 "새 글" 버튼이 **아무 데도 연결돼 있지 않았다.**
+ *    투자일지·대표 포트폴리오와 같은 사고였다. 지금은 D1에 쓰고, 여기서 발행한 글이
+ *    각 섹션 프레임에 쌓인다.
+ */
+export default async function AdminPostsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ edit?: string }>;
+}) {
+  await requireAdmin("/admin/posts");
+
+  const [{ edit }, posts] = await Promise.all([searchParams, loadAllPosts()]);
+  const editing = edit ? await findPost(edit) : null;
+
+  const published = posts.filter((p) => p.published);
+  const drafts = posts.filter((p) => !p.published);
+
   return (
     <AdminShell>
       <AdminPageHeader
         title="콘텐츠 관리"
-        description="인사이트·종목분석·공지는 관리자만 작성합니다. 글별 댓글 허용을 여기서 켜고 끕니다."
-        action={
-          <Button variant="gold" size="sm">
-            <PlusIcon size={14} />
-            새 글
-          </Button>
-        }
+        description="여기서 발행한 글이 홈·거시 지표·포트폴리오·투자일지·인사이트의 각 프레임에 쌓입니다. 기본은 보이는 화면 그대로 쓰고, 필요하면 마크다운이나 HTML로 내려가 고칠 수 있습니다."
       />
 
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
-        <div className="flex flex-wrap gap-2 flex-1">
-          {TABS.map((t, i) => (
-            <Chip key={t} active={i === 0}>
-              {t}
-            </Chip>
-          ))}
-        </div>
-        <div className="relative sm:w-60">
-          <SearchIcon
-            size={15}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600"
-          />
-          <input
-            type="search"
-            placeholder="제목 검색"
-            className="w-full bg-card border border-border rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-gold-600 transition-colors"
-          />
-        </div>
+      <div className="mb-5 flex flex-wrap gap-2 text-[12px] text-gray-400">
+        <Badge tone="emerald">발행 {published.length}</Badge>
+        <Badge tone="neutral">작성중 {drafts.length}</Badge>
       </div>
 
-      <Table>
-        <thead>
-          <tr>
-            <Th>제목</Th>
-            <Th className="w-24">유형</Th>
-            <Th className="w-24">출처</Th>
-            <Th className="w-24">발행</Th>
-            <Th className="w-20 text-center">댓글</Th>
-            <Th className="w-20 text-right">조회</Th>
-            <Th className="w-24 text-right">작업</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {allPosts.map((p) => (
-            <Tr key={p.id}>
-              <Td>
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-white truncate max-w-[280px]">{p.title}</span>
-                  {p.externalUrl && <ExternalIcon size={12} className="text-gray-600 shrink-0" />}
-                </div>
-                <span className="text-[11px] text-gray-600 font-mono">/{p.slug}</span>
-              </Td>
-              <Td>
-                <PostTypeBadge type={p.type} />
-              </Td>
-              <Td>
-                <Badge tone={p.source === "TISTORY" ? "gold" : "neutral"}>
-                  {p.source === "TISTORY" ? "티스토리" : "직접"}
-                </Badge>
-              </Td>
-              <Td>
-                {p.published ? (
-                  <span className="text-[12px] text-gray-300 tabular-nums">
-                    {formatDate(p.publishedAt)}
-                  </span>
-                ) : (
-                  <Badge tone="warn">작성중</Badge>
-                )}
-              </Td>
-              <Td className="text-center">
-                <div className="flex justify-center">
-                  <Toggle defaultOn={p.commentsEnabled} size="sm" />
-                </div>
-              </Td>
-              <Td className="text-right tabular-nums text-gray-400">
-                {p.viewCount.toLocaleString("ko-KR")}
-              </Td>
-              <Td>
-                <div className="flex justify-end gap-1">
-                  <button
-                    type="button"
-                    className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-cardHover transition-colors"
-                    aria-label="편집"
-                  >
-                    <EditIcon size={15} />
-                  </button>
-                  <button
-                    type="button"
-                    className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-cardHover transition-colors"
-                    aria-label="삭제"
-                  >
-                    <TrashIcon size={15} />
-                  </button>
-                </div>
-              </Td>
-            </Tr>
-          ))}
-        </tbody>
-      </Table>
-
-      {/* 에디터 미리보기 (Phase 3에서 실제 CRUD 폼으로 대체) */}
-      <Card className="mt-7">
-        <CardTitle action={<Badge tone="neutral">Phase 3에서 연결</Badge>}>
-          글 작성 폼 (미리보기)
+      <Card className="mb-6">
+        <CardTitle
+          action={
+            editing ? (
+              <Link
+                href="/admin/posts"
+                className="text-[12px] text-gold-400 hover:text-gold-500"
+              >
+                + 새 글 쓰기
+              </Link>
+            ) : undefined
+          }
+        >
+          {editing ? `수정: ${editing.title}` : "새 글"}
         </CardTitle>
-        <div className="grid lg:grid-cols-2 gap-5">
-          <div className="space-y-3.5">
-            <input
-              placeholder="제목"
-              className="w-full bg-[#12141c] border border-border rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <select className="bg-[#12141c] border border-border rounded-xl px-3 py-2.5 text-sm text-ink">
-                <option>INSIGHT</option>
-                <option>ANALYSIS</option>
-                <option>NOTICE</option>
-              </select>
-              <select className="bg-[#12141c] border border-border rounded-xl px-3 py-2.5 text-sm text-ink">
-                <option>SELF</option>
-                <option>TISTORY</option>
-              </select>
-            </div>
-            <input
-              placeholder="slug (예: three-bucket-portfolio)"
-              className="w-full bg-[#12141c] border border-border rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 font-mono focus:outline-none focus:border-emerald-500"
-            />
-            <input
-              placeholder="태그 (쉼표 구분) · 연결 종목 티커"
-              className="w-full bg-[#12141c] border border-border rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
-            />
-            <textarea
-              rows={7}
-              placeholder="<p>본문 HTML — 저장 시 sanitize 됩니다.</p>"
-              className="w-full bg-[#12141c] border border-border rounded-xl px-3.5 py-3 text-sm text-white placeholder-gray-600 font-mono resize-none focus:outline-none focus:border-emerald-500"
-            />
-            <Toggle
-              label="이 글의 댓글 허용"
-              description="끄면 상세 화면에 🔒 댓글이 잠긴 글입니다 로 표시됩니다."
-              defaultOn
-            />
-          </div>
-          <div>
-            <p className="text-[11px] text-muted mb-2">미리보기</p>
-            <div className="bg-[#12141c] border border-border rounded-xl p-5 h-[380px] overflow-auto">
-              <div
-                className="prose-woodsman"
-                dangerouslySetInnerHTML={{
-                  __html:
-                    "<h2>미리보기</h2><p>왼쪽에 입력한 <strong>HTML</strong>이 이곳에 렌더링됩니다. 저장 시 서버에서 sanitize 처리해 XSS를 차단합니다.</p><ul><li>목록 항목</li><li>목록 항목</li></ul>",
-                }}
-              />
-            </div>
-          </div>
+        {/* key: 다른 글을 편집할 때 편집기가 이전 본문을 붙들고 있지 않게 */}
+        <PostEditor key={editing?.id ?? "new"} post={editing ?? undefined} />
+      </Card>
+
+      <Card padding="p-0">
+        <div className="px-5 pt-5">
+          <CardTitle>글 목록 ({posts.length}편)</CardTitle>
         </div>
+        {posts.length === 0 ? (
+          <p className="px-5 pb-5 text-[13px] text-muted">
+            아직 글이 없습니다. 위에서 첫 글을 써 보세요.
+          </p>
+        ) : (
+          <Table>
+            <caption className="sr-only">작성한 글 목록</caption>
+            <thead>
+              <Tr>
+                <Th>제목</Th>
+                <Th className="w-24">유형</Th>
+                <Th className="w-28">쌓이는 자리</Th>
+                <Th className="w-20">형식</Th>
+                <Th className="w-24">상태</Th>
+                <Th className="w-28">수정</Th>
+                <Th className="w-24 text-right">관리</Th>
+              </Tr>
+            </thead>
+            <tbody>
+              {posts.map((p) => (
+                <Tr key={p.id}>
+                  <Td className="text-white">
+                    <span className="block truncate">{p.title}</span>
+                    <span className="mt-0.5 block font-mono text-[11px] text-gray-600">
+                      /{p.slug}
+                      {p.source === "TISTORY" && p.externalUrl && (
+                        <a
+                          href={p.externalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-1.5 inline-flex items-center gap-0.5 text-gold-500 hover:text-gold-400"
+                        >
+                          원문
+                          <ExternalIcon size={10} />
+                        </a>
+                      )}
+                    </span>
+                  </Td>
+                  <Td>
+                    <PostTypeBadge type={p.type} />
+                  </Td>
+                  <Td className="text-muted">{SECTION_LABEL[p.section]}</Td>
+                  <Td className="text-gray-500">
+                    {p.format === "HTML" ? "HTML" : "마크다운"}
+                  </Td>
+                  <Td>
+                    {p.published ? (
+                      <Badge tone="emerald">발행</Badge>
+                    ) : (
+                      <Badge tone="neutral">작성중</Badge>
+                    )}
+                  </Td>
+                  <Td className="whitespace-nowrap tabular-nums text-muted">
+                    {p.updatedAt ? formatDate(p.updatedAt) : "—"}
+                  </Td>
+                  <Td className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Link
+                        href={`/admin/posts?edit=${p.id}`}
+                        aria-label={`${p.title} 편집`}
+                        className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-cardHover hover:text-white"
+                      >
+                        <EditIcon size={14} />
+                      </Link>
+                      <form action={deletePostAction}>
+                        <input type="hidden" name="id" value={p.id} />
+                        <button
+                          type="submit"
+                          aria-label={`${p.title} 삭제`}
+                          className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-cardHover hover:text-red-400"
+                        >
+                          <TrashIcon size={14} />
+                        </button>
+                      </form>
+                    </div>
+                  </Td>
+                </Tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
       </Card>
     </AdminShell>
   );

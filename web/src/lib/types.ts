@@ -10,6 +10,15 @@ export type FunctionType = "GROWTH" | "INCOME" | "DEFENSE";
 
 export type PostType = "INSIGHT" | "ANALYSIS" | "NOTICE";
 export type PostSource = "SELF" | "TISTORY";
+
+/**
+ * 글이 쌓이는 화면 묶음.
+ * 발행할 때마다 그 섹션 프레임에 한 편씩 더해진다(홈·거시·포트폴리오·투자일지·인사이트).
+ */
+export type PostSection = "HOME" | "MACRO" | "PORTFOLIO" | "JOURNAL" | "INSIGHT";
+
+/** 본문을 쓴 형식. 편집기는 이 값에 따라 다른 모드로 연다. */
+export type PostFormat = "MARKDOWN" | "HTML";
 export type CommentStatus = "VISIBLE" | "PENDING" | "HIDDEN";
 
 export interface ModelHolding {
@@ -22,9 +31,13 @@ export interface ModelHolding {
   avgCost?: number;
   shares?: number;
   currency?: "KRW" | "USD";
-  /** 목업 전용: 현재가·등락률 (Phase 7에서 서버 시세 프록시로 대체) */
+  /**
+   * 현재가 — ⚠ **관리자가 손으로 넣는 값**이다(실시세 연동은 P6/P7).
+   * 화면에 낼 때는 `priceAsOf`를 반드시 같이 보여준다(`lib/manual-price.ts`).
+   */
   price?: number;
-  changePct?: number;
+  /** 위 `price`를 적은 기준일 (YYYY-MM-DD) */
+  priceAsOf?: string;
   thesis?: string;
   canslim?: number;
   blogUrl?: string;
@@ -46,7 +59,12 @@ export interface Post {
   category?: string;
   title: string;
   excerpt?: string;
+  /** 작성 원본(마크다운 또는 HTML) — 편집기가 여는 값 */
+  body?: string;
+  format: PostFormat;
+  /** 화면에 나가는 HTML. ⚠ `body`에서 변환·정화한 결과 캐시다 */
   bodyHtml?: string;
+  section: PostSection;
   thumbnailUrl?: string;
   source: PostSource;
   externalUrl?: string;
@@ -56,7 +74,8 @@ export interface Post {
   published: boolean;
   viewCount: number;
   publishedAt?: string;
-  /** 목업 전용 파생값 */
+  updatedAt?: string;
+  /** 파생값 */
   commentCount: number;
 }
 

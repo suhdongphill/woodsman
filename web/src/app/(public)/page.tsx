@@ -15,7 +15,14 @@ import { summarizePerformance } from "@/lib/performance";
 import { DataModeNotice } from "@/components/ui/DataModeNotice";
 import { getSiteBasics } from "@/lib/site-settings";
 import { loadPublishedJournal, loadSnapshots } from "@/features/journal/repository";
-import { featuredStocks, functionAllocation, posts, rebalances } from "@/lib/mock";
+import { loadPublishedHoldings, loadRebalances } from "@/features/portfolio/repository";
+import { loadMacroOverview } from "@/features/macro/service";
+import { RecessionBoard } from "@/features/macro/ui/RecessionBoard";
+import { sumTargetWeights } from "@/lib/allocation";
+import { featuredStocks } from "@/lib/mock";
+import { loadPublishedPosts, loadSectionPosts } from "@/features/posts/repository";
+import { SectionFrame } from "@/features/posts/ui/SectionFrame";
+import type { FunctionType } from "@/lib/types";
 
 /**
  * 홈.
@@ -50,22 +57,29 @@ const PRINCIPLES = [
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [snapshots, allJournal, basics] = await Promise.all([
+  const [snapshots, allJournal, basics, holdings, rebalances, macro, latestPosts, homePosts] =
+    await Promise.all([
     loadSnapshots(),
     loadPublishedJournal(),
     getSiteBasics(),
+    loadPublishedHoldings(),
+    loadRebalances(),
+    loadMacroOverview(),
+    loadPublishedPosts(3),
+    loadSectionPosts("HOME", 4),
   ]);
   const recentJournal = allJournal.slice(0, 3);
   const journalCount = allJournal.length;
 
-  const alloc = functionAllocation();
+  const bucketTarget = (f: FunctionType) =>
+    sumTargetWeights(holdings.filter((h) => h.functionType === f));
   const segments = [
-    { label: "성장", value: alloc.GROWTH, color: FUNCTION_COLOR.GROWTH },
-    { label: "인컴", value: alloc.INCOME, color: FUNCTION_COLOR.INCOME },
-    { label: "방어", value: alloc.DEFENSE, color: FUNCTION_COLOR.DEFENSE },
+    { label: "성장", value: bucketTarget("GROWTH"), color: FUNCTION_COLOR.GROWTH },
+    { label: "인컴", value: bucketTarget("INCOME"), color: FUNCTION_COLOR.INCOME },
+    { label: "방어", value: bucketTarget("DEFENSE"), color: FUNCTION_COLOR.DEFENSE },
   ];
   const perf = summarizePerformance(snapshots);
-  const latestInsights = posts.filter((p) => p.type !== "NOTICE").slice(0, 3);
+  const latestInsights = latestPosts.filter((p) => p.type !== "NOTICE");
 
   return (
     <>
@@ -156,9 +170,11 @@ export default async function HomePage() {
 
               <StatBar segments={segments} className="mt-5" height="h-3" />
 
-              <p className="mt-5 pt-4 border-t border-border/70 text-[11px] text-gray-500 leading-relaxed">
-                최근 리밸런싱 · {rebalances[0].memo}
-              </p>
+              {rebalances.length > 0 && (
+                <p className="mt-5 pt-4 border-t border-border/70 text-[11px] text-gray-500 leading-relaxed">
+                  최근 리밸런싱 · {rebalances[0].memo}
+                </p>
+              )}
             </Card>
           </div>
         </div>
@@ -192,6 +208,50 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* ─── 거시 지표 ─── */}
+      {/* 계좌(내 기록) 다음에 시장(바깥 환경)을 둔다. 초보자는 "내 돈이 놓인 판이 지금
+          어떤가"를 먼저 궁금해하고, 그 답이 여기 있다. 깊이 들어가는 건 /macro가 맡는다. */}
+      <section className="mx-auto max-w-6xl px-4 sm:px-6 pb-14">
+        <SectionHeader
+          title="지금 경제는 어떤 상태인가"
+          subtitle="침체 신호 다섯 가지를 종합하고, 지표마다 읽는 법을 붙였습니다."
+          action={
+            <Link
+              href="/macro"
+              className="text-xs text-gold-400 hover:text-gold-500 flex items-center gap-0.5 shrink-0"
+            >
+              지표 전체 보기
+              <ChevronRightIcon size={13} />
+            </Link>
+          }
+        />
+
+        <RecessionBoard
+          summary={macro.summary}
+          signals={macro.signals}
+          asOf={macro.asOf}
+          compact
+        />
+
+        {macro.headlines.length > 0 && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {macro.headlines.map((h) => (
+              <Link
+                key={h.indicator.key}
+                href={`/macro/${h.indicator.group}`}
+                className="rounded-2xl border border-border bg-card p-4 transition-colors hover:border-gold-600/40 hover:bg-cardHover"
+              >
+                <p className="text-[11px] text-muted">{h.indicator.name}</p>
+                <p className="mt-1 text-xl font-bold tabular-nums text-white">{h.display}</p>
+                <p className="mt-1 text-[11px] text-gray-600">
+                  {h.asOf ? `${h.asOf} 기준` : "수집 전"}
+                </p>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* ─── 운영 원칙 ─── */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6 pb-14">
         <SectionHeader
@@ -217,6 +277,14 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* ─── 홈 섹션에 쌓인 글 ─── */}
+      {/* 발행할 때마다 여기가 한 편씩 길어진다(features/posts/ui/SectionFrame). */}
+      {homePosts.length > 0 && (
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 pb-14">
+          <SectionFrame section="HOME" posts={homePosts} />
+        </div>
+      )}
 
       {/* ─── 최신 인사이트 ─── */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6 pb-14">

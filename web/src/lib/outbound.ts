@@ -18,7 +18,6 @@
  * 쿠키를 심지 않고, IP·UA를 저장하지 않는다. 날짜별 합계만 센다.
  * 개인정보 처리방침의 "회원정보를 수집하지 않는다"와 어긋나지 않게 유지한다.
  */
-import { posts } from "./mock";
 import { TISTORY_BLOG_URL, TISTORY_FEATURED_URL } from "./site-links";
 
 /** 허용된 아웃바운드 대상 */
@@ -40,15 +39,18 @@ export function isOutboundTarget(value: string): value is OutboundTarget {
  *
  * `post-<slug>` 형태도 허용한다. 다만 목적지는 **우리가 저장해 둔 글의 원문 URL**에서만
  * 나온다. 요청이 준 URL을 그대로 따라가는 경로는 어디에도 없다.
+ *
+ * ⚠ 글은 DB에 있으므로 조회 함수를 **주입받는다.** 이 모듈이 DB를 알면 순수 함수가 아니게 되고
+ *    테스트에서 리다이렉트 규칙을 검증할 수 없다(오픈 리다이렉트는 테스트로 지켜야 하는 규칙이다).
  */
-export function resolveOutbound(target: string): string | null {
+export function resolveOutbound(
+  target: string,
+  findTistoryUrl?: (slug: string) => string | null | undefined,
+): string | null {
   if (isOutboundTarget(target)) return OUTBOUND_TARGETS[target];
 
   const postSlug = target.startsWith(POST_PREFIX) ? target.slice(POST_PREFIX.length) : null;
-  if (postSlug) {
-    const post = posts.find((p) => p.slug === postSlug && p.source === "TISTORY");
-    return post?.externalUrl ?? null;
-  }
+  if (postSlug && findTistoryUrl) return findTistoryUrl(postSlug) ?? null;
 
   return null;
 }

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { clickDateKey, resolveOutbound } from "@/lib/outbound";
+import { findPostBySlug } from "@/features/posts/repository";
 import { recordClick } from "@/lib/outbound-repo";
 
 /**
@@ -18,7 +19,11 @@ export async function GET(
   { params }: { params: Promise<{ target: string }> },
 ) {
   const { target } = await params;
-  const destination = resolveOutbound(target);
+  // 글 경유(post-<slug>)는 DB에 저장된 티스토리 원문 URL로만 간다.
+  const tistoryUrl = target.startsWith("post-")
+    ? (await findPostBySlug(target.slice("post-".length)))?.externalUrl
+    : undefined;
+  const destination = resolveOutbound(target, () => tistoryUrl);
   if (!destination) notFound();
 
   try {

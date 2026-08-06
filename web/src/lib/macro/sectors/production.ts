@@ -1,0 +1,85 @@
+/**
+ * 생산·제조 섹터 — 묶음 정의와 지표를 **이 파일 하나에** 둔다.
+ *
+ * ⚠ 지표를 더하거나 임계값을 바꿀 때 다른 파일을 건드리지 않는다
+ *    (볼트 인수인계 사양서 1-1: 흩어져 있으면 하나 추가에 여러 곳을 고치게 된다).
+ *    새 섹터를 만들 때만 `registry.ts`에 한 줄 등록한다.
+ */
+import { FRED_URL as FRED, type MacroSector } from "../types";
+
+export const sector: MacroSector = {
+  group: {
+      key: "production",
+      name: "생산·제조",
+      emoji: "🏭",
+      question: "공장이 돌아가고 있나?",
+      intro:
+        "제조업은 경기 순환의 앞단입니다. 구매관리자지수(PMI)는 기업 구매 담당자에게 직접 물어 만든 지표라 통계보다 빠르고, 50을 넘으면 확장·밑돌면 위축으로 읽습니다.",
+      order: 7,
+    },
+  indicators: [
+    {
+      key: "ism_mfg",
+      name: "ISM 제조업 PMI",
+      group: "production",
+      source: "MANUAL",
+      transform: "level",
+      unit: "",
+      decimals: 1,
+      url: "https://www.ismworld.org/supply-management-news-and-reports/reports/ism-report-on-business/",
+      sourceLabel: "수동 입력 · ISM 원보도자료",
+      what: "제조업 구매 담당자들에게 지난달보다 나아졌는지 물어 만든 지수입니다. 50이 기준선입니다.",
+      why: "통계가 아니라 현장에 직접 물은 것이라 빠르고, 경기 방향을 앞서 보여줍니다.",
+      read: "50 위면 확장, 아래면 위축입니다. 45 아래로 내려가면 침체 국면에서 나오던 수준입니다.",
+      signal: { op: "lt", warn: 50, alert: 45, rule: "50 미만 위축 · 45 미만 침체 수준" },
+      order: 1,
+    },
+    {
+      key: "ism_svc",
+      name: "ISM 서비스업 PMI",
+      group: "production",
+      source: "MANUAL",
+      transform: "level",
+      unit: "",
+      decimals: 1,
+      url: "https://www.ismworld.org/supply-management-news-and-reports/reports/ism-report-on-business/",
+      sourceLabel: "수동 입력 · ISM 원보도자료",
+      what: "서비스업에 같은 방식으로 물어 만든 지수입니다.",
+      why: "미국 경제의 대부분은 제조업이 아니라 서비스업입니다. 제조업이 나빠도 서비스가 버티면 경기는 굴러갑니다.",
+      read: "제조업이 50 아래인데 서비스가 50 위면, 아직 경기 전체가 꺾인 것은 아니라고 봅니다.",
+      order: 2,
+    },
+    {
+      key: "indpro_yoy",
+      name: "산업생산 (전년비)",
+      group: "production",
+      source: "FRED",
+      sourceId: "INDPRO",
+      transform: "yoy",
+      unit: "%",
+      decimals: 1,
+      url: FRED("INDPRO"),
+      sourceLabel: "FRED · INDPRO",
+      what: "공장·광산·전력 회사가 실제로 만들어 낸 양이 1년 전보다 얼마나 늘었는지입니다.",
+      why: "설문이 아니라 실제 생산량입니다. 심리 지표가 맞았는지 확인하는 자리입니다.",
+      read: "마이너스로 내려가면 실물이 실제로 줄고 있다는 뜻입니다.",
+      order: 3,
+    },
+    {
+      key: "phil_fed",
+      name: "필라델피아 연준 제조업지수",
+      group: "production",
+      source: "FRED",
+      sourceId: "GACDFSA066MSFRBPHI",
+      transform: "level",
+      unit: "",
+      decimals: 1,
+      url: FRED("GACDFSA066MSFRBPHI"),
+      sourceLabel: "FRED · GACDFSA066MSFRBPHI",
+      what: "필라델피아 연준이 관할 지역 제조업체에 묻는 체감 경기입니다. 0이 기준선입니다.",
+      why: "ISM보다 먼저 나옵니다. 이번 달 제조업이 어떨지 미리 엿볼 수 있습니다.",
+      read: "0 위면 확장, 아래면 위축입니다. 월별 변동이 큰 편이라 흐름으로 봅니다.",
+      order: 4,
+    },
+  ],
+};

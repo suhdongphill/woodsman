@@ -5,7 +5,6 @@
  * 사람을 보내는 경유지가 되면 피싱에 쓰이고 도메인 평판이 망가진다.
  */
 import { describe, expect, it } from "vitest";
-import { posts } from "./mock";
 import {
   OUTBOUND_TARGETS,
   clickDateKey,
@@ -34,24 +33,23 @@ describe("오픈 리다이렉트 방지", () => {
   });
 
   it("돌려주는 목적지는 항상 우리가 등록한 값에서만 나온다", () => {
-    const allowed = new Set<string>([
-      ...Object.values(OUTBOUND_TARGETS),
-      ...posts.filter((p) => p.externalUrl).map((p) => p.externalUrl!),
-    ]);
-
+    const allowed = new Set<string>(Object.values(OUTBOUND_TARGETS));
     for (const key of Object.keys(OUTBOUND_TARGETS)) {
       expect(allowed.has(resolveOutbound(key)!)).toBe(true);
     }
   });
 
+  it("⚠ 글 조회 함수를 주지 않으면 post- 경유는 목적지가 없다", () => {
+    expect(resolveOutbound("post-어떤글")).toBeNull();
+  });
+
   it("티스토리 원문이 없는 글은 경유해도 목적지가 없다", () => {
-    const selfPost = posts.find((p) => p.source === "SELF")!;
-    expect(resolveOutbound(`post-${selfPost.slug}`)).toBeNull();
+    expect(resolveOutbound("post-self-post", () => null)).toBeNull();
   });
 
   it("티스토리 원문이 있는 글은 그 원문으로만 간다", () => {
-    const tistoryPost = posts.find((p) => p.source === "TISTORY" && p.externalUrl)!;
-    expect(resolveOutbound(`post-${tistoryPost.slug}`)).toBe(tistoryPost.externalUrl);
+    const url = "https://suhdp.tistory.com/entry/x";
+    expect(resolveOutbound("post-tistory-post", () => url)).toBe(url);
   });
 });
 

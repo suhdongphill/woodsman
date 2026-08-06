@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AdminPageHeader, AdminShell } from "@/components/layout/AdminPageHeader";
 import { Card, CardTitle } from "@/components/ui/Card";
+import { KnowledgePanel } from "@/features/ai/ui/KnowledgePanel";
 import { ProviderTable } from "@/features/ai/ui/ProviderTable";
 import { TaskRouting } from "@/features/ai/ui/TaskRouting";
 import { KeySetupGuide } from "@/features/ai/ui/KeySetupGuide";
@@ -92,6 +93,17 @@ export default async function AdminAiPage() {
           </p>
         </Card>
       </div>
+
+      <Card className="mb-7">
+        <CardTitle>사이트 기록 검색 (RAG)</CardTitle>
+        <p className="mb-4 text-[12px] leading-relaxed text-gray-500">
+          AI가 답할 때 참고하는 것은 <strong>이 사이트에 쌓인 기록</strong>입니다 —
+          글·투자일지·보유 종목·거시 지표·버블 채점. 질문을 넣어 <strong>무엇이 뽑히는지 먼저
+          확인</strong>하세요. RAG는 조용히 틀리기 때문에, 엉뚱한 기록을 골라도 답변은 그럴듯하게
+          나옵니다.
+        </p>
+        <KnowledgePanel />
+      </Card>
 
       <Card className="mb-7">
         <CardTitle>작업별 라우팅</CardTitle>

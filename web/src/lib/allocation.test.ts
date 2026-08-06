@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   fillProgressPct,
   holdingValueKrw,
+  sumTargetWeights,
   summarizeAllocation,
   targetSumPct,
+  targetSumWarning,
   totalValue,
   underweightBuckets,
   type AllocationInput,
@@ -144,5 +146,26 @@ describe("모의/실계좌 표시", () => {
   it("수익률 꼬리표는 모의일 때만 붙는다", () => {
     expect(returnSuffix("PAPER")).toBe("모의");
     expect(returnSuffix("LIVE")).toBeNull();
+  });
+});
+
+describe("목표 비중 합계 경고", () => {
+  it("100%면 경고하지 않는다", () => {
+    const items = [{ targetWeight: 40 }, { targetWeight: 35 }, { targetWeight: 25 }];
+    expect(sumTargetWeights(items)).toBe(100);
+    expect(targetSumWarning(sumTargetWeights(items))).toBeNull();
+  });
+
+  it("모자라거나 넘치면 얼마나 어긋났는지 말한다", () => {
+    expect(targetSumWarning(92)).toMatch(/8%p 모자랍니다/);
+    expect(targetSumWarning(107.5)).toMatch(/7.5%p 넘칩니다/);
+  });
+
+  it("⚠ 경고일 뿐 저장을 막지 않는다 — 작성 중에는 합계가 안 맞는 게 정상이다", () => {
+    expect(targetSumWarning(60)).toMatch(/작성 중이면 그대로 두어도 됩니다/);
+  });
+
+  it("비중을 안 적은 종목은 0으로 센다", () => {
+    expect(sumTargetWeights([{ targetWeight: 30 }, {}])).toBe(30);
   });
 });

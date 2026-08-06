@@ -1,0 +1,103 @@
+/**
+ * 물가 섹터 — 묶음 정의와 지표를 **이 파일 하나에** 둔다.
+ *
+ * ⚠ 지표를 더하거나 임계값을 바꿀 때 다른 파일을 건드리지 않는다
+ *    (볼트 인수인계 사양서 1-1: 흩어져 있으면 하나 추가에 여러 곳을 고치게 된다).
+ *    새 섹터를 만들 때만 `registry.ts`에 한 줄 등록한다.
+ */
+import { FRED_URL as FRED, type MacroSector } from "../types";
+
+export const sector: MacroSector = {
+  group: {
+      key: "inflation",
+      name: "물가",
+      emoji: "📊",
+      question: "돈의 값어치가 깎이고 있나?",
+      intro:
+        "물가가 오르면 같은 돈으로 살 수 있는 것이 줄고, 중앙은행은 금리를 올려 대응합니다. 그래서 물가 지표는 '금리가 어디로 갈까'를 먼저 알려주는 신호입니다. 미국 연준의 목표는 2%이고, 식품·에너지를 뺀 근원 물가가 추세를 더 잘 보여줍니다.",
+      order: 2,
+    },
+  indicators: [
+    {
+      key: "cpi_yoy",
+      name: "소비자물가 CPI (전년비)",
+      group: "inflation",
+      source: "FRED",
+      sourceId: "CPIAUCSL",
+      transform: "yoy",
+      unit: "%",
+      decimals: 1,
+      url: FRED("CPIAUCSL"),
+      sourceLabel: "FRED · CPIAUCSL",
+      what: "가계가 사는 물건과 서비스 값이 1년 전보다 얼마나 올랐는지입니다.",
+      why: "연준의 목표는 2%입니다. 여기서 멀어질수록 금리 정책이 흔들리고, 그 여파가 주식·채권 전부에 옵니다.",
+      read: "2%에 가까워지면 금리를 내릴 여지가 생기고, 다시 튀어 오르면 인하 기대가 사라집니다.",
+      headline: true,
+      order: 1,
+    },
+    {
+      key: "core_cpi_yoy",
+      name: "근원 CPI (전년비)",
+      group: "inflation",
+      source: "FRED",
+      sourceId: "CPILFESL",
+      transform: "yoy",
+      unit: "%",
+      decimals: 1,
+      url: FRED("CPILFESL"),
+      sourceLabel: "FRED · CPILFESL",
+      what: "CPI에서 오르내림이 심한 식품과 에너지를 뺀 물가입니다.",
+      why: "유가가 한 달 튀었다고 정책이 바뀌지는 않습니다. 추세를 보려면 근원 물가를 봅니다.",
+      read: "전체 CPI가 내려도 근원이 안 내려오면, 물가가 아직 몸에 배어 있다는 뜻입니다.",
+      order: 2,
+    },
+    {
+      key: "core_pce_yoy",
+      name: "근원 PCE (전년비)",
+      group: "inflation",
+      source: "FRED",
+      sourceId: "PCEPILFE",
+      transform: "yoy",
+      unit: "%",
+      decimals: 1,
+      url: FRED("PCEPILFE"),
+      sourceLabel: "FRED · PCEPILFE",
+      what: "연준이 목표 2%를 말할 때 실제로 보는 물가 지표입니다. 소비 구성 변화를 반영해 CPI보다 낮게 나오는 편입니다.",
+      why: "정책을 정하는 사람이 보는 숫자라, 시장도 이 값에 가장 크게 반응합니다.",
+      read: "CPI와 다른 방향으로 움직일 때가 있습니다. 정책 판단은 이쪽이 기준입니다.",
+      order: 3,
+    },
+    {
+      key: "ppi_yoy",
+      name: "생산자물가 PPI (전년비)",
+      group: "inflation",
+      source: "FRED",
+      sourceId: "PPIACO",
+      transform: "yoy",
+      unit: "%",
+      decimals: 1,
+      url: FRED("PPIACO"),
+      sourceLabel: "FRED · PPIACO",
+      what: "기업이 물건을 만들 때 치르는 값이 얼마나 올랐는지입니다.",
+      why: "원가가 오르면 시차를 두고 소비자 가격으로 넘어옵니다. 소비자물가보다 앞서 움직입니다.",
+      read: "PPI가 먼저 꺾이면 몇 달 뒤 CPI도 따라 내려오는 경우가 많습니다.",
+      order: 4,
+    },
+    {
+      key: "infl_exp_5y",
+      name: "기대 인플레이션 (5년)",
+      group: "inflation",
+      source: "FRED",
+      sourceId: "T5YIE",
+      transform: "level",
+      unit: "%",
+      decimals: 2,
+      url: FRED("T5YIE"),
+      sourceLabel: "FRED · T5YIE",
+      what: "채권시장이 앞으로 5년간 물가가 연 몇 %나 오를 것으로 보고 있는지입니다.",
+      why: "실제 물가보다 '사람들이 그렇게 믿는지'가 중요합니다. 기대가 풀리면 물가는 스스로 굳어집니다.",
+      read: "2% 근처에서 안정돼 있으면 연준이 통제하고 있다는 뜻으로 읽습니다.",
+      order: 5,
+    },
+  ],
+};

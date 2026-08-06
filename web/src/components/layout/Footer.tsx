@@ -8,6 +8,7 @@ const CONTENT_LINKS = [
   { href: "/portfolio", label: "대표 포트폴리오" },
   { href: "/journal", label: "투자일지" },
   { href: "/insights", label: "인사이트" },
+  { href: "/macro", label: "거시 지표" },
   { href: "/stocks", label: "종목분석" },
 ];
 

@@ -17,8 +17,10 @@ import { fileURLToPath } from "node:url";
 import { hash } from "bcryptjs";
 import { parseServerEnv, hasEnvKey } from "../src/lib/env.ts";
 import {
+  SEED_PRICE_AS_OF,
   buildAiProviderSeeds,
   seedAccountSnapshots,
+  seedBubbleReadings,
   seedAiConfig,
   seedComments,
   seedFeeds,
@@ -115,6 +117,9 @@ for (const h of seedModelHoldings) {
     market: rest.market ?? null,
     avgCost: rest.avgCost ?? null,
     shares: rest.shares ?? null,
+    price: rest.price ?? null,
+    // ⚠ 현재가에는 기준일이 따라붙는다. 날짜 없는 숫자는 자동 시세처럼 읽힌다.
+    priceAsOf: rest.price != null ? kst(SEED_PRICE_AS_OF) : null,
     canslim: rest.canslim ?? null,
     blogUrl: null,
     published: true,
@@ -167,6 +172,11 @@ for (const [i, p] of seedPosts.entries()) {
   upsert("Post", {
     id: `seed_po_${String(i + 1).padStart(2, "0")}`,
     ...rest,
+    // 시드 본문은 HTML로 써 두었다. 편집기가 열 원본(body)도 같은 값으로 넣는다
+    // — 원본이 비어 있으면 관리자 화면에서 글이 빈칸으로 열린다.
+    body: rest.bodyHtml ?? null,
+    format: "HTML",
+    section: rest.type === "NOTICE" ? "HOME" : "INSIGHT",
     category: rest.category ?? null,
     excerpt: rest.excerpt ?? null,
     bodyHtml: rest.bodyHtml ?? null,
@@ -179,6 +189,17 @@ for (const [i, p] of seedPosts.entries()) {
     createdAt: now,
     updatedAt: now,
   });
+}
+lines.push("");
+lines.push("-- 버블 모니터 초기 채점 (근거 문장은 비워 둔다 — /admin/bubble에서 적는다)");
+for (const r of seedBubbleReadings) {
+  lines.push(
+    `INSERT INTO "BubbleReading" ("indicatorKey","points","asOf","updatedAt")
+` +
+      `  VALUES (${lit(r.key)}, ${lit(r.points)}, ${lit(kst(r.asOf))}, ${lit(now)})
+` +
+      `  ON CONFLICT("indicatorKey") DO UPDATE SET "points" = excluded."points", "asOf" = excluded."asOf";`,
+  );
 }
 lines.push("");
 lines.push("-- 댓글은 글 slug로 연결한다(Post id를 하드코딩하지 않기 위해)");

@@ -99,6 +99,12 @@ model ModelHolding {
   /// KRW | USD
   currency     String  @default("KRW")
 
+  /// 현재가 — ⚠ **관리자가 손으로 넣는 값**이다. 실시세 연동은 아직 없다(P6/P7).
+  price     Float?
+  /// 위 `price`를 적어 넣은 기준일. ⚠ 값이 있는 화면에는 이 날짜를 반드시 같이 보여준다.
+  ///    날짜 없이 숫자만 두면 자동으로 갱신되는 시세처럼 읽힌다.
+  priceAsOf DateTime?
+
   /// 편입 논리 (sanitize된 HTML 또는 텍스트)
   thesis  String?
   canslim Float?
@@ -188,7 +194,20 @@ model Post {
 
   title        String
   excerpt      String?
+
+  /// 작성 원본. ⚠ 사람이 고치는 것은 이 값이다.
+  body         String?
+  /// MARKDOWN | HTML — `body`를 어떤 형식으로 썼는지
+  format       String  @default("MARKDOWN")
+  /// 화면에 나가는 HTML. `body`를 변환·정화한 **결과 캐시**다.
+  /// ⚠ 여기에 직접 쓰지 않는다. 저장할 때 `body`에서 다시 만든다
+  ///    (직접 쓰면 정화를 건너뛴 HTML이 화면에 꽂힌다).
   bodyHtml     String?
+
+  /// 이 글이 어느 화면 묶음에 쌓일지: HOME | MACRO | PORTFOLIO | JOURNAL | INSIGHT
+  /// 발행할 때마다 해당 섹션 프레임에 한 편씩 더해진다.
+  section      String  @default("INSIGHT")
+
   thumbnailUrl String?
 
   /// SELF | TISTORY
@@ -214,6 +233,7 @@ model Post {
   @@index([published, publishedAt])
   @@index([type])
   @@index([ticker])
+  @@index([section, published, publishedAt])
 }
 
 // ────────────── 댓글 ──────────────
@@ -402,4 +422,79 @@ model Holding {
   addedAt DateTime @default(now())
 
   @@index([portfolioId])
+}
+
+// ────────────── 거시 지표(매크로) ──────────────
+
+/// 거시 지표의 시계열 한 점.
+///
+/// ⚠ **지표의 정의는 여기 없다.** 이름·출처·임계값·설명은 `src/lib/macro/catalog.ts`가
+///    원본이다(코드 = 카탈로그, DB = 값). 여기에는 `seriesKey`(카탈로그의 key)와
+///    날짜·원값만 쌓는다.
+///
+/// ⚠ 값은 **원값(level)** 그대로 넣는다. YoY·전월비 같은 변환은 읽을 때 한다
+///    (`lib/macro/series.ts`). 가공해서 저장하면 규칙이 바뀔 때 되돌릴 수 없다.
+model MacroPoint {
+  seriesKey String
+  /// 관측 기준일. 날짜만 있는 값이므로 정오(UTC)로 저장한다.
+  date      DateTime
+  value     Float
+
+  /// FRED | YAHOO | MANUAL — 이 값이 어디서 왔는지. 수동 입력을 나중에 구분해야 한다.
+  source    String
+  /// 수집 시각(같은 날짜를 다시 받으면 갱신된다 — 통계는 사후 수정된다)
+  updatedAt DateTime @default(now())
+
+  @@id([seriesKey, date])
+  @@index([seriesKey, date])
+}
+
+/// 자료 가져오기 실행 기록.
+///
+/// ⚠ 조용한 실패를 막으려고 둔다. 지표 하나가 계속 실패해도 화면은 옛 값을 그대로
+///    보여주기 때문에, **어디까지 성공했는지 남기지 않으면 아무도 모른다.**
+model MacroIngest {
+  id         String   @id @default(cuid())
+  startedAt  DateTime @default(now())
+  finishedAt DateTime?
+
+  /// MANUAL(관리자 버튼) | CRON
+  trigger String @default("MANUAL")
+
+  okCount     Int @default(0)
+  failCount   Int @default(0)
+  /// 새로 쌓인 점의 개수
+  addedPoints Int @default(0)
+
+  /// 지표별 결과 JSON — 실패 사유를 그대로 남긴다
+  detail String?
+
+  @@index([startedAt])
+}
+
+// ────────────── AI·반도체 버블 모니터 ──────────────
+
+/// 지표 하나의 판정. ⚠ 레이어·가중치·임계값 정의는 `src/lib/bubble/catalog.ts`가 원본이다.
+model BubbleReading {
+  /// 카탈로그의 지표 키
+  indicatorKey String @id
+  /// 0 | 1 | 2 — ⚠ 소수점을 두지 않는다(정성 지표에 없는 정밀도가 생긴다)
+  points       Int
+  /// 근거가 된 숫자·문장
+  value        String?
+  /// 기준일
+  asOf         DateTime?
+  note         String?
+  updatedAt    DateTime @updatedAt
+}
+
+/// 하드 트리거의 현재 상태(발화 여부·근접도·지금 상황).
+model BubbleTriggerState {
+  triggerKey String  @id
+  fired      Boolean @default(false)
+  /// far | near
+  proximity  String  @default("far")
+  now        String?
+  asOf       DateTime?
+  updatedAt  DateTime @updatedAt
 }

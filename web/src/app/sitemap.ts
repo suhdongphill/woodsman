@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
-import { posts, stocks } from "@/lib/mock";
+import { stocks } from "@/lib/mock";
+import { loadPublishedPosts } from "@/features/posts/repository";
 import { absoluteUrl } from "@/lib/site-url";
+import { MACRO_GROUPS } from "@/lib/macro/groups";
 import { getSitePolicy } from "@/lib/site-settings";
 
 /**
@@ -16,6 +18,9 @@ const STATIC_PAGES: { path: string; priority: number; changeFrequency: "daily" |
   { path: "/portfolio", priority: 0.9, changeFrequency: "weekly" },
   { path: "/journal", priority: 0.9, changeFrequency: "weekly" },
   { path: "/insights", priority: 0.8, changeFrequency: "weekly" },
+  // 거시 지표는 매주 갱신되는 고유 콘텐츠라 색인 우선순위를 높게 둔다.
+  { path: "/macro", priority: 0.9, changeFrequency: "daily" },
+  { path: "/macro/bubble", priority: 0.8, changeFrequency: "weekly" },
   { path: "/stocks", priority: 0.6, changeFrequency: "weekly" },
   { path: "/about", priority: 0.5, changeFrequency: "monthly" },
   { path: "/disclaimer", priority: 0.3, changeFrequency: "monthly" },
@@ -34,12 +39,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // 자체 작성 글만 넣는다. 티스토리 원문 링크(source=TISTORY)는 원문이 정본이다.
-  for (const post of posts) {
-    if (!post.published || post.source !== "SELF") continue;
+  for (const post of await loadPublishedPosts(500)) {
+    if (post.source !== "SELF") continue;
     entries.push({
       url: absoluteUrl(`/insights/${post.slug}`),
       lastModified: post.publishedAt ? new Date(post.publishedAt) : now,
       changeFrequency: "monthly",
+      priority: 0.7,
+    });
+  }
+
+  // 지표 묶음 9장 — 각각 다른 주제의 본문을 가진 페이지다(중복 콘텐츠가 아니다).
+  for (const group of MACRO_GROUPS) {
+    entries.push({
+      url: absoluteUrl(`/macro/${group.key}`),
+      lastModified: now,
+      changeFrequency: "weekly",
       priority: 0.7,
     });
   }
