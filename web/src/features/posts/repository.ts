@@ -10,7 +10,7 @@
  * ⚠ `bodyHtml`은 **원본(`body`)에서 만든 결과**다. 저장할 때만 채운다(actions.ts).
  *    여기로 직접 HTML을 넣는 경로를 만들지 않는다 — 정화를 건너뛴 HTML이 화면에 꽂힌다.
  */
-import { execute, queryAll, queryOne, toBool } from "@/lib/d1";
+import { execute, queryAll, queryOne, toBool, type D1, type D1Statement } from "@/lib/d1";
 import type { Post, PostSection, PostSource, PostType } from "@/lib/types";
 
 function dayOf(value: string | null): string | undefined {
@@ -180,6 +180,36 @@ export async function savePost(input: PostInput, id?: string): Promise<string> {
     [newId, ...values, input.published ? now : null, now],
   );
   return newId;
+}
+
+/**
+ * 글 조회수 +1 **문장을 만들어 준다**(실행하지 않는다).
+ *
+ * 조회 집계와 **한 batch로 묶어 보내려고** 문장만 돌려준다 — 가장 자주 불리는 경로라
+ * 왕복 한 번이 그대로 지연이 된다. ⚠ `Post` 테이블에 닿는 SQL은 이 파일에만 둔다.
+ */
+export function incrementPostViewCount(db: D1, slug: string): D1Statement {
+  return db
+    .prepare(`UPDATE Post SET viewCount = viewCount + 1 WHERE slug = ? AND published = 1`)
+    .bind(slug);
+}
+
+/** 발행·작성중 개수. ⚠ 개수를 세려고 글 목록을 통째로 읽지 않는다(본문까지 딸려 온다). */
+export async function countPostsByStatus(): Promise<{ published: number; draft: number }> {
+  const row = await queryOne<{ total: number; published: number }>(
+    `SELECT COUNT(*) AS total, COALESCE(SUM(published), 0) AS published FROM Post`,
+  );
+  const total = row?.total ?? 0;
+  const published = row?.published ?? 0;
+  return { published, draft: total - published };
+}
+
+/** 관리자 대시보드가 "최근 글"에 쓰는 제목 한 줄. 본문은 읽지 않는다. */
+export async function loadLatestPostTitle(): Promise<string | null> {
+  const row = await queryOne<{ title: string }>(
+    `SELECT title FROM Post ORDER BY updatedAt DESC LIMIT 1`,
+  );
+  return row?.title ?? null;
 }
 
 export async function deletePost(id: string): Promise<void> {

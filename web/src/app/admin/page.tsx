@@ -5,9 +5,12 @@ import { StatTile } from "@/components/ui/StatBar";
 import { Badge } from "@/components/ui/Badge";
 import { ChevronRightIcon, AlertIcon } from "@/components/icons";
 import { OutboundStats } from "@/features/site/ui/OutboundStats";
-import { cx, formatDateTime, formatPct } from "@/lib/format";
+import { cx, formatDateTime } from "@/lib/format";
 import { adminStats, comments, aiProviders } from "@/lib/mock";
-import { loadAllPosts } from "@/features/posts/repository";
+import { countPostsByStatus, loadLatestPostTitle } from "@/features/posts/repository";
+import { loadViewStatsSafe } from "@/features/analytics/service";
+import { ViewStatsCard } from "@/features/analytics/ui/ViewStats";
+import { countMembers } from "@/features/users/repository";
 
 const QUICK = [
   { href: "/admin/posts", label: "새 글 작성", desc: "인사이트·분석·공지" },
@@ -20,9 +23,14 @@ const QUICK = [
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const posts = await loadAllPosts(20);
+  // ⚠ 개수를 세려고 목록을 통째로 읽지 않는다 — 글은 본문까지, 사용자는 댓글 수까지 딸려 온다.
+  const [postCounts, latestTitle, views, memberCount] = await Promise.all([
+    countPostsByStatus(),
+    loadLatestPostTitle(),
+    loadViewStatsSafe(),
+    countMembers(),
+  ]);
   const pending = comments.filter((c) => c.status === "PENDING" || c.reported);
-  const maxVisitor = Math.max(...adminStats.weeklyVisitors);
   const tokenPct = (adminStats.aiTokensUsed / adminStats.aiTokenCap) * 100;
 
   return (
@@ -38,11 +46,16 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-7">
+        {/* ⚠ '방문자'가 아니라 '조회수'다 — 쿠키를 심지 않아 사람을 구분하지 않는다. */}
         <StatTile
-          label="오늘 방문자"
-          value={adminStats.visitorsToday.toLocaleString("ko-KR")}
-          sub={`전주 대비 ${formatPct(adminStats.visitorsDelta)}`}
-          tone="up"
+          label="오늘 조회수"
+          value={views ? views.today.toLocaleString("ko-KR") : "—"}
+          sub={
+            views
+              ? `최근 7일 ${views.week.toLocaleString("ko-KR")}회`
+              : "집계를 읽지 못했습니다"
+          }
+          tone={views && views.weekChangePct !== undefined && views.weekChangePct >= 0 ? "up" : "default"}
         />
         <StatTile
           label="새 댓글"
@@ -52,36 +65,15 @@ export default async function AdminDashboardPage() {
         />
         <StatTile
           label="발행 글"
-          value={`${adminStats.publishedPosts}개`}
-          sub={`작성중 ${adminStats.draftPosts}`}
+          value={`${postCounts.published}개`}
+          sub={`작성중 ${postCounts.draft}`}
         />
-        <StatTile label="회원" value={`${adminStats.members}명`} sub="관리자 제외" />
+        <StatTile label="회원" value={`${memberCount}명`} sub="관리자 제외" />
       </div>
 
       <div className="grid lg:grid-cols-[1.4fr_1fr] gap-5">
-        {/* 방문자 추이 */}
-        <Card>
-          <CardTitle>최근 7일 방문자</CardTitle>
-          <div className="flex items-end gap-2 h-40">
-            {adminStats.weeklyVisitors.map((v, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                <span className="text-[10px] text-gray-500 tabular-nums">{v}</span>
-                <div
-                  className={cx(
-                    "w-full rounded-t-md transition-colors",
-                    i === adminStats.weeklyVisitors.length - 1
-                      ? "bg-gold-500"
-                      : "bg-emerald-600/70",
-                  )}
-                  style={{ height: `${(v / maxVisitor) * 100}%` }}
-                />
-                <span className="text-[10px] text-gray-600">
-                  {["월", "화", "수", "목", "금", "토", "일"][i]}
-                </span>
-              </div>
-            ))}
-          </div>
-        </Card>
+        {/* 조회수 — 카드가 스스로 그린다(features/analytics/ui) */}
+        <ViewStatsCard stats={views} />
 
         {/* AI 사용량 */}
         <Card>
@@ -194,9 +186,9 @@ export default async function AdminDashboardPage() {
               </Link>
             ))}
           </div>
-          {posts.length > 0 && (
+          {latestTitle && (
             <p className="mt-5 pt-4 border-t border-border/70 text-[11px] text-gray-600">
-              최근 글 · {posts[0].title}
+              최근 글 · {latestTitle}
             </p>
           )}
         </Card>

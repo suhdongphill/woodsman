@@ -12,7 +12,6 @@ import type {
   JournalEntry,
   SiteConfig,
   StockSummary,
-  UserRow,
 } from "./types";
 
 /* ─────────────── 사이트 설정 ─────────────── */
@@ -446,41 +445,9 @@ export const feedItems = [
   },
 ];
 
-/* ─────────────── 사용자 ─────────────── */
-export const users: UserRow[] = [
-  {
-    id: "u_admin",
-    email: "admin@woodsman.kr",
-    name: "관리자",
-    role: "ADMIN",
-    createdAt: "2026-05-01T09:00:00+09:00",
-    commentCount: 0,
-  },
-  {
-    id: "u_1",
-    email: "walker@example.com",
-    name: "산책자",
-    role: "USER",
-    createdAt: "2026-05-12T11:20:00+09:00",
-    commentCount: 4,
-  },
-  {
-    id: "u_2",
-    email: "longterm@example.com",
-    name: "장기투자",
-    role: "USER",
-    createdAt: "2026-06-03T16:45:00+09:00",
-    commentCount: 3,
-  },
-  {
-    id: "u_3",
-    email: "semi@example.com",
-    name: "반도체러버",
-    role: "USER",
-    createdAt: "2026-07-01T08:10:00+09:00",
-    commentCount: 2,
-  },
-];
+/* 사용자 목업은 삭제했다(2026-08-06).
+   화면이 이 파일을 읽는 한 삭제 버튼이 아무 일도 하지 않는다 —
+   지금은 `features/users/repository.ts`가 D1을 읽는다. ⚠ 되살리지 말 것. */
 
 /* ─────────────── 관리자 대시보드 요약 ─────────────── */
 export const adminStats = {
@@ -491,7 +458,6 @@ export const adminStats = {
   reportedComments: comments.filter((c) => c.reported).length,
   publishedPosts: 0,
   draftPosts: 0,
-  members: users.filter((u) => u.role === "USER").length,
   aiTokensUsed: aiConfig.tokensUsedThisMonth,
   aiTokenCap: aiConfig.globalMonthlyTokenCap,
   /** 최근 7일 방문자 (막대그래프용) */

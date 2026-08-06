@@ -1,112 +1,118 @@
 import type { Metadata } from "next";
 import { AdminPageHeader, AdminShell } from "@/components/layout/AdminPageHeader";
 import { Table, Th, Td, Tr } from "@/components/ui/Table";
-import { Badge, Chip } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { SearchIcon, TrashIcon, AlertIcon } from "@/components/icons";
+import { AlertIcon } from "@/components/icons";
 import { formatDate } from "@/lib/format";
-import { users } from "@/lib/mock";
+import { requireAdmin } from "@/lib/session";
+import { decideUserDelete, deleteSideEffects } from "@/lib/user-delete";
+import { countAdmins, loadUsers } from "@/features/users/repository";
+import { DeleteUserButton } from "@/features/users/ui/DeleteUserButton";
 
 export const metadata: Metadata = { title: "사용자" };
 
-const TABS = ["전체", "ADMIN", "USER"];
+/** ⚠ 정적 생성 금지 — 지워도 목록이 그대로 남는다. */
+export const dynamic = "force-dynamic";
 
-export default function AdminUsersPage() {
+/**
+ * 사용자 · 권한.
+ *
+ * ⚠ 전에는 이 화면이 `lib/mock.ts`를 읽어 **삭제 버튼이 아무 일도 하지 않았다.**
+ *    지금은 D1을 읽고 실제로 지운다. 다만 두 가지는 막는다(`lib/user-delete.ts`):
+ *    자기 자신과 마지막 관리자 — 지우면 아무도 로그인할 수 없는 사이트가 된다.
+ */
+export default async function AdminUsersPage() {
+  const me = await requireAdmin("/admin/users");
+  const [users, adminCount] = await Promise.all([loadUsers(), countAdmins()]);
+
+  const members = users.filter((u) => u.role !== "ADMIN");
+
   return (
     <AdminShell>
       <AdminPageHeader
         title="사용자 · 권한"
-        description="가입 회원의 역할을 변경합니다. 콘텐츠 작성은 ADMIN만 가능합니다."
+        description="가입 계정을 확인하고 삭제합니다. 콘텐츠 작성은 ADMIN만 가능합니다."
       />
 
-      <Card className="mb-6 flex items-start gap-3">
-        <AlertIcon size={16} className="text-yellow-500 shrink-0 mt-0.5" />
-        <p className="text-[12.5px] text-muted leading-relaxed">
-          관리자 계정은 서버 <code className="text-gold-400">.env</code>의{" "}
-          <code className="text-gold-400">ADMIN_EMAIL</code> /{" "}
-          <code className="text-gold-400">ADMIN_PASSWORD</code>로 시드 시 upsert 됩니다. 비밀번호를
-          잊었다면 env 값을 바꿔 재배포하면 갱신됩니다(이메일 복구 없음).
-        </p>
-      </Card>
-
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
-        <div className="flex flex-wrap gap-2 flex-1">
-          {TABS.map((t, i) => (
-            <Chip key={t} active={i === 0}>
-              {t}
-            </Chip>
-          ))}
-        </div>
-        <div className="relative sm:w-60">
-          <SearchIcon
-            size={15}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600"
-          />
-          <input
-            type="search"
-            placeholder="이메일·닉네임 검색"
-            className="w-full bg-card border border-border rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-gold-600 transition-colors"
-          />
-        </div>
+      <div className="mb-5 flex flex-wrap gap-2">
+        <Badge tone="gold">관리자 {adminCount}</Badge>
+        <Badge tone="neutral">회원 {members.length}</Badge>
       </div>
 
-      <Table>
-        <thead>
-          <tr>
-            <Th>사용자</Th>
-            <Th className="w-32">역할</Th>
-            <Th className="w-28">가입일</Th>
-            <Th className="w-24 text-right">댓글</Th>
-            <Th className="w-20 text-right">작업</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((u) => (
-            <Tr key={u.id}>
-              <Td>
-                <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-full bg-emerald-900 text-emerald-200 text-[12px] flex items-center justify-center font-semibold shrink-0">
-                    {(u.name ?? u.email).slice(0, 1)}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-white text-[13px]">{u.name}</p>
-                    <p className="text-[11px] text-gray-600">{u.email}</p>
-                  </div>
-                </div>
-              </Td>
-              <Td>
-                {u.role === "ADMIN" ? (
-                  <Badge tone="gold">ADMIN</Badge>
-                ) : (
-                  <select
-                    defaultValue={u.role}
-                    className="bg-[#12141c] border border-border rounded-lg px-2.5 py-1.5 text-[12px] text-ink"
-                  >
-                    <option value="USER">USER</option>
-                    <option value="ADMIN">ADMIN</option>
-                  </select>
-                )}
-              </Td>
-              <Td className="text-[11px] text-gray-500 tabular-nums">
-                {formatDate(u.createdAt)}
-              </Td>
-              <Td className="text-right tabular-nums text-gray-400">{u.commentCount}</Td>
-              <Td>
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    disabled={u.role === "ADMIN"}
-                    className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-cardHover transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                    aria-label="삭제"
-                  >
-                    <TrashIcon size={15} />
-                  </button>
-                </div>
-              </Td>
+      <Card className="mb-6 flex items-start gap-3">
+        <AlertIcon size={16} className="mt-0.5 shrink-0 text-yellow-500" />
+        <div className="text-[12.5px] leading-relaxed text-muted">
+          <p>
+            삭제는 <strong className="text-white">되돌릴 수 없습니다.</strong> 로그인 수단과 개인
+            포트폴리오가 함께 지워지고, 작성한 댓글은 남되 작성자 표시만 사라집니다.
+          </p>
+          <p className="mt-2">
+            ⚠ <strong className="text-white">자기 자신</strong>과{" "}
+            <strong className="text-white">마지막 관리자</strong>는 지울 수 없습니다. 지우는 순간
+            관리 화면을 다시 열 방법이 없어지기 때문입니다. 관리자 계정은 서버{" "}
+            <code className="text-gold-400">.env</code>의 값으로 시드 시 다시 만들어집니다.
+          </p>
+        </div>
+      </Card>
+
+      <Card padding="p-0">
+        <Table>
+          <caption className="sr-only">가입 계정 목록</caption>
+          <thead>
+            <Tr>
+              <Th>계정</Th>
+              <Th className="w-24">권한</Th>
+              <Th className="w-24 text-right">댓글</Th>
+              <Th className="w-28">가입</Th>
+              <Th className="w-64 text-right">관리</Th>
             </Tr>
-          ))}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {users.map((user) => {
+              const decision = decideUserDelete({
+                target: { id: user.id, role: user.role, email: user.email },
+                currentUserId: me.id,
+                adminCount,
+              });
+
+              return (
+                <Tr key={user.id}>
+                  <Td className="text-white">
+                    <span className="block truncate">{user.name ?? "(이름 없음)"}</span>
+                    <span className="mt-0.5 block text-[11px] text-gray-600">{user.email}</span>
+                  </Td>
+                  <Td>
+                    {user.role === "ADMIN" ? (
+                      <Badge tone="gold">ADMIN</Badge>
+                    ) : (
+                      <Badge tone="neutral">USER</Badge>
+                    )}
+                  </Td>
+                  <Td className="text-right tabular-nums text-muted">{user.commentCount}</Td>
+                  <Td className="whitespace-nowrap tabular-nums text-muted">
+                    {formatDate(user.createdAt)}
+                  </Td>
+                  <Td>
+                    <div className="flex justify-end">
+                      <DeleteUserButton
+                        id={user.id}
+                        email={user.email}
+                        sideEffects={deleteSideEffects(user.commentCount)}
+                        disabledReason={decision.allowed ? undefined : decision.reason}
+                      />
+                    </div>
+                  </Td>
+                </Tr>
+              );
+            })}
+          </tbody>
+        </Table>
+
+        {users.length === 0 && (
+          <p className="px-5 pb-5 text-[13px] text-muted">계정이 없습니다.</p>
+        )}
+      </Card>
     </AdminShell>
   );
 }

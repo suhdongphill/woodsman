@@ -498,3 +498,24 @@ model BubbleTriggerState {
   asOf       DateTime?
   updatedAt  DateTime @updatedAt
 }
+
+/// 페이지 조회 집계.
+///
+/// ⚠ **(경로, 날짜, 합계)만** 쌓는다. 쿠키·IP·UA·리퍼러를 저장하지 않는다
+///    (`/privacy`의 "회원정보를 수집하지 않는다"와 같은 선, OutboundClick과 같은 규칙).
+///    개인을 구분하지 않으므로 **방문자 수(UV)가 아니라 조회수(PV)**다. 화면에도 그렇게 적는다.
+model PageView {
+  id String @id @default(cuid())
+
+  /// 정규화된 경로 (쿼리스트링 제거 — src/lib/analytics.ts)
+  path String
+  /// 집계 날짜 (KST 기준 YYYY-MM-DD)
+  date String
+  count Int @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([path, date])
+  @@index([date])
+  @@index([path])
+}

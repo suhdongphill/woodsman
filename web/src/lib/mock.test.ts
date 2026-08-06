@@ -22,6 +22,7 @@ describe("콘텐츠도 목업에서 내려왔다", () => {
   it("⚠ 글 목업을 다시 export하지 않는다 — 화면이 이걸 읽으면 편집이 무효가 된다", () => {
     // 2026-08-06: Post는 D1로 옮겼다(features/posts/repository.ts).
     expect("posts" in mock).toBe(false);
+    expect("users" in mock).toBe(false);
     expect("allPosts" in mock).toBe(false);
     expect("getPostBySlug" in mock).toBe(false);
   });

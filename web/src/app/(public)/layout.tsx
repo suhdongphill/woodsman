@@ -1,4 +1,5 @@
 import { BetaBanner } from "@/components/layout/BetaBanner";
+import { ViewBeacon } from "@/components/analytics/ViewBeacon";
 import { TopNav } from "@/components/layout/TopNav";
 import { Footer } from "@/components/layout/Footer";
 import { currentUser } from "@/lib/session";
@@ -19,6 +20,8 @@ export default async function PublicLayout({ children }: { children: React.React
       />
       <main className="flex-1">{children}</main>
       <Footer showCommunity={showCommunityNav(policy)} />
+      {/* 조회 집계 — 쿠키·IP 없이 (경로, 날짜, 합계)만 센다 */}
+      <ViewBeacon />
     </div>
   );
 }
