@@ -56,9 +56,14 @@
 | `robots.txt`에 AI 크롤러 명시 허용 | GPTBot·ClaudeBot·PerplexityBot·Google-Extended를 **명시적으로 허용**(기본 차단이 아님을 밝힌다) |
 | RSS/Atom 피드 | 글 발행을 기계가 구독. 지금은 없다 |
 
-⚠ 결정 필요: **Google-Extended(제미나이 학습) 허용 여부**. 학습 허용은 인용 가능성을 높이지만
-콘텐츠가 모델에 흡수된다. 나는 **허용**을 권한다 — 우리는 최신 수치가 강점이라 학습보다
-실시간 인용이 중요하고, 차단하면 AI 개요에서 사라진다.
+✅ **결정됨(2026-08-06): Google-Extended 허용.**
+학습 흡수보다 인용 노출이 이득이라는 판단. 차단하면 AI 개요에서 아예 사라진다.
+같은 근거로 GPTBot·ClaudeBot·Applebot-Extended(학습)와 OAI-SearchBot·Claude-SearchBot·
+PerplexityBot(답변 인용)도 함께 열었다. ⚠ 여는 것은 **공개 화면뿐** — `/admin`·`/api`는 그대로 막는다.
+정책은 `src/lib/ai-crawlers.ts` 한 곳에 있고 테스트가 지킨다.
+
+**1단계는 착수·완료(2026-08-06)**: `robots.txt` 크롤러 명시 + `/llms.txt`.
+`/api/macro.json` 공개 엔드포인트와 RSS는 아직 — 2단계와 함께.
 
 ### 2단계. 인용하기 좋은 문장 구조 (하루)
 
@@ -103,7 +108,7 @@ AI는 "누가 썼는지 모르는 글"을 인용하지 않는다.
 
 ## 3. 내일 첫 작업 순서
 
-1. `robots.txt` AI 크롤러 정책 + `/llms.txt` (30분)
+~~1. `robots.txt` AI 크롤러 정책 + `/llms.txt`~~ ✅ 2026-08-06 완료
 2. `classifyAgent` + `AgentVisit` 집계 — **먼저 재야 나중에 효과를 안다** (2시간)
 3. 지표 "한 문장 요약" 생성기(`lib/macro/sentence.ts`, 순수·테스트) (2시간)
 4. 지표 앵커 링크 + 질문형 h2 (1시간)
