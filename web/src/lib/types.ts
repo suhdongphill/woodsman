@@ -83,6 +83,8 @@ export interface Comment {
   id: string;
   postId: string;
   postTitle?: string;
+  /** 관리자 목록에서 원문으로 건너뛰기 위한 값 */
+  postSlug?: string;
   userId?: string;
   authorName?: string;
   body: string;

@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { getSitePolicy } from "@/lib/site-settings";
+import { getSiteFlags, getSitePolicy } from "@/lib/site-settings";
 import { Chip } from "@/components/ui/Badge";
 import { BoardRow } from "@/components/ui/BoardRow";
 import { EmptyState } from "@/components/ui/Card";
 import { SearchIcon, MessageIcon, LockIcon } from "@/components/icons";
-import { siteConfig } from "@/lib/mock";
 import { loadPublishedPosts } from "@/features/posts/repository";
 
 export const metadata: Metadata = {
@@ -31,7 +30,7 @@ export default async function BoardPage() {
   const policy = await getSitePolicy();
   if (!policy.communityEnabled) notFound();
 
-  const posts = await loadPublishedPosts(100);
+  const [flags, posts] = await Promise.all([getSiteFlags(), loadPublishedPosts(100)]);
   const notices = posts.filter((p) => p.type === "NOTICE");
   const list = posts.filter((p) => p.type !== "NOTICE");
 
@@ -74,7 +73,7 @@ export default async function BoardPage() {
           <span className="flex items-center gap-1">
             <LockIcon size={12} /> 댓글 잠금
           </span>
-          {!siteConfig.commentsGloballyEnabled && (
+          {!flags.commentsGloballyEnabled && (
             <span className="text-yellow-500">현재 사이트 전체 댓글이 꺼져 있습니다</span>
           )}
         </div>

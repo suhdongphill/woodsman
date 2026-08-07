@@ -7,26 +7,15 @@ import type {
   AccountSnapshot,
   AiConfig,
   AiProvider,
-  Comment,
   Feed,
   JournalEntry,
-  SiteConfig,
   StockSummary,
 } from "./types";
 
-/* ─────────────── 사이트 설정 ─────────────── */
-export const siteConfig: SiteConfig = {
-  // 운영자 1인 콘텐츠 사이트 — 가입·커뮤니티는 닫혀 있다(src/lib/site-policy.ts).
-  signupEnabled: false,
-  communityEnabled: false,
-  commentsGloballyEnabled: true,
-  requireLoginToComment: true,
-  moderationOn: false,
-  bannedWords: "욕설,비방,광고",
-  heroTitle: "원칙대로 심고, 기다리고, 불린다",
-  heroSubtitle:
-    "성장·인컴·방어로 나눈 계좌를 그대로 공개합니다. 매달 얼마를 넣었고 지금 얼마가 되었는지, 그 사이에 무엇을 사고팔았는지까지 기록으로 남깁니다.",
-};
+/* 사이트 설정 목업은 삭제했다(2026-08-07).
+   화면이 이걸 읽는 동안 `/admin/comments`의 토글 다섯 개가 **켜도 저장되지 않았다** —
+   관리자가 "커뮤니티를 열었다"고 잘못 믿는 것이 이 버그의 실제 값이었다.
+   지금은 `lib/site-settings.ts`의 `getSiteFlags()`가 D1을 읽는다. ⚠ 되살리지 말 것. */
 
 /* ─────────────── 계좌 스냅샷 (원금 대비 평가액) ─────────────── */
 /**
@@ -137,73 +126,10 @@ export const journalEntries: JournalEntry[] = [
    지금은 `features/posts/repository.ts`가 D1을 읽고, 시드는 `lib/seed-data.ts`에 있다.
    ⚠ 목업을 되살리지 말 것. */
 
-/* ─────────────── 댓글 ─────────────── */
-export const comments: Comment[] = [
-  {
-    id: "c_1",
-    postId: "p_1",
-    postTitle: "성장·인컴·방어: 포트폴리오를 세 개의 통으로 나누는 이유",
-    authorName: "산책자",
-    body: "기능별로 나누는 관점이 신선하네요. 성장 비중을 '버틸 수 있는 만큼'으로 정한다는 말이 인상 깊습니다.",
-    status: "VISIBLE",
-    reported: false,
-    createdAt: "2026-07-26T14:12:00+09:00",
-  },
-  {
-    id: "c_2",
-    postId: "p_1",
-    postTitle: "성장·인컴·방어: 포트폴리오를 세 개의 통으로 나누는 이유",
-    authorName: "장기투자",
-    body: "방어 버킷 20%는 지금 시장에서 좀 높지 않나요? 현금 비중 기준이 궁금합니다.",
-    status: "VISIBLE",
-    reported: false,
-    createdAt: "2026-07-27T09:31:00+09:00",
-  },
-  {
-    id: "c_3",
-    postId: "p_2",
-    postTitle: "TSMC 2nm 양산, 이번 사이클은 무엇이 다른가",
-    authorName: "반도체러버",
-    body: "고객 집중도 리스크 부분 더 자세히 다뤄주시면 좋겠습니다!",
-    status: "VISIBLE",
-    reported: false,
-    createdAt: "2026-07-23T08:05:00+09:00",
-  },
-  {
-    id: "c_4",
-    postId: "p_5",
-    postTitle: "엔비디아 실적 전 체크리스트 5가지",
-    authorName: "익명",
-    body: "○○종목 지금 사면 3배 갑니다 문의주세요",
-    status: "PENDING",
-    reported: true,
-    createdAt: "2026-07-29T22:47:00+09:00",
-  },
-  {
-    id: "c_5",
-    postId: "p_5",
-    postTitle: "엔비디아 실적 전 체크리스트 5가지",
-    authorName: "데이터센터",
-    body: "총마진 방향성 체크 포인트 좋네요. 다음 분기에 적용해보겠습니다.",
-    status: "VISIBLE",
-    reported: false,
-    createdAt: "2026-07-09T10:22:00+09:00",
-  },
-  {
-    id: "c_6",
-    postId: "p_8",
-    postTitle: "리밸런싱은 달력으로, 매도는 논리로",
-    authorName: "청개구리",
-    body: "(숨김 처리된 댓글)",
-    status: "HIDDEN",
-    reported: true,
-    createdAt: "2026-06-01T19:03:00+09:00",
-  },
-];
-
-export function getCommentsByPostId(postId: string) {
-  return comments.filter((c) => c.postId === postId && c.status === "VISIBLE");
-}
+/* 댓글 목업은 삭제했다(2026-08-07).
+   화면이 이걸 읽는 동안 /admin/comments의 승인·숨김·삭제 버튼이 아무 데도
+   연결돼 있지 않았다 — 숨겼다고 믿은 댓글이 계속 노출됐다.
+   지금은 `features/comments/repository.ts`가 D1을 읽는다. ⚠ 되살리지 말 것. */
 
 /* ─────────────── 종목 ─────────────── */
 export const stocks: StockSummary[] = [
@@ -453,9 +379,6 @@ export const feedItems = [
 export const adminStats = {
   visitorsToday: 1284,
   visitorsDelta: 12.4,
-  newComments: 6,
-  pendingComments: comments.filter((c) => c.status === "PENDING").length,
-  reportedComments: comments.filter((c) => c.reported).length,
   publishedPosts: 0,
   draftPosts: 0,
   aiTokensUsed: aiConfig.tokensUsedThisMonth,

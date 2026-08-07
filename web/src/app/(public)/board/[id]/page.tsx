@@ -6,9 +6,10 @@ import { CommentSection } from "@/features/comments/ui/CommentSection";
 import { BoardRow } from "@/components/ui/BoardRow";
 import { ClockIcon, EyeIcon, ChevronRightIcon, ExternalIcon } from "@/components/icons";
 import { formatDate } from "@/lib/format";
-import { getCommentsByPostId, siteConfig } from "@/lib/mock";
 import { findPost, loadPublishedPosts } from "@/features/posts/repository";
-import { getSitePolicy } from "@/lib/site-settings";
+import { loadVisibleComments } from "@/features/comments/repository";
+import { getSiteFlags, getSitePolicy } from "@/lib/site-settings";
+import { currentUser } from "@/lib/session";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -34,8 +35,13 @@ export default async function BoardDetailPage({ params }: Props) {
   const post = await findPost(id);
   if (!post || !post.published) notFound();
 
-  const comments = getCommentsByPostId(post.id);
-  const others = (await loadPublishedPosts(20)).filter((p) => p.id !== post.id).slice(0, 5);
+  const [flags, comments, viewer, published] = await Promise.all([
+    getSiteFlags(),
+    loadVisibleComments(post.id),
+    currentUser(),
+    loadPublishedPosts(20),
+  ]);
+  const others = published.filter((p) => p.id !== post.id).slice(0, 5);
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-10">
@@ -91,7 +97,8 @@ export default async function BoardDetailPage({ params }: Props) {
       <CommentSection
         post={post}
         comments={comments}
-        config={siteConfig}
+        policy={flags}
+        isLoggedIn={!!viewer}
         open={policy.commentsEnabled}
         showAuthLinks={policy.signupEnabled}
       />

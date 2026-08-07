@@ -5,7 +5,6 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { siteConfig } from "./mock";
 import { seedSiteConfig } from "./seed-data";
 import {
   CLOSED_SITE_POLICY,
@@ -104,9 +103,8 @@ describe("기본 배포 상태", () => {
     expect(seedSiteConfig.communityEnabled).toBe(false);
   });
 
-  it("목업 설정도 같은 상태를 반영한다", () => {
-    expect(siteConfig.signupEnabled).toBe(false);
-    expect(siteConfig.communityEnabled).toBe(false);
-    expect(resolveSitePolicy(siteConfig)).toEqual(CLOSED_SITE_POLICY);
+  it("시드 설정을 그대로 통과시켜도 닫힌 정책이 나온다", () => {
+    // 목업 설정(mock.siteConfig)은 2026-08-07에 삭제했다. 이제 시드가 유일한 출발점이다.
+    expect(resolveSitePolicy(seedSiteConfig)).toEqual(CLOSED_SITE_POLICY);
   });
 });

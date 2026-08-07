@@ -8,8 +8,14 @@
  *    "커뮤니티 닫힘"과 똑같아서 배포가 멀쩡해 보였다. 실패는 로그로 남아야 구분된다.
  */
 import { cache } from "react";
-import { queryOne, toBool } from "./d1";
-import { CLOSED_SITE_POLICY, resolveSitePolicy, type SitePolicy } from "./site-policy";
+import { queryOne } from "./d1";
+import {
+  CLOSED_SITE_FLAGS,
+  resolveSiteFlags,
+  resolveSitePolicy,
+  type SiteFlags,
+  type SitePolicy,
+} from "./site-policy";
 import {
   DEFAULT_SITE_BASICS,
   resolveSiteBasics,
@@ -17,31 +23,31 @@ import {
   type SiteBasicsRow,
 } from "./site-basics";
 
-type SiteConfigRow = {
-  signupEnabled: number;
-  communityEnabled: number;
-  commentsGloballyEnabled: number;
-};
-
-/** 한 요청 안에서는 한 번만 조회한다. */
-export const getSitePolicy = cache(async (): Promise<SitePolicy> => {
+/**
+ * 스위치의 **원래 값**. 관리자 화면의 토글은 이걸 그려야 한다.
+ * 한 요청 안에서는 한 번만 조회한다.
+ */
+export const getSiteFlags = cache(async (): Promise<SiteFlags> => {
   try {
-    const row = await queryOne<SiteConfigRow>(
-      `SELECT signupEnabled, communityEnabled, commentsGloballyEnabled
+    const row = await queryOne<Record<string, unknown>>(
+      `SELECT signupEnabled, communityEnabled, commentsGloballyEnabled,
+              requireLoginToComment, moderationOn, bannedWords
          FROM SiteConfig WHERE id = ?`,
       ["singleton"],
     );
-    if (!row) return CLOSED_SITE_POLICY;
-
-    return resolveSitePolicy({
-      signupEnabled: toBool(row.signupEnabled),
-      communityEnabled: toBool(row.communityEnabled),
-      commentsGloballyEnabled: toBool(row.commentsGloballyEnabled),
-    });
+    return resolveSiteFlags(row);
   } catch (error) {
     console.error("[site-settings] SiteConfig 조회 실패 — 닫힌 정책으로 동작합니다.", error);
-    return CLOSED_SITE_POLICY;
+    return CLOSED_SITE_FLAGS;
   }
+});
+
+/**
+ * 스위치를 조합한 **결론**(무엇을 열어 줄지). 공개 화면은 이걸 본다.
+ * 원래 값 조회를 재사용하므로 한 요청에서 SiteConfig를 두 번 읽지 않는다.
+ */
+export const getSitePolicy = cache(async (): Promise<SitePolicy> => {
+  return resolveSitePolicy(await getSiteFlags());
 });
 
 /**

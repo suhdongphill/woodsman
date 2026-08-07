@@ -9,7 +9,7 @@
  *    저장하지 않고 되돌린다 — 통과 못 한 값을 그냥 넣으면 오픈 리다이렉트가 된다.
  */
 import { revalidatePath } from "next/cache";
-import { saveSiteBasics } from "./repository";
+import { saveSiteBasics, saveSiteFlags } from "./repository";
 import { emptySiteFormState, type SiteFormState } from "./form-state";
 import { sanitizeEmail, sanitizeRate, sanitizeUrl } from "@/lib/site-basics";
 import { normalizeDataMode } from "@/lib/data-mode";
@@ -18,6 +18,12 @@ import { requireAdmin } from "@/lib/session";
 function text(formData: FormData, key: string): string {
   const v = formData.get(key);
   return typeof v === "string" ? v.trim() : "";
+}
+
+/** 토글은 켜졌을 때만 값이 온다. 안 온 것은 꺼진 것이다. */
+function switched(formData: FormData, key: string): boolean {
+  const v = formData.get(key);
+  return v === "on" || v === "true";
 }
 
 /** 빈 칸은 null로 저장해 코드 기본값으로 되돌린다. */
@@ -75,6 +81,44 @@ export async function saveSiteBasicsAction(
   for (const path of ["/", "/portfolio", "/journal", "/about", "/privacy", "/disclaimer", "/admin/settings"]) {
     revalidatePath(path);
   }
+
+  return { ...emptySiteFormState, savedAt: new Date().toISOString() };
+}
+
+/**
+ * 사이트 개방·댓글 정책 스위치 저장.
+ *
+ * 전에는 이 토글들이 `defaultOn`만 받는 목업이라 **켜도 아무 일도 일어나지 않았다.**
+ * 관리자가 "커뮤니티를 열었다"고 믿고 넘어가는 것이 이 버그의 실제 값이었다.
+ *
+ * ⚠ 가입을 여는 순간 `/privacy`가 형식 미비가 된다(지금 "회원정보를 수집하지 않는다"고
+ *   적혀 있다). 화면에 경고를 띄우는 것으로 끝내지 않고 여기 주석에도 남긴다.
+ */
+export async function saveSiteFlagsAction(
+  _prev: SiteFormState,
+  formData: FormData,
+): Promise<SiteFormState> {
+  await requireAdmin("/admin/comments");
+
+  try {
+    await saveSiteFlags({
+      signupEnabled: switched(formData, "signupEnabled"),
+      communityEnabled: switched(formData, "communityEnabled"),
+      commentsGloballyEnabled: switched(formData, "commentsGloballyEnabled"),
+      requireLoginToComment: switched(formData, "requireLoginToComment"),
+      moderationOn: switched(formData, "moderationOn"),
+      bannedWords: text(formData, "bannedWords"),
+    });
+  } catch (error) {
+    console.error("[site] 정책 스위치 저장 실패", error);
+    return { error: "저장하지 못했습니다." };
+  }
+
+  // 스위치는 내비게이션·댓글·가입 화면을 한꺼번에 바꾼다.
+  for (const path of ["/", "/admin/comments", "/board", "/register", "/login"]) {
+    revalidatePath(path);
+  }
+  revalidatePath("/insights/[slug]", "page");
 
   return { ...emptySiteFormState, savedAt: new Date().toISOString() };
 }

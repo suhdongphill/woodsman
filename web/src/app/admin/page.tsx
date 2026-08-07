@@ -6,7 +6,11 @@ import { Badge } from "@/components/ui/Badge";
 import { ChevronRightIcon, AlertIcon } from "@/components/icons";
 import { OutboundStats } from "@/features/site/ui/OutboundStats";
 import { cx, formatDateTime } from "@/lib/format";
-import { adminStats, comments, aiProviders } from "@/lib/mock";
+import { adminStats, aiProviders } from "@/lib/mock";
+import {
+  loadCommentCounts,
+  loadCommentsNeedingAttention,
+} from "@/features/comments/repository";
 import { countPostsByStatus, loadLatestPostTitle } from "@/features/posts/repository";
 import { loadViewStatsSafe } from "@/features/analytics/service";
 import { ViewStatsCard } from "@/features/analytics/ui/ViewStats";
@@ -24,20 +28,21 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
   // ⚠ 개수를 세려고 목록을 통째로 읽지 않는다 — 글은 본문까지, 사용자는 댓글 수까지 딸려 온다.
-  const [postCounts, latestTitle, views, memberCount] = await Promise.all([
+  const [postCounts, latestTitle, views, memberCount, commentCounts, pending] = await Promise.all([
     countPostsByStatus(),
     loadLatestPostTitle(),
     loadViewStatsSafe(),
     countMembers(),
+    loadCommentCounts(),
+    loadCommentsNeedingAttention(),
   ]);
-  const pending = comments.filter((c) => c.status === "PENDING" || c.reported);
   const tokenPct = (adminStats.aiTokensUsed / adminStats.aiTokenCap) * 100;
 
   return (
     <AdminShell>
       <AdminPageHeader
         title="대시보드"
-        description="사이트 활동 요약입니다. (방문·댓글·AI는 Phase 0 목업, 티스토리 유입은 실데이터)"
+        description="사이트 활동 요약입니다. (조회·댓글·티스토리 유입은 실데이터, AI 사용량은 아직 목업)"
       />
 
       {/* 1순위 지표를 맨 위에 둔다 — 이 사이트의 목적이 블로그 트래픽 유도다. */}
@@ -58,10 +63,10 @@ export default async function AdminDashboardPage() {
           tone={views && views.weekChangePct !== undefined && views.weekChangePct >= 0 ? "up" : "default"}
         />
         <StatTile
-          label="새 댓글"
-          value={`${adminStats.newComments}건`}
-          sub={`승인 대기 ${adminStats.pendingComments} · 신고 ${adminStats.reportedComments}`}
-          tone={adminStats.pendingComments > 0 ? "gold" : "default"}
+          label="댓글"
+          value={`${commentCounts.all}건`}
+          sub={`승인 대기 ${commentCounts.pending} · 신고 ${commentCounts.reported}`}
+          tone={commentCounts.pending > 0 || commentCounts.reported > 0 ? "gold" : "default"}
         />
         <StatTile
           label="발행 글"
@@ -160,7 +165,7 @@ export default async function AdminDashboardPage() {
                     <Badge tone={c.status === "PENDING" ? "warn" : "danger"}>
                       {c.status === "PENDING" ? "승인대기" : "신고됨"}
                     </Badge>
-                    <span className="text-[12px] text-white">{c.authorName}</span>
+                    <span className="text-[12px] text-white">{c.authorName ?? "익명"}</span>
                     <span className="text-[11px] text-gray-600 ml-auto">
                       {formatDateTime(c.createdAt)}
                     </span>

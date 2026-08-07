@@ -35,6 +35,52 @@ export const CLOSED_SITE_POLICY: SitePolicy = {
   commentsEnabled: false,
 };
 
+/**
+ * SiteConfig의 스위치 **원래 값**.
+ *
+ * `SitePolicy`(아래)는 이 값들을 조합해 나온 *결론*이라 관리자 화면의 토글에 쓸 수 없다.
+ * 커뮤니티가 닫혀 있으면 `commentsEnabled`가 무조건 false로 나오는데,
+ * 그걸 토글에 그리면 관리자가 켜 둔 스위치가 꺼진 것처럼 보인다.
+ */
+export type SiteFlags = {
+  signupEnabled: boolean;
+  communityEnabled: boolean;
+  commentsGloballyEnabled: boolean;
+  requireLoginToComment: boolean;
+  moderationOn: boolean;
+  bannedWords: string;
+};
+
+/** 못 읽었을 때의 스위치 — 열어 두는 쪽으로 기울지 않는다. */
+export const CLOSED_SITE_FLAGS: SiteFlags = {
+  signupEnabled: false,
+  communityEnabled: false,
+  commentsGloballyEnabled: false,
+  requireLoginToComment: true,
+  moderationOn: true,
+  bannedWords: "",
+};
+
+/** DB 행(0/1·null 섞임)을 스위치로. 값이 없으면 닫힌 기본값을 쓴다. */
+export function resolveSiteFlags(row: Partial<Record<keyof SiteFlags, unknown>> | null): SiteFlags {
+  if (!row) return CLOSED_SITE_FLAGS;
+
+  const bool = (value: unknown, fallback: boolean) =>
+    value == null ? fallback : value === 1 || value === true || value === "1";
+
+  return {
+    signupEnabled: bool(row.signupEnabled, CLOSED_SITE_FLAGS.signupEnabled),
+    communityEnabled: bool(row.communityEnabled, CLOSED_SITE_FLAGS.communityEnabled),
+    commentsGloballyEnabled: bool(
+      row.commentsGloballyEnabled,
+      CLOSED_SITE_FLAGS.commentsGloballyEnabled,
+    ),
+    requireLoginToComment: bool(row.requireLoginToComment, CLOSED_SITE_FLAGS.requireLoginToComment),
+    moderationOn: bool(row.moderationOn, CLOSED_SITE_FLAGS.moderationOn),
+    bannedWords: typeof row.bannedWords === "string" ? row.bannedWords : "",
+  };
+}
+
 export type SitePolicy = {
   signupEnabled: boolean;
   communityEnabled: boolean;

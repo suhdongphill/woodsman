@@ -10,9 +10,11 @@ import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { outboundPostHref } from "@/lib/outbound";
 import { ClockIcon, EyeIcon, ExternalIcon, TagIcon, ChevronRightIcon } from "@/components/icons";
 import { formatDate } from "@/lib/format";
-import { getCommentsByPostId, getStock, siteConfig } from "@/lib/mock";
+import { getStock } from "@/lib/mock";
 import { findPostBySlug, loadPublishedPosts } from "@/features/posts/repository";
-import { getSitePolicy } from "@/lib/site-settings";
+import { loadVisibleComments } from "@/features/comments/repository";
+import { getSiteFlags, getSitePolicy } from "@/lib/site-settings";
+import { currentUser } from "@/lib/session";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -49,8 +51,13 @@ export default async function InsightDetailPage({ params }: Props) {
   const post = await findPostBySlug(slug);
   if (!post || !post.published) notFound();
 
-  const [policy, all] = await Promise.all([getSitePolicy(), loadPublishedPosts(50)]);
-  const comments = getCommentsByPostId(post.id);
+  const [policy, flags, all, comments, viewer] = await Promise.all([
+    getSitePolicy(),
+    getSiteFlags(),
+    loadPublishedPosts(50),
+    loadVisibleComments(post.id),
+    currentUser(),
+  ]);
   const related = all.filter((p) => p.id !== post.id && p.category === post.category).slice(0, 3);
   const stock = post.ticker ? getStock(post.ticker) : undefined;
   const tags = post.tags?.split(",").filter(Boolean) ?? [];
@@ -152,7 +159,8 @@ export default async function InsightDetailPage({ params }: Props) {
       <CommentSection
         post={post}
         comments={comments}
-        config={siteConfig}
+        policy={flags}
+        isLoggedIn={!!viewer}
         open={policy.commentsEnabled}
         showAuthLinks={policy.signupEnabled}
       />

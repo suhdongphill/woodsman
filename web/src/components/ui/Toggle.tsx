@@ -3,17 +3,26 @@
 import { useId, useState } from "react";
 import { cx } from "@/lib/format";
 
-/** 목업 토글 — Phase 3에서 서버 액션과 연결된다. */
+/**
+ * 켜고 끄는 스위치.
+ *
+ * ⚠ `name`을 주면 **폼과 함께 제출된다.** 주지 않으면 화면에서만 움직이는 스위치다 —
+ *   `/admin/comments`의 토글이 오래 그랬고, 켜도 아무 일이 없어 관리자가
+ *   "커뮤니티를 열었다"고 잘못 믿었다. 저장이 필요한 자리에는 반드시 `name`을 준다.
+ */
 export function Toggle({
   label,
   description,
   defaultOn = false,
   size = "md",
+  name,
 }: {
   label?: string;
   description?: string;
   defaultOn?: boolean;
   size?: "sm" | "md";
+  /** 폼으로 제출할 필드명. 켜져 있을 때만 `on`이 실린다. */
+  name?: string;
 }) {
   const [on, setOn] = useState(defaultOn);
   const id = useId();
@@ -44,7 +53,17 @@ export function Toggle({
     </button>
   );
 
-  if (!label) return button;
+  // 꺼진 값은 아예 싣지 않는다 — 체크박스와 같은 규칙이라 서버가 헷갈리지 않는다.
+  const control = name ? (
+    <>
+      {button}
+      {on && <input type="hidden" name={name} value="on" />}
+    </>
+  ) : (
+    button
+  );
+
+  if (!label) return control;
 
   return (
     <div className="flex items-start justify-between gap-4 py-3.5">
@@ -56,7 +75,7 @@ export function Toggle({
           <p className="text-[11.5px] text-muted mt-1 leading-relaxed">{description}</p>
         )}
       </div>
-      {button}
+      <span className="shrink-0">{control}</span>
     </div>
   );
 }

@@ -6,7 +6,7 @@
  * 방문자에게 거짓말을 하는 셈이므로 여기서 잡는다.
  */
 import { describe, expect, it } from "vitest";
-import { siteConfig } from "./mock";
+import { seedSiteConfig } from "./seed-data";
 import { resolveSitePolicy } from "./site-policy";
 import {
   BETA_NOTICE,
@@ -70,7 +70,7 @@ describe("로드맵", () => {
 });
 
 describe("말과 동작의 일치", () => {
-  const policy = resolveSitePolicy(siteConfig);
+  const policy = resolveSitePolicy(seedSiteConfig);
 
   it("커뮤니티가 '예정'이면 실제 스위치도 닫혀 있어야 한다", () => {
     const community = ROADMAP.find((p) => p.id === "community")!;
