@@ -117,6 +117,10 @@ npm run check    # typecheck → lint → test → build
 
 ## 참고 문서
 
+- [`../docs/운영지침.md`](../docs/운영지침.md) — **판단 기준.** 설계사상(모든 것은 admin이
+  유연하게 운영한다)과 단계별 개방 계획. ⚠ 지시가 이 문서와 어긋나면 **먼저 말하고**
+  진행 여부는 사람이 정한다. 진행했으면 문서를 같이 고친다.
 - [`README.md`](./README.md) — 구조·실행·운영 모드
 - [`CHANGELOG.md`](./CHANGELOG.md) — 결정의 이유
+- `점검해줘` — 운영지침·보안·화면을 병렬로 대조한다(`.claude/skills/site-inspect`)
 - 옵시디언 볼트 `05_Methodology/Woodsman 사이트 운영방법.md` — 배포·운영 절차
