@@ -83,7 +83,7 @@ export function Footer({ showCommunity = false }: { showCommunity?: boolean }) {
         <div className="mt-8 pt-6 border-t border-border/70 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
           <p className="text-[11px] text-gray-600">© 2026 Woodsman. All rights reserved.</p>
           <p className="text-[11px] text-gray-600">
-            운영 · 서동필 · {CONTACT_EMAIL} ·{" "}
+            운영 · Woodsman · {CONTACT_EMAIL} ·{" "}
             <a
               href={outboundHref("tistory")}
               target="_blank"

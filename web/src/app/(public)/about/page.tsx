@@ -45,7 +45,7 @@ export default function AboutPage() {
 
       <PolicySection title="한 사람의 계좌를 그대로 공개합니다">
         <p>
-          Woodsman은 운영자(서동필)가 자신의 투자 계좌를 공개하고, 매달 얼마를 넣었고 지금 얼마가
+          이 사이트는 운영자 Woodsman이 자신의 투자 계좌를 공개하고, 매달 얼마를 넣었고 지금 얼마가
           되었는지를 기록하는 블로그입니다. 종목 추천을 하는 곳이 아니라,{" "}
           <strong className="text-white">원칙대로 한 투자가 실제로 어떤 결과를 내는지</strong>를
           긴 시간에 걸쳐 확인하는 곳입니다.
