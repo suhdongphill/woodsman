@@ -2,7 +2,7 @@ import Link from "next/link";
 import { LogoMark } from "@/components/brand/Logo";
 import { ExternalIcon } from "@/components/icons";
 import { outboundHref } from "@/lib/outbound";
-import { CONTACT_EMAIL } from "@/lib/site-links";
+import { getSiteBasics } from "@/lib/site-settings";
 
 const CONTENT_LINKS = [
   { href: "/portfolio", label: "대표 포트폴리오" },
@@ -18,7 +18,9 @@ const POLICY_LINKS = [
   { href: "/privacy", label: "개인정보 처리방침" },
 ];
 
-export function Footer({ showCommunity = false }: { showCommunity?: boolean }) {
+export async function Footer({ showCommunity = false }: { showCommunity?: boolean }) {
+  // 문의 메일은 /admin/settings에서 바꾼다. 코드 상수는 DB를 못 읽었을 때의 기본값일 뿐이다.
+  const { contactEmail } = await getSiteBasics();
   const contentLinks = showCommunity
     ? [...CONTENT_LINKS, { href: "/board", label: "커뮤니티" }]
     : CONTENT_LINKS;
@@ -83,7 +85,7 @@ export function Footer({ showCommunity = false }: { showCommunity?: boolean }) {
         <div className="mt-8 pt-6 border-t border-border/70 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
           <p className="text-[11px] text-gray-600">© 2026 Woodsman. All rights reserved.</p>
           <p className="text-[11px] text-gray-600">
-            운영 · Woodsman · {CONTACT_EMAIL} ·{" "}
+            운영 · Woodsman · {contactEmail} ·{" "}
             <a
               href={outboundHref("tistory")}
               target="_blank"

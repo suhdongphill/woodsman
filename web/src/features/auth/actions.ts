@@ -7,6 +7,8 @@
  *  - role은 절대 폼에서 받지 않는다. 가입은 항상 USER로 고정하고, ADMIN은 시드만 만든다.
  *  - 로그인 실패 사유를 세분화하지 않는다(계정 존재 여부 노출 방지).
  *  - 복귀 경로(next)는 같은 사이트 절대경로만 허용한다(오픈 리다이렉트 방지).
+ *  - ⚠ 가입 개방 여부를 **서버에서 다시 확인한다.** 화면에 폼이 없다는 것은 보호가 아니다
+ *    — 액션 엔드포인트는 화면과 무관하게 호출된다(2026-08-07 점검에서 잡혔다).
  */
 import { AuthError } from "next-auth";
 import { hash } from "bcryptjs";
@@ -15,6 +17,7 @@ import { signIn, signOut } from "@/lib/auth";
 import { safeNextPath } from "@/lib/access";
 import { emptyAuthFormState, type AuthFormState } from "./form-state";
 import { firstIssueMessage, loginSchema, registerSchema } from "./schema";
+import { getSitePolicy } from "@/lib/site-settings";
 
 function text(formData: FormData, key: string): string {
   const v = formData.get(key);
@@ -55,6 +58,14 @@ export async function registerAction(
   _prev: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  // ⚠ 화면(/register)이 이미 막지만 액션은 스스로 확인한다.
+  //    닫혀 있는데 계정이 생기면 /privacy의 "회원정보를 수집하지 않는다"가 거짓이 된다.
+  const policy = await getSitePolicy();
+  if (!policy.signupEnabled) {
+    console.error("[auth] 가입이 닫힌 상태에서 가입 시도가 들어왔다");
+    return { error: "현재 공개 회원가입을 받지 않습니다." };
+  }
+
   const parsed = registerSchema.safeParse({
     name: text(formData, "name"),
     email: text(formData, "email"),

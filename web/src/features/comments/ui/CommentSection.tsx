@@ -4,7 +4,7 @@ import { LockIcon, MessageIcon, AlertIcon } from "@/components/icons";
 import { formatDateTime } from "@/lib/format";
 import { canSubmitComment, type CommentPolicy } from "@/lib/comments";
 import type { Comment, Post } from "@/lib/types";
-import { CONTACT_EMAIL } from "@/lib/site-links";
+import { getSiteBasics } from "@/lib/site-settings";
 import { CommentForm } from "./CommentForm";
 import { reportCommentAction } from "../actions";
 
@@ -138,7 +138,8 @@ export function CommentSection({
 }
 
 /** 커뮤니티를 열기 전까지 보여 주는 안내 — 죽은 입력창을 남겨두지 않는다. */
-function CommentsClosedNotice() {
+async function CommentsClosedNotice() {
+  const { contactEmail } = await getSiteBasics();
   return (
     <section className="mt-12">
       <Card className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
@@ -147,7 +148,7 @@ function CommentsClosedNotice() {
           댓글은 아직 열지 않았습니다.
         </p>
         <p className="text-[12px] text-gray-500">
-          의견·반론은 <span className="text-gold-400">{CONTACT_EMAIL}</span>으로 보내주세요.
+          의견·반론은 <span className="text-gold-400">{contactEmail}</span>으로 보내주세요.
         </p>
       </Card>
     </section>

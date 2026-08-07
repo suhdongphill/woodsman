@@ -20,13 +20,37 @@
  */
 import { TISTORY_BLOG_URL, TISTORY_FEATURED_URL } from "./site-links";
 
-/** 허용된 아웃바운드 대상 */
+/**
+ * 허용된 아웃바운드 대상의 **기본값**(코드 상수).
+ *
+ * ⚠ 실제 목적지는 `/admin/settings`에서 바꾼다. 이 상수는 DB를 못 읽었을 때만 쓴다 —
+ *   2026-08-07 점검 전까지는 저장한 주소가 무시되고 이 값으로만 나갔다.
+ */
 export const OUTBOUND_TARGETS = {
   /** 티스토리 대표 글 */
   tistory: TISTORY_FEATURED_URL,
   /** 티스토리 블로그 대문 */
   "tistory-home": TISTORY_BLOG_URL,
 } as const;
+
+export type OutboundDestinations = Record<keyof typeof OUTBOUND_TARGETS, string>;
+
+/**
+ * 설정값에서 목적지 표를 만든다.
+ *
+ * ⚠ 여기 들어오는 주소는 이미 `site-basics.sanitizeUrl`을 통과한 값이다.
+ *   정화되지 않은 문자열을 넣으면 우리 도메인이 피싱 경유지가 된다 —
+ *   목적지를 확장할 때 반드시 이 경로를 지킨다.
+ */
+export function outboundDestinations(basics: {
+  tistoryFeaturedUrl: string;
+  tistoryBlogUrl: string;
+}): OutboundDestinations {
+  return {
+    tistory: basics.tistoryFeaturedUrl,
+    "tistory-home": basics.tistoryBlogUrl,
+  };
+}
 
 export type OutboundTarget = keyof typeof OUTBOUND_TARGETS;
 
@@ -46,8 +70,10 @@ export function isOutboundTarget(value: string): value is OutboundTarget {
 export function resolveOutbound(
   target: string,
   findTistoryUrl?: (slug: string) => string | null | undefined,
+  /** 관리자가 저장한 목적지. 넘기지 않으면 코드 기본값을 쓴다. */
+  destinations: OutboundDestinations = OUTBOUND_TARGETS,
 ): string | null {
-  if (isOutboundTarget(target)) return OUTBOUND_TARGETS[target];
+  if (isOutboundTarget(target)) return destinations[target];
 
   const postSlug = target.startsWith(POST_PREFIX) ? target.slice(POST_PREFIX.length) : null;
   if (postSlug && findTistoryUrl) return findTistoryUrl(postSlug) ?? null;

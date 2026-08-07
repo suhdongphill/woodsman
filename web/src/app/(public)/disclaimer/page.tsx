@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PolicyList, PolicyPage, PolicySection } from "@/components/layout/PolicyPage";
-import { CONTACT_EMAIL } from "@/lib/site-links";
+import { getSiteBasics } from "@/lib/site-settings";
+import { dataModeNotice } from "@/lib/data-mode";
 
 export const metadata: Metadata = {
   title: "투자 판단 책임 고지",
@@ -9,7 +10,14 @@ export const metadata: Metadata = {
     "Woodsman의 모든 콘텐츠는 정보 제공 목적이며 투자 권유나 자문이 아닙니다. 투자 판단과 그 결과의 책임은 투자자 본인에게 있습니다.",
 };
 
-export default function DisclaimerPage() {
+/**
+ * ⚠ 모의/실계좌 문구를 코드에 박지 않는다. 2026-08-07 점검에서, 화면은 "모의 투자"라고
+ *   표시하는데 이 고지는 "실제로 운용하는 계좌"라고 적혀 있는 모순이 잡혔다.
+ *   같은 사실을 두 곳에서 말하면 한쪽이 반드시 뒤처진다 — 설정 하나에서 읽는다.
+ */
+export default async function DisclaimerPage() {
+  const { dataMode, contactEmail } = await getSiteBasics();
+  const mode = dataModeNotice(dataMode);
   return (
     <PolicyPage
       eyebrow="DISCLAIMER"
@@ -52,8 +60,8 @@ export default function DisclaimerPage() {
               <Link href="/journal" className="text-gold-400 hover:text-gold-500">
                 투자일지
               </Link>
-              는 운영자가 실제로 운용하는 계좌를 기준으로 기록합니다. 손실 구간과 잘못된 판단도
-              지우지 않고 남깁니다.
+              는 <strong className="text-white">{mode.badge}</strong> 기록입니다. {mode.line} 손실
+              구간과 잘못된 판단도 지우지 않고 남깁니다.
             </>,
             "평가액·수익률은 기록 시점의 종가 기준이며, 세금·거래비용·환전 수수료가 모두 반영되지 않을 수 있습니다.",
             "환율이 개입되는 종목은 원화 환산 시점에 따라 수치가 달라질 수 있습니다.",
@@ -83,7 +91,7 @@ export default function DisclaimerPage() {
 
       <PolicySection title="6. 문의">
         <p>
-          내용의 오류 지적이나 정정 요청은 <span className="text-gold-400">{CONTACT_EMAIL}</span>
+          내용의 오류 지적이나 정정 요청은 <span className="text-gold-400">{contactEmail}</span>
           으로 보내주시면 확인 후 반영하겠습니다.
         </p>
       </PolicySection>

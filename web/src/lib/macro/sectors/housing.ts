@@ -24,7 +24,9 @@ export const sector: MacroSector = {
       group: "housing",
       source: "FRED",
       sourceId: "HOUST",
-      transform: "levelK",
+      // ⚠ FRED HOUST는 **이미 천호 단위**다(2026-06 = 1427 → 142.7만호).
+      //    levelK로 한 번 더 나누면 화면에 "1천호"로 나온다 — 2026-08-07 점검에서 잡혔다.
+      transform: "level",
       unit: "천호",
       decimals: 0,
       url: FRED("HOUST"),

@@ -6,7 +6,9 @@ import { Badge } from "@/components/ui/Badge";
 import { ChevronRightIcon, AlertIcon } from "@/components/icons";
 import { OutboundStats } from "@/features/site/ui/OutboundStats";
 import { cx, formatDateTime } from "@/lib/format";
-import { adminStats, aiProviders } from "@/lib/mock";
+import { loadAiConfig, loadProviderUsage } from "@/features/ai/repository";
+import { AI_PROVIDERS } from "@/lib/ai/catalog";
+import { hasEnvKey } from "@/lib/env";
 import {
   loadCommentCounts,
   loadCommentsNeedingAttention,
@@ -28,21 +30,39 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
   // ⚠ 개수를 세려고 목록을 통째로 읽지 않는다 — 글은 본문까지, 사용자는 댓글 수까지 딸려 온다.
-  const [postCounts, latestTitle, views, memberCount, commentCounts, pending] = await Promise.all([
+  const [postCounts, latestTitle, views, memberCount, commentCounts, pending, aiUsage, aiConfig] =
+    await Promise.all([
     countPostsByStatus(),
     loadLatestPostTitle(),
     loadViewStatsSafe(),
     countMembers(),
     loadCommentCounts(),
     loadCommentsNeedingAttention(),
+    loadProviderUsage(),
+    loadAiConfig(),
   ]);
-  const tokenPct = (adminStats.aiTokensUsed / adminStats.aiTokenCap) * 100;
+  // ⚠ 전에는 목업(206K/1000K·전부 "연결됨")이라 키가 없어도 초록 점이 켜져 있었다.
+  //    /admin/ai는 실제 env를 보고 "0/7 연결"이라 말해 같은 사실이 두 화면에서 달랐다.
+  const aiRows = AI_PROVIDERS.map((meta) => {
+    const u = aiUsage.find((x) => x.providerId === meta.id);
+    return {
+      id: meta.id,
+      name: meta.label,
+      free: meta.free,
+      enabled: u?.enabled ?? true,
+      connected: hasEnvKey(meta.apiKeyEnv),
+      tokensUsedThisMonth: u?.tokensUsedThisMonth ?? 0,
+    };
+  });
+  const aiTokensUsed = aiConfig.tokensUsedThisMonth;
+  const aiTokenCap = aiConfig.globalMonthlyTokenCap;
+  const tokenPct = aiTokenCap > 0 ? (aiTokensUsed / aiTokenCap) * 100 : 0;
 
   return (
     <AdminShell>
       <AdminPageHeader
         title="대시보드"
-        description="사이트 활동 요약입니다. (조회·댓글·티스토리 유입은 실데이터, AI 사용량은 아직 목업)"
+        description="사이트 활동 요약입니다. 조회·댓글·티스토리 유입·AI 사용량 모두 실제 집계입니다."
       />
 
       {/* 1순위 지표를 맨 위에 둔다 — 이 사이트의 목적이 블로그 트래픽 유도다. */}
@@ -97,10 +117,10 @@ export default async function AdminDashboardPage() {
           </CardTitle>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-bold text-white tabular-nums">
-              {(adminStats.aiTokensUsed / 1000).toFixed(0)}K
+              {(aiTokensUsed / 1000).toFixed(0)}K
             </span>
             <span className="text-xs text-muted">
-              / {(adminStats.aiTokenCap / 1000).toFixed(0)}K
+              / {(aiTokenCap / 1000).toFixed(0)}K
             </span>
           </div>
           <div className="mt-3 h-2 rounded-full bg-[#12141c] overflow-hidden">
@@ -113,7 +133,7 @@ export default async function AdminDashboardPage() {
             />
           </div>
           <div className="mt-5 space-y-2.5">
-            {aiProviders
+            {aiRows
               .filter((p) => p.enabled)
               .map((p) => (
                 <div key={p.id} className="flex items-center gap-2">

@@ -90,7 +90,8 @@ export const sector: MacroSector = {
       group: "jobs",
       source: "FRED",
       sourceId: "JTSJOL",
-      transform: "levelK",
+      // ⚠ JOLTS도 **이미 천건 단위**다(2026-06 = 7359 → 735.9만건). 위 ICSA(실제 건수)와 다르다.
+      transform: "level",
       unit: "천건",
       decimals: 0,
       url: FRED("JTSJOL"),

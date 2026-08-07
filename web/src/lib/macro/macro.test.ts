@@ -353,3 +353,20 @@ describe("외부 응답 파서", () => {
     ]);
   });
 });
+
+describe("단위와 변환이 맞물리는가", () => {
+  // 2026-08-07 점검: FRED가 이미 천 단위로 주는 지표에 levelK(÷1000)를 걸어
+  // 주택착공이 화면에 "1천호"(실제 142.7만호)로 나왔다. 원값 규모를 근거로 고정한다.
+  const byKey = new Map(MACRO_INDICATORS.map((i) => [i.key, i]));
+
+  it("⚠ FRED가 천 단위로 주는 지표에는 levelK를 걸지 않는다", () => {
+    // HOUST 1427(천호) · JTSJOL 7359(천건) — 나누면 한 자리 수가 되어 버린다
+    expect(byKey.get("houst")?.transform).toBe("level");
+    expect(byKey.get("jolts")?.transform).toBe("level");
+  });
+
+  it("실제 건수로 주는 지표에는 levelK가 맞다", () => {
+    // ICSA는 199000(건) → 199천건
+    expect(byKey.get("claims")?.transform).toBe("levelK");
+  });
+});

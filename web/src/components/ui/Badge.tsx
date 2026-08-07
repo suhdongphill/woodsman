@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { cx } from "@/lib/format";
 import type { FunctionType, PostType, PostSource } from "@/lib/types";
@@ -35,29 +36,43 @@ export function Badge({
   );
 }
 
-/** 클릭 가능한 필터 칩 */
+/**
+ * 필터 칩.
+ *
+ * ⚠ `href`를 주면 링크가 되고, 안 주면 **커서도 바뀌지 않는 표시용 라벨**이다.
+ *   전에는 href 없이도 `cursor-pointer`가 붙어 있어 누를 수 있어 보였는데 아무 일도
+ *   일어나지 않았다(2026-08-07 점검). 죽은 버튼을 두지 않는다 — 운영지침 1장.
+ */
 export function Chip({
   children,
   active = false,
   className,
+  href,
 }: {
   children: ReactNode;
   active?: boolean;
   className?: string;
+  /** 누를 수 있게 하려면 반드시 준다. */
+  href?: string;
 }) {
-  return (
-    <span
-      className={cx(
-        "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer",
-        active
-          ? "bg-gold-500/15 text-gold-400 border-gold-500/40"
-          : "bg-card text-muted border-border hover:text-white hover:border-gold-600/40",
-        className,
-      )}
-    >
-      {children}
-    </span>
+  const classes = cx(
+    "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+    active
+      ? "bg-gold-500/15 text-gold-400 border-gold-500/40"
+      : "bg-card text-muted border-border",
+    // 누를 수 있을 때만 누를 수 있어 보이게 한다.
+    href && "cursor-pointer hover:text-white hover:border-gold-600/40",
+    className,
   );
+
+  if (href) {
+    return (
+      <Link href={href} scroll={false} className={classes}>
+        {children}
+      </Link>
+    );
+  }
+  return <span className={classes}>{children}</span>;
 }
 
 export const FUNCTION_LABEL: Record<FunctionType, string> = {

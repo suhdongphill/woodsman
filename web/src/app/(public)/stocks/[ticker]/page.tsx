@@ -7,7 +7,7 @@ import { Card, CardTitle } from "@/components/ui/Card";
 import { MockChart } from "@/features/stocks/ui/MockChart";
 import { CanslimPanel } from "@/features/ai/ui/CanslimPanel";
 import { PostCard } from "@/features/posts/ui/PostCard";
-import { ExternalIcon, ChevronRightIcon } from "@/components/icons";
+import { ChevronRightIcon } from "@/components/icons";
 import { cx, formatNumber, formatPct, profitColor } from "@/lib/format";
 import { getStock, mockSeries } from "@/lib/mock";
 import { loadPublishedPosts } from "@/features/posts/repository";
@@ -15,34 +15,11 @@ import { findPublishedHoldingByTicker } from "@/features/portfolio/repository";
 
 type Props = { params: Promise<{ ticker: string }> };
 
-/** 목업 뉴스 (Phase 7에서 서버 라우트로 대체) */
-const NEWS = [
-  {
-    title: "선단 공정 수요 확대…파운드리 가동률 상향",
-    source: "Reuters",
-    at: "2026-07-30",
-    url: "#",
-  },
-  {
-    title: "AI 가속기 출하 전망 상향 조정",
-    source: "Bloomberg",
-    at: "2026-07-28",
-    url: "#",
-  },
-  {
-    title: "분기 실적 컨센서스 상회…가이던스 유지",
-    source: "CNBC",
-    at: "2026-07-24",
-    url: "#",
-  },
-  {
-    title: "설비투자 계획 발표, 캐펙스 사이클 주목",
-    source: "WSJ",
-    at: "2026-07-19",
-    url: "#",
-  },
-];
-
+/* 목업 뉴스는 삭제했다(2026-08-07 점검).
+   Reuters·Bloomberg·CNBC·WSJ 이름을 달고 실재하지 않는 기사를 보여주고 있었고,
+   링크는 전부 href="#"이라 아무 데도 가지 않았다. 숫자를 공개해 신뢰를 얻는 사이트에서
+   실재 언론사 이름을 붙인 가짜 기사는 가장 크게 깨는 지점이다(운영지침 5장).
+   ⚠ 실제 뉴스 출처가 붙기 전까지 되살리지 말 것. */
 const CANSLIM_SCORES: Record<string, Record<string, number>> = {
   TSM: { C: 9, A: 8, N: 9, S: 8, L: 9, I: 8, M: 7 },
   NVDA: { C: 9, A: 9, N: 8, S: 7, L: 9, I: 8, M: 6 },
@@ -101,35 +78,6 @@ export default async function StockDetailPage({ params }: Props) {
         <div className="space-y-6">
           <MockChart series={series} up={up} />
 
-          {/* 뉴스 */}
-          <Card padding="p-0">
-            <div className="px-5 pt-5">
-              <CardTitle action={<Badge tone="neutral">Yahoo Finance</Badge>}>
-                주요 기사
-              </CardTitle>
-            </div>
-            <ul>
-              {NEWS.map((n) => (
-                <li key={n.title}>
-                  <a
-                    href={n.url}
-                    className="flex items-start gap-3 px-5 py-3.5 border-t border-border hover:bg-cardHover transition-colors"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-gold-500 mt-2 shrink-0" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[13.5px] text-gray-200 leading-snug">
-                        {n.title}
-                      </span>
-                      <span className="block text-[11px] text-gray-600 mt-1">
-                        {n.source} · {n.at}
-                      </span>
-                    </span>
-                    <ExternalIcon size={13} className="text-gray-600 mt-1 shrink-0" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </Card>
         </div>
 
         <div className="space-y-6">

@@ -14,19 +14,26 @@ const ITEMS = [
 ];
 
 /**
- * CANSLIM 결과 패널(목업).
- * Phase 7에서 서버 라우트(AI 제공자 폴백 체인 + 24h 캐시) 결과로 채워진다.
+ * CANSLIM 결과 패널.
+ *
+ * ⚠ 지금 점수는 **AI가 낸 값이 아니라 예시**다(P6에서 실제 호출로 채운다).
+ *   그래서 제공자 이름과 캐시 시각을 찍지 않는다 — 2026-08-07 점검 전까지
+ *   부르지도 않은 "NVIDIA NIM"과 있지도 않은 "캐시 2026-07-31 06:00"을 기본값으로
+ *   표시하고 있었다. 없는 근거를 지어내는 것은 값을 안 보여주는 것보다 나쁘다.
+ *   실제 호출이 붙으면 provider·analyzedAt을 받아서 그때 표시한다.
  */
 export function CanslimPanel({
   composite,
   scores,
-  provider = "NVIDIA NIM",
-  cachedAt = "2026-07-31 06:00",
+  provider,
+  analyzedAt,
 }: {
   composite: number;
   scores: Record<string, number>;
+  /** 실제로 호출한 AI 제공자. 예시 점수일 때는 넘기지 않는다. */
   provider?: string;
-  cachedAt?: string;
+  /** 실제 분석 시각. 예시 점수일 때는 넘기지 않는다. */
+  analyzedAt?: string;
 }) {
   const c = scoreColor(composite);
   return (
@@ -36,7 +43,7 @@ export function CanslimPanel({
           <BotIcon size={16} className="text-gold-400" />
           CANSLIM 분석
         </h3>
-        <Badge tone="neutral">{provider}</Badge>
+        <Badge tone={provider ? "neutral" : "warn"}>{provider ?? "예시 점수"}</Badge>
       </div>
 
       <div className="flex items-center gap-6">
@@ -70,7 +77,9 @@ export function CanslimPanel({
         종합 {composite.toFixed(1)}점 — {composite >= 7 ? "편입 후보" : composite >= 5 ? "관찰" : "보류"}
       </p>
       <p className="text-[11px] text-gray-600 mt-1">
-        캐시 {cachedAt} 기준 · 24시간마다 갱신 · 실행 권한: 관리자
+        {analyzedAt
+          ? `${analyzedAt} 분석 · 실행 권한: 관리자`
+          : "AI 분석을 아직 붙이지 않았습니다. 위 점수는 화면 구성을 보여주는 예시입니다."}
       </p>
     </div>
   );

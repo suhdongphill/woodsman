@@ -3,14 +3,7 @@
  * Phase 1에서 Prisma seed / DB 조회로 대체된다. (필드명은 Prisma 스키마와 동일)
  * 주의: 날짜·난수는 모두 고정값 — SSR/CSR hydration 불일치를 막는다.
  */
-import type {
-  AccountSnapshot,
-  AiConfig,
-  AiProvider,
-  Feed,
-  JournalEntry,
-  StockSummary,
-} from "./types";
+import type { AccountSnapshot, JournalEntry, StockSummary } from "./types";
 
 /* 사이트 설정 목업은 삭제했다(2026-08-07).
    화면이 이걸 읽는 동안 `/admin/comments`의 토글 다섯 개가 **켜도 저장되지 않았다** —
@@ -244,149 +237,12 @@ export function mockSeries(base: number, len = 90) {
   return out;
 }
 
-/* ─────────────── AI 제공자 ─────────────── */
-export const aiProviders: AiProvider[] = [
-  {
-    id: "ai_nvidia",
-    name: "NVIDIA NIM",
-    kind: "OPENAI_COMPAT",
-    baseUrl: "https://integrate.api.nvidia.com/v1",
-    model: "meta/llama-3.3-70b-instruct",
-    apiKeyEnv: "NVIDIA_API_KEY",
-    free: true,
-    enabled: true,
-    priority: 0,
-    monthlyTokenCap: 500000,
-    tokensUsedThisMonth: 128400,
-    connected: true,
-  },
-  {
-    id: "ai_groq",
-    name: "Groq",
-    kind: "OPENAI_COMPAT",
-    baseUrl: "https://api.groq.com/openai/v1",
-    model: "llama-3.3-70b-versatile",
-    apiKeyEnv: "GROQ_API_KEY",
-    free: true,
-    enabled: true,
-    priority: 1,
-    monthlyTokenCap: 300000,
-    tokensUsedThisMonth: 41200,
-    connected: true,
-  },
-  {
-    id: "ai_gemini",
-    name: "Google Gemini (무료티어)",
-    kind: "OPENAI_COMPAT",
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-    model: "gemini-2.0-flash",
-    apiKeyEnv: "GEMINI_API_KEY",
-    free: true,
-    enabled: false,
-    priority: 2,
-    monthlyTokenCap: 300000,
-    tokensUsedThisMonth: 0,
-    connected: false,
-  },
-  {
-    id: "ai_openrouter",
-    name: "OpenRouter (무료 모델)",
-    kind: "OPENAI_COMPAT",
-    baseUrl: "https://openrouter.ai/api/v1",
-    model: "meta-llama/llama-3.3-70b-instruct:free",
-    apiKeyEnv: "OPENROUTER_API_KEY",
-    free: true,
-    enabled: false,
-    priority: 3,
-    tokensUsedThisMonth: 0,
-    connected: false,
-  },
-  {
-    id: "ai_anthropic",
-    name: "Anthropic Claude",
-    kind: "ANTHROPIC",
-    model: "claude-sonnet-5",
-    apiKeyEnv: "ANTHROPIC_API_KEY",
-    free: false,
-    enabled: true,
-    priority: 9,
-    monthlyTokenCap: 200000,
-    tokensUsedThisMonth: 36700,
-    connected: true,
-  },
-];
-
-export const aiConfig: AiConfig = {
-  allowedRole: "ADMIN",
-  cacheTtlHours: 24,
-  globalMonthlyTokenCap: 1000000,
-  tokensUsedThisMonth: 206300,
-};
-
-/* ─────────────── RSS 피드 ─────────────── */
-export const feeds: Feed[] = [
-  {
-    id: "f_1",
-    name: "Woodsman 티스토리",
-    url: "https://suhdp.tistory.com/rss",
-    active: true,
-    lastFetchedAt: "2026-07-31T06:00:00+09:00",
-    itemCount: 42,
-  },
-  {
-    id: "f_2",
-    name: "인컴 노트(티스토리)",
-    url: "https://incomenote.tistory.com/rss",
-    active: false,
-    lastFetchedAt: "2026-07-02T06:00:00+09:00",
-    itemCount: 17,
-  },
-];
-
-/** /admin/feeds 미리보기용 가져오기 대기 항목 */
-export const feedItems = [
-  {
-    id: "fi_1",
-    feedName: "Woodsman 티스토리",
-    title: "배당 캘린더로 현금흐름 설계하기",
-    link: "https://suhdp.tistory.com/entry/dividend-calendar",
-    publishedAt: "2026-07-15T20:10:00+09:00",
-    imported: true,
-  },
-  {
-    id: "fi_2",
-    feedName: "Woodsman 티스토리",
-    title: "브라질 국채, 달러표시로만 사는 이유",
-    link: "https://suhdp.tistory.com/entry/brazil-bond-usd",
-    publishedAt: "2026-06-14T08:40:00+09:00",
-    imported: true,
-  },
-  {
-    id: "fi_3",
-    feedName: "Woodsman 티스토리",
-    title: "ETF 분배금 재투자, 언제가 유리한가",
-    link: "https://suhdp.tistory.com/entry/etf-drip",
-    publishedAt: "2026-07-30T21:00:00+09:00",
-    imported: false,
-  },
-];
-
-/* 사용자 목업은 삭제했다(2026-08-06).
-   화면이 이 파일을 읽는 한 삭제 버튼이 아무 일도 하지 않는다 —
-   지금은 `features/users/repository.ts`가 D1을 읽는다. ⚠ 되살리지 말 것. */
-
-/* ─────────────── 관리자 대시보드 요약 ─────────────── */
-export const adminStats = {
-  visitorsToday: 1284,
-  visitorsDelta: 12.4,
-  publishedPosts: 0,
-  draftPosts: 0,
-  aiTokensUsed: aiConfig.tokensUsedThisMonth,
-  aiTokenCap: aiConfig.globalMonthlyTokenCap,
-  /** 최근 7일 방문자 (막대그래프용) */
-  weeklyVisitors: [742, 810, 905, 866, 1120, 1043, 1284],
-};
-
+/* AI 제공자·설정·대시보드 요약 목업은 삭제했다(2026-08-07 점검).
+   대시보드가 이 고정값을 읽어 키가 하나도 없는데도 "연결됨 · 206K 사용"을 그렸다.
+   같은 사실을 /admin/ai는 실제 env·D1로 판단해 "0/7 연결"이라 말했다 —
+   한 사실이 두 화면에서 다르면 어느 쪽도 못 믿는다.
+   지금은 `features/ai/repository.ts`(사용량)와 `lib/ai/catalog.ts`(제공자 목록),
+   `lib/env.hasEnvKey`(연결 여부)가 답한다. ⚠ 되살리지 말 것. */
 /* 대표 포트폴리오·리밸런싱 목업은 삭제했다(2026-08-06).
    화면이 이 파일을 읽는 한 관리자 화면에서 아무리 고쳐도 바뀌지 않는다 —
    투자일지에서 겪은 사고와 같다. 지금은 `features/portfolio/repository.ts`가 D1을 읽고,

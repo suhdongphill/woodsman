@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as mock from "./mock";
-import { aiProviders, getStock, mockSeries } from "./mock";
+import { getStock, mockSeries } from "./mock";
 
 describe("대표 포트폴리오는 목업에서 내려왔다", () => {
   it("⚠ 목업을 다시 export하지 않는다 — 화면이 이걸 읽으면 관리자 편집이 무효가 된다", () => {
@@ -36,27 +36,11 @@ describe("댓글·사이트 설정도 목업에서 내려왔다", () => {
     expect("siteConfig" in mock).toBe(false);
   });
 
-  it("대시보드 요약에서 댓글 숫자를 빼 두었다(실집계로 옮김)", () => {
-    expect("newComments" in mock.adminStats).toBe(false);
-    expect("pendingComments" in mock.adminStats).toBe(false);
+
+  it("⚠ 대시보드 요약 목업도 다시 export하지 않는다", () => {
+    expect("adminStats" in mock).toBe(false);
   });
 });
-
-describe("AI 제공자 목업", () => {
-  it("키 '값'이 아니라 env 변수명만 저장한다", () => {
-    for (const p of aiProviders) {
-      expect(p.apiKeyEnv).toMatch(/^[A-Z0-9_]+$/);
-      expect(JSON.stringify(p)).not.toMatch(/sk-[a-z]/i);
-    }
-  });
-
-  it("무료 제공자가 유료(Anthropic)보다 우선순위가 앞선다", () => {
-    const paid = aiProviders.filter((p) => !p.free).map((p) => p.priority);
-    const free = aiProviders.filter((p) => p.free).map((p) => p.priority);
-    expect(Math.max(...free)).toBeLessThan(Math.min(...paid));
-  });
-});
-
 describe("종목 목업", () => {
   it("티커 대소문자 무관하게 조회된다", () => {
     expect(getStock("tsm")?.name).toBe("TSMC");

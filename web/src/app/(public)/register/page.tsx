@@ -8,7 +8,7 @@ import { SocialButtons } from "@/features/auth/ui/SocialButtons";
 import { safeNextPath } from "@/lib/access";
 import { currentUser } from "@/lib/session";
 import { getSitePolicy } from "@/lib/site-settings";
-import { CONTACT_EMAIL } from "@/lib/site-links";
+import { getSiteBasics } from "@/lib/site-settings";
 
 export const metadata: Metadata = {
   title: "회원가입",
@@ -74,7 +74,8 @@ export default async function RegisterPage({
   );
 }
 
-function SignupClosed() {
+async function SignupClosed() {
+  const { contactEmail } = await getSiteBasics();
   return (
     <div className="mx-auto max-w-lg px-4 sm:px-6 py-16">
       <div className="flex flex-col items-center text-center">
@@ -111,7 +112,7 @@ function SignupClosed() {
           </li>
           <li className="flex gap-2.5">
             <CheckIcon size={15} className="mt-0.5 shrink-0 text-emerald-400" />
-            <span>의견이나 질문은 이메일({CONTACT_EMAIL})로 받고 있습니다.</span>
+            <span>의견이나 질문은 이메일({contactEmail})로 받고 있습니다.</span>
           </li>
         </ul>
 

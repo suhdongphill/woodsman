@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PolicyList, PolicyPage, PolicySection } from "@/components/layout/PolicyPage";
-import { CONTACT_EMAIL } from "@/lib/site-links";
+import { getSiteBasics } from "@/lib/site-settings";
 
 export const metadata: Metadata = {
   title: "개인정보 처리방침",
@@ -9,13 +9,14 @@ export const metadata: Metadata = {
     "Woodsman은 현재 회원가입을 지원하지 않으며, 방문자의 개인정보를 직접 수집하지 않습니다.",
 };
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const { contactEmail } = await getSiteBasics();
   return (
     <PolicyPage
       eyebrow="PRIVACY"
       title="개인정보 처리방침"
       description="지금 이 사이트가 무엇을 수집하고 무엇을 수집하지 않는지 그대로 적었습니다."
-      effectiveDate="2026년 8월 2일"
+      effectiveDate="2026년 8월 6일"
     >
       <PolicySection title="1. 회원가입을 지원하지 않습니다">
         <p>
@@ -120,12 +121,14 @@ export default function PrivacyPage() {
           items={[
             "책임자 · 서동필 (Woodsman 운영자)",
             <>
-              연락처 · <span className="text-gold-400">{CONTACT_EMAIL}</span>
+              연락처 · <span className="text-gold-400">{contactEmail}</span>
             </>,
           ]}
         />
         <p className="text-[12.5px] text-gray-500">
           이 방침이 변경될 경우 시행일을 갱신해 이 페이지에 공지합니다.
+          <br />
+          최근 개정 · 2026년 8월 6일: 조회수 집계(쿠키·IP를 저장하지 않는 날짜별 합계) 항목을 추가.
         </p>
       </PolicySection>
     </PolicyPage>

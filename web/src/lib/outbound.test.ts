@@ -9,6 +9,7 @@ import {
   OUTBOUND_TARGETS,
   clickDateKey,
   isOutboundTarget,
+  outboundDestinations,
   outboundHref,
   outboundPostHref,
   resolveOutbound,
@@ -77,5 +78,28 @@ describe("집계 날짜", () => {
     const a = clickDateKey(new Date("2026-08-02T00:00:00Z"));
     const b = clickDateKey(new Date("2026-09-01T00:00:00Z"));
     expect(a < b).toBe(true);
+  });
+});
+
+describe("목적지는 관리자가 저장한 값을 쓴다", () => {
+  // 2026-08-07 점검: 저장한 티스토리 주소가 무시되고 코드 상수로만 나갔다.
+  const saved = outboundDestinations({
+    tistoryFeaturedUrl: "https://example.tistory.com/99",
+    tistoryBlogUrl: "https://example.tistory.com",
+  });
+
+  it("설정값을 넘기면 그 주소로 간다", () => {
+    expect(resolveOutbound("tistory", undefined, saved)).toBe("https://example.tistory.com/99");
+    expect(resolveOutbound("tistory-home", undefined, saved)).toBe("https://example.tistory.com");
+  });
+
+  it("안 넘기면 코드 기본값으로 떨어진다 — DB를 못 읽어도 링크가 죽지 않는다", () => {
+    expect(resolveOutbound("tistory")).toBe(OUTBOUND_TARGETS.tistory);
+  });
+
+  it("⚠ 설정값을 줘도 등록되지 않은 대상은 여전히 거부한다(오픈 리다이렉트 방지)", () => {
+    expect(resolveOutbound("evil", undefined, saved)).toBeNull();
+    expect(resolveOutbound("https://evil.com", undefined, saved)).toBeNull();
+    expect(resolveOutbound("//evil.com", undefined, saved)).toBeNull();
   });
 });
