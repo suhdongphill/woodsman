@@ -26,6 +26,7 @@ const MENU = [
   { href: "/admin", label: "대시보드", icon: LayoutIcon, exact: true },
   { href: "/admin/model-portfolio", label: "대표 포트폴리오", icon: BriefcaseIcon },
   { href: "/admin/journal", label: "투자일지 · 계좌", icon: ClockIcon },
+  { href: "/admin/analytics", label: "화면 통계", icon: BarChartIcon },
   { href: "/admin/macro", label: "거시 지표", icon: BarChartIcon },
   { href: "/admin/bubble", label: "버블 모니터", icon: BotIcon },
   { href: "/admin/posts", label: "콘텐츠", icon: FileTextIcon },

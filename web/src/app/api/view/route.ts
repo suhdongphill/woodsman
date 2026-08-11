@@ -12,6 +12,7 @@
  */
 import { NextResponse } from "next/server";
 import { isBotUserAgent, normalizePath, postSlugFromPath, viewDateKey } from "@/lib/analytics";
+import { guardBeacon } from "@/lib/beacon-guard";
 import { recordPageView } from "@/features/analytics/repository";
 
 export const runtime = "nodejs";
@@ -20,6 +21,12 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    // ⚠ 2026-08-07 점검: "무제한 쓰기". 로그인 없이 DB에 쓰는 문이라 속도 제한을 건다.
+    const guard = await guardBeacon(request, "view");
+    if (!guard.ok) {
+      return NextResponse.json({ ok: true, counted: false, reason: guard.reason });
+    }
+
     // 봇은 세지 않는다. UA는 여기서 판정에만 쓰고 저장하지 않는다.
     if (isBotUserAgent(request.headers.get("user-agent"))) {
       return NextResponse.json({ ok: true, counted: false });

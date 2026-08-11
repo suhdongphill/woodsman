@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { clickDateKey, outboundDestinations, resolveOutbound } from "@/lib/outbound";
+import { normalizePath } from "@/lib/analytics";
 import { getSiteBasics } from "@/lib/site-settings";
 import { findPostBySlug } from "@/features/posts/repository";
 import { recordClick } from "@/lib/outbound-repo";
+import { recordOutboundSource } from "@/features/analytics/engagement-repository";
 
 /**
  * 아웃바운드 경유 — 클릭을 세고 목적지로 넘긴다.
@@ -15,8 +17,26 @@ import { recordClick } from "@/lib/outbound-repo";
  */
 export const dynamic = "force-dynamic";
 
+/**
+ * 클릭이 **어느 화면에서** 났는지 알아낸다.
+ *
+ * 같은 출처에서 온 링크 클릭은 브라우저가 `Referer`에 전체 URL을 실어 준다
+ * (기본 정책 `strict-origin-when-cross-origin`은 동일 출처에 한해 전체 경로를 보낸다).
+ * ⚠ 여기서 **경로만 뽑고 쿼리는 버린다**(`normalizePath`). 검색어·UTM에 개인정보가 실릴 수 있다.
+ * ⚠ 리퍼러 원문은 어디에도 저장하지 않는다. 남는 것은 정규화된 사이트 내부 경로뿐이다.
+ * ⚠ 목적지는 여전히 **등록된 대상만**이다 — 리퍼러는 집계에만 쓰고 이동에 쓰지 않는다.
+ */
+function sourcePathFrom(referer: string | null): string | null {
+  if (!referer) return null;
+  try {
+    return normalizePath(new URL(referer).pathname);
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ target: string }> },
 ) {
   const { target } = await params;
@@ -31,7 +51,13 @@ export async function GET(
   if (!destination) notFound();
 
   try {
-    await recordClick(target, clickDateKey(new Date()));
+    const date = clickDateKey(new Date());
+    await recordClick(target, date);
+
+    // ⚠ 출처 집계는 **부가**다. 실패해도 1순위 지표(recordClick)는 이미 올라가 있다.
+    //    순서를 바꾸지 말 것 — 출처를 먼저 쓰다 죽으면 클릭 자체가 누락된다.
+    const from = sourcePathFrom(request.headers.get("referer"));
+    if (from) await recordOutboundSource({ path: from, target, date });
   } catch (error) {
     // 집계는 부가 기능이라 이동을 막지 않는다. 다만 조용히 넘기지는 않는다 —
     // 집계가 0인데 이유를 모르는 상태가 되면 성과 판단 자체가 불가능해진다.
