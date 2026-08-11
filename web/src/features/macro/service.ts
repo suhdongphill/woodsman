@@ -21,6 +21,7 @@ import {
   type SeriesPoint,
 } from "@/lib/macro/series";
 import { judgeSignal, summarizeRecession, type RecessionSummary, type SignalStatus } from "@/lib/macro/signal";
+import { estimateFedHike, type FedHikeResult } from "@/lib/macro/fedhike";
 import { loadRecentPoints, loadSeriesMany } from "./repository";
 
 export type IndicatorView = {
@@ -68,7 +69,29 @@ export type MacroOverview = {
   asOf?: string;
   /** 값이 하나도 없으면 true — 화면이 "아직 안 가져왔다"고 말한다 */
   empty: boolean;
+  /**
+   * 연준 정책금리 방향 확률. 필수 지표(Core PCE·기준금리·실업률)가 없으면 undefined다.
+   * ⚠ 여기서 한 번만 계산한다 — 화면마다 따로 계산하면 같은 회의에 다른 확률이 나온다.
+   */
+  fedHike?: FedHikeResult;
+  /** 인상확률 계산에 쓴 값들의 기준일 중 가장 오래된 것 — "얼마나 묵은 판단인가" */
+  fedHikeAsOf?: string;
 };
+
+/**
+ * 인상확률 입력 지표와 카탈로그 키의 대응.
+ * ⚠ 키를 바꾸면 조용히 결측이 되므로 한 곳에 모아 둔다.
+ */
+const FED_HIKE_KEYS = {
+  corePce: "core_pce_yoy",
+  fedFunds: "fed_funds",
+  unrate: "unrate",
+  ism: "ism_mfg",
+  umcsent: "umcsent",
+  breakeven5y: "infl_exp_5y",
+  ppiYoy: "ppi_yoy",
+  wti: "wti",
+} as const;
 
 /**
  * 홈·허브가 쓰는 요약.
@@ -98,7 +121,28 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
   const dates = [...views.values()].map((v) => v.asOf).filter((d): d is string => !!d);
   const asOf = dates.length ? dates.slice().sort().reverse()[0] : undefined;
 
-  return { summary, signals, headlines, groups, asOf, empty: dates.length === 0 };
+  const fedHike = estimateFedHike(
+    Object.fromEntries(
+      Object.entries(FED_HIKE_KEYS).map(([field, key]) => [field, views.get(key)?.value]),
+    ),
+  );
+  // ⚠ 가장 최근이 아니라 **가장 오래된** 기준일을 쓴다. 한 지표만 오늘 것이어도
+  //    "오늘 기준"이라고 적으면 묵은 판단을 새 것으로 보이게 한다.
+  const fedHikeDates = Object.values(FED_HIKE_KEYS)
+    .map((key) => views.get(key)?.asOf)
+    .filter((d): d is string => !!d);
+  const fedHikeAsOf = fedHikeDates.length ? fedHikeDates.slice().sort()[0] : undefined;
+
+  return {
+    summary,
+    signals,
+    headlines,
+    groups,
+    asOf,
+    empty: dates.length === 0,
+    fedHike,
+    fedHikeAsOf: fedHike ? fedHikeAsOf : undefined,
+  };
 }
 
 export type MacroGroupDetail = {

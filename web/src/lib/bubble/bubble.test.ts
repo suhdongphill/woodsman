@@ -8,10 +8,26 @@ function readings(entries: [string, 0 | 1 | 2][]): Map<string, BubbleReading> {
 }
 
 describe("버블 카탈로그", () => {
-  it("설계서의 5레이어 28지표를 그대로 옮겼다", () => {
+  it("설계서의 5레이어 30지표를 그대로 옮겼다", () => {
     expect(BUBBLE_LAYERS).toHaveLength(5);
-    expect(ALL_BUBBLE_INDICATORS).toHaveLength(28);
-    expect(BUBBLE_TRIGGERS).toHaveLength(7);
+    expect(ALL_BUBBLE_INDICATORS).toHaveLength(30);
+    expect(BUBBLE_TRIGGERS).toHaveLength(8);
+  });
+
+  /**
+   * ⚠ 층별 개수까지 못 박는 이유: 총합만 보면 한 층에서 빠지고 다른 층에서 늘어난 것을
+   * 놓친다. 볼트 대시보드(`00_Dashboard/메모리 버블 트리거.html`)의 층 구성과 대조하는 자리다.
+   */
+  it("층별 지표 수가 볼트와 같다", () => {
+    const byId = Object.fromEntries(BUBBLE_LAYERS.map((l) => [l.id, l.indicators.length]));
+    expect(byId).toEqual({ L1: 8, L2: 5, L3: 6, L4: 6, L5: 5 });
+  });
+
+  it("2026-08 볼트 ingest로 늘어난 지표가 들어 있다", () => {
+    const keys = ALL_BUBBLE_INDICATORS.map((i) => i.key);
+    expect(keys).toContain("llm_token_spend"); // L1 · AI 수익화의 실물 증거
+    expect(keys).toContain("asset_life_mismatch"); // L4 · 부채의 만기 구조
+    expect(BUBBLE_TRIGGERS.map((t) => t.key)).toContain("trg8"); // 엔캐리 청산 재발화
   });
 
   it("지표 키가 중복되지 않는다", () => {
@@ -75,7 +91,8 @@ describe("총점", () => {
     const result = scoreBubble(one);
     // 채점된 레이어(L1)의 평균이 2 → 그 레이어만으로 정규화하면 100
     expect(result.score).toBe(100);
-    expect(result.coverage).toEqual({ scored: 1, total: 28, pct: 4 });
+    expect(result.coverage.scored).toBe(1);
+    expect(result.coverage.total).toBe(ALL_BUBBLE_INDICATORS.length);
   });
 
   it("⚠ 하나도 채점되지 않았으면 점수를 내지 않는다(0은 '안전'으로 읽힌다)", () => {

@@ -4,7 +4,7 @@ import { AdminPageHeader, AdminShell } from "@/components/layout/AdminPageHeader
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { requireAdmin } from "@/lib/session";
-import { BUBBLE_LAYERS, BUBBLE_TRIGGERS } from "@/lib/bubble/catalog";
+import { ALL_BUBBLE_INDICATORS, BUBBLE_LAYERS, BUBBLE_TRIGGERS } from "@/lib/bubble/catalog";
 import { scoreBubble } from "@/lib/bubble/score";
 import { loadReadings, loadTriggerStates } from "@/features/bubble/repository";
 import { ScoreGauge } from "@/features/bubble/ui/ScoreGauge";
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 /**
  * 버블 모니터 채점.
  *
- * 28개 지표를 0·1·2로 매기고 근거를 한 줄 적는다. 자동으로 받아 올 수 있는 값이 거의 없는
+ * 30개 지표를 0·1·2로 매기고 근거를 한 줄 적는다. 자동으로 받아 올 수 있는 값이 거의 없는
  * 모델이라(설계서가 정성 판단을 절반 두었다) **손으로 채점하는 화면**이 본체다.
  * 분기 1회 점검을 전제로 만들었다.
  */
@@ -34,7 +34,7 @@ export default async function AdminBubblePage() {
     <AdminShell>
       <AdminPageHeader
         title="버블 모니터 채점"
-        description="다섯 층 28개 지표를 0·1·2로 매깁니다. 근거를 함께 적어야 나중에 왜 그렇게 봤는지 알 수 있습니다."
+        description={`다섯 층 ${ALL_BUBBLE_INDICATORS.length}개 지표를 0·1·2로 매깁니다. 근거를 함께 적어야 나중에 왜 그렇게 봤는지 알 수 있습니다.`}
         action={
           <Link
             href="/macro/bubble"

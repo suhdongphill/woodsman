@@ -6,11 +6,13 @@ import { ChevronRightIcon } from "@/components/icons";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { RecessionBoard } from "@/features/macro/ui/RecessionBoard";
+import { FedHikeCard } from "@/features/macro/ui/FedHikeCard";
 import { GroupCard } from "@/features/macro/ui/GroupCard";
 import { loadMacroOverview } from "@/features/macro/service";
 import { loadSectionPosts } from "@/features/posts/repository";
 import { SectionFrame } from "@/features/posts/ui/SectionFrame";
 import { MACRO_INDICATORS } from "@/lib/macro/catalog";
+import { ALL_BUBBLE_INDICATORS, BUBBLE_TRIGGERS } from "@/lib/bubble/catalog";
 import { breadcrumbJsonLd, datasetJsonLd } from "@/lib/seo";
 import { getSiteBasics } from "@/lib/site-settings";
 
@@ -84,6 +86,16 @@ export default async function MacroHubPage() {
           />
         </section>
 
+        {/* ①-2 금리는 '지금 몇 %'보다 '어디로 가는가'가 먼저다 */}
+        {overview.fedHike && (
+          <section aria-labelledby="fedhike-heading">
+            <h2 id="fedhike-heading" className="sr-only">
+              연준 정책금리 방향
+            </h2>
+            <FedHikeCard result={overview.fedHike} asOf={overview.fedHikeAsOf} />
+          </section>
+        )}
+
         {/* ② 처음 오신 분 — 읽는 순서를 알려준다 */}
         <section aria-labelledby="guide-heading">
           <Card className="border-gold-600/30 bg-gold-500/[0.04]">
@@ -141,8 +153,9 @@ export default async function MacroHubPage() {
         >
           <h2 className="text-[15px] font-semibold text-white">🫧 AI·반도체 버블 모니터</h2>
           <p className="mt-1 text-[13px] leading-relaxed text-muted">
-            설비투자·밸류에이션·실물 수요·신용·심리 다섯 층 28개 지표를 채점해 지금 사이클이 어디쯤인지
-            한 숫자로 봅니다. 판이 바뀌는 사건 7가지도 함께 감시합니다.
+            설비투자·밸류에이션·실물 수요·신용·심리 다섯 층 {ALL_BUBBLE_INDICATORS.length}개 지표를
+            채점해 지금 사이클이 어디쯤인지 한 숫자로 봅니다. 판이 바뀌는 사건{" "}
+            {BUBBLE_TRIGGERS.length}가지도 함께 감시합니다.
           </p>
           <span className="mt-2 inline-flex items-center gap-0.5 text-[12px] text-gold-400">
             모니터 보기

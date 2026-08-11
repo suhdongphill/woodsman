@@ -65,6 +65,13 @@ export const BUBBLE_LAYERS: BubbleLayer[] = [
         label: "빅4 백로그 중 프리-프로핏 랩 비중",
         rule: "<20% · 20~40% · >40%",
         source: "Groundbreaker 「The Second Derivative」",
+      },
+      {
+        key: "llm_token_spend",
+        label: "LLM 토큰 지출 지수 (AI 수익화의 실물 증거)",
+        rule: "증가 지속 · 횡보 · 감소 전환",
+        source:
+          "실리콘데이터 LLM Token Expenditure Index (경제학교 경읽남 257화 인용) · ⚠ 원지수 실수치·계열 정의 미확인",
       }
     ],
   },
@@ -160,7 +167,7 @@ export const BUBBLE_LAYERS: BubbleLayer[] = [
     id: "L4",
     name: "신용·유동성",
     weight: 1.0,
-    note: "매크로 지표 대시보드 재사용",
+    note: "매크로 지표 대시보드 재사용 + 부채의 '양'이 아니라 '만기 구조'",
     indicators: [
       {
         key: "hy_oas",
@@ -195,6 +202,12 @@ export const BUBBLE_LAYERS: BubbleLayer[] = [
         label: "하이퍼스케일러 IG 레버리지",
         rule: "<1.0배 · 1.0~1.5배 · >1.5배 (총부채/EBITDA)",
         source: "Morgan Stanley (Groundbreaker 인용) · 임계값은 자체 보정",
+      },
+      {
+        key: "asset_life_mismatch",
+        label: "AI 자산 경제수명 vs 부채 만기 미스매치",
+        rule: "정합(1~2배) · 3~5배 괴리 · 5배+ 괴리",
+        source: "경제학교 특강 반론 리서치(반대 시각 조사) · 임계값은 자체 보정",
       }
     ],
   },
@@ -289,6 +302,10 @@ export const BUBBLE_TRIGGERS: BubbleTriggerDef[] = [
   {
     key: "trg7",
     text: "OpenAI 차기 마크(IPO 포함)가 요구 스텝업에 미달",
+  },
+  {
+    key: "trg8",
+    text: "엔캐리 청산 재발화 — 달러-엔 단기 급변(주 5%+) 또는 BOJ 예상 밖 인상",
   },
 ];
 

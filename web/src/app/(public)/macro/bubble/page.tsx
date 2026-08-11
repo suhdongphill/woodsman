@@ -8,7 +8,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { ScoreGauge } from "@/features/bubble/ui/ScoreGauge";
 import { loadReadings, loadTriggerStates } from "@/features/bubble/repository";
-import { BUBBLE_TRIGGERS } from "@/lib/bubble/catalog";
+import { ALL_BUBBLE_INDICATORS, BUBBLE_TRIGGERS } from "@/lib/bubble/catalog";
 import { scoreBubble } from "@/lib/bubble/score";
 import { breadcrumbJsonLd } from "@/lib/seo";
 import { getSiteBasics } from "@/lib/site-settings";
@@ -16,12 +16,12 @@ import { getSiteBasics } from "@/lib/site-settings";
 export const metadata: Metadata = {
   title: "AI·반도체 버블 모니터 — 지금 어디쯤인가",
   description:
-    "AI 설비투자·밸류에이션·실물 수요·신용·심리 다섯 층 28개 지표를 0·1·2로 채점해 0~100으로 냅니다. 판이 바뀌는 사건 7가지(하드 트리거)도 함께 감시합니다. 점수보다 '무엇을 보고 그렇게 봤나'를 남기는 것이 목적입니다.",
+    `AI 설비투자·밸류에이션·실물 수요·신용·심리 다섯 층 ${ALL_BUBBLE_INDICATORS.length}개 지표를 0·1·2로 채점해 0~100으로 냅니다. 판이 바뀌는 사건 ${BUBBLE_TRIGGERS.length}가지(하드 트리거)도 함께 감시합니다. 점수보다 '무엇을 보고 그렇게 봤나'를 남기는 것이 목적입니다.`,
   alternates: { canonical: "/macro/bubble" },
   openGraph: {
     type: "article",
     title: "AI·반도체 버블 모니터 — 지금 어디쯤인가",
-    description: "다섯 층 28개 지표로 본 AI·반도체 사이클의 위치. 채점 근거를 그대로 공개합니다.",
+    description: `다섯 층 ${ALL_BUBBLE_INDICATORS.length}개 지표로 본 AI·반도체 사이클의 위치. 채점 근거를 그대로 공개합니다.`,
     url: "/macro/bubble",
   },
 };
@@ -60,7 +60,7 @@ export default async function BubbleMonitorPage() {
       <PageHeader
         eyebrow="BUBBLE MONITOR"
         title="🫧 AI·반도체 버블 모니터"
-        description="다섯 층으로 나눈 28개 지표를 0·1·2로 채점해 한 숫자로 냅니다. 숫자보다 중요한 것은 각 지표에 적어 둔 근거입니다."
+        description={`다섯 층으로 나눈 ${ALL_BUBBLE_INDICATORS.length}개 지표를 0·1·2로 채점해 한 숫자로 냅니다. 숫자보다 중요한 것은 각 지표에 적어 둔 근거입니다.`}
       />
 
       <div className="mx-auto max-w-4xl space-y-10 px-4 py-10 sm:px-6">
