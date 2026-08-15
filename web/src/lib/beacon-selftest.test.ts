@@ -23,7 +23,13 @@ describe("속도 제한 자가 진단 판정", () => {
     expect(judgeProbe(ready(), 10).level).toBe("ok");
   });
 
-  it("⚠ 상한을 넘겼는데 하나도 안 막히면 실패로 본다 — 8/11에 겪은 그 증상이다", () => {
+  it("⚠ '막는다'고 할 때도 동시 폭주는 별개라고 함께 적는다 — 없는 안전을 팔지 않는다", () => {
+    // 2026-08-15 실측: 순차 100건은 32건 차단, 병렬 120건은 0건 차단.
+    // 이 진단은 워커 하나 안의 연속 호출이라 가장 유리한 조건이다.
+    expect(judgeProbe(ready(), 10).detail).toContain("병렬");
+  });
+
+  it("⚠ 상한을 넘겼는데 하나도 안 막히면 실패로 본다", () => {
     const verdict = judgeProbe(ready({ blocked: 0 }), 10);
     expect(verdict.level).toBe("fail");
     expect(verdict.detail).toContain("한 번도 차단되지 않았습니다");
