@@ -12,6 +12,7 @@ import { NextResponse } from "next/server";
 import { isBotUserAgent, normalizePath, viewDateKey } from "@/lib/analytics";
 import { sanitizeEngagement } from "@/lib/engagement";
 import { guardBeacon } from "@/lib/beacon-guard";
+import { isRecordablePath } from "@/lib/beacon-path";
 import { recordEngagement } from "@/features/analytics/engagement-repository";
 
 export const runtime = "nodejs";
@@ -38,6 +39,11 @@ export async function POST(request: Request) {
 
     const path = normalizePath(body?.path ?? "");
     if (!path) return NextResponse.json({ ok: true, counted: false });
+
+    // ⚠ 조회수와 **같은 규칙**으로 거른다. 두 표의 경로 집합이 갈리면 비율이 거짓말을 한다.
+    if (!isRecordablePath(path)) {
+      return NextResponse.json({ ok: true, counted: false, reason: "unknown-path" });
+    }
 
     // ⚠ 누구나 부를 수 있는 값이라 여기서 범위를 자른다(`lib/engagement.sanitizeEngagement`).
     const measured = sanitizeEngagement({

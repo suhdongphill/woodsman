@@ -19,6 +19,7 @@ import {
   ClockIcon,
   GearIcon,
   BarChartIcon,
+  LockIcon,
 } from "@/components/icons";
 import { cx } from "@/lib/format";
 
@@ -36,6 +37,8 @@ const MENU = [
   { href: "/admin/home", label: "홈 편집", icon: HomeIcon },
   { href: "/admin/settings", label: "사이트 기본값", icon: GearIcon },
   { href: "/admin/users", label: "사용자", icon: UsersIcon },
+  // ⚠ 방어 장치가 "붙어 있나"가 아니라 "실제로 막나"를 재는 화면. 2026-08-11 사고의 산물이다.
+  { href: "/admin/diagnostics", label: "자가 진단", icon: LockIcon },
 ];
 
 function Nav({ onNavigate }: { onNavigate?: () => void }) {

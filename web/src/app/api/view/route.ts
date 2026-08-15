@@ -13,6 +13,7 @@
 import { NextResponse } from "next/server";
 import { isBotUserAgent, normalizePath, postSlugFromPath, viewDateKey } from "@/lib/analytics";
 import { guardBeacon } from "@/lib/beacon-guard";
+import { isRecordablePath } from "@/lib/beacon-path";
 import { recordPageView } from "@/features/analytics/repository";
 
 export const runtime = "nodejs";
@@ -35,6 +36,12 @@ export async function POST(request: Request) {
     const body = (await request.json().catch(() => null)) as { path?: string } | null;
     const path = normalizePath(body?.path ?? "");
     if (!path) return NextResponse.json({ ok: true, counted: false });
+
+    // ⚠ 사이트가 실제로 서비스하는 경로만 센다. 이걸 빼면 `/__probe` 같은 **없는 화면**을
+    //    얼마든지 통계표에 만들어 낼 수 있다(`lib/beacon-path.ts`).
+    if (!isRecordablePath(path)) {
+      return NextResponse.json({ ok: true, counted: false, reason: "unknown-path" });
+    }
 
     // 글이면 글 자체의 조회수도 함께 올라간다(규칙은 repository가 안다).
     await recordPageView(path, viewDateKey(new Date()), postSlugFromPath(path));

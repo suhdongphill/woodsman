@@ -20,6 +20,7 @@
 현재 순수 모듈: `access` `site-policy` `site-status` `performance` `outbound` `ads`
 `auth-providers` `site-url` `site-links` `format` `env-file` `site-basics`
 `data-mode` `allocation` `manual-price` `markdown` `sanitize-html` `seo` `sections`
+`analytics` `engagement` `beacon-path` `beacon-selftest`
 `macro/{registry,series,signal,parse}` `bubble/{catalog,score}`
 `ai/{catalog,persona,context,routing,retrieval}`
 — 전부 테스트가 있다.
@@ -36,6 +37,16 @@
 - 되돌리면 안 되는 결정에는 **⚠** 를 붙인다.
 - 사고가 났으면 **증상 → 원인 → 결정 → 재발 방지** 순으로 남긴다.
 
+## 2-1. ⚠ 설정과 코드에 같은 숫자를 두 번 적었으면 **테스트가 대조한다** (2026-08-15 추가)
+
+Worker 런타임은 `wrangler.jsonc`를 읽을 수 없어, 상한 같은 값을 코드에도 적어야 할 때가 있다.
+그럴 때 주석으로 "같이 고치세요"라고 쓰지 않는다 — 사람은 잊는다.
+**설정 파일을 직접 읽어 대조하는 테스트**를 붙인다(`beacon-selftest.test.ts`).
+
+같은 규칙을 **라우트 목록**에도 건다. 화면을 새로 만들고 집계 대상 목록에 넣는 것을 잊으면
+그 화면의 통계가 조용히 0이 된다. `beacon-path.test.ts`가 `src/app/(public)` 디렉터리를
+직접 걸어서 목록과 맞춰 본다.
+
 ## 3. 조용한 실패를 만들지 않는다 (필수)
 
 이 프로젝트에서 가장 크게 데인 부분이다.
@@ -47,6 +58,17 @@
 - "값이 없음"과 "읽지 못함"이 같은 화면이 되지 않게 한다.
 - 조용히 다른 경로로 떨어지는 폴백(예: DB 못 붙으면 로컬 파일로)을 만들지 않는다.
   경로가 갈리면 "로컬은 되는데 배포만 죽는" 사고가 난다.
+- ⚠ **`catch {}`로 예외를 삼키지 않는다** (2026-08-15 추가). `lib/beacon-guard.ts`가
+  `getCloudflareContext()`의 예외를 빈 catch로 삼키고 있어, "바인딩이 없는 것"과
+  "context를 못 읽은 것"이 운영에서 똑같이 보였다. 원인을 좁히는 데 그만큼 시간이 샜다.
+- ⚠ **외부 바인딩은 캐스팅하고 믿지 않는다.** 모양(`typeof x.limit === "function"`)과
+  **반환값의 모양**까지 확인한다. `{success: undefined}` 하나가 집계를 통째로 날린다.
+
+### 방어 장치는 재 봐야 인정한다 (2026-08-15 추가)
+
+붙였다고 끝이 아니다. **실제로 막히는지 재는 방법을 같이 남긴다.**
+2026-08-11에 속도 제한을 걸고 "닫았다"고 적었지만 배포 후 실측은 **447건 중 0건 차단**이었다.
+재는 자리는 `/admin/diagnostics`다 — CLI로 수백 번 두드려야 하는 측정은 다시 하지 않게 된다.
 
 ## 4. 배포 대상은 Cloudflare Workers다
 
