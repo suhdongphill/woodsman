@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import * as mock from "./mock";
-import { getStock, mockSeries } from "./mock";
 
 describe("대표 포트폴리오는 목업에서 내려왔다", () => {
   it("⚠ 목업을 다시 export하지 않는다 — 화면이 이걸 읽으면 관리자 편집이 무효가 된다", () => {
@@ -43,13 +42,16 @@ describe("댓글·사이트 설정도 목업에서 내려왔다", () => {
     expect("adminStats" in mock).toBe(false);
   });
 });
-describe("종목 목업", () => {
-  it("티커 대소문자 무관하게 조회된다", () => {
-    expect(getStock("tsm")?.name).toBe("TSMC");
-  });
-
-  it("mockSeries는 결정적이다(같은 입력 → 같은 출력)", () => {
-    expect(mockSeries(100, 10)).toEqual(mockSeries(100, 10));
+describe("⚠ 종목 목업도 내려갔다 (2026-08-15)", () => {
+  it("지어낸 시세·가짜 차트를 다시 export하지 않는다", () => {
+    // 공개 화면 다섯 곳(홈·/stocks·/stocks/[ticker]·/insights/[slug]·sitemap)이
+    // AAPL 232.6 · TSM 191.2 같은 **지어낸 숫자**를 실제 시세처럼 보여주고 있었다.
+    // 숫자를 공개해 신뢰를 얻는 사이트에서 가장 크게 깨지는 지점이다(운영지침 §5).
+    // 종목 데이터는 이제 features/reports/repository(발행된 보고서)에서만 온다.
+    expect("stocks" in mock).toBe(false);
+    expect("getStock" in mock).toBe(false);
+    expect("featuredStocks" in mock).toBe(false);
+    expect("mockSeries" in mock).toBe(false);
   });
 });
 

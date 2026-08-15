@@ -27,6 +27,7 @@ import type {
 } from "@/lib/report/types";
 import type { CanslimReading, DataTagKey } from "@/lib/canslim/types";
 import { isCanslimKey } from "@/lib/canslim/catalog";
+import { scoreCanslim } from "@/lib/canslim/score";
 
 /** ⚠ 날짜만 있는 값은 **정오(UTC)** 로 저장한다. 자정으로 넣으면 화면에서 하루가 밀린다. */
 function toStoredDate(day: string): string {
@@ -120,6 +121,81 @@ export async function loadReportSummaries(): Promise<ReportSummary[]> {
     nextCheckAt: dayOf(r.nextCheckAt),
     updatedAt: r.updatedAt ?? undefined,
   }));
+}
+
+/** 공개 목록용 — 발행본 요약 + CANSLIM 종합. */
+export type PublishedSummary = ReportSummary & {
+  industry?: string;
+  /** 0~10. ⚠ 채점된 축이 없으면 undefined다. 0으로 내지 않는다. */
+  composite10?: number;
+  publishedAt?: string;
+};
+
+/**
+ * 발행본 목록.
+ *
+ * ⚠ 종목마다 채점을 따로 읽지 않는다 — 종목 수만큼 왕복하면 무료 등급의
+ *    "호출당 50쿼리"를 목록 화면 하나가 먹는다. **쿼리 2번**으로 끝낸다.
+ */
+export async function loadPublishedSummaries(limit = 50): Promise<PublishedSummary[]> {
+  const rows = await queryAll<{
+    ticker: string;
+    name: string;
+    market: string;
+    industry: string | null;
+    headline: string;
+    version: number;
+    nextCheckAt: string | null;
+    publishedAt: string | null;
+    updatedAt: string | null;
+  }>(
+    `SELECT ticker, name, market, industry, headline, version, nextCheckAt, publishedAt, updatedAt
+       FROM StockReport WHERE status = 'PUBLISHED'
+      ORDER BY publishedAt DESC LIMIT ?`,
+    [limit],
+  );
+  if (rows.length === 0) return [];
+
+  const itemRows = await queryAll<{ ticker: string; itemKey: string; points: number | null; tag: string }>(
+    `SELECT ticker, itemKey, points, tag FROM StockReportItem
+      WHERE ticker IN (${rows.map(() => "?").join(", ")})`,
+    rows.map((r) => r.ticker),
+  );
+
+  const byTicker = new Map<string, Map<string, CanslimReading>>();
+  for (const i of itemRows) {
+    if (!isCanslimKey(i.itemKey)) continue;
+    const bucket = byTicker.get(i.ticker) ?? new Map<string, CanslimReading>();
+    bucket.set(i.itemKey, {
+      key: i.itemKey as CanslimReading["key"],
+      points: i.points ?? undefined,
+      tag: normalizeTag(i.tag) ?? "na",
+    });
+    byTicker.set(i.ticker, bucket);
+  }
+
+  return rows.map((r) => ({
+    ticker: r.ticker,
+    name: r.name,
+    market: r.market === "KR" ? "KR" : "US",
+    status: "PUBLISHED" as const,
+    headline: r.headline,
+    version: r.version,
+    industry: r.industry ?? undefined,
+    nextCheckAt: dayOf(r.nextCheckAt),
+    publishedAt: r.publishedAt ?? undefined,
+    updatedAt: r.updatedAt ?? undefined,
+    composite10: scoreCanslim(byTicker.get(r.ticker) ?? new Map()).composite10,
+  }));
+}
+
+/** 글에서 종목을 가리킬 때 쓰는 최소 조회 — 발행본이 없으면 null(링크를 걸지 않는다). */
+export async function findPublishedName(ticker: string): Promise<string | null> {
+  const row = await queryOne<{ name: string }>(
+    `SELECT name FROM StockReport WHERE ticker = ? AND status = 'PUBLISHED'`,
+    [ticker],
+  );
+  return row?.name ?? null;
 }
 
 /**

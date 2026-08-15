@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { stocks } from "@/lib/mock";
+import { loadPublishedSummaries } from "@/features/reports/repository";
 import { loadPublishedPosts } from "@/features/posts/repository";
 import { absoluteUrl } from "@/lib/site-url";
 import { MACRO_GROUPS } from "@/lib/macro/groups";
@@ -59,12 +59,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  for (const stock of stocks) {
+  // ⚠ **발행된 보고서만** 넣는다. 예전에는 목업 종목 8건을 넣고 있었는데,
+  //    그 경로들은 이제 404다 — 404를 색인 요청하는 것은 사이트 신뢰를 깎는다.
+  for (const report of await loadPublishedSummaries(200)) {
     entries.push({
-      url: absoluteUrl(`/stocks/${stock.ticker}`),
-      lastModified: now,
+      url: absoluteUrl(`/stocks/${report.ticker}`),
+      lastModified: report.publishedAt ? new Date(report.publishedAt) : now,
       changeFrequency: "weekly",
-      priority: 0.4,
+      // 고유 분석 콘텐츠라 목업 시절(0.4)보다 우선순위를 높인다.
+      priority: 0.7,
     });
   }
 

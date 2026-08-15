@@ -10,7 +10,7 @@ import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { outboundPostHref } from "@/lib/outbound";
 import { ClockIcon, EyeIcon, ExternalIcon, TagIcon, ChevronRightIcon } from "@/components/icons";
 import { formatDate } from "@/lib/format";
-import { getStock } from "@/lib/mock";
+import { findPublishedName } from "@/features/reports/repository";
 import { findPostBySlug, loadPublishedPosts } from "@/features/posts/repository";
 import { loadVisibleComments } from "@/features/comments/repository";
 import { getSiteFlags, getSitePolicy } from "@/lib/site-settings";
@@ -59,7 +59,9 @@ export default async function InsightDetailPage({ params }: Props) {
     currentUser(),
   ]);
   const related = all.filter((p) => p.id !== post.id && p.category === post.category).slice(0, 3);
-  const stock = post.ticker ? getStock(post.ticker) : undefined;
+  // ⚠ 발행된 보고서가 있을 때만 링크를 건다. 목업 종목을 읽던 시절에는 존재하지 않는
+  //    화면으로 보내고 있었다 — 링크는 눌러서 도착해야 링크다.
+  const stockName = post.ticker ? await findPublishedName(post.ticker) : null;
   const tags = post.tags?.split(",").filter(Boolean) ?? [];
   const isFromTistory = post.source === "TISTORY" && Boolean(post.externalUrl);
 
@@ -97,14 +99,14 @@ export default async function InsightDetailPage({ params }: Props) {
       </div>
 
       {/* 연결된 종목 */}
-      {stock && (
+      {stockName && post.ticker && (
         <Link
-          href={`/stocks/${stock.ticker}`}
+          href={`/stocks/${post.ticker}`}
           className="mt-6 flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3 hover:border-gold-600/40 transition-colors"
         >
           <span className="text-[11px] text-muted">연결 종목</span>
-          <span className="text-sm font-semibold text-white">{stock.name}</span>
-          <span className="text-[11px] font-mono text-gray-500">{stock.ticker}</span>
+          <span className="text-sm font-semibold text-white">{stockName}</span>
+          <span className="text-[11px] font-mono text-gray-500">{post.ticker}</span>
           <ChevronRightIcon size={14} className="ml-auto text-gold-500" />
         </Link>
       )}

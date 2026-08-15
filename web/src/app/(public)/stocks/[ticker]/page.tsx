@@ -4,85 +4,78 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardTitle } from "@/components/ui/Card";
-import { MockChart } from "@/features/stocks/ui/MockChart";
 import { CanslimPanel } from "@/features/ai/ui/CanslimPanel";
+import { ReportView } from "@/features/reports/ui/ReportView";
 import { PostCard } from "@/features/posts/ui/PostCard";
 import { ChevronRightIcon } from "@/components/icons";
-import { cx, formatNumber, formatPct, profitColor } from "@/lib/format";
-import { getStock, mockSeries } from "@/lib/mock";
 import { scoreCanslim } from "@/lib/canslim/score";
+import { loadPublishedReport } from "@/features/reports/repository";
 import { loadPublishedPosts } from "@/features/posts/repository";
 import { findPublishedHoldingByTicker } from "@/features/portfolio/repository";
 
 type Props = { params: Promise<{ ticker: string }> };
 
-/* 목업 뉴스는 삭제했다(2026-08-07 점검).
-   Reuters·Bloomberg·CNBC·WSJ 이름을 달고 실재하지 않는 기사를 보여주고 있었고,
-   링크는 전부 href="#"이라 아무 데도 가지 않았다. 숫자를 공개해 신뢰를 얻는 사이트에서
-   실재 언론사 이름을 붙인 가짜 기사는 가장 크게 깨는 지점이다(운영지침 5장).
-   ⚠ 실제 뉴스 출처가 붙기 전까지 되살리지 말 것. */
-/* ⚠ 2026-08-15: 하드코딩된 CANSLIM 예시 점수표를 지웠다(설계서 §1의 진단).
-   TSM·NVDA·DEFAULT 세 벌의 숫자가 근거·출처·기준일 없이 박혀 있었고, 화면은 그걸
-   실제 분석처럼 그렸다. 숫자 모양의 의견이다.
-   채점 결과는 2단계(스키마 + repository)에서 D1로 들어온다. 그때까지는 **채점 전**으로 그린다 —
-   ⚠ 없는 점수를 지어내는 것보다 비어 있는 편이 낫다(운영지침 §5). */
-
 /**
- * ⚠ 정적 생성 금지 — 이 화면은 대표 포트폴리오(DB)를 읽는다.
- *    `generateStaticParams`로 굳혀 두면 종목을 편입·제외해도 "편입 안 됨"이 그대로 남는다.
- *    (차트·뉴스·시세는 아직 목업이다. 실데이터 연결은 P6/P7.)
+ * 종목분석 보고서 (공개).
+ *
+ * ## ⚠ 2026-08-15: 목업을 전부 걷어냈다
+ * 이 화면은 `lib/mock`의 **지어낸 시세**(AAPL 232.6 같은)와 결정적 파형으로 만든 가짜 차트,
+ * 근거 없는 CANSLIM 예시 점수를 실제 분석처럼 보여주고 있었다. 숫자를 공개해 신뢰를 얻는
+ * 사이트에서 가장 크게 깨지는 지점이라(운영지침 §5) 통째로 지웠다.
+ *
+ * ⚠ 이제 **발행된 보고서(PUBLISHED)만** 이 경로에 존재한다. 보고서가 없으면 404다 —
+ *    빈 껍데기 화면을 만들어 두면 검색엔진에 내용 없는 페이지가 색인된다.
+ * ⚠ 차트는 없다. 시세 실데이터가 붙는 단계에서 더한다. **없는 것을 그리지 않는다.**
  */
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { ticker } = await params;
-  const s = getStock(ticker);
-  if (!s) return { title: "종목을 찾을 수 없습니다" };
+  const report = await loadPublishedReport(ticker);
+  if (!report) return { title: "보고서를 찾을 수 없습니다" };
+
   return {
-    title: `${s.name} (${s.ticker})`,
-    description: `${s.name} 차트·CANSLIM 점수·최신 뉴스를 한 화면에서 확인합니다.`,
+    title: `${report.name} (${report.ticker}) 종목분석`,
+    description: report.headline,
   };
 }
 
-export default async function StockDetailPage({ params }: Props) {
+export default async function StockReportPage({ params }: Props) {
   const { ticker } = await params;
-  const stock = getStock(ticker);
-  if (!stock) notFound();
+  const report = await loadPublishedReport(ticker);
+  if (!report) notFound();
 
-  const up = stock.changePct >= 0;
-  const series = mockSeries(stock.price);
-  // ⚠ 빈 채점이다. 결측 제외·등급 밴드·M 게이트 판정은 전부 순수 모듈이 한다.
-  const canslim = scoreCanslim(new Map());
-  const holding = await findPublishedHoldingByTicker(stock.ticker);
+  const canslim = scoreCanslim(report.readings);
+  const holding = await findPublishedHoldingByTicker(report.ticker);
   const related = (await loadPublishedPosts(50))
-    .filter((p) => p.ticker === stock.ticker)
+    .filter((p) => p.ticker === report.ticker)
     .slice(0, 2);
 
   return (
     <>
       <PageHeader
-        eyebrow={`${stock.market} · ${stock.ticker}`}
-        title={stock.name}
-        description={stock.industry}
+        eyebrow={`${report.market === "KR" ? "한국" : "미국"} · ${report.ticker}${
+          report.industry ? ` · ${report.industry}` : ""
+        }`}
+        title={report.name}
+        description={report.headline}
         action={
           <div className="text-left sm:text-right">
-            <p className="text-2xl font-bold text-white tabular-nums">
-              {formatNumber(stock.price, stock.currency)}
-            </p>
-            <p className={cx("text-sm tabular-nums mt-0.5", profitColor(stock.changePct))}>
-              {formatPct(stock.changePct)}
-            </p>
+            <p className="text-[11px] text-muted">보고서 버전</p>
+            <p className="text-sm font-mono text-gold-400">v{report.version}</p>
+            {report.publishedAt && (
+              <p className="text-[11px] text-gray-600 tabular-nums mt-0.5">
+                {report.publishedAt.slice(0, 10)} 발행
+              </p>
+            )}
           </div>
         }
       />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 grid lg:grid-cols-[1.6fr_1fr] gap-6 items-start">
-        <div className="space-y-6">
-          <MockChart series={series} up={up} />
+        <ReportView report={report} />
 
-        </div>
-
-        <div className="space-y-6">
+        <div className="space-y-6 lg:sticky lg:top-6">
           <CanslimPanel score={canslim} />
 
           {/* 대표 포트폴리오 편입 여부 */}
@@ -121,9 +114,7 @@ export default async function StockDetailPage({ params }: Props) {
           ) : (
             <Card>
               <CardTitle>대표 포트폴리오 편입</CardTitle>
-              <p className="text-[12.5px] text-muted">
-                현재 편입되지 않은 관찰 종목입니다.
-              </p>
+              <p className="text-[12.5px] text-muted">현재 편입되지 않은 관찰 종목입니다.</p>
             </Card>
           )}
 

@@ -1,37 +1,47 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { StockCard } from "@/features/stocks/ui/StockCard";
 import { EmptyState } from "@/components/ui/Card";
 import { BarChartIcon } from "@/components/icons";
-import { stocks } from "@/lib/mock";
+import { ReportCard } from "@/features/reports/ui/ReportCard";
+import { loadPublishedSummaries } from "@/features/reports/repository";
 
 export const metadata: Metadata = {
   title: "종목분석",
-  description: "차트·CANSLIM·뉴스를 한 화면에서 확인합니다.",
+  description: "정직성 규율을 통과해 발행한 종목분석 보고서 목록입니다.",
 };
 
+/** ⚠ 정적 생성 금지 — 발행 상태가 바뀌면 곧바로 반영돼야 한다. */
+export const dynamic = "force-dynamic";
 
+/**
+ * 종목분석 목록.
+ *
+ * ⚠ 2026-08-15: `lib/mock`의 종목 8건(지어낸 시세 포함)을 걷어냈다.
+ *    이제 **발행된 보고서만** 나온다. 비어 있으면 비어 있다고 적는다 —
+ *    목업으로 채운 목록은 방문자에게 "이만큼 분석했다"는 거짓 신호를 준다.
+ */
+export default async function StocksPage() {
+  const reports = await loadPublishedSummaries();
 
-export default function StocksPage() {
   return (
     <>
       <PageHeader
         eyebrow="STOCKS"
         title="종목분석"
-        description="대표 포트폴리오 편입 종목과 관찰 종목을 함께 봅니다. 상세에서 차트와 CANSLIM 구성을 볼 수 있습니다."
+        description="근거·출처·기준일을 갖춘 보고서만 발행합니다. 확인하지 못한 항목은 비운 채 조회처를 적습니다."
       />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
-        {/* 업종 필터·검색·정렬은 제거했다(2026-08-07 점검).
-            아무 데도 연결돼 있지 않아 눌러도 목록이 그대로였다 — 방문자는 "종목이 이것뿐"으로 읽는다.
-            실데이터가 붙을 때 실제로 동작하는 형태로 다시 만든다. */}
-
-        {stocks.length === 0 ? (
-          <EmptyState icon={<BarChartIcon size={30} />} title="표시할 종목이 없습니다" />
+        {reports.length === 0 ? (
+          <EmptyState
+            icon={<BarChartIcon size={30} />}
+            title="아직 발행한 보고서가 없습니다"
+            description="정직성 규율(근거·출처·기준일·철회 조건·방법론 한계)을 통과한 보고서만 여기에 올립니다. 준비되는 대로 공개합니다."
+          />
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {stocks.map((s) => (
-              <StockCard key={s.ticker} stock={s} />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {reports.map((r) => (
+              <ReportCard key={r.ticker} report={r} />
             ))}
           </div>
         )}

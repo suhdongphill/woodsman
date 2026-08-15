@@ -3,7 +3,7 @@
  * Phase 1에서 Prisma seed / DB 조회로 대체된다. (필드명은 Prisma 스키마와 동일)
  * 주의: 날짜·난수는 모두 고정값 — SSR/CSR hydration 불일치를 막는다.
  */
-import type { AccountSnapshot, JournalEntry, StockSummary } from "./types";
+import type { AccountSnapshot, JournalEntry } from "./types";
 
 /* 사이트 설정 목업은 삭제했다(2026-08-07).
    화면이 이걸 읽는 동안 `/admin/comments`의 토글 다섯 개가 **켜도 저장되지 않았다** —
@@ -124,126 +124,13 @@ export const journalEntries: JournalEntry[] = [
    연결돼 있지 않았다 — 숨겼다고 믿은 댓글이 계속 노출됐다.
    지금은 `features/comments/repository.ts`가 D1을 읽는다. ⚠ 되살리지 말 것. */
 
-/* ─────────────── 종목 ─────────────── */
-export const stocks: StockSummary[] = [
-  {
-    ticker: "TSM",
-    name: "TSMC",
-    market: "NYSE",
-    industry: "반도체·IT부품",
-    price: 191.2,
-    changePct: 1.24,
-    currency: "USD",
-    canslim: 8.4,
-    spark: [168, 171, 169, 175, 178, 176, 182, 185, 183, 188, 190, 191.2],
-  },
-  {
-    ticker: "NVDA",
-    name: "엔비디아",
-    market: "NASDAQ",
-    industry: "반도체·IT부품",
-    price: 148.7,
-    changePct: -0.86,
-    currency: "USD",
-    canslim: 7.9,
-    spark: [155, 152, 158, 161, 157, 154, 150, 153, 151, 149, 150.2, 148.7],
-  },
-  {
-    ticker: "005930",
-    name: "삼성전자",
-    market: "KOSPI",
-    industry: "반도체·IT부품",
-    price: 84300,
-    changePct: 0.72,
-    currency: "KRW",
-    canslim: 6.8,
-    spark: [76000, 77500, 79000, 78200, 80100, 81300, 80500, 82400, 83100, 82800, 83900, 84300],
-  },
-  {
-    ticker: "PFE",
-    name: "화이자",
-    market: "NYSE",
-    industry: "바이오·헬스케어",
-    price: 26.4,
-    changePct: 0.45,
-    currency: "USD",
-    canslim: 5.2,
-    spark: [28.9, 28.4, 27.9, 27.5, 27.8, 27.1, 26.8, 26.2, 26.5, 26.1, 26.3, 26.4],
-  },
-  {
-    ticker: "069500",
-    name: "KODEX 200",
-    market: "KOSPI",
-    industry: "기타",
-    price: 36980,
-    changePct: -0.41,
-    currency: "KRW",
-    canslim: 6.1,
-    spark: [34200, 34800, 35400, 35100, 35900, 36400, 36100, 36800, 37200, 37050, 37120, 36980],
-  },
-  {
-    ticker: "088980",
-    name: "맥쿼리인프라",
-    market: "KOSPI",
-    industry: "금융·핀테크",
-    price: 12450,
-    changePct: 0.32,
-    currency: "KRW",
-    canslim: 4.6,
-    spark: [11800, 11750, 11900, 12050, 11980, 12100, 12300, 12200, 12380, 12400, 12410, 12450],
-  },
-  {
-    ticker: "AAPL",
-    name: "애플",
-    market: "NASDAQ",
-    industry: "소프트웨어·플랫폼",
-    price: 232.6,
-    changePct: 0.58,
-    currency: "USD",
-    canslim: 7.1,
-    spark: [214, 218, 221, 219, 224, 227, 225, 229, 231, 230, 233, 232.6],
-  },
-  {
-    ticker: "MSFT",
-    name: "마이크로소프트",
-    market: "NASDAQ",
-    industry: "소프트웨어·플랫폼",
-    price: 471.3,
-    changePct: 1.02,
-    currency: "USD",
-    canslim: 8.0,
-    spark: [432, 439, 444, 441, 450, 455, 452, 461, 466, 464, 469, 471.3],
-  },
-];
+/* 종목 목업은 삭제했다(2026-08-15).
+   `stocks`·`getStock`·`featuredStocks`·`mockSeries` 네 개가 공개 화면 다섯 곳
+   (홈 '주목 종목' · /stocks · /stocks/[ticker] · /insights/[slug] · sitemap)에서
+   **지어낸 시세**(AAPL 232.6 · TSM 191.2 같은)와 결정적 파형으로 만든 가짜 차트를
+   실제 데이터처럼 보여주고 있었다. 숫자를 공개해 신뢰를 얻는 사이트에서 가장 크게
+   깨지는 지점이다(운영지침 §5).
 
-export function getStock(ticker: string) {
-  return stocks.find((s) => s.ticker.toLowerCase() === ticker.toLowerCase());
-}
-
-/** 홈 '주목 종목' 4개 */
-export const featuredStocks = stocks.slice(0, 4);
-
-/** 종목 상세 목업: 90일 캔들 대체용 종가 시리즈 (고정 생성) */
-export function mockSeries(base: number, len = 90) {
-  const out: { t: string; v: number }[] = [];
-  let v = base * 0.86;
-  for (let i = 0; i < len; i++) {
-    // 결정적(deterministic) 파형 — 난수 미사용
-    const wave = Math.sin(i / 6) * 0.012 + Math.sin(i / 17) * 0.02 + 0.0016;
-    v = v * (1 + wave);
-    const d = new Date(Date.UTC(2026, 4, 4) + i * 86400000);
-    out.push({ t: d.toISOString().slice(0, 10), v: Number(v.toFixed(2)) });
-  }
-  return out;
-}
-
-/* AI 제공자·설정·대시보드 요약 목업은 삭제했다(2026-08-07 점검).
-   대시보드가 이 고정값을 읽어 키가 하나도 없는데도 "연결됨 · 206K 사용"을 그렸다.
-   같은 사실을 /admin/ai는 실제 env·D1로 판단해 "0/7 연결"이라 말했다 —
-   한 사실이 두 화면에서 다르면 어느 쪽도 못 믿는다.
-   지금은 `features/ai/repository.ts`(사용량)와 `lib/ai/catalog.ts`(제공자 목록),
-   `lib/env.hasEnvKey`(연결 여부)가 답한다. ⚠ 되살리지 말 것. */
-/* 대표 포트폴리오·리밸런싱 목업은 삭제했다(2026-08-06).
-   화면이 이 파일을 읽는 한 관리자 화면에서 아무리 고쳐도 바뀌지 않는다 —
-   투자일지에서 겪은 사고와 같다. 지금은 `features/portfolio/repository.ts`가 D1을 읽고,
-   시드 데이터는 `lib/seed-data.ts`에 있다. 목업을 되살리지 말 것. */
+   지금 종목 데이터는 `features/reports/repository`의 **발행된 보고서**에서 온다.
+   보고서가 없으면 화면은 비어 있다 — 그게 사실이다.
+   ⚠ 되살리지 말 것. `mock.test.ts`가 막는다. */
