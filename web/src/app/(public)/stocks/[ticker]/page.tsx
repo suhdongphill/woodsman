@@ -10,6 +10,7 @@ import { PostCard } from "@/features/posts/ui/PostCard";
 import { ChevronRightIcon } from "@/components/icons";
 import { cx, formatNumber, formatPct, profitColor } from "@/lib/format";
 import { getStock, mockSeries } from "@/lib/mock";
+import { scoreCanslim } from "@/lib/canslim/score";
 import { loadPublishedPosts } from "@/features/posts/repository";
 import { findPublishedHoldingByTicker } from "@/features/portfolio/repository";
 
@@ -20,11 +21,11 @@ type Props = { params: Promise<{ ticker: string }> };
    링크는 전부 href="#"이라 아무 데도 가지 않았다. 숫자를 공개해 신뢰를 얻는 사이트에서
    실재 언론사 이름을 붙인 가짜 기사는 가장 크게 깨는 지점이다(운영지침 5장).
    ⚠ 실제 뉴스 출처가 붙기 전까지 되살리지 말 것. */
-const CANSLIM_SCORES: Record<string, Record<string, number>> = {
-  TSM: { C: 9, A: 8, N: 9, S: 8, L: 9, I: 8, M: 7 },
-  NVDA: { C: 9, A: 9, N: 8, S: 7, L: 9, I: 8, M: 6 },
-  DEFAULT: { C: 6, A: 6, N: 5, S: 6, L: 5, I: 6, M: 6 },
-};
+/* ⚠ 2026-08-15: 하드코딩된 CANSLIM 예시 점수표를 지웠다(설계서 §1의 진단).
+   TSM·NVDA·DEFAULT 세 벌의 숫자가 근거·출처·기준일 없이 박혀 있었고, 화면은 그걸
+   실제 분석처럼 그렸다. 숫자 모양의 의견이다.
+   채점 결과는 2단계(스키마 + repository)에서 D1로 들어온다. 그때까지는 **채점 전**으로 그린다 —
+   ⚠ 없는 점수를 지어내는 것보다 비어 있는 편이 낫다(운영지침 §5). */
 
 /**
  * ⚠ 정적 생성 금지 — 이 화면은 대표 포트폴리오(DB)를 읽는다.
@@ -50,7 +51,8 @@ export default async function StockDetailPage({ params }: Props) {
 
   const up = stock.changePct >= 0;
   const series = mockSeries(stock.price);
-  const scores = CANSLIM_SCORES[stock.ticker] ?? CANSLIM_SCORES.DEFAULT;
+  // ⚠ 빈 채점이다. 결측 제외·등급 밴드·M 게이트 판정은 전부 순수 모듈이 한다.
+  const canslim = scoreCanslim(new Map());
   const holding = await findPublishedHoldingByTicker(stock.ticker);
   const related = (await loadPublishedPosts(50))
     .filter((p) => p.ticker === stock.ticker)
@@ -81,7 +83,7 @@ export default async function StockDetailPage({ params }: Props) {
         </div>
 
         <div className="space-y-6">
-          <CanslimPanel composite={stock.canslim ?? 0} scores={scores} />
+          <CanslimPanel score={canslim} />
 
           {/* 대표 포트폴리오 편입 여부 */}
           {holding ? (
