@@ -4,7 +4,9 @@ import { AdminPageHeader, AdminShell } from "@/components/layout/AdminPageHeader
 import { Card, CardTitle } from "@/components/ui/Card";
 import { requireAdmin } from "@/lib/session";
 import { RateLimitProbe } from "@/features/diagnostics/ui/RateLimitProbe";
+import { probeUsage } from "@/features/diagnostics/usage";
 import { PUBLIC_STATIC_PATHS, DYNAMIC_PATH_RULES } from "@/lib/beacon-path";
+import { CLOUDFLARE_LIMITS, CLOUDFLARE_LINKS, LIMITS_CHECKED_AT, gaugeD1 } from "@/lib/quota";
 
 export const metadata: Metadata = { title: "자가 진단" };
 
@@ -26,11 +28,14 @@ export const dynamic = "force-dynamic";
 export default async function AdminDiagnosticsPage() {
   await requireAdmin("/admin/diagnostics");
 
+  const usage = await probeUsage();
+  const gauge = usage.sizeBytes === undefined ? undefined : gaugeD1(usage.sizeBytes, "free");
+
   return (
     <AdminShell>
       <AdminPageHeader
         title="자가 진단"
-        description="방어 장치가 실제로 동작하는지 운영 런타임에서 직접 잽니다."
+        description="방어 장치가 실제로 동작하는지, 무료 등급 한도에 얼마나 가까운지 운영 런타임에서 직접 잽니다."
         action={
           <Link
             href="/admin"
@@ -42,6 +47,118 @@ export default async function AdminDiagnosticsPage() {
       />
 
       <div className="space-y-5">
+        {/* ⚠ 비용·한도 문제는 코드 버그와 증상이 똑같다("불러오지 못했습니다").
+            그래서 닿기 전에 보이게 계기를 맨 위에 둔다. */}
+        <Card>
+          <CardTitle
+            action={
+              <a
+                href={CLOUDFLARE_LINKS.workersPlans}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-[11px] text-gold-400 hover:text-gold-500"
+              >
+                요금제 전환 →
+              </a>
+            }
+          >
+            무료 등급 사용량
+          </CardTitle>
+
+          {usage.failure ? (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/[0.06] px-3.5 py-3">
+              <p className="text-[13px] font-medium text-red-200">{usage.failure.title}</p>
+              <p className="mt-1 text-[12px] text-gray-300">{usage.failure.detail}</p>
+              <p className="mt-1 text-[12px] text-red-200">→ {usage.failure.action}</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-[12px] text-muted">D1 데이터베이스 크기</span>
+                  <span
+                    className={`text-[12.5px] tabular-nums ${
+                      gauge?.level === "critical"
+                        ? "text-red-300"
+                        : gauge?.level === "warn"
+                          ? "text-amber-300"
+                          : "text-gray-200"
+                    }`}
+                  >
+                    {gauge ? gauge.text : "재지 못했습니다"}
+                  </span>
+                </div>
+                <div className="mt-2 h-2 rounded-full bg-[#12141c] overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${
+                      gauge?.level === "critical"
+                        ? "bg-red-500"
+                        : gauge?.level === "warn"
+                          ? "bg-amber-500"
+                          : "bg-emerald-500"
+                    }`}
+                    style={{ width: `${Math.min(100, gauge?.pct ?? 0)}%` }}
+                  />
+                </div>
+              </div>
+
+              {usage.tables.length > 0 && (
+                <div className="rounded-lg bg-black/20 px-3 py-2">
+                  <p className="mb-1.5 text-[11px] text-muted">행이 많은 표 (무엇이 자리를 먹나)</p>
+                  {usage.tables.slice(0, 6).map((t) => (
+                    <div key={t.name} className="flex justify-between py-0.5 text-[12px]">
+                      <span className="text-gray-400 font-mono">{t.name}</span>
+                      <span className="text-gray-300 tabular-nums">
+                        {t.rows.toLocaleString("ko-KR")}행
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-[12px]">
+              <thead>
+                <tr className="border-b border-border text-left text-[10.5px] text-muted">
+                  <th className="py-2 pr-3">자원</th>
+                  <th className="py-2 pr-3">무료</th>
+                  <th className="py-2 pr-3">유료</th>
+                  <th className="py-2">한도에 닿으면</th>
+                </tr>
+              </thead>
+              <tbody>
+                {CLOUDFLARE_LIMITS.map((row) => (
+                  <tr key={row.key} className="border-b border-border/50 last:border-0">
+                    <td className="py-2 pr-3 text-gray-300 whitespace-nowrap">{row.label}</td>
+                    <td className="py-2 pr-3 text-gray-400 whitespace-nowrap tabular-nums">{row.free}</td>
+                    <td className="py-2 pr-3 text-emerald-300/80 whitespace-nowrap tabular-nums">{row.paid}</td>
+                    <td className="py-2 text-gray-500">{row.symptom}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11.5px]">
+            <a href={CLOUDFLARE_LINKS.billing} target="_blank" rel="noreferrer noopener" className="text-gold-400 hover:text-gold-500">
+              결제·요금제 →
+            </a>
+            <a href={CLOUDFLARE_LINKS.d1} target="_blank" rel="noreferrer noopener" className="text-gold-400 hover:text-gold-500">
+              D1 사용량 →
+            </a>
+            <a href={CLOUDFLARE_LINKS.observability} target="_blank" rel="noreferrer noopener" className="text-gold-400 hover:text-gold-500">
+              Worker 로그 →
+            </a>
+            <a href={CLOUDFLARE_LINKS.limitsDoc} target="_blank" rel="noreferrer noopener" className="text-gray-500 hover:text-gray-300">
+              공식 한도 문서 →
+            </a>
+            {/* ⚠ 오래된 숫자를 확정처럼 보이지 않게 확인 날짜를 적는다. */}
+            <span className="text-gray-600">한도표 확인: {LIMITS_CHECKED_AT}</span>
+          </div>
+        </Card>
+
         <Card>
           <CardTitle>집계 비콘 · 속도 제한</CardTitle>
           <RateLimitProbe />

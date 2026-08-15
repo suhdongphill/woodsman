@@ -20,6 +20,7 @@ import {
   GearIcon,
   BarChartIcon,
   LockIcon,
+  TrendingUpIcon,
 } from "@/components/icons";
 import { cx } from "@/lib/format";
 
@@ -30,6 +31,7 @@ const MENU = [
   { href: "/admin/analytics", label: "화면 통계", icon: BarChartIcon },
   { href: "/admin/macro", label: "거시 지표", icon: BarChartIcon },
   { href: "/admin/bubble", label: "버블 모니터", icon: BotIcon },
+  { href: "/admin/stocks", label: "종목 보고서", icon: TrendingUpIcon },
   { href: "/admin/posts", label: "콘텐츠", icon: FileTextIcon },
   { href: "/admin/comments", label: "댓글 · 정책", icon: MessageIcon },
   { href: "/admin/ai", label: "AI 제공자", icon: BotIcon },

@@ -22,13 +22,26 @@
  * - 도메인 쿼리는 이 파일이 아니라 각 기능 모듈의 repository에 둔다.
  */
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { classifyQuotaError } from "./quota";
+
+/**
+ * D1이 결과에 함께 주는 계측값.
+ * ⚠ `size_after`는 **데이터베이스의 실제 바이트 크기**다. 무료 등급 500 MB에 얼마나
+ *    가까운지를 이 값으로만 알 수 있어서, `/admin/diagnostics`가 이걸 계기판으로 쓴다.
+ */
+export type D1Meta = {
+  size_after?: number;
+  rows_read?: number;
+  rows_written?: number;
+  duration?: number;
+};
 
 /** D1 바인딩의 최소 형태 — @cloudflare/workers-types 없이도 쓰도록 직접 좁게 정의한다. */
 export type D1Statement = {
   bind: (...values: unknown[]) => D1Statement;
   first: <T>() => Promise<T | null>;
-  all: <T>() => Promise<{ results: T[] }>;
-  run: () => Promise<unknown>;
+  all: <T>() => Promise<{ results: T[]; meta?: D1Meta }>;
+  run: () => Promise<{ meta?: D1Meta }>;
 };
 
 export type D1 = {
@@ -52,23 +65,68 @@ export async function getD1(): Promise<D1> {
   return binding as D1;
 }
 
+/**
+ * 질의 실패를 **분류해서** 로그에 남기고 그대로 다시 던진다.
+ *
+ * ⚠ 삼키지 않는다(3장). 다만 무료 등급 한도에 닿아 죽는 것과 코드 버그로 죽는 것은
+ *    증상이 똑같이 "불러오지 못했습니다"라서, 그걸 구분하지 못하면 엉뚱한 데를 뒤지게 된다.
+ *    분류 결과는 `/admin/diagnostics`가 화면에서도 읽는다.
+ */
+function rethrowClassified(error: unknown, sql: string): never {
+  const verdict = classifyQuotaError(error);
+  const head = sql.trim().slice(0, 120);
+
+  if (verdict.kind === "yes") {
+    console.error(`[d1] ⚠ 한도 문제로 보입니다 — ${verdict.title}. ${verdict.action} | SQL: ${head}`, error);
+  } else if (verdict.kind === "unknown") {
+    console.error(`[d1] 한도 문제일 수 있습니다 — ${verdict.detail} | SQL: ${head}`, error);
+  } else {
+    console.error(`[d1] 질의 실패 | SQL: ${head}`, error);
+  }
+  throw error;
+}
+
 /** 한 행. 없으면 null. */
 export async function queryOne<T>(sql: string, params: unknown[] = []): Promise<T | null> {
-  const db = await getD1();
-  return db.prepare(sql).bind(...params).first<T>();
+  try {
+    const db = await getD1();
+    return await db.prepare(sql).bind(...params).first<T>();
+  } catch (error) {
+    rethrowClassified(error, sql);
+  }
 }
 
 /** 여러 행. */
 export async function queryAll<T>(sql: string, params: unknown[] = []): Promise<T[]> {
-  const db = await getD1();
-  const { results } = await db.prepare(sql).bind(...params).all<T>();
-  return results ?? [];
+  try {
+    const db = await getD1();
+    const { results } = await db.prepare(sql).bind(...params).all<T>();
+    return results ?? [];
+  } catch (error) {
+    rethrowClassified(error, sql);
+  }
 }
 
 /** INSERT/UPDATE/DELETE. */
 export async function execute(sql: string, params: unknown[] = []): Promise<void> {
+  try {
+    const db = await getD1();
+    await db.prepare(sql).bind(...params).run();
+  } catch (error) {
+    rethrowClassified(error, sql);
+  }
+}
+
+/**
+ * 데이터베이스의 실제 크기(바이트)를 잰다. 재지 못하면 undefined.
+ *
+ * ⚠ 이 값이 무료 등급 한도(500 MB)에 얼마나 가까운지를 알려 주는 **유일한 실측치**다.
+ *    D1은 아무 질의에나 `meta.size_after`를 함께 준다 — 그래서 가장 싼 질의 하나로 잰다.
+ */
+export async function probeD1SizeBytes(): Promise<number | undefined> {
   const db = await getD1();
-  await db.prepare(sql).bind(...params).run();
+  const result = await db.prepare(`SELECT 1`).run();
+  return result?.meta?.size_after;
 }
 
 /**
