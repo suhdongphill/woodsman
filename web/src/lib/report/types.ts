@@ -117,6 +117,12 @@ export type ReportDraft = {
   /** ⚠ 밸류에이션 방법론의 한계(R6). 신뢰는 결론이 아니라 한계 고백에서 나온다. */
   valuationLimitation?: string;
   consensusTarget?: ConsensusTarget;
+  /**
+   * 이 보고서를 옮겨 실은 티스토리 글 주소.
+   * ⚠ 1순위 목적(티스토리 유입)의 경로다. 값이 있으면 공개 화면이 경유 CTA를 띄운다.
+   * ⚠ 폼에서 받은 문자열을 그대로 넣지 않는다 — `sanitizeUrl`을 거친 값만 온다.
+   */
+  tistoryUrl?: string;
   blocks: ReportBlock[];
   checklist: ChecklistItem[];
 };

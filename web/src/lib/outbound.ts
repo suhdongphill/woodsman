@@ -72,16 +72,27 @@ export function resolveOutbound(
   findTistoryUrl?: (slug: string) => string | null | undefined,
   /** 관리자가 저장한 목적지. 넘기지 않으면 코드 기본값을 쓴다. */
   destinations: OutboundDestinations = OUTBOUND_TARGETS,
+  /**
+   * 종목 보고서의 티스토리 원문. ⚠ 글(`post-`)과 **같은 규칙**이다 —
+   * 목적지는 우리가 저장해 둔 값에서만 나오고, 요청이 준 URL을 따라가지 않는다.
+   */
+  findStockUrl?: (ticker: string) => string | null | undefined,
 ): string | null {
   if (isOutboundTarget(target)) return destinations[target];
 
   const postSlug = target.startsWith(POST_PREFIX) ? target.slice(POST_PREFIX.length) : null;
   if (postSlug && findTistoryUrl) return findTistoryUrl(postSlug) ?? null;
 
+  const ticker = target.startsWith(STOCK_PREFIX) ? target.slice(STOCK_PREFIX.length) : null;
+  if (ticker && findStockUrl) return findStockUrl(ticker) ?? null;
+
   return null;
 }
 
 const POST_PREFIX = "post-";
+
+/** ⚠ 티커는 **문자열**이다. `005930`의 앞 0이 살아 있어야 한다. */
+const STOCK_PREFIX = "stock-";
 
 /** 화면에서 쓰는 경유 링크 */
 export function outboundHref(target: OutboundTarget): string {
@@ -91,6 +102,11 @@ export function outboundHref(target: OutboundTarget): string {
 /** 티스토리 원문이 있는 글의 경유 링크 */
 export function outboundPostHref(slug: string): string {
   return `/go/${POST_PREFIX}${slug}`;
+}
+
+/** 티스토리에 옮겨 실은 종목 보고서의 경유 링크 */
+export function outboundStockHref(ticker: string): string {
+  return `/go/${STOCK_PREFIX}${ticker}`;
 }
 
 /** 집계 키 — 날짜(KST 기준 YYYY-MM-DD) */

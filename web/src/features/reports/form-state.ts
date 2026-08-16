@@ -11,6 +11,7 @@
  * 막는 것은 저장이 아니라 **발행**이다.
  */
 import { ALL_SECTION_KEYS } from "@/lib/report/rules";
+import { sanitizeUrl } from "@/lib/site-basics";
 import type { ChecklistItem, ReportBlock, ReportDraft, ReportSectionKey } from "@/lib/report/types";
 import type { CanslimReading, DataTagKey } from "@/lib/canslim/types";
 import { CANSLIM_ITEMS } from "@/lib/canslim/catalog";
@@ -107,6 +108,9 @@ export function parseReportForm(form: FormData, ticker: string): ReportDraft {
           sourceUrl: optional(form, "consensus.sourceUrl"),
         }
       : undefined,
+    // ⚠ 폼 문자열을 그대로 넣지 않는다. 정화되지 않은 주소가 저장되면 `/go/stock-<ticker>`가
+    //    우리 도메인을 피싱 경유지로 만든다(`lib/outbound` 첫머리의 규칙).
+    tistoryUrl: sanitizeUrl(text(form, "tistoryUrl")) ?? undefined,
     blocks: parseBlocks(form),
     checklist: parseChecklist(form),
   };

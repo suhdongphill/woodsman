@@ -12,6 +12,7 @@ import {
   outboundDestinations,
   outboundHref,
   outboundPostHref,
+  outboundStockHref,
   resolveOutbound,
 } from "./outbound";
 
@@ -101,5 +102,33 @@ describe("목적지는 관리자가 저장한 값을 쓴다", () => {
     expect(resolveOutbound("evil", undefined, saved)).toBeNull();
     expect(resolveOutbound("https://evil.com", undefined, saved)).toBeNull();
     expect(resolveOutbound("//evil.com", undefined, saved)).toBeNull();
+  });
+});
+
+describe("종목 보고서 경유 — stock-<ticker>", () => {
+  it("저장해 둔 원문 URL로만 간다", () => {
+    const url = "https://blog.tistory.com/42";
+    expect(resolveOutbound("stock-TSM", undefined, undefined, () => url)).toBe(url);
+  });
+
+  it("⚠ 조회 함수를 주지 않으면 목적지가 없다 — 요청이 준 값을 따라가지 않는다", () => {
+    expect(resolveOutbound("stock-TSM")).toBeNull();
+  });
+
+  it("원문을 안 적은 보고서는 목적지가 없다", () => {
+    expect(resolveOutbound("stock-TSM", undefined, undefined, () => null)).toBeNull();
+  });
+
+  it("⚠ 국내 티커의 앞 0이 살아 있다 — 숫자로 다루면 005930이 5930이 된다", () => {
+    let asked = "";
+    resolveOutbound("stock-005930", undefined, undefined, (t) => {
+      asked = t;
+      return null;
+    });
+    expect(asked).toBe("005930");
+  });
+
+  it("경유 링크 모양", () => {
+    expect(outboundStockHref("005930")).toBe("/go/stock-005930");
   });
 });

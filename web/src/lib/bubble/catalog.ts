@@ -318,3 +318,8 @@ export function findBubbleIndicator(key: string) {
 }
 
 export const ALL_BUBBLE_INDICATORS = BUBBLE_LAYERS.flatMap((l) => l.indicators);
+
+/** 트리거 키 → 정의. ⚠ 문장의 원본은 여기다 — 저장소는 **키만** 담는다. */
+export function findBubbleTrigger(key: string): BubbleTriggerDef | undefined {
+  return BUBBLE_TRIGGERS.find((t) => t.key === key);
+}

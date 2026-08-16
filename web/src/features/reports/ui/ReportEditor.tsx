@@ -94,6 +94,24 @@ export function ReportEditor({
         </label>
       </section>
 
+      {/* 티스토리 원문 — ⚠ 1순위 지표(넘어간 클릭)의 경로다 */}
+      <section className="bg-card border border-border rounded-2xl p-5 space-y-3">
+        <h3 className="text-sm font-semibold text-white">티스토리 원문 주소</h3>
+        <p className="text-[11.5px] text-gray-600">
+          이 보고서를 티스토리에 옮겨 실었으면 그 글 주소를 적습니다. 적으면 공개 화면이
+          <strong className="text-gray-300"> 경유 링크(/go)</strong>로 보내고 클릭을 셉니다 —
+          그 숫자가 이 사이트의 1순위 지표입니다. ⚠ https 주소만 저장됩니다.
+        </p>
+        <input
+          name="tistoryUrl"
+          type="url"
+          inputMode="url"
+          placeholder="https://<블로그>.tistory.com/123"
+          defaultValue={draft.tistoryUrl ?? ""}
+          className={field}
+        />
+      </section>
+
       {/* 밸류에이션 한계 + 컨센서스 — R6·R4 */}
       <section className="bg-card border border-border rounded-2xl p-5 space-y-3">
         <h3 className="text-sm font-semibold text-white">밸류에이션 한계 (R6) · 컨센서스 (R4)</h3>

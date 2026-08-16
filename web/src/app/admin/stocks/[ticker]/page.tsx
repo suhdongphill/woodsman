@@ -6,11 +6,22 @@ import { Card, CardTitle } from "@/components/ui/Card";
 import { requireAdmin } from "@/lib/session";
 import { viewDateKey } from "@/lib/analytics";
 import { publishBlockers, validateReport } from "@/lib/report/rules";
+import {
+  contextAgeDays,
+  describeDrift,
+  renderContextMarkdown,
+} from "@/lib/report/context";
 import { scoreCanslim, canslimCoverageNotice, missingAxes } from "@/lib/canslim/score";
 import { loadReport } from "@/features/reports/repository";
+import { loadContext } from "@/features/reports/context-repo";
+import { captureSiteContext } from "@/features/reports/context";
 import { ReportEditor } from "@/features/reports/ui/ReportEditor";
 import { RuleReport } from "@/features/reports/ui/RuleReport";
 import { PublishBar } from "@/features/reports/ui/PublishBar";
+import { ContextPanel } from "@/features/reports/ui/ContextPanel";
+import { TistoryExportPanel } from "@/features/reports/ui/TistoryExportPanel";
+import { renderTistoryHtml } from "@/lib/report/tistory";
+import { siteUrl } from "@/lib/site-url";
 
 type Props = { params: Promise<{ ticker: string }> };
 
@@ -36,9 +47,17 @@ export default async function AdminStockReportPage({ params }: Props) {
   const report = await loadReport(ticker);
   if (!report) notFound();
 
-  const problems = validateReport(report, viewDateKey(new Date()));
+  const today = viewDateKey(new Date());
+  const problems = validateReport(report, today);
   const blockers = publishBlockers(problems);
   const canslim = scoreCanslim(report.readings);
+
+  // ⚠ 얼려 둔 스냅숏과 **지금 값**을 같이 읽는다. 차이를 말해 주는 자리가 여기뿐이다 —
+  //    공개 화면은 스냅숏 그대로를 보여준다(읽는 날마다 숫자가 달라지면 다른 문서다).
+  // ⚠ 지금 값을 읽는 데 D1 쿼리 4개가 더 나간다. 관리자 한 사람이 보는 화면이라 감수한다 —
+  //    버튼을 눌러야 알게 되면 스냅숏이 묵은 줄 모르고 발행하게 된다.
+  const snapshot = await loadContext(report.ticker);
+  const drift = snapshot ? describeDrift(snapshot, await captureSiteContext(report.ticker)) : [];
 
   return (
     <AdminShell>
@@ -111,6 +130,20 @@ export default async function AdminStockReportPage({ params }: Props) {
             )}
           </div>
         </Card>
+
+        <ContextPanel
+          ticker={report.ticker}
+          snapshot={snapshot}
+          drift={drift}
+          markdown={snapshot ? renderContextMarkdown(snapshot) : ""}
+          ageDays={snapshot ? contextAgeDays(snapshot.capturedAt, today) : undefined}
+        />
+
+        <TistoryExportPanel
+          ticker={report.ticker}
+          html={renderTistoryHtml({ report, snapshot, siteUrl: siteUrl(), today })}
+          publishedAt={report.publishedAt}
+        />
 
         <ReportEditor draft={report} readings={report.readings} />
       </div>

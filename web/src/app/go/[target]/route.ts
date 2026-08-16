@@ -3,6 +3,7 @@ import { clickDateKey, outboundDestinations, resolveOutbound } from "@/lib/outbo
 import { normalizePath } from "@/lib/analytics";
 import { getSiteBasics } from "@/lib/site-settings";
 import { findPostBySlug } from "@/features/posts/repository";
+import { findPublishedTistoryUrl } from "@/features/reports/repository";
 import { recordClick } from "@/lib/outbound-repo";
 import { recordOutboundSource } from "@/features/analytics/engagement-repository";
 
@@ -44,10 +45,20 @@ export async function GET(
   const tistoryUrl = target.startsWith("post-")
     ? (await findPostBySlug(target.slice("post-".length)))?.externalUrl
     : undefined;
+  // 종목 보고서 경유(stock-<ticker>)도 같은 규칙이다 — 저장해 둔 원문 URL로만 간다.
+  // ⚠ 티커는 문자열로 다룬다. 숫자로 만지면 005930이 5930이 된다.
+  const stockUrl = target.startsWith("stock-")
+    ? await findPublishedTistoryUrl(target.slice("stock-".length))
+    : null;
   // ⚠ 목적지는 /admin/settings에서 바꾼 값을 쓴다. 코드 상수로만 가면
   //    운영자가 블로그 주소를 바꿔도 방문자는 옛 주소로 간다(1순위 목적의 경로다).
   const basics = await getSiteBasics();
-  const destination = resolveOutbound(target, () => tistoryUrl, outboundDestinations(basics));
+  const destination = resolveOutbound(
+    target,
+    () => tistoryUrl,
+    outboundDestinations(basics),
+    () => stockUrl,
+  );
   if (!destination) notFound();
 
   try {

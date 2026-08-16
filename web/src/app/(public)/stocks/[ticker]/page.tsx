@@ -9,7 +9,10 @@ import { ReportView } from "@/features/reports/ui/ReportView";
 import { PostCard } from "@/features/posts/ui/PostCard";
 import { ChevronRightIcon } from "@/components/icons";
 import { scoreCanslim } from "@/lib/canslim/score";
+import { outboundStockHref } from "@/lib/outbound";
 import { loadPublishedReport } from "@/features/reports/repository";
+import { loadContext } from "@/features/reports/context-repo";
+import { SiteContextCard } from "@/features/reports/ui/SiteContextCard";
 import { loadPublishedPosts } from "@/features/posts/repository";
 import { findPublishedHoldingByTicker } from "@/features/portfolio/repository";
 
@@ -46,6 +49,8 @@ export default async function StockReportPage({ params }: Props) {
   if (!report) notFound();
 
   const canslim = scoreCanslim(report.readings);
+  // ⚠ 얼려 둔 스냅숏이다. 오늘 값으로 갱신하지 않는다 — 본문의 논지가 참조한 숫자다.
+  const snapshot = await loadContext(report.ticker);
   const holding = await findPublishedHoldingByTicker(report.ticker);
   const related = (await loadPublishedPosts(50))
     .filter((p) => p.ticker === report.ticker)
@@ -76,7 +81,30 @@ export default async function StockReportPage({ params }: Props) {
         <ReportView report={report} />
 
         <div className="space-y-6 lg:sticky lg:top-6">
+          {/* ⚠ 티스토리 CTA를 **맨 위**에 둔다. 1순위 목적은 블로그로 보내는 것이고(운영지침 §5),
+              자리 경쟁이 붙으면 티스토리가 이긴다. 경유(/go)로 보내 클릭을 센다. */}
+          {report.tistoryUrl && (
+            <a
+              href={outboundStockHref(report.ticker)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-2xl border border-gold-600/40 bg-gold-500/10 p-4 transition-colors hover:bg-gold-500/15"
+            >
+              <p className="text-[11px] text-gold-400/80">블로그 원문</p>
+              <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-gold-300">
+                티스토리에서 이 보고서 읽기
+                <ChevronRightIcon size={14} />
+              </p>
+              <p className="mt-1.5 text-[11.5px] leading-relaxed text-muted">
+                같은 분석을 블로그에도 실었습니다. 댓글과 구독은 그쪽에서 받습니다.
+              </p>
+            </a>
+          )}
+
           <CanslimPanel score={canslim} />
+
+          {/* 작성 시점 사이트 자료 — ⚠ 주입한 보고서에만 나온다. 없으면 카드를 만들지 않는다 */}
+          {snapshot && <SiteContextCard snapshot={snapshot} />}
 
           {/* 대표 포트폴리오 편입 여부 */}
           {holding ? (

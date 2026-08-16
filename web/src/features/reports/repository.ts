@@ -66,6 +66,7 @@ type ReportRow = {
   consensusSource: string | null;
   consensusAsOf: string | null;
   consensusUrl: string | null;
+  tistoryUrl: string | null;
   publishedAt: string | null;
   updatedAt: string | null;
 };
@@ -207,7 +208,7 @@ export async function loadReport(ticker: string): Promise<StoredReport | null> {
     `SELECT ticker, name, market, industry, currency, status, version, headline,
             verdictStructural, verdictShort, revokeIf, valuationLimitation, nextCheckAt,
             consensusTarget, consensusCurrency, consensusSource, consensusAsOf, consensusUrl,
-            publishedAt, updatedAt
+            tistoryUrl, publishedAt, updatedAt
        FROM StockReport WHERE ticker = ?`,
     [ticker],
   );
@@ -308,6 +309,7 @@ export async function loadReport(ticker: string): Promise<StoredReport | null> {
             sourceUrl: row.consensusUrl ?? undefined,
           }
         : undefined,
+    tistoryUrl: row.tistoryUrl ?? undefined,
     blocks,
     checklist: checkRows.map((c) => ({ item: c.item, source: c.source, impact: c.impact })),
     html,
@@ -341,8 +343,8 @@ export async function saveReport(draft: ReportDraft): Promise<void> {
            (ticker, name, market, industry, currency, status, headline,
             verdictStructural, verdictShort, revokeIf, valuationLimitation, nextCheckAt,
             consensusTarget, consensusCurrency, consensusSource, consensusAsOf, consensusUrl,
-            updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            tistoryUrl, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(ticker) DO UPDATE SET
            name = excluded.name, market = excluded.market, industry = excluded.industry,
            currency = excluded.currency, status = excluded.status, headline = excluded.headline,
@@ -351,7 +353,7 @@ export async function saveReport(draft: ReportDraft): Promise<void> {
            nextCheckAt = excluded.nextCheckAt, consensusTarget = excluded.consensusTarget,
            consensusCurrency = excluded.consensusCurrency, consensusSource = excluded.consensusSource,
            consensusAsOf = excluded.consensusAsOf, consensusUrl = excluded.consensusUrl,
-           updatedAt = excluded.updatedAt`,
+           tistoryUrl = excluded.tistoryUrl, updatedAt = excluded.updatedAt`,
       )
       .bind(
         draft.ticker,
@@ -371,6 +373,7 @@ export async function saveReport(draft: ReportDraft): Promise<void> {
         draft.consensusTarget?.source ?? null,
         draft.consensusTarget?.asOf ? toStoredDate(draft.consensusTarget.asOf) : null,
         draft.consensusTarget?.sourceUrl ?? null,
+        draft.tistoryUrl ?? null,
         now,
       ),
   );
@@ -517,4 +520,18 @@ export async function replaceChecklist(ticker: string, rows: ChecklistItem[]): P
     );
   }
   await db.batch(statements);
+}
+
+/**
+ * 티스토리에 옮겨 실은 원문 주소. `/go/stock-<ticker>` 경유가 쓴다.
+ *
+ * ⚠ **발행본만** 본다. 초안의 주소로 나가면 아직 공개하지 않은 글이 새어 나간다.
+ * ⚠ 저장된 값만 돌려준다 — 요청이 준 URL을 따라가는 경로는 어디에도 없다(오픈 리다이렉트).
+ */
+export async function findPublishedTistoryUrl(ticker: string): Promise<string | null> {
+  const row = await queryOne<{ tistoryUrl: string | null }>(
+    `SELECT tistoryUrl FROM StockReport WHERE ticker = ? AND status = 'PUBLISHED'`,
+    [ticker],
+  );
+  return row?.tistoryUrl ?? null;
 }

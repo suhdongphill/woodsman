@@ -12,8 +12,11 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/session";
 import { validateReport, publishBlockers } from "@/lib/report/rules";
+import { marketAxisEvidence } from "@/lib/report/context";
 import { classifyQuotaError } from "@/lib/quota";
 import { viewDateKey } from "@/lib/analytics";
+import { captureSiteContext } from "./context";
+import { loadContext, saveContext } from "./context-repo";
 import {
   deleteReport,
   loadReport,
@@ -169,4 +172,90 @@ export async function replaceChecklistAction(formData: FormData): Promise<void> 
 
   await replaceChecklist(ticker, parseReportForm(formData, ticker).checklist);
   revalidate(ticker);
+}
+
+/**
+ * 사이트 자료 주입 — 거시 · 버블 · 대표 포트폴리오를 **지금 값으로 떠서 얼린다.**
+ *
+ * ⚠ 실시간으로 갖다 쓰지 않는 이유는 `lib/report/context.ts` 첫머리에 적었다:
+ *    보고서는 날짜가 박힌 문서라, 논지가 참조한 숫자가 읽는 날마다 달라지면 안 된다.
+ *    그래서 **사람이 누를 때만** 갱신된다.
+ */
+export async function injectContextAction(
+  _prev: ReportFormState,
+  formData: FormData,
+): Promise<ReportFormState> {
+  await requireAdmin(ADMIN_PATH);
+
+  const ticker = ticketOf(formData);
+  if (!ticker) return { error: "티커가 없습니다." };
+
+  try {
+    if (!(await loadReport(ticker))) return { error: "보고서를 찾을 수 없습니다." };
+
+    const now = await captureSiteContext(ticker);
+    await saveContext(ticker, { ...now, capturedAt: viewDateKey(new Date()) });
+  } catch (error) {
+    return failure("사이트 자료 주입", error);
+  }
+
+  revalidate(ticker);
+  return {
+    savedAt: new Date().toISOString(),
+    notice: "사이트 자료를 이 보고서에 주입했습니다. 지금 값 기준으로 얼렸습니다.",
+  };
+}
+
+/**
+ * CANSLIM **M축의 근거·출처·기준일**만 주입한 자료로 채운다.
+ *
+ * ⚠ **점수는 채우지 않는다.** 이유는 `MARKET_AXIS_LIMITATION`에 적었다 —
+ *    사이트의 거시 지표는 침체 신호를 재고, 오닐의 M축은 지수의 분산일·추세를 잰다.
+ *    겹친다고 점수를 대신 매기면 다른 것을 잰 값이 M축 자리에 조용히 앉는다.
+ * ⚠ 얼려 둔 스냅숏에서 채운다. 화면이 보여주는 숫자와 본문에 적히는 숫자가 갈리면 안 된다.
+ */
+export async function fillMarketAxisAction(
+  _prev: ReportFormState,
+  formData: FormData,
+): Promise<ReportFormState> {
+  await requireAdmin(ADMIN_PATH);
+
+  const ticker = ticketOf(formData);
+  if (!ticker) return { error: "티커가 없습니다." };
+
+  try {
+    const snapshot = await loadContext(ticker);
+    if (!snapshot) return { error: "먼저 사이트 자료를 주입하세요." };
+
+    const evidence = marketAxisEvidence(snapshot.macro);
+    if (!evidence) {
+      return {
+        error:
+          "거시 지표가 아직 수집되지 않아 채울 근거가 없습니다. /admin/macro에서 자료를 가져온 뒤 다시 주입하세요.",
+      };
+    }
+
+    const stored = await loadReport(ticker);
+    if (!stored) return { error: "보고서를 찾을 수 없습니다." };
+
+    // ⚠ 점수와 태그는 **있던 것을 그대로 둔다.** 근거만 갈아 끼운다.
+    const current = stored.readings.get("M");
+    await saveReading(ticker, {
+      key: "M",
+      points: current?.points,
+      tag: current?.tag ?? "na",
+      evidence: evidence.evidence,
+      source: evidence.source,
+      sourceUrl: evidence.sourceUrl,
+      asOf: evidence.asOf,
+    });
+  } catch (error) {
+    return failure("M축 근거 주입", error);
+  }
+
+  revalidate(ticker);
+  return {
+    savedAt: new Date().toISOString(),
+    notice: "M축의 근거·출처·기준일을 채웠습니다. ⚠ 점수는 사람이 넣습니다.",
+  };
 }
