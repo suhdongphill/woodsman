@@ -5,6 +5,8 @@ import { Card, CardTitle } from "@/components/ui/Card";
 import { requireAdmin } from "@/lib/session";
 import { RateLimitProbe } from "@/features/diagnostics/ui/RateLimitProbe";
 import { probeUsage } from "@/features/diagnostics/usage";
+import { checkSeedResidue } from "@/features/diagnostics/seed-check";
+import { SeedResidueCard } from "@/features/diagnostics/ui/SeedResidueCard";
 import { PUBLIC_STATIC_PATHS, DYNAMIC_PATH_RULES } from "@/lib/beacon-path";
 import { CLOUDFLARE_LIMITS, CLOUDFLARE_LINKS, LIMITS_CHECKED_AT, gaugeD1 } from "@/lib/quota";
 
@@ -28,7 +30,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminDiagnosticsPage() {
   await requireAdmin("/admin/diagnostics");
 
-  const usage = await probeUsage();
+  const [usage, seed] = await Promise.all([probeUsage(), checkSeedResidue()]);
   const gauge = usage.sizeBytes === undefined ? undefined : gaugeD1(usage.sizeBytes, "free");
 
   return (
@@ -47,6 +49,10 @@ export default async function AdminDiagnosticsPage() {
       />
 
       <div className="space-y-5">
+        {/* ⚠ 지어낸 숫자가 공개되고 있는 것보다 급한 계기는 없다. 그래서 맨 위다.
+            (2026-08-16: 종목을 다 지웠는데 시드 계좌 곡선이 공개되고 있었다.) */}
+        <SeedResidueCard check={seed} />
+
         {/* ⚠ 비용·한도 문제는 코드 버그와 증상이 똑같다("불러오지 못했습니다").
             그래서 닿기 전에 보이게 계기를 맨 위에 둔다. */}
         <Card>

@@ -10,6 +10,7 @@ import { dataModeNotice } from "@/lib/data-mode";
 import { getSiteBasics } from "@/lib/site-settings";
 import { requireAdmin } from "@/lib/session";
 import { loadAllJournal, loadSnapshots } from "@/features/journal/repository";
+import { findSeedResidue, residueNotice } from "@/lib/seed-residue";
 import { deleteJournalAction, deleteSnapshotAction } from "@/features/journal/actions";
 import { JournalForm } from "@/features/journal/ui/JournalForm";
 import { SnapshotForm } from "@/features/journal/ui/SnapshotForm";
@@ -42,6 +43,18 @@ export default async function AdminJournalPage() {
     getSiteBasics(),
   ]);
 
+  // ⚠ 지우는 자리에서도 말해 준다. 진단 화면까지 가야 아는 경고는 늦다.
+  const seedResidue = findSeedResidue({
+    snapshots: snapshots.map((s) => ({
+      date: s.date,
+      principal: s.principal,
+      value: s.value,
+      income: s.income,
+    })),
+    journal: entries.map((e) => ({ date: e.date, title: e.title })),
+    holdings: [],
+  });
+
   const perf = summarizePerformance(snapshots);
   const notice = dataModeNotice(basics.dataMode);
   const today = new Date().toISOString().slice(0, 10);
@@ -58,6 +71,18 @@ export default async function AdminJournalPage() {
         <Badge tone={notice.tone === "ok" ? "emerald" : "info"}>{notice.badge}</Badge>
         <span>{notice.line}</span>
       </p>
+
+      {seedResidue.length > 0 && (
+        <div className="mb-6 rounded-xl border border-red-500/40 bg-red-500/5 px-4 py-3">
+          <p className="text-[12.5px] leading-relaxed text-red-400">
+            {residueNotice(seedResidue)}
+          </p>
+          <p className="mt-1.5 text-[11.5px] text-gray-500">
+            {seedResidue.map((r) => `${r.label} ${r.matched}건`).join(" · ")} — 아래 목록에서
+            지우면 공개 화면에서도 사라집니다.
+          </p>
+        </div>
+      )}
 
       {perf && (
         <div className="mb-6 grid gap-3 sm:grid-cols-4">

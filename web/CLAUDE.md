@@ -20,7 +20,7 @@
 현재 순수 모듈: `access` `site-policy` `site-status` `performance` `outbound` `ads`
 `auth-providers` `site-url` `site-links` `format` `env-file` `site-basics`
 `data-mode` `allocation` `manual-price` `markdown` `sanitize-html` `seo` `sections`
-`analytics` `engagement` `beacon-path` `beacon-selftest`
+`analytics` `engagement` `beacon-path` `beacon-selftest` `seed-residue`
 `macro/{registry,series,signal,parse}` `bubble/{catalog,score}`
 `canslim/{catalog,score}` `report/{catalog,rules,context,tistory}` `quota`
 `ai/{catalog,persona,context,routing,retrieval}`
@@ -113,6 +113,11 @@ Worker 런타임은 `wrangler.jsonc`를 읽을 수 없어, 상한 같은 값을 
   저장·표시한다(`src/lib/manual-price.ts`). 날짜 없는 숫자는 자동 시세처럼 읽힌다.
 - ⚠ **목업으로 되돌리지 않는다.** `lib/mock.ts`에 대표 포트폴리오·투자일지·계좌·글 데이터를
   다시 넣지 말 것. 화면이 그걸 읽는 순간 관리자 편집이 조용히 무효가 된다(세 번 겪었다).
+- ⚠ **시드는 개발용이다. 운영에 남기지 않는다** (2026-08-16 사고). `npm run d1:seed`로 넣은
+  예시 계좌·일지·글·댓글이 운영 D1에 살아 있어, 종목을 다 지운 뒤에도 `/portfolio`가
+  **평가액 76,540,000원**을 자기 계좌처럼 공개하고 있었다. `lib/seed-residue.ts`가 시드와
+  **완전 일치**하는 행을 찾아 `/admin/diagnostics`·`/admin/journal`에 띄운다.
+  ⚠ 그 경고가 떠 있으면 **먼저 지우고** 다른 일을 한다.
 - ⚠ 글 본문 저장 경로는 **하나뿐이다**: 원본(`body`) → 변환(`lib/markdown`) → 정화
   (`lib/sanitize-html`) → `bodyHtml`. `bodyHtml`에 직접 쓰지 않는다.
 - ⚠ HTML 정화는 **허용 목록**으로 한다. 금지 목록(script만 막기)은 언제나 뚫린다.
