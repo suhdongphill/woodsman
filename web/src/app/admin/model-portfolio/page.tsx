@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminPageHeader, AdminShell } from "@/components/layout/AdminPageHeader";
 import { Card, CardTitle } from "@/components/ui/Card";
-import { Badge, FUNCTION_COLOR, FUNCTION_LABEL, FunctionBadge } from "@/components/ui/Badge";
+import { Badge, FunctionBadge } from "@/components/ui/Badge";
 import { StatTile, StatBar } from "@/components/ui/StatBar";
 import { CanslimScore } from "@/components/ui/CanslimScore";
 import { EditIcon, TrashIcon } from "@/components/icons";
@@ -20,15 +20,22 @@ import { requireAdmin } from "@/lib/session";
 import { loadAllHoldings, loadRebalances } from "@/features/portfolio/repository";
 import { deleteHoldingAction, deleteRebalanceAction } from "@/features/portfolio/actions";
 import { HoldingForm } from "@/features/portfolio/ui/HoldingForm";
+import { BucketManager } from "@/features/portfolio/ui/BucketManager";
+import { loadBuckets } from "@/features/portfolio/buckets-repo";
+import {
+  bucketBreakdownWarning,
+  bucketName,
+  breakdownBuckets,
+  cashTargetPct,
+  isBucketTargetSet,
+  orphanHoldings,
+} from "@/lib/bucket-target";
 import { RebalanceForm } from "@/features/portfolio/ui/RebalanceForm";
-import type { FunctionType } from "@/lib/types";
 
 export const metadata: Metadata = { title: "대표 포트폴리오" };
 
 /** ⚠ 정적 생성 금지 — 종목을 고쳐도 화면이 안 바뀌는 사고가 난다. */
 export const dynamic = "force-dynamic";
-
-const FUNCTIONS: FunctionType[] = ["GROWTH", "INCOME", "DEFENSE"];
 
 /**
  * 대표 포트폴리오 관리.
@@ -44,11 +51,12 @@ export default async function AdminModelPortfolioPage({
 }) {
   await requireAdmin("/admin/model-portfolio");
 
-  const [{ edit }, holdings, rebalances, basics] = await Promise.all([
+  const [{ edit }, holdings, rebalances, basics, buckets] = await Promise.all([
     searchParams,
     loadAllHoldings(),
     loadRebalances(),
     getSiteBasics(),
+    loadBuckets(),
   ]);
 
   const editing = edit ? holdings.find((h) => h.id === edit) : undefined;
@@ -62,15 +70,29 @@ export default async function AdminModelPortfolioPage({
       targetWeight: h.targetWeight,
       marketValue: holdingValueKrw(h, basics.usdKrwRate),
     })),
+    buckets,
   );
   const targetSum = sumTargetWeights(published);
   const sumWarning = targetSumWarning(targetSum);
   const prices = summarizeManualPrices(published, today);
-  const segments = FUNCTIONS.map((f) => ({
-    label: FUNCTION_LABEL[f],
-    value: rows.find((r) => r.functionType === f)?.targetPct ?? 0,
-    color: FUNCTION_COLOR[f],
-  }));
+
+  // ⚠ 버킷 목표는 이제 종목에서 파생되지 않는다. 관리자가 정한 값을 그대로 그린다.
+  const breakdown = breakdownBuckets(buckets, published);
+  const bucketWarning = bucketBreakdownWarning(breakdown);
+  const targetSet = isBucketTargetSet(buckets);
+  const cashPct = cashTargetPct(buckets);
+  // ⚠ 어느 버킷에도 속하지 않는 종목 — 비중 계산에서 조용히 빠지므로 반드시 말한다.
+  const orphans = orphanHoldings(buckets, published);
+
+  const segments = [
+    ...breakdown.map((r) => ({
+      label: r.bucket.name,
+      value: r.targetPct,
+      color: r.bucket.color,
+    })),
+    // 남는 몫을 회색으로 그린다 — 100%를 채운 것처럼 보이지 않게.
+    ...(cashPct > 0 ? [{ label: "현금·미배정", value: cashPct, color: "#3a3f4b" }] : []),
+  ];
 
   // 통화별 원가·평가액 — 환율로 뭉개지 않고 통화 그대로 본다(원가는 통화별로만 의미가 있다).
   let krwCost = 0,
@@ -150,15 +172,24 @@ export default async function AdminModelPortfolioPage({
 
       <Card className="mb-5">
         <CardTitle
-          action={<Badge tone={sumWarning ? "gold" : "emerald"}>목표 합계 {targetSum}%</Badge>}
+          action={<Badge tone={sumWarning ? "gold" : "emerald"}>종목 비중 합계 {targetSum}%</Badge>}
         >
-          기능별 목표 배분
+          분류별 목표 배분
         </CardTitle>
-        <StatBar segments={segments} height="h-3" />
-        <dl className="mt-4 grid grid-cols-3 gap-3 text-center">
+
+        {/* ⚠ 목표를 안 정했으면 0%짜리 막대를 그리지 않는다 — 빈 막대는 "목표가 0"으로 읽힌다 */}
+        {targetSet ? (
+          <StatBar segments={segments} height="h-3" />
+        ) : (
+          <p className="rounded-lg border border-dashed border-border bg-[#12141c] px-3 py-4 text-center text-[12px] text-gray-500">
+            아직 목표 구성비를 정하지 않았습니다. 아래 <strong className="text-gray-400">목표 구성비</strong>에서 정하세요.
+          </p>
+        )}
+
+        <dl className="mt-4 grid gap-3 text-center sm:grid-cols-2 lg:grid-cols-4">
           {rows.map((r) => (
             <div key={r.functionType} className="rounded-lg bg-[#12141c] py-2.5">
-              <dt className="text-[10px] text-gray-500">{FUNCTION_LABEL[r.functionType]}</dt>
+              <dt className="text-[10px] text-gray-500">{bucketName(buckets, r.functionType)}</dt>
               <dd className="mt-0.5 text-[13px] font-bold tabular-nums text-white">
                 {r.currentPct}%
                 <span className="ml-1 text-[11px] font-normal text-gray-500">
@@ -167,13 +198,33 @@ export default async function AdminModelPortfolioPage({
               </dd>
             </div>
           ))}
+          {cashPct > 0 && (
+            <div className="rounded-lg bg-[#12141c] py-2.5">
+              <dt className="text-[10px] text-gray-500">현금·미배정</dt>
+              <dd className="mt-0.5 text-[13px] font-bold tabular-nums text-gray-400">
+                <span className="text-[11px] font-normal text-gray-500">목표 </span>
+                {cashPct}%
+              </dd>
+            </div>
+          )}
         </dl>
+
+        {/* ⚠ 갈 곳 없는 분류의 종목 — 조용히 빠지게 두지 않는다 */}
+        {orphans.length > 0 && (
+          <p className="mt-4 rounded-xl border border-red-500/30 bg-red-500/[0.06] px-3 py-2.5 text-[12px] text-red-300">
+            ⚠ 어느 분류에도 속하지 않는 종목이 {orphans.length}건 있습니다(
+            {orphans.map((h) => h.name).join(" · ")}). 비중 계산에서 빠집니다 — 아래에서 분류를
+            다시 지정하세요.
+          </p>
+        )}
       </Card>
 
-      <Card className="mb-6">
+      <BucketManager buckets={buckets} breakdown={breakdown} warning={bucketWarning} />
+
+      <Card className="mb-6 mt-5">
         <CardTitle>{editing ? `수정: ${editing.name}` : "종목 추가"}</CardTitle>
         {/* key: 다른 종목을 편집할 때 폼이 이전 값을 붙들고 있지 않게 한다 */}
-        <HoldingForm key={editing?.id ?? "new"} holding={editing} today={today} />
+        <HoldingForm key={editing?.id ?? "new"} holding={editing} today={today} buckets={buckets} />
       </Card>
 
       {/* 종목 카드 */}

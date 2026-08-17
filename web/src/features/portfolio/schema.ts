@@ -50,7 +50,17 @@ export const holdingSchema = z
     name: z.string().trim().min(1, "종목명을 입력하세요.").max(80, "종목명이 너무 깁니다."),
     ticker: optionalText,
     market: optionalText,
-    functionType: z.enum(["GROWTH", "INCOME", "DEFENSE"]),
+    /**
+     * 버킷 키(`PortfolioBucket.key`).
+     * ⚠ 전에는 `z.enum(["GROWTH","INCOME","DEFENSE"])`였다. 관리자가 분류를 추가할 수
+     *    있게 되면서 **여기서 목록을 고정하면 새 분류가 저장 거부된다.**
+     *    "그 키가 실제로 있는가"는 DB를 봐야 알 수 있으므로 액션이 확인한다.
+     */
+    functionType: z
+      .string()
+      .trim()
+      .min(1, "분류를 고르세요.")
+      .max(24, "분류 키가 너무 깁니다."),
     targetWeight: optionalNumber(100, "목표 비중은 0~100 사이여야 합니다."),
     avgCost: optionalNumber(Number.MAX_SAFE_INTEGER, "0 이상의 숫자여야 합니다."),
     shares: optionalNumber(Number.MAX_SAFE_INTEGER, "0 이상의 숫자여야 합니다."),

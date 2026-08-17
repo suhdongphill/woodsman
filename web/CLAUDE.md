@@ -23,7 +23,7 @@
 `analytics` `engagement` `beacon-path` `beacon-selftest` `seed-residue`
 `macro/{registry,series,signal,parse}` `bubble/{catalog,score}`
 `canslim/{catalog,score}` `report/{catalog,rules,context,tistory}` `quota`
-`quote/{kpi,envelope,parse}`
+`quote/{kpi,envelope,parse,lookup}` `bucket-target`
 `ai/{catalog,persona,context,routing,retrieval}`
 — 전부 테스트가 있다.
 

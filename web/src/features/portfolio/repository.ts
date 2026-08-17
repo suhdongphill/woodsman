@@ -111,7 +111,8 @@ export type HoldingInput = {
   name: string;
   ticker?: string;
   market?: string;
-  functionType: FunctionType;
+  /** 버킷 키(`PortfolioBucket.key`). ⚠ 고정 유니온이 아니다 — 관리자가 분류를 추가한다 */
+  functionType: string;
   targetWeight?: number;
   avgCost?: number;
   shares?: number;

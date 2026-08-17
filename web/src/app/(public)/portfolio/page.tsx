@@ -4,7 +4,6 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, SectionHeader } from "@/components/ui/Card";
 import { Donut } from "@/components/ui/Donut";
 import { StatTile } from "@/components/ui/StatBar";
-import { FUNCTION_COLOR, FUNCTION_LABEL } from "@/components/ui/Badge";
 import { HoldingCard } from "@/features/portfolio/ui/HoldingCard";
 import { CapitalFlowChart } from "@/features/portfolio/ui/CapitalFlowChart";
 import { JournalTimeline } from "@/features/portfolio/ui/JournalTimeline";
@@ -20,7 +19,14 @@ import { loadPublishedJournal, loadSnapshots } from "@/features/journal/reposito
 import { loadPublishedHoldings, loadRebalances } from "@/features/portfolio/repository";
 import { loadSectionPosts } from "@/features/posts/repository";
 import { SectionFrame } from "@/features/posts/ui/SectionFrame";
-import type { FunctionType, ModelHolding } from "@/lib/types";
+import type { ModelHolding } from "@/lib/types";
+import { loadBuckets } from "@/features/portfolio/buckets-repo";
+import {
+  cashTargetPct,
+  isBucketTargetSet,
+  orphanHoldings,
+  type PortfolioBucket,
+} from "@/lib/bucket-target";
 
 export const metadata: Metadata = {
   title: "대표 포트폴리오",
@@ -28,26 +34,18 @@ export const metadata: Metadata = {
     "납입원금 대비 평가액 추이, 성장·인컴·방어 기능별 배분, 종목별 편입 논리(thesis)를 그대로 공개합니다. 목표 비중을 단계적으로 채워 가는 과정을 기록합니다.",
 };
 
-const ORDER: FunctionType[] = ["GROWTH", "INCOME", "DEFENSE"];
-
-const BUCKET_DESC: Record<FunctionType, string> = {
-  GROWTH: "이익 성장으로 수익을 만든다. 변동성을 감수하는 자리.",
-  INCOME: "배당·이자로 현금흐름을 만든다. 하락장에서 버티는 힘.",
-  DEFENSE: "지수·현금으로 최악을 막고 리밸런싱 탄약을 보관한다.",
-};
-
 /** ⚠ 정적 생성 금지 — 기록을 올려도 화면이 안 바뀐다. */
 export const dynamic = "force-dynamic";
 
 /** 버킷 안의 종목 이름 — 예전엔 "TSMC · 엔비디아"가 코드에 박혀 있었다(DB를 고쳐도 안 바뀜). */
-function bucketNames(holdings: ModelHolding[], f: FunctionType): string {
-  const names = holdings.filter((h) => h.functionType === f).map((h) => h.name);
+function bucketNames(holdings: ModelHolding[], key: string): string {
+  const names = holdings.filter((h) => h.functionType === key).map((h) => h.name);
   if (!names.length) return "아직 비어 있음";
   return names.length > 3 ? `${names.slice(0, 3).join(" · ")} 외 ${names.length - 3}` : names.join(" · ");
 }
 
 export default async function PortfolioPage() {
-  const [snapshots, recentJournal, basics, published, rebalances, sectionPosts] =
+  const [snapshots, recentJournal, basics, published, rebalances, sectionPosts, buckets] =
     await Promise.all([
     loadSnapshots(),
     loadPublishedJournal(3),
@@ -55,6 +53,7 @@ export default async function PortfolioPage() {
     loadPublishedHoldings(),
     loadRebalances(),
     loadSectionPosts("PORTFOLIO", 5),
+    loadBuckets(),
   ]);
 
   // 목표 비중 대비 현재 비중 — 한 번에 완성되지 않는다는 사실을 그대로 보여준다.
@@ -65,15 +64,23 @@ export default async function PortfolioPage() {
       // ⚠ 반드시 원화로 환산해서 넘긴다 — 통화를 섞으면 비중이 통째로 틀린다.
       marketValue: holdingValueKrw(h, basics.usdKrwRate),
     })),
+    buckets,
   );
   const fillPct = fillProgressPct(allocationRows);
-  const targetPct = (f: FunctionType) =>
-    allocationRows.find((r) => r.functionType === f)?.targetPct ?? 0;
-  const segments = ORDER.map((f) => ({
-    label: FUNCTION_LABEL[f],
-    value: targetPct(f),
-    color: FUNCTION_COLOR[f],
-  }));
+  const targetPct = (key: string) =>
+    allocationRows.find((r) => r.functionType === key)?.targetPct ?? 0;
+
+  // ⚠ 목표는 관리자가 정한 값이다. 종목에서 파생시키지 않는다(2026-08-17).
+  const targetSet = isBucketTargetSet(buckets);
+  const cashPct = cashTargetPct(buckets);
+  const segments = [
+    ...buckets.map((b) => ({ label: b.name, value: b.targetPct, color: b.color })),
+    // ⚠ 남는 몫을 그린다. 빼면 도넛이 100%를 채워 "현금이 없다"로 읽힌다.
+    ...(cashPct > 0 ? [{ label: "현금·미배정", value: cashPct, color: "#3a3f4b" }] : []),
+  ];
+  // ⚠ 어느 버킷에도 없는 종목 — 아래 버킷 목록에서 빠지므로 따로 모아 보여준다.
+  const orphans = orphanHoldings(buckets, published);
+  const headline: PortfolioBucket[] = buckets.slice(0, 2);
   const perf = summarizePerformance(snapshots);
   // ⚠ 현재가는 수기 입력이다. 기준일을 밝히지 않으면 자동 시세처럼 읽힌다.
   const prices = summarizeManualPrices(published, new Date().toISOString().slice(0, 10));
@@ -170,18 +177,17 @@ export default async function PortfolioPage() {
 
           <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
             <StatTile label="공개 종목" value={`${published.length}개`} sub="현금성 포함" />
-            <StatTile
-              label="성장 버킷"
-              value={`${targetPct("GROWTH")}%`}
-              tone="up"
-              sub={bucketNames(published, "GROWTH")}
-            />
-            <StatTile
-              label="인컴 버킷"
-              value={`${targetPct("INCOME")}%`}
-              tone="gold"
-              sub={bucketNames(published, "INCOME")}
-            />
+            {/* ⚠ 앞의 두 분류를 보여준다. 예전엔 성장·인컴이 코드에 박혀 있어
+                관리자가 분류를 바꿔도 이 자리만 옛 이름으로 남았다. */}
+            {headline.map((b, i) => (
+              <StatTile
+                key={b.key}
+                label={`${b.name} 버킷`}
+                value={`${targetPct(b.key)}%`}
+                tone={i === 0 ? "up" : "gold"}
+                sub={bucketNames(published, b.key)}
+              />
+            ))}
             <StatTile
               label="최근 리밸런싱"
               value={rebalances.length ? formatDate(rebalances[0].date) : "—"}
@@ -191,11 +197,14 @@ export default async function PortfolioPage() {
         </section>
 
         {/* 목표 대비 현재 — 한 번에 완성되지 않는다는 사실을 그대로 */}
-        <AllocationProgress
-          rows={allocationRows}
-          fillPct={fillPct}
-          usdKrwRate={basics.usdKrwRate}
-        />
+        {targetSet && (
+          <AllocationProgress
+            rows={allocationRows}
+            buckets={buckets}
+            fillPct={fillPct}
+            usdKrwRate={basics.usdKrwRate}
+          />
+        )}
 
         {/* ⚠ 현재가는 손으로 적는 값이다. 기준일을 밝히지 않으면 자동 시세로 읽힌다. */}
         {published.length > 0 && (
@@ -205,23 +214,23 @@ export default async function PortfolioPage() {
         )}
 
         {/* 기능별 종목 */}
-        {ORDER.map((f) => {
-          const items = published.filter((h) => h.functionType === f);
+        {buckets.map((b) => {
+          const items = published.filter((h) => h.functionType === b.key);
           if (!items.length) return null;
           return (
-            <section key={f}>
+            <section key={b.key}>
               <SectionHeader
                 title={
                   <span className="flex items-center gap-2.5">
                     <span
                       className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: FUNCTION_COLOR[f] }}
+                      style={{ backgroundColor: b.color }}
                     />
-                    {FUNCTION_LABEL[f]} 버킷
-                    <span className="text-sm font-normal text-gold-400">{targetPct(f)}%</span>
+                    {b.name} 버킷
+                    <span className="text-sm font-normal text-gold-400">{targetPct(b.key)}%</span>
                   </span>
                 }
-                subtitle={BUCKET_DESC[f]}
+                subtitle={b.description}
               />
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {items.map((h) => (
@@ -231,6 +240,22 @@ export default async function PortfolioPage() {
             </section>
           );
         })}
+
+        {/* ⚠ 어느 버킷에도 속하지 않는 종목. 위 목록에서 빠지므로 여기 모아 둔다 —
+            조용히 사라지면 공개 종목 수와 화면이 어긋난다. */}
+        {orphans.length > 0 && (
+          <section>
+            <SectionHeader
+              title="분류 미지정"
+              subtitle="아직 어느 분류에도 넣지 않은 종목입니다. 배분 비중 계산에는 들어가지 않습니다."
+            />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {orphans.map((h) => (
+                <HoldingCard key={h.id} holding={h} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* 이 화면에 대해 쓴 글 — 발행할 때마다 쌓인다 */}
         <SectionFrame section="PORTFOLIO" posts={sectionPosts} />

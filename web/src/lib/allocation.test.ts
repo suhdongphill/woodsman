@@ -10,6 +10,7 @@ import {
   underweightBuckets,
   type AllocationInput,
 } from "./allocation";
+import type { PortfolioBucket } from "./bucket-target";
 import {
   DEFAULT_DATA_MODE,
   dataModeNotice,
@@ -17,6 +18,21 @@ import {
   normalizeDataMode,
   returnSuffix,
 } from "./data-mode";
+
+/**
+ * ⚠ 목표는 이제 **버킷이 갖는다**(2026-08-17). 전에는 종목의 `targetWeight` 합계로
+ *    파생시켰는데, 그러면 종목이 0건일 때 목표도 0이 되어 "정해 두고 아직 안 샀다"를
+ *    표현할 수 없었다.
+ */
+function bucket(key: string, name: string, targetPct: number, sortOrder: number): PortfolioBucket {
+  return { key, name, targetPct, color: "#36a06a", sortOrder, builtIn: true };
+}
+
+const BUCKETS: PortfolioBucket[] = [
+  bucket("GROWTH", "성장", 40, 0),
+  bucket("INCOME", "인컴", 35, 1),
+  bucket("DEFENSE", "방어", 25, 2),
+];
 
 const PLAN: AllocationInput[] = [
   { functionType: "GROWTH", targetWeight: 40 },
@@ -26,7 +42,7 @@ const PLAN: AllocationInput[] = [
 
 describe("목표 대비 현재 비중", () => {
   it("⚠ 평가액이 없으면 현재 비중은 0이다 — 목표를 현재인 척하지 않는다", () => {
-    const rows = summarizeAllocation(PLAN);
+    const rows = summarizeAllocation(PLAN, BUCKETS);
     expect(rows.map((r) => r.currentPct)).toEqual([0, 0, 0]);
     expect(rows.map((r) => r.targetPct)).toEqual([40, 35, 25]);
     expect(fillProgressPct(rows)).toBe(0);
@@ -38,7 +54,7 @@ describe("목표 대비 현재 비중", () => {
       { functionType: "GROWTH", targetWeight: 40, marketValue: 1_000_000 },
       { functionType: "INCOME", targetWeight: 35 },
       { functionType: "DEFENSE", targetWeight: 25 },
-    ]);
+    ], BUCKETS);
     expect(rows[0].currentPct).toBe(100);
     expect(rows[0].gapPct).toBe(60);
     // 겹치는 부분은 성장의 40%뿐 → 40/100
@@ -50,7 +66,7 @@ describe("목표 대비 현재 비중", () => {
       { functionType: "GROWTH", targetWeight: 40, marketValue: 400 },
       { functionType: "INCOME", targetWeight: 35, marketValue: 350 },
       { functionType: "DEFENSE", targetWeight: 25, marketValue: 250 },
-    ]);
+    ], BUCKETS);
     expect(fillProgressPct(rows)).toBe(100);
     expect(rows.every((r) => r.gapPct === 0)).toBe(true);
   });
@@ -60,7 +76,7 @@ describe("목표 대비 현재 비중", () => {
       { functionType: "GROWTH", targetWeight: 40, marketValue: 800 },
       { functionType: "INCOME", targetWeight: 35, marketValue: 200 },
       { functionType: "DEFENSE", targetWeight: 25 },
-    ]);
+    ], BUCKETS);
     const under = underweightBuckets(rows);
     expect(under[0].functionType).toBe("DEFENSE"); // -25
     expect(under[1].functionType).toBe("INCOME"); // -15
@@ -68,15 +84,15 @@ describe("목표 대비 현재 비중", () => {
   });
 
   it("목표 합계를 그대로 돌려준다(100%가 아니면 화면이 경고한다)", () => {
-    expect(targetSumPct(summarizeAllocation(PLAN))).toBe(100);
+    expect(targetSumPct(summarizeAllocation(PLAN, BUCKETS))).toBe(100);
     expect(
-      targetSumPct(summarizeAllocation([{ functionType: "GROWTH", targetWeight: 40 }])),
+      targetSumPct(summarizeAllocation([], [bucket("GROWTH", "성장", 40, 0)])),
     ).toBe(40);
   });
 
   it("종목이 하나도 없어도 죽지 않는다", () => {
     expect(totalValue([])).toBe(0);
-    expect(fillProgressPct(summarizeAllocation([]))).toBe(0);
+    expect(fillProgressPct(summarizeAllocation([], BUCKETS))).toBe(0);
   });
 });
 
@@ -108,12 +124,14 @@ describe("통화 환산", () => {
     // 환산 없이 더하면 성장이 0.07%로 묻힌다 — 예전 버그의 재현
     const wrong = summarizeAllocation(
       holdings.map((h) => ({ ...h, marketValue: h.shares * h.price })),
+      BUCKETS,
     );
     expect(wrong[0].currentPct).toBeLessThan(1);
 
     // 환산하면 성장이 제 몫을 찾는다
     const right = summarizeAllocation(
       holdings.map((h) => ({ ...h, marketValue: holdingValueKrw(h, 1350) })),
+      BUCKETS,
     );
     expect(right[0].currentPct).toBeGreaterThan(45);
   });

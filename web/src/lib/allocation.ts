@@ -11,13 +11,25 @@
  * ⚠ "무엇을 얼마나 사라"는 계산은 하지 않는다. 이 사이트는 매매를 권유하지 않는다
  * (`/disclaimer`, `src/lib/ai/persona.ts`의 공통 규범과 같은 선).
  * 여기서 내는 것은 **차이(gap)**까지다. 그 차이를 어떻게 메울지는 사람이 정한다.
+ *
+ * ## ⚠ 목표는 버킷이 갖는다 (2026-08-17에 뒤집었다)
+ * 전에는 `targetPct`를 **보유 종목의 `targetWeight` 합계로 파생**시켰다. 그래서
+ * 위 첫 문장("목표 배분을 정해 두고 매달 조금씩 채워 간다")과 코드가 정반대였다 —
+ * 종목이 0건이면 목표도 0이 되어, 아직 아무것도 안 산 상태를 표현할 수 없었다.
+ * 지금은 **목표를 `PortfolioBucket`에서 받는다**(`lib/bucket-target.ts`).
  */
-import type { FunctionType } from "./types";
+import type { PortfolioBucket } from "./bucket-target";
+import { sortBuckets } from "./bucket-target";
 
 export type AllocationInput = {
-  /** 기능 분류 */
-  functionType: FunctionType;
-  /** 목표 비중(%) */
+  /** 버킷 키 (`PortfolioBucket.key`) */
+  functionType: string;
+  /**
+   * 종목별 목표 비중(%).
+   * ⚠ **버킷 목표와 다른 값이다.** 이건 "이 종목에 얼마를 배정할까"이고,
+   *    버킷 목표는 "이 분류에 얼마를 둘까"다. 버킷 안에서 종목 합계가 모자란 몫이
+   *    `bucket-target.breakdownBuckets()`가 말하는 **미배정분**이다.
+   */
   targetWeight?: number;
   /**
    * 현재 평가액 — **원화 기준으로 환산된 값**이어야 한다.
@@ -44,14 +56,13 @@ export function holdingValueKrw(
 }
 
 export type AllocationRow = {
-  functionType: FunctionType;
+  /** 버킷 키 */
+  functionType: string;
   targetPct: number;
   currentPct: number;
   /** 현재 − 목표. 양수면 과다, 음수면 미달 */
   gapPct: number;
 };
-
-const FUNCTIONS: FunctionType[] = ["GROWTH", "INCOME", "DEFENSE"];
 
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
@@ -63,23 +74,36 @@ export function totalValue(items: AllocationInput[]): number {
 }
 
 /**
- * 기능별 목표·현재 비중.
+ * 버킷별 목표·현재 비중.
  *
  * 평가액이 하나도 없으면 현재 비중은 전부 0이다 — **목표 비중을 현재인 것처럼
  * 되돌리지 않는다.** 그게 "이미 그렇게 굴리는 중"으로 보이게 만드는 지점이었다.
+ *
+ * ⚠ **현재 비중의 분모는 전체 평가액이다.** 어느 버킷에도 속하지 않는 종목(관리자가
+ *    버킷을 지웠거나 옛 데이터)도 분모에는 들어간다 — 빼면 남은 버킷들의 비중이
+ *    실제보다 부풀어 100%처럼 보인다. 그런 종목이 있다는 사실은
+ *    `bucket-target.orphanHoldings()`가 따로 말한다.
  */
-export function summarizeAllocation(items: AllocationInput[]): AllocationRow[] {
+export function summarizeAllocation(
+  items: AllocationInput[],
+  buckets: PortfolioBucket[],
+): AllocationRow[] {
   const total = totalValue(items);
 
-  return FUNCTIONS.map((functionType) => {
-    const inBucket = items.filter((i) => i.functionType === functionType);
-    const targetPct = round1(inBucket.reduce((sum, i) => sum + (i.targetWeight ?? 0), 0));
+  return sortBuckets(buckets).map((bucket) => {
+    const inBucket = items.filter((i) => i.functionType === bucket.key);
+    const targetPct = round1(bucket.targetPct || 0);
     const currentPct =
       total > 0
         ? round1((inBucket.reduce((sum, i) => sum + (i.marketValue ?? 0), 0) / total) * 100)
         : 0;
 
-    return { functionType, targetPct, currentPct, gapPct: round1(currentPct - targetPct) };
+    return {
+      functionType: bucket.key,
+      targetPct,
+      currentPct,
+      gapPct: round1(currentPct - targetPct),
+    };
   });
 }
 

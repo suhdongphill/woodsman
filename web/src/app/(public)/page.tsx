@@ -2,7 +2,6 @@ import Link from "next/link";
 import { LinkButton } from "@/components/ui/Button";
 import { Card, SectionHeader } from "@/components/ui/Card";
 import { StatBar } from "@/components/ui/StatBar";
-import { FUNCTION_COLOR } from "@/components/ui/Badge";
 import { PostCard } from "@/features/posts/ui/PostCard";
 import { CapitalFlowChart } from "@/features/portfolio/ui/CapitalFlowChart";
 import { JournalTimeline } from "@/features/portfolio/ui/JournalTimeline";
@@ -15,14 +14,14 @@ import { summarizePerformance } from "@/lib/performance";
 import { DataModeNotice } from "@/components/ui/DataModeNotice";
 import { getSiteBasics } from "@/lib/site-settings";
 import { loadPublishedJournal, loadSnapshots } from "@/features/journal/repository";
-import { loadPublishedHoldings, loadRebalances } from "@/features/portfolio/repository";
+import { loadRebalances } from "@/features/portfolio/repository";
+import { loadBuckets } from "@/features/portfolio/buckets-repo";
+import { cashTargetPct, isBucketTargetSet } from "@/lib/bucket-target";
 import { loadMacroOverview } from "@/features/macro/service";
 import { RecessionBoard } from "@/features/macro/ui/RecessionBoard";
-import { sumTargetWeights } from "@/lib/allocation";
 import { loadPublishedSummaries } from "@/features/reports/repository";
 import { loadPublishedPosts, loadSectionPosts } from "@/features/posts/repository";
 import { SectionFrame } from "@/features/posts/ui/SectionFrame";
-import type { FunctionType } from "@/lib/types";
 
 /**
  * 홈.
@@ -61,32 +60,37 @@ export default async function HomePage() {
     snapshots,
     allJournal,
     basics,
-    holdings,
     rebalances,
     macro,
     latestPosts,
     homePosts,
     featuredReports,
+    buckets,
   ] = await Promise.all([
     loadSnapshots(),
     loadPublishedJournal(),
     getSiteBasics(),
-    loadPublishedHoldings(),
     loadRebalances(),
     loadMacroOverview(),
     loadPublishedPosts(3),
     loadSectionPosts("HOME", 4),
     loadPublishedSummaries(4),
+    loadBuckets(),
   ]);
   const recentJournal = allJournal.slice(0, 3);
   const journalCount = allJournal.length;
 
-  const bucketTarget = (f: FunctionType) =>
-    sumTargetWeights(holdings.filter((h) => h.functionType === f));
+  /**
+   * ⚠ **목표 구성비 막대다. 현재 배분이 아니다.**
+   *    2026-08-17 점검에서 지적받은 자리 — 라벨 없이 그려서 현재 비중처럼 읽혔다.
+   *    이제 막대 위에 "목표"라고 적고, 남는 몫도 현금으로 그린다.
+   * ⚠ 목표는 관리자가 정한 값(`PortfolioBucket`)이다. 종목 합계에서 파생시키지 않는다.
+   */
+  const cashPct = cashTargetPct(buckets);
+  const targetSet = isBucketTargetSet(buckets);
   const segments = [
-    { label: "성장", value: bucketTarget("GROWTH"), color: FUNCTION_COLOR.GROWTH },
-    { label: "인컴", value: bucketTarget("INCOME"), color: FUNCTION_COLOR.INCOME },
-    { label: "방어", value: bucketTarget("DEFENSE"), color: FUNCTION_COLOR.DEFENSE },
+    ...buckets.map((b) => ({ label: b.name, value: b.targetPct, color: b.color })),
+    ...(cashPct > 0 ? [{ label: "현금·미배정", value: cashPct, color: "#3a3f4b" }] : []),
   ];
   const perf = summarizePerformance(snapshots);
   const latestInsights = latestPosts.filter((p) => p.type !== "NOTICE");
@@ -178,7 +182,16 @@ export default async function HomePage() {
                 </>
               )}
 
-              <StatBar segments={segments} className="mt-5" height="h-3" />
+              {/* ⚠ 목표임을 반드시 적는다. 안 적으면 현재 배분으로 읽힌다(2026-08-17 점검). */}
+              {targetSet && (
+                <div className="mt-5">
+                  <p className="mb-1.5 flex items-baseline justify-between text-[11px] text-gray-500">
+                    <span>목표 구성비</span>
+                    <span className="text-gray-600">현재 배분은 /portfolio에서</span>
+                  </p>
+                  <StatBar segments={segments} height="h-3" />
+                </div>
+              )}
 
               {rebalances.length > 0 && (
                 <p className="mt-5 pt-4 border-t border-border/70 text-[11px] text-gray-500 leading-relaxed">

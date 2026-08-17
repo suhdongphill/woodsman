@@ -878,3 +878,40 @@ model StockQuoteIngest {
 
   @@index([startedAt])
 }
+
+// ────────────── 포트폴리오 대분류 버킷 ──────────────
+
+/// 대표 포트폴리오의 **대분류 카테고리와 목표 구성비**.
+///
+/// ⚠ 2026-08-17 이전에는 성장·인컴·방어가 `FunctionType` 유니온으로 **코드에 박혀** 있었고,
+///    버킷 목표비중은 보유 종목의 `targetWeight` 합계로 **파생**되고 있었다. 그래서
+///    "목표를 정해 두고 아직 아무것도 안 샀다"를 표현할 수 없었고, 운영 전략이 바뀌어도
+///    관리자가 분류를 손댈 수 없었다. 운영지침의 설계사상(모든 것은 admin이 유연하게 운영한다)에
+///    어긋나 데이터로 내렸다. 판단·검증은 `src/lib/bucket-target.ts`가 한다.
+model PortfolioBucket {
+  /// ⚠ 안정된 식별자. `ModelHolding.functionType`·`StockReportContext.functionType`이
+  ///    이 값을 참조하므로 **만든 뒤 바꾸지 않는다.** 기본 셋은 GROWTH · INCOME · DEFENSE
+  key String @id
+
+  /// 화면에 보이는 이름. 관리자가 바꿀 수 있다(키는 그대로 두므로 옛 데이터가 안 끊긴다)
+  name        String
+  /// 공개 화면의 한 줄 설명
+  description String?
+
+  /// 목표 구성비(%). ⚠ 합계는 100 **이하**를 허용한다 — 남는 몫이 현금·미배정이다
+  targetPct Float @default(0)
+
+  /// 차트·배지 색 (#RRGGBB). ⚠ 임의 문자열이 style에 들어가지 않게 검증한다
+  color String @default("#5b7fa6")
+
+  /// 표시 순서. 작을수록 앞
+  sortOrder Int @default(0)
+
+  /// ⚠ 기본 셋인가. 기본 셋의 **키는 지울 수 없다** — AI 프롬프트 용어(`lib/ai/labels.ts`)와
+  ///    시드·기존 보고서가 참조한다. 안 쓰겠다면 목표 비중을 0%로 둔다.
+  builtIn Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+}

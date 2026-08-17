@@ -74,9 +74,16 @@ describe("종목 입력 검증", () => {
     ).toBe(true);
   });
 
-  it("종목명과 기능 분류는 필수다", () => {
+  it("종목명과 분류는 비울 수 없다", () => {
     expect(holdingSchema.safeParse({ ...BASE, name: "  " }).success).toBe(false);
-    expect(holdingSchema.safeParse({ ...BASE, functionType: "ETC" }).success).toBe(false);
+    expect(holdingSchema.safeParse({ ...BASE, functionType: "  " }).success).toBe(false);
+  });
+
+  it("⚠ 모르는 분류 키를 스키마가 막지 않는다 — 목록이 DB에 있기 때문이다", () => {
+    // 2026-08-17에 뒤집었다. 전에는 z.enum(["GROWTH","INCOME","DEFENSE"])였는데,
+    // 관리자가 분류를 추가할 수 있게 되면서 목록을 여기 박으면 새 분류가 저장 거부된다.
+    // "그 키가 실제로 있는가"는 DB를 봐야 알 수 있어 `saveHoldingAction`이 확인한다.
+    expect(holdingSchema.safeParse({ ...BASE, functionType: "ALT" }).success).toBe(true);
   });
 
   it("잘못된 기준일 형식은 막는다", () => {

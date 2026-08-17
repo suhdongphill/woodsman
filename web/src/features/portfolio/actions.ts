@@ -18,6 +18,7 @@ import {
   saveHolding,
   saveRebalance,
 } from "./repository";
+import { loadBuckets } from "./buckets-repo";
 import { firstIssue, holdingSchema, rebalanceSchema } from "./schema";
 import { emptyPortfolioFormState, type PortfolioFormState } from "./form-state";
 import { requireAdmin } from "@/lib/session";
@@ -76,6 +77,13 @@ export async function saveHoldingAction(
     published: checked(formData, "published"),
   });
   if (!parsed.success) return { error: firstIssue(parsed.error) };
+
+  // ⚠ 분류가 실제로 있는지 여기서 확인한다. 스키마는 목록을 모른다(관리자가 추가·삭제한다).
+  //    없는 키를 그대로 저장하면 그 종목이 어느 버킷에도 안 잡혀 비중 계산에서 조용히 빠진다.
+  const buckets = await loadBuckets();
+  if (!buckets.some((b) => b.key === parsed.data.functionType)) {
+    return { error: `분류 ${parsed.data.functionType}를 찾을 수 없습니다. 다시 고르세요.` };
+  }
 
   const id = text(formData, "id") || undefined;
   try {

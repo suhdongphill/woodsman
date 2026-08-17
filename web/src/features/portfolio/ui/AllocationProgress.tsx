@@ -12,16 +12,19 @@
  * ⚠ "무엇을 얼마나 사라"는 말은 쓰지 않는다. 차이까지만 보여주고 판단은 사람이 한다.
  */
 import { Card, SectionHeader } from "@/components/ui/Card";
-import { FUNCTION_COLOR, FUNCTION_LABEL } from "@/components/ui/Badge";
+import { bucketColor, bucketName, type PortfolioBucket } from "@/lib/bucket-target";
 import type { AllocationRow } from "@/lib/allocation";
 
 export function AllocationProgress({
   rows,
+  buckets,
   fillPct,
   usdKrwRate,
   className,
 }: {
   rows: AllocationRow[];
+  /** 이름·색의 원본. ⚠ 관리자가 바꾼 이름을 화면이 그대로 쓴다 */
+  buckets: PortfolioBucket[];
   /** 구성 완료율 0~100 */
   fillPct: number;
   /** 달러 종목 환산에 쓴 기준 환율 — 화면에 밝힌다 */
@@ -34,7 +37,7 @@ export function AllocationProgress({
     <section className={className}>
       <SectionHeader
         title="목표까지 얼마나 채웠나"
-        subtitle="정한 기능별 목표 비중을 매달 나눠서 채워 갑니다. 지금은 그 과정의 한 지점입니다."
+        subtitle="정한 분류별 목표 비중을 매달 나눠서 채워 갑니다. 지금은 그 과정의 한 지점입니다."
       />
 
       <Card>
@@ -45,7 +48,8 @@ export function AllocationProgress({
 
         <ul className="space-y-4">
           {rows.map((row) => {
-            const color = FUNCTION_COLOR[row.functionType];
+            const color = bucketColor(buckets, row.functionType);
+            const label = bucketName(buckets, row.functionType);
             const currentW = (row.currentPct / maxScale) * 100;
             const targetW = (row.targetPct / maxScale) * 100;
             const filled = row.gapPct >= 0;
@@ -58,7 +62,7 @@ export function AllocationProgress({
                       className="h-2.5 w-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: color }}
                     />
-                    <span className="text-gray-300">{FUNCTION_LABEL[row.functionType]}</span>
+                    <span className="text-gray-300">{label}</span>
                   </span>
                   <span className="tabular-nums text-gray-500">
                     <span className="text-white">{row.currentPct}%</span>
@@ -74,7 +78,7 @@ export function AllocationProgress({
                 <div
                   className="relative h-3 rounded-full bg-[#12141c]"
                   role="img"
-                  aria-label={`${FUNCTION_LABEL[row.functionType]} 현재 ${row.currentPct}%, 목표 ${row.targetPct}%`}
+                  aria-label={`${label} 현재 ${row.currentPct}%, 목표 ${row.targetPct}%`}
                 >
                   <div
                     className="absolute inset-y-0 left-0 rounded-full border border-dashed"
