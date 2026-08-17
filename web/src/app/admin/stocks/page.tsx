@@ -6,6 +6,10 @@ import { requireAdmin } from "@/lib/session";
 import { loadReportSummaries } from "@/features/reports/repository";
 import { NewReportForm } from "@/features/reports/ui/NewReportForm";
 import { classifyQuotaError } from "@/lib/quota";
+import { loadLastQuoteIngestAt } from "@/features/stocks/repository";
+import { FetchQuotesCard } from "@/features/stocks/ui/FetchQuotesCard";
+import { QUOTE_STALE_AFTER_DAYS, quoteAgeDays } from "@/lib/quote/kpi";
+import { viewDateKey } from "@/lib/analytics";
 
 export const metadata: Metadata = { title: "종목 보고서" };
 
@@ -22,9 +26,13 @@ export default async function AdminStocksPage() {
 
   let summaries: Awaited<ReturnType<typeof loadReportSummaries>> | null = null;
   let failure: string | undefined;
+  let lastIngestAt: string | undefined;
 
   try {
-    summaries = await loadReportSummaries();
+    [summaries, lastIngestAt] = await Promise.all([
+      loadReportSummaries(),
+      loadLastQuoteIngestAt(),
+    ]);
   } catch (error) {
     // ⚠ "값이 없음"과 "읽지 못함"을 같은 화면으로 만들지 않는다.
     //    한도 문제면 그렇다고 말해 준다 — 코드 버그와 증상이 똑같아서 구분이 안 된다.
@@ -34,6 +42,14 @@ export default async function AdminStocksPage() {
         ? "목록을 불러오지 못했습니다. 서버 로그의 [d1] 항목을 확인하세요."
         : `${verdict.title} ${verdict.action}`;
   }
+
+  // ⚠ 판단은 `lib/quote/kpi`가 한다. 화면은 문장만 받는다 — 같은 판단이 두 곳에 생기면
+  //    관리자 화면과 보고서가 다른 말을 한다.
+  const ingestAgeDays = quoteAgeDays(lastIngestAt?.slice(0, 10), viewDateKey(new Date()));
+  const staleNote =
+    ingestAgeDays != null && ingestAgeDays > QUOTE_STALE_AFTER_DAYS
+      ? `${ingestAgeDays}일 지났습니다. 수집이 멈췄는지 확인하세요.`
+      : undefined;
 
   return (
     <AdminShell>
@@ -54,6 +70,11 @@ export default async function AdminStocksPage() {
         <Card>
           <CardTitle>새 보고서</CardTitle>
           <NewReportForm />
+        </Card>
+
+        <Card>
+          <CardTitle>시세</CardTitle>
+          <FetchQuotesCard lastIngestAt={lastIngestAt} staleNote={staleNote} />
         </Card>
 
         {failure ? (

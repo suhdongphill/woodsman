@@ -15,6 +15,8 @@ import { validateReport, publishBlockers } from "@/lib/report/rules";
 import { marketAxisEvidence } from "@/lib/report/context";
 import { classifyQuotaError } from "@/lib/quota";
 import { viewDateKey } from "@/lib/analytics";
+import { ingestQuotes } from "@/features/stocks/ingest";
+import { deleteQuotes } from "@/features/stocks/repository";
 import { captureSiteContext } from "./context";
 import { loadContext, saveContext } from "./context-repo";
 import {
@@ -160,6 +162,10 @@ export async function deleteReportAction(formData: FormData): Promise<void> {
   if (!ticker) return;
 
   await deleteReport(ticker);
+  // ⚠ 시세도 함께 지운다. `StockQuote`는 보고서에 FK가 없어(시장 하나 = 어댑터 하나로
+  //    나중에 보고서 없는 종목도 받을 수 있게 열어 뒀다) 지우지 않으면 고아 행이 남는다.
+  //    지금 시세를 갖는 이유는 보고서뿐이므로 같이 정리한다.
+  await deleteQuotes(ticker);
   revalidatePath(ADMIN_PATH);
   revalidatePath(`/stocks/${ticker}`);
 }
@@ -191,9 +197,11 @@ export async function injectContextAction(
   if (!ticker) return { error: "티커가 없습니다." };
 
   try {
-    if (!(await loadReport(ticker))) return { error: "보고서를 찾을 수 없습니다." };
+    const report = await loadReport(ticker);
+    if (!report) return { error: "보고서를 찾을 수 없습니다." };
 
-    const now = await captureSiteContext(ticker);
+    // 시장은 보고서가 이미 갖고 있다 — 시세를 어느 거래소에서 볼지, 어느 통화로 적을지 정한다.
+    const now = await captureSiteContext(ticker, { market: report.market });
     await saveContext(ticker, { ...now, capturedAt: viewDateKey(new Date()) });
   } catch (error) {
     return failure("사이트 자료 주입", error);
@@ -204,6 +212,51 @@ export async function injectContextAction(
     savedAt: new Date().toISOString(),
     notice: "사이트 자료를 이 보고서에 주입했습니다. 지금 값 기준으로 얼렸습니다.",
   };
+}
+
+/**
+ * 시세 가져오기 — Yahoo에서 이 종목의 일봉을 받아 D1에 누적한다.
+ *
+ * ⚠ **주입과 나눠 둔다.** 시세는 매일 바뀌고 사이트 자료(거시·버블)는 그렇지 않다.
+ *    한 버튼으로 묶으면 시세를 새로 받으려다 **보고서가 참조한 거시 숫자까지 갈아 끼우게 된다** —
+ *    그 순간 §01 논지의 근거가 조용히 바뀐다. 받는 것과 얼리는 것은 다른 일이다.
+ *
+ * ⚠ 받기만 하고 **얼리지 않는다.** 보고서에 반영하려면 「사이트 자료 주입」을 눌러야 한다.
+ *    그래야 "언제 기준의 숫자인가"가 사람의 결정으로 남는다.
+ */
+export async function fetchQuotesAction(
+  _prev: ReportFormState,
+  formData: FormData,
+): Promise<ReportFormState> {
+  await requireAdmin(ADMIN_PATH);
+
+  const ticker = ticketOf(formData);
+  if (!ticker) return { error: "티커가 없습니다." };
+
+  try {
+    const report = await loadReport(ticker);
+    if (!report) return { error: "보고서를 찾을 수 없습니다." };
+
+    const result = await ingestQuotes([{ ticker, market: report.market }]);
+
+    // ⚠ 실패를 조용히 넘기지 않는다. 화면이 사유를 그대로 말한다(CLAUDE.md 3장).
+    if (result.failCount > 0) {
+      const reason = result.detail.find((d) => !d.ok)?.error ?? "알 수 없는 이유";
+      return { error: `시세를 가져오지 못했습니다 — ${reason}` };
+    }
+
+    const added = result.addedPoints;
+    revalidate(ticker);
+    return {
+      savedAt: new Date().toISOString(),
+      notice:
+        added > 0
+          ? `시세 ${added}일치를 새로 받았습니다. 보고서에 반영하려면 「사이트 자료 주입」을 누르세요.`
+          : "새로 받을 시세가 없습니다(이미 최신입니다).",
+    };
+  } catch (error) {
+    return failure("시세 가져오기", error);
+  }
 }
 
 /**

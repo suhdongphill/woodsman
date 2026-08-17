@@ -794,7 +794,87 @@ model StockReportContext {
   targetWeight  Float?
   holdingThesis String?
 
+  /// ── 시세 (§02 히어로 KPI). ⚠ null = 미수집. 0으로 저장하지 않는다
+  quotePrice          Float?
+  /// 그 종가의 거래일. 날짜만 있는 값이므로 정오(UTC)로 저장한다
+  quoteAsOf           DateTime?
+  quoteCurrency       String?
+  /// 전일 대비 %
+  quoteChangePercent  Float?
+  quoteLow52          Float?
+  quoteHigh52         Float?
+  /// 52주 밴드 안의 위치 0~100. ⚠ 밴드 폭이 0이면 null이다(0%는 "52주 저점"이라는 거짓말이 된다)
+  quotePosition52     Float?
+  /// 52주 범위를 실제로 몇 개 점에서 냈나 — 얇으면 화면이 그렇게 말한다
+  quoteRangeSamples   Int?
+  /// 일평균 대비 거래량 배수
+  quoteVolumeMultiple Float?
+  /// ⚠ 국내 종목처럼 덜 믿을 값일 때의 한 문장. 조용히 같은 굵기로 보이면 안 된다
+  quoteCaveat         String?
+
+  /// ── Envelope (§09). ⚠ **밴드 위치까지만.** 대응(매수/손절)은 사람이 쓴다
+  envMiddle    Float?
+  envUpper     Float?
+  envLower     Float?
+  /// 0=하단 · 50=중심 · 100=상단. ⚠ 벗어나면 범위 밖 값을 그대로 저장한다
+  envPosition  Float?
+  /// 중심선 대비 괴리율 %
+  envDeviation Float?
+  /// 계산에 쓴 주 수. 20보다 적으면 화면이 그렇게 말한다
+  envWeeks     Int?
+
   updatedAt DateTime @updatedAt
 
   report StockReport @relation(fields: [ticker], references: [ticker], onDelete: Cascade)
+}
+
+// ────────────── 종목 시세 (§02 히어로 KPI · §09 Envelope) ──────────────
+
+/// 종목 하나의 하루 종가.
+///
+/// ⚠ **`Stock` 테이블을 따로 두지 않았다.** 종목의 이름·시장·통화는 이미 `StockReport`가
+///    갖고 있다(계획서 C1은 둘로 나눌 것을 적었지만, 지금 시세가 필요한 것은 보고서뿐이라
+///    같은 사실을 두 곳에 두면 어긋난다). 보고서 없는 종목의 시세가 필요해지면 그때 나눈다.
+///
+/// ⚠ ticker는 **문자열로만** 다룬다. 숫자로 파싱하면 `005930` → `5930`이 되어 국내 종목이 사라진다.
+model StockQuote {
+  ticker String
+  /// 거래일. 날짜만 있는 값이므로 정오(UTC)로 저장한다(`MacroPoint`와 같은 규칙).
+  date   DateTime
+
+  close  Float
+  /// ⚠ 거래량은 없을 수 있다. **없는 것과 0은 다르다** — 배수 계산에서 갈린다.
+  volume Float?
+
+  /// YAHOO | MANUAL — 어디서 온 값인지. 나중에 국장 어댑터가 붙으면 늘어난다(설계서 §5-2)
+  source String @default("YAHOO")
+
+  /// 수집 시각(같은 날짜를 다시 받으면 갱신된다 — 종가도 사후 수정된다)
+  updatedAt DateTime @default(now())
+
+  @@id([ticker, date])
+  @@index([ticker, date])
+}
+
+/// 시세 가져오기 실행 기록.
+///
+/// ⚠ `MacroIngest`와 같은 이유로 둔다. 수집이 멈춰도 화면은 옛 종가를 그대로 보여주므로,
+///    **어디까지 성공했는지 남기지 않으면 멈춘 줄도 모른다.**
+model StockQuoteIngest {
+  id         String    @id @default(cuid())
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  /// MANUAL(관리자 버튼) | CRON
+  trigger String @default("MANUAL")
+
+  okCount     Int @default(0)
+  failCount   Int @default(0)
+  /// 새로 쌓인 점의 개수
+  addedPoints Int @default(0)
+
+  /// 종목별 결과 JSON — 실패 사유를 그대로 남긴다
+  detail String?
+
+  @@index([startedAt])
 }

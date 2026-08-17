@@ -9,6 +9,7 @@ import {
   recessionCounts,
   renderContextMarkdown,
   type MacroContext,
+  type QuoteContext,
   type ReportContextSnapshot,
   type SiteContext,
 } from "./context";
@@ -45,6 +46,26 @@ const EMPTY_MACRO: MacroContext = {
   total: 5,
 };
 
+const QUOTE: QuoteContext = {
+  price: 1_180.5,
+  asOf: "2026-08-14",
+  currency: "USD",
+  changePercent: 2.4,
+  low52: 720,
+  high52: 1_240,
+  position52: 88.5,
+  rangeSamples: 250,
+  volumeMultiple: 1.8,
+  envelope: {
+    middle: 980,
+    upper: 1_176,
+    lower: 784,
+    position: 101.1,
+    deviation: 20.5,
+    weeks: 20,
+  },
+};
+
 const SNAPSHOT: ReportContextSnapshot = {
   capturedAt: "2026-08-16",
   macro: MACRO,
@@ -63,12 +84,14 @@ const SNAPSHOT: ReportContextSnapshot = {
     targetWeight: 8,
     thesis: "파운드리 독점 구조",
   },
+  quote: QUOTE,
 };
 
 const base = (): SiteContext => ({
   macro: { ...MACRO, fed: { ...MACRO.fed! } },
   bubble: { ...SNAPSHOT.bubble, firedTriggerKeys: [...SNAPSHOT.bubble.firedTriggerKeys] },
   holding: { ...SNAPSHOT.holding },
+  quote: { ...QUOTE, envelope: QUOTE.envelope ? { ...QUOTE.envelope } : undefined },
 });
 
 describe("marketAxisEvidence — M축 근거", () => {
@@ -265,5 +288,144 @@ describe("⚠ 두 곳에 적은 것은 테스트가 대조한다", () => {
     for (const t of BUBBLE_TRIGGERS) {
       expect(t.key).not.toContain(",");
     }
+  });
+});
+
+describe("renderContextMarkdown — §02 히어로 KPI", () => {
+  it("현재가·전일 대비·기준일을 적는다", () => {
+    const md = renderContextMarkdown(SNAPSHOT);
+    expect(md).toContain("**현재가**");
+    expect(md).toContain("USD");
+    expect(md).toContain("+2.40%");
+    expect(md).toContain("기준일 2026-08-14");
+  });
+
+  it("52주 범위와 밴드 내 위치를 적는다", () => {
+    const md = renderContextMarkdown(SNAPSHOT);
+    expect(md).toContain("**52주 범위**");
+    expect(md).toContain("밴드 내 89%");
+  });
+
+  it("시가총액은 미조회로 남기고 조회처를 적는다 — 지어내지 않는다(R2)", () => {
+    const md = renderContextMarkdown(SNAPSHOT);
+    expect(md).toContain("**시가총액**");
+    expect(md).toContain("미조회");
+    expect(md).toContain("발행주식수");
+  });
+
+  it("거래량 배수를 적는다", () => {
+    const md = renderContextMarkdown(SNAPSHOT);
+    expect(md).toContain("일평균 대비 1.8배");
+  });
+
+  it("거래량이 일평균 10배를 넘으면 속보 박스 자리를 짚어 준다", () => {
+    const md = renderContextMarkdown({
+      ...SNAPSHOT,
+      quote: { ...QUOTE, volumeMultiple: 12.3 },
+    });
+    expect(md).toContain("속보 박스");
+  });
+
+  it("52주 표본이 얇으면 그 사실을 적는다", () => {
+    const md = renderContextMarkdown({
+      ...SNAPSHOT,
+      quote: { ...QUOTE, rangeSamples: 40 },
+    });
+    expect(md).toContain("40거래일치로 계산");
+  });
+
+  it("시세를 안 가져왔으면 어디서 가져오는지 적는다 — 0원짜리 KPI를 만들지 않는다", () => {
+    const md = renderContextMarkdown({ ...SNAPSHOT, quote: {} });
+    expect(md).toContain("아직 가져오지 않았습니다");
+    expect(md).toContain("/admin/stocks");
+    expect(md).not.toContain("**현재가**");
+  });
+
+  it("시세가 있으면 출처에 Yahoo를 적는다 — 어디서 온 숫자인지 남긴다", () => {
+    expect(renderContextMarkdown(SNAPSHOT)).toContain("Yahoo Finance");
+    expect(renderContextMarkdown({ ...SNAPSHOT, quote: {} })).not.toContain("Yahoo Finance");
+  });
+
+  it("국내 종목의 단서를 그대로 싣는다", () => {
+    const md = renderContextMarkdown({
+      ...SNAPSHOT,
+      quote: { ...QUOTE, caveat: "국내 종목 시세는 Yahoo 경유라 지연·결측이 있습니다." },
+    });
+    expect(md).toContain("지연·결측");
+  });
+});
+
+describe("renderContextMarkdown — §09 Envelope", () => {
+  it("밴드 세 값과 위치를 적는다", () => {
+    const md = renderContextMarkdown(SNAPSHOT);
+    expect(md).toContain("Envelope(20주MA ±20%)");
+    expect(md).toContain("밴드 내 위치");
+    expect(md).toContain("중심선 대비 +20.5%");
+  });
+
+  it("⚠ 매매를 지시하지 않는다 — 대응은 사람이 쓴다", () => {
+    for (const position of [-30, 0, 50, 100, 140]) {
+      const md = renderContextMarkdown({
+        ...SNAPSHOT,
+        quote: { ...QUOTE, envelope: { ...QUOTE.envelope!, position } },
+      });
+      for (const word of ["매수", "매도", "손절", "진입", "청산"]) {
+        expect(md.includes(word), `${word}가 들어갔다`).toBe(false);
+      }
+    }
+  });
+
+  it("20주가 안 찼으면 그 사실을 적는다", () => {
+    const md = renderContextMarkdown({
+      ...SNAPSHOT,
+      quote: { ...QUOTE, envelope: { ...QUOTE.envelope!, weeks: 8 } },
+    });
+    expect(md).toContain("Envelope(8주MA ±20%)");
+    expect(md).toContain("20주가 아직 차지 않아");
+  });
+
+  it("마크다운이 표가 아니라 목록이다 — markdown.ts에 표 문법이 없다", () => {
+    const html = markdownToHtml(renderContextMarkdown(SNAPSHOT));
+    expect(html).toContain("<li>");
+    expect(html).not.toContain("<table>");
+  });
+});
+
+describe("describeDrift — 시세", () => {
+  it("5% 미만으로 움직인 종가는 말하지 않는다 — 매일 바뀌는 값이다", () => {
+    const now = base();
+    now.quote.price = QUOTE.price! * 1.03;
+    expect(describeDrift(base(), now).some((d) => d.label.startsWith("현재가"))).toBe(false);
+  });
+
+  it("5% 이상 움직이면 말한다", () => {
+    const now = base();
+    now.quote.price = QUOTE.price! * 1.08;
+    const drift = describeDrift(base(), now).find((d) => d.label.startsWith("현재가"));
+    expect(drift).toBeDefined();
+    expect(drift!.label).toContain("+8.0%");
+  });
+
+  it("없다가 생기면 크기와 무관하게 말한다 — 이제 §02를 채울 수 있다는 뜻이다", () => {
+    const before = base();
+    before.quote = {};
+    const drift = describeDrift(before, base()).find((d) => d.label === "현재가");
+    expect(drift?.before).toBe("미수집");
+  });
+
+  it("Envelope 밴드 안팎이 바뀌면 말한다", () => {
+    const now = base();
+    now.quote.envelope = { ...QUOTE.envelope!, position: 60 };
+    const drift = describeDrift(base(), now).find((d) => d.label === "Envelope 위치");
+    expect(drift?.before).toBe("상단 밖");
+    expect(drift?.after).toBe("밴드 안");
+  });
+
+  it("밴드 안에서만 움직이면 말하지 않는다", () => {
+    const a = base();
+    a.quote.envelope = { ...QUOTE.envelope!, position: 30 };
+    const b = base();
+    b.quote.envelope = { ...QUOTE.envelope!, position: 70 };
+    expect(describeDrift(a, b).some((d) => d.label === "Envelope 위치")).toBe(false);
   });
 });

@@ -48,6 +48,22 @@ type ContextRow = {
   functionType: string | null;
   targetWeight: number | null;
   holdingThesis: string | null;
+  quotePrice: number | null;
+  quoteAsOf: string | null;
+  quoteCurrency: string | null;
+  quoteChangePercent: number | null;
+  quoteLow52: number | null;
+  quoteHigh52: number | null;
+  quotePosition52: number | null;
+  quoteRangeSamples: number | null;
+  quoteVolumeMultiple: number | null;
+  quoteCaveat: string | null;
+  envMiddle: number | null;
+  envUpper: number | null;
+  envLower: number | null;
+  envPosition: number | null;
+  envDeviation: number | null;
+  envWeeks: number | null;
 };
 
 const COLUMNS = `ticker, capturedAt, recessionLevel, recessionLabel, recessionLine,
@@ -55,7 +71,11 @@ const COLUMNS = `ticker, capturedAt, recessionLevel, recessionLabel, recessionLi
        fedBias, fedBiasLabel, fedHike, fedHold, fedCut, fedAsOf,
        bubbleScore, bubbleRegime, bubbleStance, bubbleScored, bubbleTotal,
        bubblePriorityFired, bubbleFired,
-       inPortfolio, functionType, targetWeight, holdingThesis`;
+       inPortfolio, functionType, targetWeight, holdingThesis,
+       quotePrice, quoteAsOf, quoteCurrency, quoteChangePercent,
+       quoteLow52, quoteHigh52, quotePosition52, quoteRangeSamples,
+       quoteVolumeMultiple, quoteCaveat,
+       envMiddle, envUpper, envLower, envPosition, envDeviation, envWeeks`;
 
 /** 저장된 문자열을 아는 값으로만 좁힌다. 모르는 값은 미수집으로 본다 — 지어내지 않는다. */
 function toLevel(v: string | null): RecessionLevel {
@@ -113,6 +133,36 @@ function toSnapshot(row: ContextRow): ReportContextSnapshot {
       targetWeight: row.targetWeight ?? undefined,
       thesis: row.holdingThesis ?? undefined,
     },
+    quote: {
+      // ⚠ null은 **미수집**이다. 0으로 바꾸지 않는다 — 0원짜리 KPI가 만들어진다.
+      price: row.quotePrice ?? undefined,
+      asOf: dayOf(row.quoteAsOf),
+      currency: row.quoteCurrency ?? undefined,
+      changePercent: row.quoteChangePercent ?? undefined,
+      low52: row.quoteLow52 ?? undefined,
+      high52: row.quoteHigh52 ?? undefined,
+      position52: row.quotePosition52 ?? undefined,
+      rangeSamples: row.quoteRangeSamples ?? undefined,
+      volumeMultiple: row.quoteVolumeMultiple ?? undefined,
+      caveat: row.quoteCaveat ?? undefined,
+      // ⚠ 밴드는 다섯 값이 **한 묶음**이다. 하나라도 없으면 통째로 없는 것으로 본다 —
+      //    일부만 살려 두면 반쪽짜리 밴드가 온전한 것처럼 그려진다(연준 확률과 같은 규칙).
+      envelope:
+        row.envMiddle != null &&
+        row.envUpper != null &&
+        row.envLower != null &&
+        row.envPosition != null &&
+        row.envDeviation != null
+          ? {
+              middle: row.envMiddle,
+              upper: row.envUpper,
+              lower: row.envLower,
+              position: row.envPosition,
+              deviation: row.envDeviation,
+              weeks: row.envWeeks ?? 0,
+            }
+          : undefined,
+    },
   };
 }
 
@@ -129,7 +179,8 @@ export async function saveContext(
   ticker: string,
   snapshot: ReportContextSnapshot,
 ): Promise<void> {
-  const { macro, bubble, holding } = snapshot;
+  const { macro, bubble, holding, quote } = snapshot;
+  const env = quote.envelope;
 
   await execute(
     `INSERT INTO StockReportContext (
@@ -139,8 +190,14 @@ export async function saveContext(
        fedBias, fedBiasLabel, fedHike, fedHold, fedCut, fedAsOf,
        bubbleScore, bubbleRegime, bubbleStance, bubbleScored, bubbleTotal,
        bubblePriorityFired, bubbleFired,
-       inPortfolio, functionType, targetWeight, holdingThesis, updatedAt
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       inPortfolio, functionType, targetWeight, holdingThesis,
+       quotePrice, quoteAsOf, quoteCurrency, quoteChangePercent,
+       quoteLow52, quoteHigh52, quotePosition52, quoteRangeSamples,
+       quoteVolumeMultiple, quoteCaveat,
+       envMiddle, envUpper, envLower, envPosition, envDeviation, envWeeks,
+       updatedAt
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+               ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(ticker) DO UPDATE SET
        capturedAt = excluded.capturedAt,
        recessionLevel = excluded.recessionLevel,
@@ -168,6 +225,22 @@ export async function saveContext(
        functionType = excluded.functionType,
        targetWeight = excluded.targetWeight,
        holdingThesis = excluded.holdingThesis,
+       quotePrice = excluded.quotePrice,
+       quoteAsOf = excluded.quoteAsOf,
+       quoteCurrency = excluded.quoteCurrency,
+       quoteChangePercent = excluded.quoteChangePercent,
+       quoteLow52 = excluded.quoteLow52,
+       quoteHigh52 = excluded.quoteHigh52,
+       quotePosition52 = excluded.quotePosition52,
+       quoteRangeSamples = excluded.quoteRangeSamples,
+       quoteVolumeMultiple = excluded.quoteVolumeMultiple,
+       quoteCaveat = excluded.quoteCaveat,
+       envMiddle = excluded.envMiddle,
+       envUpper = excluded.envUpper,
+       envLower = excluded.envLower,
+       envPosition = excluded.envPosition,
+       envDeviation = excluded.envDeviation,
+       envWeeks = excluded.envWeeks,
        updatedAt = excluded.updatedAt`,
     [
       ticker,
@@ -197,6 +270,22 @@ export async function saveContext(
       holding.functionType ?? null,
       holding.targetWeight ?? null,
       holding.thesis ?? null,
+      quote.price ?? null,
+      quote.asOf ? toStoredDate(quote.asOf) : null,
+      quote.currency ?? null,
+      quote.changePercent ?? null,
+      quote.low52 ?? null,
+      quote.high52 ?? null,
+      quote.position52 ?? null,
+      quote.rangeSamples ?? null,
+      quote.volumeMultiple ?? null,
+      quote.caveat ?? null,
+      env?.middle ?? null,
+      env?.upper ?? null,
+      env?.lower ?? null,
+      env?.position ?? null,
+      env?.deviation ?? null,
+      env?.weeks ?? null,
       new Date().toISOString(),
     ],
   );

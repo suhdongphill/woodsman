@@ -69,10 +69,53 @@ export type HoldingContext = {
   thesis?: string;
 };
 
+/**
+ * 시세 — §02 히어로 KPI와 §09 Envelope.
+ *
+ * ⚠ **없으면 통째로 없다.** 한 번도 수집하지 않은 종목에 0원짜리 KPI를 만들지 않는다.
+ *    화면은 "아직 가져오지 않았습니다 + 가져오는 곳"을 적는다(R2).
+ * ⚠ 계산은 `lib/quote/*`가 한다. 여기는 **옮겨 담기**만 한다 —
+ *    같은 계산이 두 곳에 생기면 화면마다 다른 숫자가 나온다.
+ * ⚠ 시가총액은 여기 없다. 발행주식수가 있어야 하는데 시세 시계열에는 없다.
+ *    **지어내지 않는다**(R2) — 화면이 "미조회 + 조회처"를 적는다.
+ */
+export type QuoteContext = {
+  /** 최근 종가 */
+  price?: number;
+  /** 그 종가의 거래일 (YYYY-MM-DD) */
+  asOf?: string;
+  currency?: string;
+  /** 전일 대비 % */
+  changePercent?: number;
+  low52?: number;
+  high52?: number;
+  /** 52주 밴드 안의 위치 0~100. ⚠ 밴드 폭이 0이면 없다 */
+  position52?: number;
+  /** 52주 범위를 실제로 몇 개 점에서 냈나 — 적으면 화면이 그렇게 말한다 */
+  rangeSamples?: number;
+  /** 일평균 대비 거래량 배수 */
+  volumeMultiple?: number;
+  /** ⚠ 국내 종목처럼 덜 믿을 값일 때의 한 문장. 조용히 같은 굵기로 보이면 안 된다 */
+  caveat?: string;
+  /** Envelope — 20주 이동평균 ±20%. ⚠ 밴드 위치까지만. 대응은 사람이 §09에 쓴다 */
+  envelope?: {
+    middle: number;
+    upper: number;
+    lower: number;
+    /** 0=하단 · 50=중심 · 100=상단. ⚠ 벗어나면 범위 밖 값이 그대로 온다 */
+    position: number;
+    /** 중심선 대비 괴리율 % */
+    deviation: number;
+    /** 계산에 쓴 주 수. 20보다 적으면 화면이 그렇게 말한다 */
+    weeks: number;
+  };
+};
+
 export type SiteContext = {
   macro: MacroContext;
   bubble: BubbleContext;
   holding: HoldingContext;
+  quote: QuoteContext;
 };
 
 /** 저장된 스냅숏 — 사이트 자료 + **언제 떴는가**. */
@@ -166,6 +209,88 @@ function asOfSuffix(day: string | undefined): string {
   return day ? ` · 기준일 ${day}` : "";
 }
 
+/** 소수 n자리. 반올림 자리를 한 곳에서 정한다 — 화면마다 다르면 같은 값이 달라 보인다. */
+function fixed(v: number, digits = 1): string {
+  return v.toFixed(digits);
+}
+
+function signed(v: number, digits = 1): string {
+  return `${v >= 0 ? "+" : ""}${fixed(v, digits)}`;
+}
+
+/** 통화 꼬리표. 모르면 붙이지 않는다 — 임의로 원/달러를 정하면 자릿수가 통째로 뒤집힌다. */
+function money(value: number, currency: string | undefined): string {
+  const n = value.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
+  return currency ? `${n} ${currency}` : n;
+}
+
+/**
+ * §02 히어로 KPI · §09 Envelope 줄.
+ *
+ * ⚠ **매매를 지시하지 않는다.** 밴드 위치까지만 적고 🟢신규매수/🔴손절 같은 대응은
+ *    사람이 §09에 쓴다(`docs/아이디어_노트.md` A4 · `WOODSMAN_DOCTRINE`).
+ * ⚠ 시가총액은 **미조회 + 조회처**로 남긴다. 시세 시계열에 발행주식수가 없다(R2).
+ */
+function quoteLines(quote: QuoteContext): string[] {
+  if (quote.price == null) {
+    return [
+      "- **시세** — 아직 가져오지 않았습니다 (/admin/stocks에서 「시세 가져오기」)",
+    ];
+  }
+
+  const out: string[] = [];
+
+  const change =
+    quote.changePercent != null ? ` · 전일 대비 ${signed(quote.changePercent, 2)}%` : "";
+  out.push(`- **현재가** — ${money(quote.price, quote.currency)}${change}${asOfSuffix(quote.asOf)}`);
+
+  if (quote.low52 != null && quote.high52 != null) {
+    const where =
+      quote.position52 != null
+        ? ` · 밴드 내 ${fixed(quote.position52, 0)}%`
+        : " · 밴드 폭이 없어 위치를 내지 않았습니다";
+    // ⚠ 표본이 얇으면 그 사실을 함께 적는다. 상장 직후 종목의 "52주 범위"는 52주가 아니다.
+    const thin =
+      quote.rangeSamples != null && quote.rangeSamples < 200
+        ? ` (⚠ ${quote.rangeSamples}거래일치로 계산)`
+        : "";
+    out.push(
+      `- **52주 범위** — ${money(quote.low52, quote.currency)} ~ ${money(
+        quote.high52,
+        quote.currency,
+      )}${where}${thin}`,
+    );
+  }
+
+  // ⚠ R2 — 없는 값을 지어내지 않고 어디서 보는지 적는다.
+  out.push("- **시가총액** — — (미조회 · 발행주식수가 필요합니다 · 거래소 공시/증권사 시세)");
+
+  if (quote.volumeMultiple != null) {
+    const spike =
+      quote.volumeMultiple >= 10 ? " · ⚠ 일평균 10배를 넘겼습니다(속보 박스 자리)" : "";
+    out.push(`- **거래량** — 일평균 대비 ${fixed(quote.volumeMultiple)}배${spike}`);
+  }
+
+  if (quote.envelope) {
+    const e = quote.envelope;
+    const short = e.weeks < 20 ? ` (⚠ 20주가 아직 차지 않아 ${e.weeks}주로 계산)` : "";
+    out.push(
+      `- **Envelope(${e.weeks}주MA ±20%)** — 하단 ${money(e.lower, quote.currency)} · 중심 ${money(
+        e.middle,
+        quote.currency,
+      )} · 상단 ${money(e.upper, quote.currency)}${short}`,
+    );
+    out.push(
+      `- **밴드 내 위치** — ${fixed(e.position, 0)}% · 중심선 대비 ${signed(e.deviation)}%` +
+        " (⚠ 위치까지만입니다. 대응은 §09에 직접 씁니다)",
+    );
+  }
+
+  if (quote.caveat) out.push(`- ⚠ ${quote.caveat}`);
+
+  return out;
+}
+
 /**
  * 본문에 붙여 넣을 마크다운.
  *
@@ -179,9 +304,11 @@ function asOfSuffix(day: string | undefined): string {
  * ⚠ 없는 값은 `—`로 두고 어디서 보는지 적는다(R2). 0이나 "안전"으로 채우지 않는다.
  */
 export function renderContextMarkdown(snapshot: ReportContextSnapshot): string {
-  const { macro, bubble, holding } = snapshot;
+  const { macro, bubble, holding, quote } = snapshot;
 
   const lines: string[] = [`> 사이트 자료 자동 주입 · 기준 ${snapshot.capturedAt}`, ""];
+
+  lines.push(...quoteLines(quote));
 
   lines.push(
     macro.level === "unknown"
@@ -221,7 +348,10 @@ export function renderContextMarkdown(snapshot: ReportContextSnapshot): string {
 
   lines.push(
     "",
-    "출처: [거시 지표](/macro) · [버블 모니터](/macro/bubble) · [대표 포트폴리오](/portfolio)",
+    // ⚠ 시세는 사이트 안에 공개 화면이 없으므로 **출처를 글로 적는다.** 링크가 없다고 빼면
+    //    독자가 어디서 온 숫자인지 알 수 없다(설계서 §12 — 항목별 수치 출처).
+    "출처: [거시 지표](/macro) · [버블 모니터](/macro/bubble) · [대표 포트폴리오](/portfolio)" +
+      (snapshot.quote.price != null ? " · 시세 Yahoo Finance(일봉 종가)" : ""),
   );
 
   return lines.join("\n");
@@ -288,6 +418,55 @@ export function describeDrift(snapshot: SiteContext, now: SiteContext): ContextD
   const afterHolding = holdingText(now.holding);
   if (beforeHolding !== afterHolding) {
     out.push({ label: "대표 포트폴리오", before: beforeHolding, after: afterHolding });
+  }
+
+  out.push(...quoteDrift(snapshot.quote, now.quote));
+
+  return out;
+}
+
+/**
+ * 시세가 얼마나 움직였나.
+ *
+ * ⚠ 시세는 **매일 바뀐다.** 1원만 달라져도 말하면 편집 화면이 매번 빨개져서
+ *    정작 중요한 변화(버블 점수·트리거)가 묻힌다. 그래서 두 가지만 말한다 —
+ *    ① 주입 이후 종가가 5% 넘게 움직였나, ② Envelope 밴드 밖으로 나갔는지가 바뀌었나.
+ *    이 둘이 §01 논지와 §09 대응을 실제로 뒤집는 변화다.
+ */
+const QUOTE_DRIFT_PERCENT = 5;
+
+function bandSide(position: number | undefined): string {
+  if (position == null) return "미산출";
+  if (position > 100) return "상단 밖";
+  if (position < 0) return "하단 밖";
+  return "밴드 안";
+}
+
+function quoteDrift(before: QuoteContext, after: QuoteContext): ContextDrift[] {
+  const out: ContextDrift[] = [];
+
+  if (before.price != null && after.price != null && before.price !== 0) {
+    const moved = ((after.price - before.price) / before.price) * 100;
+    if (Math.abs(moved) >= QUOTE_DRIFT_PERCENT) {
+      out.push({
+        label: `현재가 (${signed(moved)}%)`,
+        before: money(before.price, before.currency) + asOfSuffix(before.asOf),
+        after: money(after.price, after.currency) + asOfSuffix(after.asOf),
+      });
+    }
+  } else if (before.price == null && after.price != null) {
+    // 없다가 생긴 것은 크기와 무관하게 말한다 — §02를 이제 채울 수 있다는 뜻이다.
+    out.push({
+      label: "현재가",
+      before: "미수집",
+      after: money(after.price, after.currency) + asOfSuffix(after.asOf),
+    });
+  }
+
+  const wasSide = bandSide(before.envelope?.position);
+  const isSide = bandSide(after.envelope?.position);
+  if (wasSide !== isSide) {
+    out.push({ label: "Envelope 위치", before: wasSide, after: isSide });
   }
 
   return out;

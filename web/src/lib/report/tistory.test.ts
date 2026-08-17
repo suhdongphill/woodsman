@@ -35,6 +35,7 @@ const SNAPSHOT: ReportContextSnapshot = {
     firedTriggerKeys: ["trg5"],
   },
   holding: { inPortfolio: true, functionType: "GROWTH", targetWeight: 20 },
+  quote: {},
 };
 
 function input(overrides: Partial<TistoryExportInput> = {}): TistoryExportInput {

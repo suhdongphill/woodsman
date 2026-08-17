@@ -10,9 +10,11 @@
  * - **M축 점수는 채우지 않는다.** 근거·출처·기준일만 채우고, 왜 그런지를 화면에 적는다.
  * - 본문은 프로그램이 고치지 않는다. **붙여 넣을 마크다운을 보여줄** 뿐이다 —
  *   쓰던 글을 프로그램이 건드리면 다시는 안 쓴다.
+ * - ⚠ **Envelope는 밴드 위치까지만** 보여준다. 🟢신규매수/🔴손절 같은 대응은 사람이 §09에 쓴다
+ *   (`docs/아이디어_노트.md` A4 · `WOODSMAN_DOCTRINE`).
  */
 import { useActionState } from "react";
-import { fillMarketAxisAction, injectContextAction } from "../actions";
+import { fetchQuotesAction, fillMarketAxisAction, injectContextAction } from "../actions";
 import { emptyReportFormState } from "../form-state";
 import {
   CONTEXT_STALE_DAYS,
@@ -55,6 +57,10 @@ export function ContextPanel({
     fillMarketAxisAction,
     emptyReportFormState,
   );
+  const [quoteState, quoteAction, fetchingQuotes] = useActionState(
+    fetchQuotesAction,
+    emptyReportFormState,
+  );
 
   const stale = ageDays !== undefined && ageDays > CONTEXT_STALE_DAYS;
 
@@ -64,20 +70,46 @@ export function ContextPanel({
         <div>
           <h3 className="text-sm font-semibold text-white">사이트 자료 주입</h3>
           <p className="mt-1 text-[11.5px] text-gray-600">
-            거시 지표 · 버블 모니터 · 대표 포트폴리오를 손으로 다시 적지 않습니다.
+            시세 · 거시 지표 · 버블 모니터 · 대표 포트폴리오를 손으로 다시 적지 않습니다.
           </p>
         </div>
-        <form action={injectAction}>
-          <input type="hidden" name="ticker" value={ticker} />
-          <button
-            type="submit"
-            disabled={injecting}
-            className="rounded-xl border border-gold-600/40 px-3 py-2 text-[12.5px] text-gold-300 transition-colors hover:bg-gold-600/10 disabled:opacity-40"
-          >
-            {injecting ? "가져오는 중…" : snapshot ? "지금 값으로 다시 주입" : "사이트 자료 주입"}
-          </button>
-        </form>
+        <div className="flex flex-wrap items-center gap-2">
+          {/*
+            ⚠ 「시세 가져오기」와 「주입」은 **다른 버튼이다.** 시세는 매일 바뀌고
+               거시·버블은 그렇지 않다. 한 버튼으로 묶으면 시세를 새로 받으려다
+               보고서가 참조한 거시 숫자까지 갈아 끼우게 된다.
+          */}
+          <form action={quoteAction}>
+            <input type="hidden" name="ticker" value={ticker} />
+            <button
+              type="submit"
+              disabled={fetchingQuotes}
+              className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-white disabled:opacity-40"
+            >
+              {fetchingQuotes ? "받는 중…" : "시세 가져오기"}
+            </button>
+          </form>
+          <form action={injectAction}>
+            <input type="hidden" name="ticker" value={ticker} />
+            <button
+              type="submit"
+              disabled={injecting}
+              className="rounded-xl border border-gold-600/40 px-3 py-2 text-[12.5px] text-gold-300 transition-colors hover:bg-gold-600/10 disabled:opacity-40"
+            >
+              {injecting ? "가져오는 중…" : snapshot ? "지금 값으로 다시 주입" : "사이트 자료 주입"}
+            </button>
+          </form>
+        </div>
       </div>
+
+      {quoteState.error && (
+        <p role="alert" className="text-[12px] text-red-400">
+          {quoteState.error}
+        </p>
+      )}
+      {quoteState.notice && !quoteState.error && (
+        <p className="text-[12px] text-emerald-400">{quoteState.notice}</p>
+      )}
 
       {injectState.error && (
         <p role="alert" className="text-[12px] text-red-400">
@@ -175,6 +207,92 @@ export function ContextPanel({
                 )}
               </span>
             </div>
+
+            <div className={row}>
+              <span className={key}>현재가</span>
+              <span className={val}>
+                {snapshot.quote.price == null ? (
+                  <span className="text-gray-500">— 아직 가져오지 않음 (/admin/stocks)</span>
+                ) : (
+                  <>
+                    <span className="tabular-nums">
+                      {snapshot.quote.price.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}
+                    </span>
+                    {snapshot.quote.currency && (
+                      <span className="ml-1 text-[11px] text-gray-500">
+                        {snapshot.quote.currency}
+                      </span>
+                    )}
+                    {snapshot.quote.changePercent != null && (
+                      <span
+                        className={
+                          snapshot.quote.changePercent >= 0
+                            ? "ml-2 text-emerald-300 tabular-nums"
+                            : "ml-2 text-rose-300 tabular-nums"
+                        }
+                      >
+                        {snapshot.quote.changePercent >= 0 ? "+" : ""}
+                        {snapshot.quote.changePercent.toFixed(2)}%
+                      </span>
+                    )}
+                    {snapshot.quote.asOf && (
+                      <span className="ml-2 text-[11px] text-gray-600 tabular-nums">
+                        {snapshot.quote.asOf}
+                      </span>
+                    )}
+                  </>
+                )}
+              </span>
+            </div>
+
+            {snapshot.quote.low52 != null && snapshot.quote.high52 != null && (
+              <div className={row}>
+                <span className={key}>52주 범위</span>
+                <span className={val}>
+                  <span className="tabular-nums">
+                    {snapshot.quote.low52.toLocaleString("ko-KR", { maximumFractionDigits: 2 })} ~{" "}
+                    {snapshot.quote.high52.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}
+                  </span>
+                  {snapshot.quote.position52 != null && (
+                    <span className="ml-2 text-[11px] text-gray-500">
+                      밴드 내 {Math.round(snapshot.quote.position52)}%
+                    </span>
+                  )}
+                  {/* ⚠ 표본이 얇으면 그 사실을 말한다. 상장 직후 종목의 '52주'는 52주가 아니다. */}
+                  {snapshot.quote.rangeSamples != null && snapshot.quote.rangeSamples < 200 && (
+                    <span className="ml-2 text-[11px] text-amber-300">
+                      ⚠ {snapshot.quote.rangeSamples}거래일치
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
+
+            {snapshot.quote.envelope && (
+              <div className={row}>
+                <span className={key}>Envelope</span>
+                <span className={val}>
+                  <span className="tabular-nums">
+                    {Math.round(snapshot.quote.envelope.position)}% 위치
+                  </span>
+                  <span className="ml-2 text-[11px] text-gray-500 tabular-nums">
+                    중심선 대비 {snapshot.quote.envelope.deviation >= 0 ? "+" : ""}
+                    {snapshot.quote.envelope.deviation.toFixed(1)}%
+                  </span>
+                  {/* ⚠ 20주가 안 찼으면 숨기지 않는다 — 같은 굵기의 판단으로 읽힌다. */}
+                  {snapshot.quote.envelope.weeks < 20 && (
+                    <span className="ml-2 text-[11px] text-amber-300">
+                      ⚠ {snapshot.quote.envelope.weeks}주로 계산
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
+
+            {/* ⚠ 국내 종목은 Yahoo 경유라 지연·결측이 있다. 값과 같은 자리에서 말한다. */}
+            {snapshot.quote.caveat && (
+              <p className="px-1 py-1 text-[11px] text-amber-300">⚠ {snapshot.quote.caveat}</p>
+            )}
 
             <div className={row}>
               <span className={key}>대표 포트폴리오</span>

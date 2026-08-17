@@ -57,7 +57,10 @@ export default async function AdminStockReportPage({ params }: Props) {
   // ⚠ 지금 값을 읽는 데 D1 쿼리 4개가 더 나간다. 관리자 한 사람이 보는 화면이라 감수한다 —
   //    버튼을 눌러야 알게 되면 스냅숏이 묵은 줄 모르고 발행하게 된다.
   const snapshot = await loadContext(report.ticker);
-  const drift = snapshot ? describeDrift(snapshot, await captureSiteContext(report.ticker)) : [];
+  const drift = snapshot ? describeDrift(
+        snapshot,
+        await captureSiteContext(report.ticker, { market: report.market }),
+      ) : [];
 
   return (
     <AdminShell>
