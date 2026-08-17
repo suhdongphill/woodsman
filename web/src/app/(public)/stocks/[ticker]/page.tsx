@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Badge } from "@/components/ui/Badge";
+import { FunctionBadge } from "@/components/ui/Badge";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { CanslimPanel } from "@/features/ai/ui/CanslimPanel";
 import { ReportView } from "@/features/reports/ui/ReportView";
@@ -15,6 +15,7 @@ import { loadContext } from "@/features/reports/context-repo";
 import { SiteContextCard } from "@/features/reports/ui/SiteContextCard";
 import { loadPublishedPosts } from "@/features/posts/repository";
 import { findPublishedHoldingByTicker } from "@/features/portfolio/repository";
+import { loadBuckets } from "@/features/portfolio/buckets-repo";
 
 type Props = { params: Promise<{ ticker: string }> };
 
@@ -51,7 +52,11 @@ export default async function StockReportPage({ params }: Props) {
   const canslim = scoreCanslim(report.readings);
   // ⚠ 얼려 둔 스냅숏이다. 오늘 값으로 갱신하지 않는다 — 본문의 논지가 참조한 숫자다.
   const snapshot = await loadContext(report.ticker);
-  const holding = await findPublishedHoldingByTicker(report.ticker);
+  // ⚠ 분류 이름·색은 DB에 있다(관리자가 바꾼다). 종목과 함께 병렬로 읽는다.
+  const [holding, buckets] = await Promise.all([
+    findPublishedHoldingByTicker(report.ticker),
+    loadBuckets(),
+  ]);
   const related = (await loadPublishedPosts(50))
     .filter((p) => p.ticker === report.ticker)
     .slice(0, 2);
@@ -123,13 +128,12 @@ export default async function StockReportPage({ params }: Props) {
                 대표 포트폴리오 편입
               </CardTitle>
               <div className="flex items-center gap-3 mb-3">
-                <Badge tone={holding.functionType === "GROWTH" ? "emerald" : "gold"}>
-                  {holding.functionType === "GROWTH"
-                    ? "성장"
-                    : holding.functionType === "INCOME"
-                      ? "인컴"
-                      : "방어"}
-                </Badge>
+                {/* ⚠ 분류는 관리자가 만든다. 하드코딩 삼항식이면 커스텀 분류가 전부 "방어"로 나왔다. */}
+                <FunctionBadge
+                  type={holding.functionType}
+                  name={buckets.find((b) => b.key === holding.functionType)?.name}
+                  color={buckets.find((b) => b.key === holding.functionType)?.color}
+                />
                 <span className="text-xs text-muted">목표비중</span>
                 <span className="text-sm font-bold text-gold-400 tabular-nums">
                   {holding.targetWeight != null ? `${holding.targetWeight}%` : "—"}

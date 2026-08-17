@@ -24,7 +24,7 @@
  */
 import { REPORT_SECTIONS } from "./catalog";
 import { findDataTag, CANSLIM_ITEMS } from "../canslim/catalog";
-import { FUNCTION_LABEL_REPORT, recessionCounts, type ReportContextSnapshot } from "./context";
+import { reportFunctionLabel, recessionCounts, type ReportContextSnapshot } from "./context";
 import { findBubbleTrigger } from "../bubble/catalog";
 import type { ReportBlock, ReportDraft, ReportSectionKey, ChecklistItem } from "./types";
 import type { CanslimReading } from "../canslim/types";
@@ -367,7 +367,7 @@ function renderContext(snapshot: ReportContextSnapshot, siteUrl: string): string
       ? "<strong>AI·반도체 버블</strong> — 아직 채점 전"
       : `<strong>AI·반도체 버블</strong> — ${bubble.score}점 · ${escapeHtml(bubble.regime ?? "—")} (${bubble.total}개 중 ${bubble.scored}개 채점)`,
     holding.inPortfolio
-      ? `<strong>대표 포트폴리오</strong> — 편입 · ${holding.functionType ? FUNCTION_LABEL_REPORT[holding.functionType] : "—"} · 목표비중 ${holding.targetWeight != null ? `${holding.targetWeight}%` : "—"}`
+      ? `<strong>대표 포트폴리오</strong> — 편입 · ${holding.functionType ? escapeHtml(reportFunctionLabel(holding.functionType)) : "—"} · 목표비중 ${holding.targetWeight != null ? `${holding.targetWeight}%` : "—"}`
       : "<strong>대표 포트폴리오</strong> — 미편입 (관찰 종목)",
   ];
 

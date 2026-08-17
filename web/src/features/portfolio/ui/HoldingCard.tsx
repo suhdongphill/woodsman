@@ -4,8 +4,27 @@ import { CanslimScore } from "@/components/ui/CanslimScore";
 import { formatNumber, formatPct, profitColor, cx } from "@/lib/format";
 import type { ModelHolding } from "@/lib/types";
 
-/** 대표 포트폴리오 종목 카드 (기존 index.html 종목 카드 레이아웃 계승) */
-export function HoldingCard({ holding: h }: { holding: ModelHolding }) {
+/**
+ * 대표 포트폴리오 종목 카드.
+ *
+ * ## ⚠ 보고서 링크는 **받아서** 건다 (2026-08-17)
+ * 전에는 티커만 있으면 무조건 `/stocks/<티커>`로 링크했다. 그런데 그 화면은
+ * **발행된 보고서가 없으면 404**다 — 발행본이 0건인 동안 **모든 카드가 404로 갔다.**
+ * 이제 "보고서가 있는가"는 `lib/report/link.ts`가 판단하고, 여기는 결과만 쓴다.
+ */
+export function HoldingCard({
+  holding: h,
+  reportHref,
+  bucketName,
+  bucketColor,
+}: {
+  holding: ModelHolding;
+  /** 발행된 보고서가 있을 때만 온다. 없으면 카드는 링크가 아니다 */
+  reportHref?: string;
+  /** 관리자가 붙인 분류 이름·색 */
+  bucketName?: string;
+  bucketColor?: string;
+}) {
   const cur = h.currency ?? "KRW";
   const hasPrice = h.price != null;
   const profitPct =
@@ -16,7 +35,7 @@ export function HoldingCard({ holding: h }: { holding: ModelHolding }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <FunctionBadge type={h.functionType} />
+            <FunctionBadge type={h.functionType} name={bucketName} color={bucketColor} />
             {h.ticker && (
               <span className="text-[11px] font-mono text-gray-500">{h.ticker}</span>
             )}
@@ -69,9 +88,11 @@ export function HoldingCard({ holding: h }: { holding: ModelHolding }) {
   const cls =
     "block bg-card border border-border rounded-2xl p-5 card-hover hover:border-gold-600/40";
 
-  return h.ticker && h.market !== "BOND" && h.market !== "CASH" ? (
-    <Link href={`/stocks/${h.ticker}`} className={cls}>
+  return reportHref ? (
+    <Link href={reportHref} className={cls}>
       {body}
+      {/* ⚠ 링크가 걸린 카드와 아닌 카드가 겉으로 같으면 눌러 보고 알게 된다 */}
+      <span className="mt-3 block text-[11px] text-gold-400">분석 보고서 보기 →</span>
     </Link>
   ) : (
     <div className={cls}>{body}</div>

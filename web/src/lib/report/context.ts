@@ -63,7 +63,8 @@ export type BubbleContext = {
 /** 대표 포트폴리오 편입 여부. */
 export type HoldingContext = {
   inPortfolio: boolean;
-  functionType?: FunctionType;
+  /** 버킷 키. ⚠ 고정 유니온이 아니다 — 관리자가 분류를 추가한다 */
+  functionType?: string;
   /** % */
   targetWeight?: number;
   thesis?: string;
@@ -137,6 +138,18 @@ export const FUNCTION_LABEL_REPORT: Record<FunctionType, string> = {
   INCOME: "인컴",
   DEFENSE: "방어",
 };
+
+/**
+ * 분류 키 → 보고서 문안.
+ *
+ * ⚠ 관리자가 만든 분류는 이 표에 없다. 그럴 땐 **키를 그대로** 쓴다 —
+ *    `undefined`가 스냅숏에 얼어붙으면 발행된 문서에 영원히 남는다.
+ *    (커스텀 분류의 한글 이름까지 얼리려면 스냅숏에 이름을 같이 저장해야 하는데,
+ *     그건 관리자가 이름을 바꿀 때 옛 보고서가 뭘 보여줄지부터 정해야 한다 — 아직 안 정했다.)
+ */
+export function reportFunctionLabel(key: string): string {
+  return key in FUNCTION_LABEL_REPORT ? FUNCTION_LABEL_REPORT[key as FunctionType] : key;
+}
 
 /**
  * ⚠ M축을 거시 지표로 **채점하지 않는** 이유. 화면에 그대로 띄운다.
@@ -341,7 +354,7 @@ export function renderContextMarkdown(snapshot: ReportContextSnapshot): string {
   lines.push(
     holding.inPortfolio
       ? `- **대표 포트폴리오** — 편입 · ${
-          holding.functionType ? FUNCTION_LABEL_REPORT[holding.functionType] : "—"
+          holding.functionType ? reportFunctionLabel(holding.functionType) : "—"
         } · 목표비중 ${holding.targetWeight != null ? `${holding.targetWeight}%` : "—"}`
       : "- **대표 포트폴리오** — 미편입 (관찰 종목)",
   );
@@ -370,7 +383,7 @@ function bubbleScoreText(score: number | undefined, regime: string | undefined):
 
 function holdingText(h: HoldingContext): string {
   if (!h.inPortfolio) return "미편입";
-  const fn = h.functionType ? FUNCTION_LABEL_REPORT[h.functionType] : "—";
+  const fn = h.functionType ? reportFunctionLabel(h.functionType) : "—";
   return `편입 · ${fn} · ${h.targetWeight != null ? `${h.targetWeight}%` : "—"}`;
 }
 

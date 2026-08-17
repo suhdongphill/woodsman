@@ -17,6 +17,7 @@ import { execute, getD1, queryAll, queryOne, type D1Statement } from "@/lib/d1";
 import { markdownToHtml } from "@/lib/markdown";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import { ALL_SECTION_KEYS } from "@/lib/report/rules";
+import type { ReportLinkEntry } from "@/lib/report/link";
 import type {
   ChecklistItem,
   ReportBlock,
@@ -138,6 +139,26 @@ export type PublishedSummary = ReportSummary & {
  * ⚠ 종목마다 채점을 따로 읽지 않는다 — 종목 수만큼 왕복하면 무료 등급의
  *    "호출당 50쿼리"를 목록 화면 하나가 먹는다. **쿼리 2번**으로 끝낸다.
  */
+/**
+ * 티커 → 보고서 색인. **연결 전용의 가장 싼 질의**다.
+ *
+ * ⚠ 본문·섹션을 읽지 않는다. 대표 포트폴리오 화면은 "이 종목에 보고서가 있나"만 알면 되는데,
+ *    `loadReportSummaries()`를 부르면 필요 없는 컬럼까지 끌어온다.
+ * ⚠ 초안도 함께 낸다. 공개 화면에 걸지 말지는 `lib/report/link.ts`가 판단한다 —
+ *    같은 판단을 질의에도 넣으면 두 곳이 언젠가 갈린다.
+ */
+export async function loadReportLinkEntries(): Promise<ReportLinkEntry[]> {
+  const rows = await queryAll<{ ticker: string; name: string; status: string }>(
+    `SELECT ticker, name, status FROM StockReport ORDER BY ticker ASC`,
+  );
+  return rows.map((r) => ({
+    ticker: r.ticker,
+    name: r.name,
+    // ⚠ 모르는 값은 DRAFT로 본다. PUBLISHED로 보면 안 쓴 보고서가 공개 화면에 링크된다.
+    status: r.status === "PUBLISHED" ? "PUBLISHED" : "DRAFT",
+  }));
+}
+
 export async function loadPublishedSummaries(limit = 50): Promise<PublishedSummary[]> {
   const rows = await queryAll<{
     ticker: string;

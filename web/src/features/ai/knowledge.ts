@@ -20,7 +20,7 @@ import { loadMacroStatus } from "@/features/macro/service";
 import { loadReadings } from "@/features/bubble/repository";
 import { findBubbleIndicator } from "@/lib/bubble/catalog";
 import { toPlainText } from "@/lib/markdown";
-import { FUNCTION_LABEL_KO } from "@/lib/ai/labels";
+import { functionLabelKo } from "@/lib/ai/labels";
 import type { KnowledgeDoc } from "@/lib/ai/retrieval";
 
 /** 사이트 전체 기록을 문서로. */
@@ -66,7 +66,7 @@ export async function loadKnowledgeDocs(): Promise<KnowledgeDoc[]> {
       kind: "holding",
       title: `${holding.name}${holding.ticker ? ` (${holding.ticker})` : ""}`,
       text: [
-        FUNCTION_LABEL_KO[holding.functionType],
+        functionLabelKo(holding.functionType),
         holding.targetWeight != null ? `목표 비중 ${holding.targetWeight}%` : "",
         holding.thesis,
       ]

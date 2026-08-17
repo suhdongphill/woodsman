@@ -5,7 +5,12 @@
 
 export type Role = "ADMIN" | "USER";
 
-/** 대표 포트폴리오 기능 분류 */
+/**
+ * ⚠ **기본** 버킷 키. 관리자가 분류를 추가할 수 있으므로 이것이 전부가 아니다.
+ *    보유 종목·보고서의 분류 값은 `string`이고, 목록은 `PortfolioBucket`이 갖는다
+ *    (`lib/bucket-target.ts`). 이 유니온은 **기본 셋을 가리킬 때만** 쓴다 —
+ *    AI 프롬프트 용어(`lib/ai/labels.ts`)와 시드가 그렇다.
+ */
 export type FunctionType = "GROWTH" | "INCOME" | "DEFENSE";
 
 export type PostType = "INSIGHT" | "ANALYSIS" | "NOTICE";
@@ -26,7 +31,13 @@ export interface ModelHolding {
   name: string;
   ticker?: string;
   market?: string;
-  functionType: FunctionType;
+  /**
+   * 버킷 키(`PortfolioBucket.key`).
+   * ⚠ **고정 유니온이 아니다.** 2026-08-17부터 관리자가 분류를 추가·삭제한다.
+   *    `FunctionType`으로 좁히면 커스텀 분류가 타입 거짓말이 되고, 화면이
+   *    `Record<FunctionType, …>`으로 색·이름을 찾다가 `undefined`를 그린다.
+   */
+  functionType: string;
   targetWeight?: number;
   avgCost?: number;
   shares?: number;

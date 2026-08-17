@@ -14,7 +14,7 @@
  *   빈칸을 두면 모델이 지어낸다.
  */
 import type { FunctionType, JournalEntry, ModelHolding, StockSummary } from "../types";
-import { FUNCTION_LABEL_KO } from "./labels";
+import { FUNCTION_LABEL_KO, functionLabelKo } from "./labels";
 
 export type PortfolioContext = {
   /** 기능별 목표 비중(%) */
@@ -41,7 +41,7 @@ export function renderPortfolioContext(ctx: PortfolioContext): string {
   const holdings = ctx.holdings
     .map(
       (h) =>
-        `- ${h.name}${h.ticker ? ` (${h.ticker})` : ""} · ${FUNCTION_LABEL_KO[h.functionType]} · 목표 ${fmtOrNone(h.targetWeight, "%")}\n` +
+        `- ${h.name}${h.ticker ? ` (${h.ticker})` : ""} · ${functionLabelKo(h.functionType)} · 목표 ${fmtOrNone(h.targetWeight, "%")}\n` +
         `  편입 논리: ${fmtOrNone(h.thesis)}`,
     )
     .join("\n");
@@ -81,7 +81,7 @@ CANSLIM 종합: ${fmtOrNone(stock.canslim)}
 ${
   holding
     ? `이 종목은 이미 편입돼 있습니다.
-- 맡은 기능: ${FUNCTION_LABEL_KO[holding.functionType]}
+- 맡은 기능: ${functionLabelKo(holding.functionType)}
 - 목표 비중: ${fmtOrNone(holding.targetWeight, "%")}
 - 기존 편입 논리: ${fmtOrNone(holding.thesis)}
 

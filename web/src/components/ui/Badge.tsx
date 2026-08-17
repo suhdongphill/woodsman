@@ -87,9 +87,41 @@ export const FUNCTION_COLOR: Record<FunctionType, string> = {
   DEFENSE: "#5b7fa6",
 };
 
-export function FunctionBadge({ type }: { type: FunctionType }) {
+/**
+ * 분류 배지.
+ *
+ * ⚠ 2026-08-17부터 분류는 **관리자가 만든다.** 그래서 이름·색을 `Record<FunctionType, …>`에서
+ *    찾지 않고 **넘겨받는다.** 표에서 찾으면 커스텀 분류가 `undefined`로 그려진다.
+ * ⚠ 이름을 못 받았으면 **키를 그대로** 쓴다. 빈 배지는 분류가 없는 것처럼 보인다.
+ */
+export function FunctionBadge({
+  type,
+  name,
+  color,
+}: {
+  /** 버킷 키 */
+  type: string;
+  /** 관리자가 붙인 이름 */
+  name?: string;
+  /** #RRGGBB */
+  color?: string;
+}) {
+  const label = name?.trim() || FUNCTION_LABEL[type as FunctionType] || type;
+
+  // 색을 받았으면 그 색으로, 아니면 기본 셋의 톤으로.
+  if (color) {
+    return (
+      <span
+        className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10.5px] font-medium"
+        style={{ backgroundColor: `${color}22`, color }}
+      >
+        {label}
+      </span>
+    );
+  }
+
   const tone: BadgeTone = type === "GROWTH" ? "emerald" : type === "INCOME" ? "gold" : "info";
-  return <Badge tone={tone}>{FUNCTION_LABEL[type]}</Badge>;
+  return <Badge tone={tone}>{label}</Badge>;
 }
 
 export const POST_TYPE_LABEL: Record<PostType, string> = {

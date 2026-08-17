@@ -22,6 +22,8 @@ import { deleteHoldingAction, deleteRebalanceAction } from "@/features/portfolio
 import { HoldingForm } from "@/features/portfolio/ui/HoldingForm";
 import { BucketManager } from "@/features/portfolio/ui/BucketManager";
 import { loadBuckets } from "@/features/portfolio/buckets-repo";
+import { loadReportLinkEntries } from "@/features/reports/repository";
+import { adminReportLink, buildReportIndex } from "@/lib/report/link";
 import {
   bucketBreakdownWarning,
   bucketName,
@@ -51,12 +53,13 @@ export default async function AdminModelPortfolioPage({
 }) {
   await requireAdmin("/admin/model-portfolio");
 
-  const [{ edit }, holdings, rebalances, basics, buckets] = await Promise.all([
+  const [{ edit }, holdings, rebalances, basics, buckets, reportEntries] = await Promise.all([
     searchParams,
     loadAllHoldings(),
     loadRebalances(),
     getSiteBasics(),
     loadBuckets(),
+    loadReportLinkEntries(),
   ]);
 
   const editing = edit ? holdings.find((h) => h.id === edit) : undefined;
@@ -83,6 +86,10 @@ export default async function AdminModelPortfolioPage({
   const cashPct = cashTargetPct(buckets);
   // ⚠ 어느 버킷에도 속하지 않는 종목 — 비중 계산에서 조용히 빠지므로 반드시 말한다.
   const orphans = orphanHoldings(buckets, published);
+
+  // ⚠ 두 화면이 서로를 모르면 관리자가 매번 보고서 목록을 뒤져야 한다. 여기서 이어 준다.
+  //    공개 화면과 달리 **초안에도** 링크를 건다 — 쓰다 만 보고서로 돌아갈 길이 필요하다.
+  const reportIndex = buildReportIndex(reportEntries);
 
   const segments = [
     ...breakdown.map((r) => ({
@@ -251,7 +258,11 @@ export default async function AdminModelPortfolioPage({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <FunctionBadge type={h.functionType} />
+                      <FunctionBadge
+                        type={h.functionType}
+                        name={buckets.find((b) => b.key === h.functionType)?.name}
+                        color={buckets.find((b) => b.key === h.functionType)?.color}
+                      />
                       {h.ticker && (
                         <span className="text-[11px] font-mono text-gray-500">{h.ticker}</span>
                       )}
@@ -260,6 +271,34 @@ export default async function AdminModelPortfolioPage({
                     <p className="text-[11px] text-gray-500 mt-0.5">
                       {h.market ?? "—"} · 수정 {formatDate(h.updatedAt)}
                     </p>
+
+                    {/* ── 종목분석 보고서로 가는 길 ── */}
+                    {(() => {
+                      const link = adminReportLink(h, reportIndex);
+                      if (link.kind === "none") {
+                        return (
+                          <p className="mt-1.5 text-[11px] text-gray-600">{link.reason}</p>
+                        );
+                      }
+                      if (link.kind === "create") {
+                        return (
+                          <Link
+                            href={link.href}
+                            className="mt-1.5 inline-block text-[11px] text-gray-500 underline underline-offset-2 hover:text-gold-300"
+                          >
+                            분석 보고서 없음 — 만들기
+                          </Link>
+                        );
+                      }
+                      return (
+                        <Link
+                          href={link.href}
+                          className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-gold-400 hover:text-gold-300"
+                        >
+                          분석 보고서 {link.status === "PUBLISHED" ? "(발행)" : "(초안)"} →
+                        </Link>
+                      );
+                    })()}
                   </div>
                   {h.published ? (
                     <Badge tone="emerald">공개</Badge>

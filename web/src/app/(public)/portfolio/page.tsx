@@ -21,6 +21,8 @@ import { loadSectionPosts } from "@/features/posts/repository";
 import { SectionFrame } from "@/features/posts/ui/SectionFrame";
 import type { ModelHolding } from "@/lib/types";
 import { loadBuckets } from "@/features/portfolio/buckets-repo";
+import { loadReportLinkEntries } from "@/features/reports/repository";
+import { buildReportIndex, publicReportHref } from "@/lib/report/link";
 import {
   cashTargetPct,
   isBucketTargetSet,
@@ -45,7 +47,7 @@ function bucketNames(holdings: ModelHolding[], key: string): string {
 }
 
 export default async function PortfolioPage() {
-  const [snapshots, recentJournal, basics, published, rebalances, sectionPosts, buckets] =
+  const [snapshots, recentJournal, basics, published, rebalances, sectionPosts, buckets, reportEntries] =
     await Promise.all([
     loadSnapshots(),
     loadPublishedJournal(3),
@@ -54,6 +56,7 @@ export default async function PortfolioPage() {
     loadRebalances(),
     loadSectionPosts("PORTFOLIO", 5),
     loadBuckets(),
+    loadReportLinkEntries(),
   ]);
 
   // 목표 비중 대비 현재 비중 — 한 번에 완성되지 않는다는 사실을 그대로 보여준다.
@@ -80,6 +83,15 @@ export default async function PortfolioPage() {
   ];
   // ⚠ 어느 버킷에도 없는 종목 — 아래 버킷 목록에서 빠지므로 따로 모아 보여준다.
   const orphans = orphanHoldings(buckets, published);
+
+  // ⚠ 보고서가 **발행돼 있을 때만** 카드에 링크를 건다. 전에는 티커만 있으면 걸어서
+  //    발행본이 없는 종목이 전부 404로 갔다(`lib/report/link.ts`).
+  const reportIndex = buildReportIndex(reportEntries);
+  const cardProps = (h: ModelHolding) => ({
+    reportHref: publicReportHref(h, reportIndex),
+    bucketName: buckets.find((b) => b.key === h.functionType)?.name,
+    bucketColor: buckets.find((b) => b.key === h.functionType)?.color,
+  });
   const headline: PortfolioBucket[] = buckets.slice(0, 2);
   const perf = summarizePerformance(snapshots);
   // ⚠ 현재가는 수기 입력이다. 기준일을 밝히지 않으면 자동 시세처럼 읽힌다.
@@ -234,7 +246,7 @@ export default async function PortfolioPage() {
               />
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {items.map((h) => (
-                  <HoldingCard key={h.id} holding={h} />
+                  <HoldingCard key={h.id} holding={h} {...cardProps(h)} />
                 ))}
               </div>
             </section>
@@ -251,7 +263,7 @@ export default async function PortfolioPage() {
             />
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {orphans.map((h) => (
-                <HoldingCard key={h.id} holding={h} />
+                <HoldingCard key={h.id} holding={h} {...cardProps(h)} />
               ))}
             </div>
           </section>
