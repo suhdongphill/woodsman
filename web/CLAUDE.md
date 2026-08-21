@@ -24,7 +24,7 @@
 `macro/{registry,series,signal,parse}` `bubble/{catalog,score}`
 `canslim/{catalog,score}` `report/{catalog,rules,context,tistory,link}` `quota`
 `quote/{kpi,envelope,parse,lookup}` `bucket-target`
-`ai/{catalog,persona,context,routing,retrieval}`
+`ai/{catalog,persona,context,routing,retrieval}` `security-headers` `login-throttle`
 — 전부 테스트가 있다.
 
 거시 지표는 **섹터 하나 = 파일 하나**다(`src/lib/macro/sectors/<key>.ts`).

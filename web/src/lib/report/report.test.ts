@@ -14,6 +14,7 @@ import {
   validateReport,
   validationSummary,
 } from "./rules";
+import { holdingFunctionLabel } from "./context";
 import type { ReportBlock, ReportDraft, ReportSectionKey } from "./types";
 
 const TODAY = "2026-08-15";
@@ -351,5 +352,31 @@ describe("R7 — 다음 판단 시점을 날짜로", () => {
   it("체크리스트 줄이 덜 채워지면 발행할 수 없다", () => {
     const draft = validDraft({ checklist: [{ item: "3Q26 가이던스", source: "", impact: "A축" }] });
     expect(canPublish(validateReport(draft, TODAY))).toBe(false);
+  });
+});
+
+/**
+ * 2026-08-21 결정 — 발행 시점의 분류 이름을 얼린다.
+ * 8/17부터 미뤄 둔 판단이었다. 발행본이 0건인 지금이 정하기 가장 싼 시점이었다.
+ */
+describe("분류 이름 얼리기", () => {
+  const base = { inPortfolio: true, functionType: "GROWTH" as const };
+
+  it("⚠ 얼린 이름이 이긴다 — 나중에 분류 이름을 바꿔도 발행된 보고서는 그대로다", () => {
+    expect(holdingFunctionLabel({ ...base, functionName: "성장" })).toBe("성장");
+    expect(holdingFunctionLabel({ ...base, functionName: "공격" })).toBe("공격");
+  });
+
+  it("얼린 이름이 없는 옛 스냅숏은 키로 되돌린다 — 빈 칸을 만들지 않는다", () => {
+    expect(holdingFunctionLabel(base)).toBe("성장");
+    expect(holdingFunctionLabel({ inPortfolio: true, functionType: "MY_BUCKET" })).toBe("MY_BUCKET");
+  });
+
+  it("공백만 든 이름은 없는 것으로 본다", () => {
+    expect(holdingFunctionLabel({ ...base, functionName: "   " })).toBe("성장");
+  });
+
+  it("편입 종목이 아니면 —", () => {
+    expect(holdingFunctionLabel({ inPortfolio: false })).toBe("—");
   });
 });

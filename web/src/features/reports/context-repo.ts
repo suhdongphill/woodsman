@@ -46,6 +46,7 @@ type ContextRow = {
   bubbleFired: string;
   inPortfolio: number;
   functionType: string | null;
+  functionName: string | null;
   targetWeight: number | null;
   holdingThesis: string | null;
   quotePrice: number | null;
@@ -71,7 +72,7 @@ const COLUMNS = `ticker, capturedAt, recessionLevel, recessionLabel, recessionLi
        fedBias, fedBiasLabel, fedHike, fedHold, fedCut, fedAsOf,
        bubbleScore, bubbleRegime, bubbleStance, bubbleScored, bubbleTotal,
        bubblePriorityFired, bubbleFired,
-       inPortfolio, functionType, targetWeight, holdingThesis,
+       inPortfolio, functionType, functionName, targetWeight, holdingThesis,
        quotePrice, quoteAsOf, quoteCurrency, quoteChangePercent,
        quoteLow52, quoteHigh52, quotePosition52, quoteRangeSamples,
        quoteVolumeMultiple, quoteCaveat,
@@ -130,6 +131,8 @@ function toSnapshot(row: ContextRow): ReportContextSnapshot {
     holding: {
       inPortfolio: toBool(row.inPortfolio),
       functionType: toFunctionType(row.functionType),
+      /** ⚠ 얼린 이름. 없으면 이 결정 이전에 쌬 옛 스냅숏이다 — 키로 되돌린다. */
+      functionName: row.functionName ?? undefined,
       targetWeight: row.targetWeight ?? undefined,
       thesis: row.holdingThesis ?? undefined,
     },
@@ -190,14 +193,14 @@ export async function saveContext(
        fedBias, fedBiasLabel, fedHike, fedHold, fedCut, fedAsOf,
        bubbleScore, bubbleRegime, bubbleStance, bubbleScored, bubbleTotal,
        bubblePriorityFired, bubbleFired,
-       inPortfolio, functionType, targetWeight, holdingThesis,
+       inPortfolio, functionType, functionName, targetWeight, holdingThesis,
        quotePrice, quoteAsOf, quoteCurrency, quoteChangePercent,
        quoteLow52, quoteHigh52, quotePosition52, quoteRangeSamples,
        quoteVolumeMultiple, quoteCaveat,
        envMiddle, envUpper, envLower, envPosition, envDeviation, envWeeks,
        updatedAt
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-               ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+               ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(ticker) DO UPDATE SET
        capturedAt = excluded.capturedAt,
        recessionLevel = excluded.recessionLevel,
@@ -223,6 +226,7 @@ export async function saveContext(
        bubbleFired = excluded.bubbleFired,
        inPortfolio = excluded.inPortfolio,
        functionType = excluded.functionType,
+       functionName = excluded.functionName,
        targetWeight = excluded.targetWeight,
        holdingThesis = excluded.holdingThesis,
        quotePrice = excluded.quotePrice,
@@ -268,6 +272,7 @@ export async function saveContext(
       bubble.firedTriggerKeys.join(","),
       holding.inPortfolio ? 1 : 0,
       holding.functionType ?? null,
+      holding.functionName ?? null,
       holding.targetWeight ?? null,
       holding.thesis ?? null,
       quote.price ?? null,

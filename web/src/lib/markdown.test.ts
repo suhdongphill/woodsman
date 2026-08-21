@@ -100,3 +100,36 @@ describe("HTML 정화 (허용 목록)", () => {
     expect(sanitizeHtml("")).toBe("");
   });
 });
+
+/**
+ * 2026-08-21 점검 후속 — 8/17 점검이 잡은 두 건.
+ * (1) `isSafeUrl`이 `//evil.com`을 내부 경로로 통과시켰다.
+ * (2) `looksDangerous()`가 운영 코드에서 한 번도 불리지 않았다.
+ */
+describe("HTML 정화 — 8/17 점검 후속", () => {
+  it("⚠ //evil.com은 내부 경로가 아니다 — 프로토콜 상대 주소로 밖에 나간다", () => {
+    expect(sanitizeHtml('<a href="//evil.com">안내</a>')).toBe("<a>안내</a>");
+    expect(sanitizeHtml('<img src="//evil.com/x.png" alt="">')).not.toContain("evil.com");
+  });
+
+  it("⚠ 역슬래시를 섞은 것도 막는다", () => {
+    expect(sanitizeHtml('<a href="/\\evil.com">안내</a>')).toBe("<a>안내</a>");
+  });
+
+  it("진짜 내부 경로는 그대로 둔다 — 막느라 멀쩡한 링크를 죽이지 않는다", () => {
+    expect(sanitizeHtml('<a href="/stocks/NVDA">보고서</a>')).toContain('href="/stocks/NVDA"');
+    expect(sanitizeHtml('<a href="#요약">요약</a>')).toContain('href="#요약"');
+  });
+
+  it("looksDangerous는 태그 안쪽만 본다 — 글자로 쓴 javascript:는 위험이 아니다", () => {
+    expect(looksDangerous("<p>href에 javascript: 를 쓰면 안 됩니다</p>")).toBe(false);
+    expect(looksDangerous("<p>onerror= 속성을 설명하는 글</p>")).toBe(false);
+    expect(looksDangerous('<img src="x" onerror="alert(1)" />')).toBe(true);
+    expect(looksDangerous('<a href="javascript:alert(1)">x</a>')).toBe(true);
+  });
+
+  it("javascript:를 다루는 글이 서식을 잃지 않는다", () => {
+    const out = sanitizeHtml("<p><strong>javascript:</strong> 주소는 막힙니다</p>");
+    expect(out).toBe("<p><strong>javascript:</strong> 주소는 막힙니다</p>");
+  });
+});

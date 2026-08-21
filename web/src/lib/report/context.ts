@@ -65,6 +65,17 @@ export type HoldingContext = {
   inPortfolio: boolean;
   /** 버킷 키. ⚠ 고정 유니온이 아니다 — 관리자가 분류를 추가한다 */
   functionType?: string;
+  /**
+   * ⚠ **발행 시점의 분류 이름**을 함께 얼린다 (2026-08-21 결정).
+   *
+   * 예전에는 키만 얼렸다. 그러면 관리자가 "성장"을 "공격"으로 바꾸는 순간
+   * **이미 발행된 보고서의 문장까지 같이 바뀐다.** 보고서는 기록이다 —
+   * 발행 당시 "성장 버킷이라 산다"고 썼으면 그때의 판단이 그대로 남아야 한다.
+   *
+   * ⚠ 이것이 없는 옛 스냅숏도 있다(이 결정 이전에 쌬 것). 그럴 땐
+   *    `reportFunctionLabel(key)`로 되돌린다 — 빈 칸을 만들지 않는다.
+   */
+  functionName?: string;
   /** % */
   targetWeight?: number;
   thesis?: string;
@@ -149,6 +160,18 @@ export const FUNCTION_LABEL_REPORT: Record<FunctionType, string> = {
  */
 export function reportFunctionLabel(key: string): string {
   return key in FUNCTION_LABEL_REPORT ? FUNCTION_LABEL_REPORT[key as FunctionType] : key;
+}
+
+/**
+ * 스냅숏이 보여줄 분류 이름 — **얼린 이름이 이긴다.**
+ *
+ * ⚠ 분류 이름을 화면에 내는 자리는 전부 여기를 지나게 한다. 한 곳이라도
+ *    `reportFunctionLabel`을 직접 부르면 거기서만 이름이 바뀐다.
+ * ⚠ `reportFunctionLabel`은 이제 **얼린 이름이 없는 옛 스냅숏용 되돌림**이다.
+ */
+export function holdingFunctionLabel(holding: HoldingContext): string {
+  if (holding.functionName?.trim()) return holding.functionName.trim();
+  return holding.functionType ? reportFunctionLabel(holding.functionType) : "—";
 }
 
 /**
@@ -354,7 +377,7 @@ export function renderContextMarkdown(snapshot: ReportContextSnapshot): string {
   lines.push(
     holding.inPortfolio
       ? `- **대표 포트폴리오** — 편입 · ${
-          holding.functionType ? reportFunctionLabel(holding.functionType) : "—"
+          holdingFunctionLabel(holding)
         } · 목표비중 ${holding.targetWeight != null ? `${holding.targetWeight}%` : "—"}`
       : "- **대표 포트폴리오** — 미편입 (관찰 종목)",
   );
@@ -383,7 +406,7 @@ function bubbleScoreText(score: number | undefined, regime: string | undefined):
 
 function holdingText(h: HoldingContext): string {
   if (!h.inPortfolio) return "미편입";
-  const fn = h.functionType ? reportFunctionLabel(h.functionType) : "—";
+  const fn = holdingFunctionLabel(h);
   return `편입 · ${fn} · ${h.targetWeight != null ? `${h.targetWeight}%` : "—"}`;
 }
 

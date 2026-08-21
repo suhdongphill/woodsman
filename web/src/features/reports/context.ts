@@ -19,6 +19,7 @@ import { currencyForMarket, planSymbol } from "@/lib/quote/parse";
 import type { QuoteContext } from "@/lib/report/context";
 import { loadReadings, loadTriggerStates } from "@/features/bubble/repository";
 import { findPublishedHoldingByTicker } from "@/features/portfolio/repository";
+import { findBucket } from "@/features/portfolio/buckets-repo";
 import { scoreBubble } from "@/lib/bubble/score";
 import { BIAS_LABEL } from "@/lib/macro/fedhike";
 import type { SiteContext } from "@/lib/report/context";
@@ -49,6 +50,17 @@ export async function captureSiteContext(
 
   const bubble = scoreBubble(readings);
   const fed = overview.fedHike;
+
+  /**
+   * ⚠ **분류 이름을 발행 시점에 얼리기 위해** 한 번 더 읽는다 (2026-08-21 결정).
+   *
+   * 키만 얼리면 관리자가 "성장"을 "공격"으로 바꾸는 순간 **이미 발행된
+   * 보고서의 문장까지 같이 바뀐다.** 보고서는 기록이다.
+   *
+   * ⚠ 위 병렬 묶음에 넣지 못한다 — 무슨 버킷을 읽을지를 `holding`을 받은 뒤에야 안다.
+   *    편입 종목이 아니면 **아예 안 보낸다**(무료 등급 쿼리 수를 공짜로 쓰지 않는다).
+   */
+  const bucket = holding?.functionType ? await findBucket(holding.functionType) : null;
 
   return {
     macro: {
@@ -84,6 +96,8 @@ export async function captureSiteContext(
     holding: {
       inPortfolio: !!holding,
       functionType: holding?.functionType,
+      /** ⚠ 분류가 지워졌으면 이름이 없다. 그럴 땐 비워 둔다 — 키로 되돌린다. */
+      functionName: bucket?.name,
       targetWeight: holding?.targetWeight,
       thesis: holding?.thesis,
     },

@@ -18,7 +18,7 @@ import { fetchQuotesAction, fillMarketAxisAction, injectContextAction } from "..
 import { emptyReportFormState } from "../form-state";
 import {
   CONTEXT_STALE_DAYS,
-  reportFunctionLabel,
+  holdingFunctionLabel,
   MARKET_AXIS_LIMITATION,
   recessionCounts,
   type ContextDrift,
@@ -301,7 +301,7 @@ export function ContextPanel({
                   <>
                     편입 ·{" "}
                     {snapshot.holding.functionType
-                      ? reportFunctionLabel(snapshot.holding.functionType)
+                      ? holdingFunctionLabel(snapshot.holding)
                       : "—"}{" "}
                     · 목표비중{" "}
                     {snapshot.holding.targetWeight != null

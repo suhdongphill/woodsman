@@ -55,7 +55,7 @@ export default async function AdminStocksPage() {
     <AdminShell>
       <AdminPageHeader
         title="종목 보고서"
-        description="10섹션 종목분석 보고서를 쓰고, 정직성 규율을 통과해야 발행합니다."
+        description="13섹션 종목분석 보고서를 쓰고, 정직성 규율을 통과해야 발행합니다."
         action={
           <Link
             href="/admin/diagnostics"

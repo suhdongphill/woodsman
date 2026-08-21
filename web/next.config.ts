@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+import { securityHeaderRules } from "./src/lib/security-headers";
 
 /**
  * 예전에 있던 두 가지 우회(웹팩 WASM 실험 플래그 + Prisma 생성물 파일트레이싱 제외)는
@@ -20,6 +21,14 @@ import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 const CANONICAL_HOST = "portfolio-solutions.net";
 
 const nextConfig: NextConfig = {
+  /**
+   * 응답 보안 헤더. 무엇을 왜 걸었는지는 `src/lib/security-headers.ts`에 적었다
+   * (⚠ 전역에 `default-src`를 넣으면 AdSense가 죽는다는 것도 거기 있다).
+   * 값 판단은 순수 함수 + 테스트로 내려 두고, 여기서는 연결만 한다.
+   */
+  async headers() {
+    return securityHeaderRules();
+  },
   async redirects() {
     const fromWww = [{ type: "host" as const, value: `www.${CANONICAL_HOST}` }];
     return [
