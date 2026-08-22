@@ -107,6 +107,13 @@ export const sector: MacroSector = {
       layer: "L3",
       type: "level",
       freq: "m",
+      /**
+       * ⚠ 2026-08-22 실측 보정. JOLTS는 BLS가 기준월 종료 후 **약 5~6주** 뒤에 낸다
+       *   (6월분이 8월 초, 7월분이 9월 초). 그날 FRED 원본 최신 관측도 `2026-06-01`이었다.
+       */
+      staleDays: 100,
+      staleWhy:
+        "BLS JOLTS는 기준월 종료 후 약 5~6주 뒤 발표된다(7월분이 9월 초). 기본 75일로 재면 정상 발표 중에도 기한초과로 뜬다.",
       unit: "천건",
       decimals: 0,
       url: FRED("JTSJOL"),
