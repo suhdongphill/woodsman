@@ -8,6 +8,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { AdSlot } from "@/components/analytics/AdSlot";
 import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { IndicatorCard } from "@/features/macro/ui/IndicatorCard";
+import { HealthNotice } from "@/features/macro/ui/Freshness";
 import { loadMacroGroup } from "@/features/macro/service";
 import { findMacroGroup, type MacroGroupKey } from "@/lib/macro/groups";
 import { indicatorsByGroup } from "@/lib/macro/catalog";
@@ -114,6 +115,9 @@ export default async function MacroGroupPage({ params }: Props) {
             지표 {items.length}개 · {detail.asOf ? `가장 최근 기준일 ${detail.asOf}` : "아직 수집 전"}
           </p>
         </Card>
+
+        {/* ⚠ 문제가 없으면 렌더되지 않는다 */}
+        <HealthNotice health={detail.health} />
 
         {/* 지표 목록 — 카드 하나가 지표 하나 */}
         <div className="space-y-5">

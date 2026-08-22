@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { splitEmphasis } from "../format";
 import {
   MACRO_INDICATORS,
   RECESSION_SIGNAL_KEYS,
@@ -23,6 +24,43 @@ import {
 import { judgeSignal, summarizeRecession, type SignalStatus } from "./signal";
 import { dedupeByDate, parseFredCsv, parseYahooChart } from "./parse";
 
+describe("⚠ 단위 환산 — 유동성 묶음이 조용히 1000배 틀리는 자리", () => {
+  /**
+   * FRED는 같은 유동성 블록에서도 계열마다 단위가 다르다. 실제 응답으로 확인한 값이다.
+   *   WALCL  2026-06-10 = 6,725,397 (백만 달러) → 6.73조
+   *   WDTGAL 2026-06-10 =   801,084 (백만 달러) → 0.80조
+   *   RRPONTSYD 2026-06-02 =    2.502 (십억 달러) → 0.0025조
+   * 하나라도 틀리면 합계·비교가 1000배 어긋나는데 화면은 멀쩡해 보인다.
+   */
+  it("백만 달러 계열은 levelM으로 조 달러가 된다", () => {
+    const out = applyTransform([{ date: "2026-06-10", value: 6_725_397 }], "levelM");
+    expect(out[0].value).toBeCloseTo(6.725, 3);
+  });
+
+  it("TGA도 백만 달러다 — 십억으로 읽으면 800배 커진다", () => {
+    expect(applyTransform([{ date: "2026-06-10", value: 801_084 }], "levelM")[0].value).toBeCloseTo(
+      0.801,
+      3,
+    );
+    // ⚠ 틀린 변환(levelK)을 썼다면 이 값이 나온다 — 0.8조가 아니라 801조로 읽힌다.
+    expect(applyTransform([{ date: "2026-06-10", value: 801_084 }], "levelK")[0].value).toBe(801.084);
+  });
+
+  it("역레포는 십억 달러라 levelK가 맞다", () => {
+    expect(applyTransform([{ date: "2026-06-02", value: 2.502 }], "levelK")[0].value).toBeCloseTo(
+      0.0025,
+      4,
+    );
+  });
+
+  it("카탈로그가 실제로 그 변환을 쓰고 있다", () => {
+    const byKey = new Map(MACRO_INDICATORS.map((i) => [i.key, i]));
+    expect(byKey.get("fed_assets")?.transform).toBe("levelM");
+    expect(byKey.get("tga")?.transform).toBe("levelM");
+    expect(byKey.get("rrp")?.transform).toBe("levelK");
+  });
+});
+
 describe("섹터 정의 검증 (볼트 사양서 1-1)", () => {
   it("⚠ 정의가 깨져 있으면 목록으로 드러난다 — 반쯤 동작하게 두지 않는다", () => {
     expect(validateSectors()).toEqual([]);
@@ -39,6 +77,10 @@ describe("섹터 정의 검증 (볼트 사양서 1-1)", () => {
             group: "fx",
             source: "FRED",
             transform: "level",
+            layer: "L9" as never,
+            type: "capacity_remaining",
+            freq: "d",
+            staleDays: 30,
             unit: "",
             decimals: 0,
             url: "http://insecure",
@@ -55,6 +97,21 @@ describe("섹터 정의 검증 (볼트 사양서 1-1)", () => {
     expect(broken.some((p) => p.includes("group(fx)이 다르다"))).toBe(true);
     expect(broken.some((p) => p.includes("출처 링크가 없다"))).toBe(true);
     expect(broken.some((p) => p.includes("초보자 설명"))).toBe(true);
+    expect(broken.some((p) => p.includes("레이어"))).toBe(true);
+    expect(broken.some((p) => p.includes("stateDependency"))).toBe(true);
+    expect(broken.some((p) => p.includes("staleWhy"))).toBe(true);
+  });
+
+  /**
+   * ⚠ 신선도는 지표마다 발표 주기를 정확히 적어야 동작한다. 하나라도 비면
+   *    그 지표만 조용히 판정에서 빠진다 — 그게 이 기능이 죽는 방식이다.
+   */
+  it("모든 지표에 레이어·성격·발표주기가 있다", () => {
+    for (const i of MACRO_INDICATORS) {
+      expect(i.layer, i.key).toBeTruthy();
+      expect(i.type, i.key).toBeTruthy();
+      expect(["d", "w", "m", "q"], i.key).toContain(i.freq);
+    }
   });
 });
 
@@ -368,5 +425,31 @@ describe("단위와 변환이 맞물리는가", () => {
   it("실제 건수로 주는 지표에는 levelK가 맞다", () => {
     // ICSA는 199000(건) → 199천건
     expect(byKey.get("claims")?.transform).toBe("levelK");
+  });
+});
+
+describe("설명글의 강조 표시", () => {
+  it("⚠ 별표가 화면에 그대로 찍히지 않는다 — 초보자용 문장에서 강조가 방해가 됐다", () => {
+    expect(splitEmphasis("절대 수준보다 **방향**을 봅니다.")).toEqual([
+      { text: "절대 수준보다 ", strong: false },
+      { text: "방향", strong: true },
+      { text: "을 봅니다.", strong: false },
+    ]);
+  });
+
+  it("강조가 없으면 통째로 한 조각", () => {
+    expect(splitEmphasis("그냥 문장")).toEqual([{ text: "그냥 문장", strong: false }]);
+  });
+
+  it("짝이 안 맞는 별표는 그대로 둔다 — 없는 강조를 만들지 않는다", () => {
+    expect(splitEmphasis("**열기만 함")).toEqual([{ text: "**열기만 함", strong: false }]);
+  });
+
+  it("카탈로그 설명에 남은 별표가 모두 짝이 맞는다", () => {
+    for (const i of MACRO_INDICATORS) {
+      for (const field of [i.what, i.why, i.read]) {
+        expect((field.match(/\*\*/g) ?? []).length % 2, `${i.key}: ${field}`).toBe(0);
+      }
+    }
   });
 });

@@ -15,7 +15,7 @@ export const sector: MacroSector = {
       question: "사람들이 지갑을 열고 있나?",
       intro:
         "미국 경제의 3분의 2는 소비입니다. 실제로 쓴 돈(소매판매)과 앞으로 쓸 마음(소비자신뢰)을 같이 보면, 지금 버티는 중인지 곧 꺾일지가 갈립니다. 심리 지표는 실제 소비보다 먼저 움직입니다.",
-      order: 6,
+      order: 7,
     },
   indicators: [
     {
@@ -25,6 +25,9 @@ export const sector: MacroSector = {
       source: "FRED",
       sourceId: "RSAFS",
       transform: "mom",
+      layer: "L3",
+      type: "change",
+      freq: "m",
       unit: "%",
       decimals: 1,
       url: FRED("RSAFS"),
@@ -40,6 +43,9 @@ export const sector: MacroSector = {
       group: "consumer",
       source: "MANUAL",
       transform: "level",
+      layer: "L6",
+      type: "level",
+      freq: "m",
       unit: "",
       decimals: 1,
       url: "https://www.conference-board.org/topics/consumer-confidence",
@@ -56,6 +62,9 @@ export const sector: MacroSector = {
       source: "FRED",
       sourceId: "UMCSENT",
       transform: "level",
+      layer: "L6",
+      type: "level",
+      freq: "m",
       unit: "",
       decimals: 1,
       url: FRED("UMCSENT"),

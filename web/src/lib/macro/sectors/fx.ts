@@ -15,7 +15,7 @@ export const sector: MacroSector = {
       question: "원화와 달러의 힘겨루기는 어떤가?",
       intro:
         "한국에서 투자한다면 환율은 수익률의 일부입니다. 원/달러가 오르면(원화 약세) 달러 자산의 원화 환산 수익은 늘지만 수입 물가가 오르고 외국인 자금은 빠져나가기 쉽습니다. 달러인덱스는 달러 자체의 강도를 봅니다.",
-      order: 4,
+      order: 5,
     },
   indicators: [
     {
@@ -25,6 +25,12 @@ export const sector: MacroSector = {
       source: "FRED",
       sourceId: "DEXKOUS",
       transform: "level",
+      layer: "L2",
+      type: "level",
+      freq: "d",
+      staleDays: 14,
+      staleWhy:
+        "연준 H.10 주간 릴리스(월요일, 직전 금요일까지). 일별 관측이지만 발표는 주 1회.",
       unit: "원",
       decimals: 1,
       url: FRED("DEXKOUS"),
@@ -39,12 +45,23 @@ export const sector: MacroSector = {
       key: "dxy",
       name: "달러인덱스 (DXY)",
       group: "fx",
-      source: "MANUAL",
+      /**
+       * ⚠ 2026-08-22 **수동 → 자동**으로 바꿨다(볼트 §6-4와 같은 판단).
+       *   수동으로 두는 동안 한 달 넘게 방치돼 있었고, 그 사실이 화면에 드러나지도 않았다.
+       *   ⚠ 키(`dxy`)는 그대로다 — 바꾸면 쌓아 둔 시계열이 통째로 끊긴다.
+       *   ⚠ 예전 수동 입력분과 출처가 다르다(Investing.com → ICE DXY 선물).
+       *      과거 구간과 최근 구간의 값이 미세하게 어긋날 수 있다.
+       */
+      source: "YAHOO",
+      sourceId: "DX-Y.NYB",
       transform: "level",
+      layer: "L2",
+      type: "level",
+      freq: "d",
       unit: "",
       decimals: 2,
-      url: "https://kr.investing.com/currencies/us-dollar-index",
-      sourceLabel: "수동 입력 · Investing.com",
+      url: "https://finance.yahoo.com/quote/DX-Y.NYB/",
+      sourceLabel: "Yahoo Finance · DX-Y.NYB (ICE)",
       what: "유로·엔 등 주요 6개 통화 대비 달러의 종합 강도입니다.",
       why: "달러가 세지면 원자재와 신흥국 자산이 동시에 눌립니다. 위험자산 전반의 역풍 게이지입니다.",
       read: "원/달러가 올랐을 때 DXY도 올랐다면 달러가 센 것이고, DXY는 그대로인데 원화만 약하면 국내 요인입니다.",
@@ -57,6 +74,12 @@ export const sector: MacroSector = {
       source: "FRED",
       sourceId: "DEXJPUS",
       transform: "level",
+      layer: "L2",
+      type: "level",
+      freq: "d",
+      staleDays: 14,
+      staleWhy:
+        "연준 H.10 주간 릴리스(월요일, 직전 금요일까지). 일별 관측이지만 발표는 주 1회.",
       unit: "엔",
       decimals: 1,
       url: FRED("DEXJPUS"),
@@ -73,6 +96,12 @@ export const sector: MacroSector = {
       source: "FRED",
       sourceId: "DEXCHUS",
       transform: "level",
+      layer: "L2",
+      type: "level",
+      freq: "d",
+      staleDays: 14,
+      staleWhy:
+        "연준 H.10 주간 릴리스(월요일, 직전 금요일까지). 일별 관측이지만 발표는 주 1회.",
       unit: "위안",
       decimals: 2,
       url: FRED("DEXCHUS"),

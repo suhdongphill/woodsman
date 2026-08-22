@@ -15,7 +15,7 @@ export const sector: MacroSector = {
       question: "금리가 실물에 얼마나 닿았나?",
       intro:
         "주택은 금리에 가장 민감한 실물 자산입니다. 금리가 오르면 착공과 건설업체 체감경기가 먼저 식고, 그 다음에 고용과 소비로 번집니다. 그래서 부동산 지표는 '긴축이 실제로 아프기 시작했는지'를 보는 창입니다.",
-      order: 8,
+      order: 9,
     },
   indicators: [
     {
@@ -27,6 +27,9 @@ export const sector: MacroSector = {
       // ⚠ FRED HOUST는 **이미 천호 단위**다(2026-06 = 1427 → 142.7만호).
       //    levelK로 한 번 더 나누면 화면에 "1천호"로 나온다 — 2026-08-07 점검에서 잡혔다.
       transform: "level",
+      layer: "L3",
+      type: "level",
+      freq: "m",
       unit: "천호",
       decimals: 0,
       url: FRED("HOUST"),
@@ -43,6 +46,12 @@ export const sector: MacroSector = {
       source: "FRED",
       sourceId: "CSUSHPINSA",
       transform: "yoy",
+      layer: "L3",
+      type: "change",
+      freq: "m",
+      staleDays: 135,
+      staleWhy:
+        "S&P CoreLogic 케이스-실러는 기준월 종료 후 약 2개월 뒤 발표된다(6월분이 8월 말). 기본 75일로 재면 정상 발표 중에도 늘 기한초과로 뜬다.",
       unit: "%",
       decimals: 1,
       url: FRED("CSUSHPINSA"),
@@ -58,6 +67,9 @@ export const sector: MacroSector = {
       group: "housing",
       source: "MANUAL",
       transform: "level",
+      layer: "L6",
+      type: "level",
+      freq: "m",
       unit: "",
       decimals: 0,
       url: "https://www.nahb.org/news-and-economics/housing-economics/indices/housing-market-index",

@@ -82,3 +82,27 @@ export function formatDateTime(iso?: string) {
 export function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
+
+/**
+ * `**강조**`만 뽑아 조각으로 나눈다 — 카탈로그 설명글 전용.
+ *
+ * ## 왜 이게 필요했나
+ * `sectors/*.ts`의 "어떻게 읽나요" 문장에 `**…**`가 섞여 있었는데 화면은 그대로 별표를
+ * 찍고 있었다(2026-08-22 발견). 초보자용 설명에서 강조가 별표로 보이면 오히려 방해다.
+ *
+ * ⚠ **마크다운 렌더러가 아니다.** 이 함수는 카탈로그(코드 상수)만 받는다.
+ *    사용자 입력에 쓰지 말 것 — 그쪽은 `lib/sanitize-html.ts`가 맡는다.
+ */
+export function splitEmphasis(text: string): { text: string; strong: boolean }[] {
+  const out: { text: string; strong: boolean }[] = [];
+  const re = /\*\*([^*]+)\*\*/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) out.push({ text: text.slice(last, m.index), strong: false });
+    out.push({ text: m[1], strong: true });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push({ text: text.slice(last), strong: false });
+  return out;
+}

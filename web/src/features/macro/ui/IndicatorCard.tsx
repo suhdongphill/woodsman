@@ -9,11 +9,13 @@
  * 검색엔진이 읽는 본문이 된다.
  */
 import { Card } from "@/components/ui/Card";
+import { Emphasis } from "@/components/ui/Emphasis";
 import { cx } from "@/lib/format";
 import { chartBaseline, formatIndicatorValue } from "@/lib/macro/series";
 import type { IndicatorView } from "../service";
 import { SeriesChart } from "./SeriesChart";
 import { SignalPill } from "./SignalPill";
+import { FreshnessBadge, LayerChip, StateDependencyNote } from "./Freshness";
 
 function ChangeNote({ view }: { view: IndicatorView }) {
   if (view.change === undefined) return null;
@@ -44,11 +46,19 @@ export function IndicatorCard({ view }: { view: IndicatorView }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           {/* h3: 그룹 상세의 h1(그룹명) 아래 단계 */}
-          <h3 id={indicator.key} className="text-[15px] font-semibold text-white">
-            {indicator.name}
-          </h3>
-          <p className="mt-1 text-[11px] text-gray-500">
-            {view.asOf ? `${view.asOf} 기준` : "아직 수집되지 않음"} · {indicator.sourceLabel}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <LayerChip layer={indicator.layer} />
+            <h3 id={indicator.key} className="text-[15px] font-semibold text-white">
+              {indicator.name}
+            </h3>
+          </div>
+          <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500">
+            <span className={cx(view.freshness.stale && "text-amber-300/80")}>
+              {view.asOf ? `${view.asOf} 기준` : "아직 수집되지 않음"}
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>{indicator.sourceLabel}</span>
+            <FreshnessBadge freshness={view.freshness} />
           </p>
         </div>
         {indicator.signal ? (
@@ -58,10 +68,21 @@ export function IndicatorCard({ view }: { view: IndicatorView }) {
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-baseline gap-3">
+      {/*
+        ⚠ 낡은 값을 **지우지 않고 흐리게** 낸다. 숨기면 "값이 없다"와 구분이 안 되고,
+          그대로 진하게 두면 오늘 값처럼 읽힌다. 회색이 그 사이를 말한다.
+      */}
+      <div
+        className={cx(
+          "mt-3 flex flex-wrap items-baseline gap-3",
+          (view.freshness.stale || view.freshness.stalled) && "opacity-55",
+        )}
+      >
         <strong className="text-3xl font-bold tabular-nums text-white">{view.display}</strong>
         <ChangeNote view={view} />
       </div>
+
+      {indicator.stateDependency && <StateDependencyNote text={indicator.stateDependency} />}
 
       {indicator.signal && (
         <p className="mt-2 text-[12px] text-gray-400">
@@ -84,19 +105,25 @@ export function IndicatorCard({ view }: { view: IndicatorView }) {
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-gold-400">
             이게 뭔가요
           </dt>
-          <dd className="mt-1 text-gray-300">{indicator.what}</dd>
+          <dd className="mt-1 text-gray-300">
+            <Emphasis text={indicator.what} />
+          </dd>
         </div>
         <div>
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-gold-400">
             왜 보나요
           </dt>
-          <dd className="mt-1 text-gray-300">{indicator.why}</dd>
+          <dd className="mt-1 text-gray-300">
+            <Emphasis text={indicator.why} />
+          </dd>
         </div>
         <div>
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-gold-400">
             어떻게 읽나요
           </dt>
-          <dd className="mt-1 text-gray-300">{indicator.read}</dd>
+          <dd className="mt-1 text-gray-300">
+            <Emphasis text={indicator.read} />
+          </dd>
         </div>
       </dl>
 
@@ -131,8 +158,16 @@ export function IndicatorRow({ view }: { view: IndicatorView }) {
     <div className="flex items-center justify-between gap-3 py-1.5">
       <span className="min-w-0 truncate text-[12.5px] text-gray-400">{view.indicator.name}</span>
       <span className="flex shrink-0 items-center gap-2">
+        <FreshnessBadge freshness={view.freshness} />
         {collected ? (
-          <span className="text-[13px] font-semibold tabular-nums text-white">{view.display}</span>
+          <span
+            className={cx(
+              "text-[13px] font-semibold tabular-nums text-white",
+              (view.freshness.stale || view.freshness.stalled) && "opacity-55",
+            )}
+          >
+            {view.display}
+          </span>
         ) : hasPill ? null : (
           <span className="text-[11.5px] text-gray-600">아직 수집 안 됨</span>
         )}

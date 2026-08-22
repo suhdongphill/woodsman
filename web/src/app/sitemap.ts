@@ -21,6 +21,7 @@ const STATIC_PAGES: { path: string; priority: number; changeFrequency: "daily" |
   // 거시 지표는 매주 갱신되는 고유 콘텐츠라 색인 우선순위를 높게 둔다.
   { path: "/macro", priority: 0.9, changeFrequency: "daily" },
   { path: "/macro/bubble", priority: 0.8, changeFrequency: "weekly" },
+  { path: "/macro/compare", priority: 0.7, changeFrequency: "daily" },
   { path: "/stocks", priority: 0.6, changeFrequency: "weekly" },
   { path: "/about", priority: 0.5, changeFrequency: "monthly" },
   { path: "/disclaimer", priority: 0.3, changeFrequency: "monthly" },

@@ -60,6 +60,37 @@ export async function loadLatestPoints(): Promise<Map<string, LatestPoint>> {
   return out;
 }
 
+export type SeriesMeta = {
+  /** 마지막 **관측치**의 날짜 */
+  asOf: string;
+  /** 마지막 **수집 성공** 시각(ISO) */
+  fetchedAt?: string;
+};
+
+/**
+ * 계열마다 "언제 값인가"와 "언제 받았나"를 **따로** 읽는다.
+ *
+ * ⚠ 이 둘은 독립적으로 실패한다(볼트 사양서 §1-6, `lib/macro/freshness.ts`).
+ *    수집이 끊겨도 옛 값이 남아 화면은 멀쩡해 보이고, 수집이 성공해도 발표기관이
+ *    새 값을 안 냈으면 `asOf`는 그대로다. 한 필드로 합치면 두 사고가 구분되지 않는다.
+ *
+ * ⭐ **스키마를 늘리지 않았다.** `MacroPoint.updatedAt`이 이미 쓰기 시각을 들고 있고,
+ *    수집이 실패하면 그 행에 아무것도 쓰지 않으므로 `MAX(updatedAt)`이 곧
+ *    "마지막으로 성공한 수집"이다.
+ */
+export async function loadSeriesMeta(): Promise<Map<string, SeriesMeta>> {
+  const rows = await queryAll<{ seriesKey: string; asOf: string; fetchedAt: string | null }>(
+    `SELECT seriesKey, MAX(date) AS asOf, MAX(updatedAt) AS fetchedAt
+       FROM MacroPoint GROUP BY seriesKey`,
+  );
+  return new Map(
+    rows.map((r) => [
+      r.seriesKey,
+      { asOf: dayOf(r.asOf), fetchedAt: r.fetchedAt ?? undefined },
+    ]),
+  );
+}
+
 /**
  * 모든 지표의 **최근 N개**만 한 번에.
  *

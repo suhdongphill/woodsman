@@ -6,8 +6,12 @@
  * 것이고, 이름도 되도록 그쪽을 따랐다(같은 걸 다르게 부르면 대조가 안 된다).
  */
 
+import type { MacroIndicatorType, MacroLayer } from "./layers";
+import type { ReleaseFreq } from "./freshness";
+
 export type MacroGroupKey =
   | "rates"
+  | "liquidity"
   | "fx"
   | "commodity"
   | "inflation"
@@ -32,6 +36,9 @@ export type MacroGroup = {
 /** FRED·Yahoo는 서버가 직접 가져온다. MANUAL은 공식 API가 없어 관리자가 손으로 넣는다. */
 export type MacroSource = "FRED" | "YAHOO" | "MANUAL";
 
+export type { MacroLayer, MacroIndicatorType } from "./layers";
+export type { ReleaseFreq } from "./freshness";
+
 /**
  * 원본 시계열을 화면 값으로 바꾸는 방법.
  * - `level`    원값 그대로
@@ -39,8 +46,12 @@ export type MacroSource = "FRED" | "YAHOO" | "MANUAL";
  * - `mom`      전월 대비 %
  * - `momdiff`  전월 대비 증감(원단위) — 고용자 수처럼 "몇 명 늘었나"
  * - `levelK`   원값을 1,000으로 나눠 천 단위로
+ * - `levelM`   원값을 1,000,000으로 나눈다 — ⚠ FRED가 **백만 달러 단위**로 주는 계열
+ *              (연준 총자산 WALCL 등)을 조 달러로 읽기 위한 것이다. 같은 유동성 블록에서
+ *              어떤 계열은 십억, 어떤 계열은 백만으로 오기 때문에 **단위를 맞추지 않으면
+ *              합계·비교가 조용히 1000배 틀린다.**
  */
-export type MacroTransform = "level" | "yoy" | "mom" | "momdiff" | "levelK";
+export type MacroTransform = "level" | "yoy" | "mom" | "momdiff" | "levelK" | "levelM";
 
 /** 침체 시그널 판정 규칙. `op`는 "위험한 방향". */
 export type MacroSignalRule = {
@@ -62,6 +73,29 @@ export type MacroIndicator = {
   /** FRED 시리즈 ID 또는 Yahoo 심볼. MANUAL이면 없다. */
   sourceId?: string;
   transform: MacroTransform;
+  /**
+   * 인과 레이어 L0~L6 — **메커니즘상의 위치**다(`lib/macro/layers.ts`).
+   * ⚠ 시간 선행 주장이 아니다. L6이 아래라고 후행한다는 뜻이 아니다.
+   */
+  layer: MacroLayer;
+  /**
+   * 지표의 성격. `transform`과 헷갈리지 말 것 —
+   * `transform`은 **어떻게 계산해 보여줄까**(yoy·momdiff…), `type`은 **무엇을 재는 숫자인가**다.
+   * ⚠ `capacity_remaining`(남은 완충 여력)은 해석이 뒤집히는 종류라
+   *    `stateDependency` 없이는 `validateSectors()`가 거부한다.
+   */
+  type: MacroIndicatorType;
+  /** 해석이 뒤집히는 임계 조건. `capacity_remaining`이면 필수. */
+  stateDependency?: string;
+  /**
+   * ⚠ **발표** 주기다(관측 주기가 아니다). 신선도 기한을 여기서 뽑는다.
+   *    틀리면 정상 지표가 매일 회색으로 떠서, 회색 자체가 무시된다(`freshness.ts` §1-7).
+   */
+  freq: ReleaseFreq;
+  /** 발표지연이 구조적으로 더 긴 계열의 기한 예외(일). ⚠ `staleWhy` 없이 쓰지 않는다. */
+  staleDays?: number;
+  /** 예외의 근거. 기관의 실제 릴리스 일정이어야 한다 — 못 대면 과최적화다. */
+  staleWhy?: string;
   /** 값 뒤에 붙는 단위 */
   unit: string;
   decimals: number;

@@ -30,6 +30,7 @@ function yearBefore(date: string): string {
 export function applyTransform(points: SeriesPoint[], tf: MacroTransform): SeriesPoint[] {
   if (tf === "level") return points;
   if (tf === "levelK") return points.map((p) => ({ date: p.date, value: p.value / 1000 }));
+  if (tf === "levelM") return points.map((p) => ({ date: p.date, value: p.value / 1_000_000 }));
 
   if (tf === "yoy") {
     const byDate = new Map(points.map((p) => [p.date, p.value]));

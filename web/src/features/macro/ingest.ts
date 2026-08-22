@@ -64,10 +64,19 @@ async function fetchFred(seriesId: string, from: string): Promise<SeriesPoint[]>
   return points;
 }
 
-async function fetchYahoo(symbol: string, full: boolean): Promise<SeriesPoint[]> {
-  // 월봉으로 받는다. 거시 비교에 일봉은 필요 없고, 점 수가 40배 늘어난다.
-  const range = full ? "max" : "2y";
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=1mo`;
+/**
+ * Yahoo 시세.
+ *
+ * 기본은 **월봉**이다 — 거시 비교에 일봉은 필요 없고 점 수가 40배 늘어난다.
+ * ⚠ 다만 **발표 주기가 일간(`freq: "d"`)인 지표는 일봉으로 받는다**(2026-08-22).
+ *   달러인덱스·금·주가지수를 월봉으로 받으면 `asOf`가 늘 월초로 찍혀서,
+ *   신선도 판정이 **매일 "기한초과"라고 거짓말을 한다.** 판정을 붙였으면 입력도 맞춰야 한다.
+ *   일봉은 `max`가 너무 크므로 최초 수집도 10년으로 자른다.
+ */
+async function fetchYahoo(symbol: string, full: boolean, daily: boolean): Promise<SeriesPoint[]> {
+  const interval = daily ? "1d" : "1mo";
+  const range = full ? (daily ? "10y" : "max") : daily ? "1y" : "2y";
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`;
   const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`Yahoo ${symbol} 응답 ${res.status}`);
 
@@ -86,7 +95,7 @@ async function fetchIndicator(
     return fetchFred(indicator.sourceId, hasHistory ? daysAgo(REFRESH_DAYS) : HISTORY_START);
   }
   if (indicator.source === "YAHOO") {
-    return fetchYahoo(indicator.sourceId, !hasHistory);
+    return fetchYahoo(indicator.sourceId, !hasHistory, indicator.freq === "d");
   }
   throw new Error(`알 수 없는 출처: ${indicator.source}`);
 }

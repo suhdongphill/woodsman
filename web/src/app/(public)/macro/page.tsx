@@ -8,6 +8,7 @@ import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { RecessionBoard } from "@/features/macro/ui/RecessionBoard";
 import { FedHikeCard } from "@/features/macro/ui/FedHikeCard";
 import { GroupCard } from "@/features/macro/ui/GroupCard";
+import { HealthNotice } from "@/features/macro/ui/Freshness";
 import { loadMacroOverview } from "@/features/macro/service";
 import { loadSectionPosts } from "@/features/posts/repository";
 import { SectionFrame } from "@/features/posts/ui/SectionFrame";
@@ -75,10 +76,12 @@ export default async function MacroHubPage() {
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-10 sm:px-6">
         {/* ① 결론 먼저 */}
-        <section aria-labelledby="signals-heading">
+        <section aria-labelledby="signals-heading" className="space-y-4">
           <h2 id="signals-heading" className="sr-only">
             침체 신호 종합
           </h2>
+          {/* ⚠ 문제가 없으면 이 줄은 렌더되지 않는다 — 늘 떠 있는 경고는 무시된다 */}
+          <HealthNotice health={overview.health} />
           <RecessionBoard
             summary={overview.summary}
             signals={overview.signals}
@@ -146,7 +149,24 @@ export default async function MacroHubPage() {
           </div>
         </section>
 
-        {/* ③-2 반도체 사이클은 따로 깊게 본다 */}
+        {/* ③-2 따로 보면 안 보이는 것 — 겹쳐 보기 */}
+        <Link
+          href="/macro/compare"
+          className="block rounded-2xl border border-border bg-card p-5 transition-colors hover:border-gold-600/40 hover:bg-cardHover"
+        >
+          <h2 className="text-[15px] font-semibold text-white">📈 지표 겹쳐 보기</h2>
+          <p className="mt-1 text-[13px] leading-relaxed text-muted">
+            금리와 유동성, 물가와 기대, 실물과 주가를 <strong>같은 시간축 위에</strong> 세워
+            어디서 벌어졌는지를 봅니다. 단위가 다르면 축을 두 개 그리는 대신 척도를 환산합니다 —
+            축을 조정하는 것만으로 아무 결론이나 만들 수 있기 때문입니다.
+          </p>
+          <span className="mt-2 inline-flex items-center gap-0.5 text-[12px] text-gold-400">
+            겹쳐 보기
+            <ChevronRightIcon size={13} />
+          </span>
+        </Link>
+
+        {/* ③-3 반도체 사이클은 따로 깊게 본다 */}
         <Link
           href="/macro/bubble"
           className="block rounded-2xl border border-border bg-card p-5 transition-colors hover:border-gold-600/40 hover:bg-cardHover"

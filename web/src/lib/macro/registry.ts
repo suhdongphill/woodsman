@@ -15,9 +15,11 @@
  * 다시 계산할 수 있고, 변환 규칙을 고칠 때 데이터를 다시 받지 않아도 되기 때문이다.
  * 대신 사양서가 경고한 **이중 적용**을 막으려고 변환은 `lib/macro/series.ts` 한 곳에서만 한다.
  */
+import { isMacroLayer } from "./layers";
 import type { MacroGroup, MacroGroupKey, MacroIndicator, MacroSector } from "./types";
 
 import { sector as rates } from "./sectors/rates";
+import { sector as liquidity } from "./sectors/liquidity";
 import { sector as inflation } from "./sectors/inflation";
 import { sector as jobs } from "./sectors/jobs";
 import { sector as fx } from "./sectors/fx";
@@ -30,6 +32,7 @@ import { sector as semi } from "./sectors/semi";
 /** ⚠ 새 섹터는 여기 한 줄만 추가한다. */
 export const MACRO_SECTORS: MacroSector[] = [
   rates,
+  liquidity,
   inflation,
   jobs,
   fx,
@@ -53,11 +56,16 @@ export const MACRO_INDICATORS: MacroIndicator[] = MACRO_SECTORS.flatMap((s) => s
 export function validateSectors(sectors: MacroSector[] = MACRO_SECTORS): string[] {
   const problems: string[] = [];
   const seenGroups = new Set<string>();
+  const seenOrders = new Set<number>();
   const seenKeys = new Set<string>();
 
   for (const s of sectors) {
     if (seenGroups.has(s.group.key)) problems.push(`묶음 키 중복: ${s.group.key}`);
     seenGroups.add(s.group.key);
+
+    // ⚠ 순서가 겹치면 정렬이 흔들려 **화면마다 묶음 차례가 달라진다.**
+    if (seenOrders.has(s.group.order)) problems.push(`묶음 순서 중복: ${s.group.key}`);
+    seenOrders.add(s.group.order);
 
     if (s.indicators.length === 0) problems.push(`${s.group.key}: 지표가 없다`);
 
@@ -76,6 +84,25 @@ export function validateSectors(sectors: MacroSector[] = MACRO_SECTORS): string[
       }
       if (!/^https:\/\//.test(i.url)) problems.push(`${i.key}: 출처 링크가 없다`);
       if (!i.what || !i.why || !i.read) problems.push(`${i.key}: 초보자 설명(3줄)이 비었다`);
+
+      /**
+       * ⚠ 볼트 인수인계 사양서 §2-1의 게이트를 그대로 옮겼다.
+       *    "정의가 깨졌으면 조용히 반쯤 동작하지 않는다."
+       */
+      if (!isMacroLayer(i.layer)) problems.push(`${i.key}: 레이어(L0~L6)가 없거나 모르는 값이다`);
+
+      // 해석이 뒤집히는 지표에 뒤집히는 조건이 없으면, 그 지표는 읽는 사람을 속인다.
+      if (i.type === "capacity_remaining" && !i.stateDependency?.trim()) {
+        problems.push(`${i.key}: capacity_remaining인데 stateDependency가 비었다`);
+      }
+
+      // 예외를 근거 없이 늘리는 것이 신선도 기능을 죽이는 가장 빠른 길이다.
+      if (i.staleDays !== undefined && !i.staleWhy?.trim()) {
+        problems.push(`${i.key}: staleDays를 줬는데 근거(staleWhy)가 없다`);
+      }
+      if (i.staleWhy && i.staleDays === undefined) {
+        problems.push(`${i.key}: staleWhy만 있고 staleDays가 없다`);
+      }
     }
   }
   return problems;
@@ -122,3 +149,5 @@ export function autoIndicators(): MacroIndicator[] {
 export function manualIndicators(): MacroIndicator[] {
   return MACRO_INDICATORS.filter((i) => i.source === "MANUAL");
 }
+
+export { MACRO_LAYERS, MACRO_LAYER_LIST, layerDef } from "./layers";
