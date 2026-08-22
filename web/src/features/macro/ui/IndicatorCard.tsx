@@ -114,14 +114,29 @@ export function IndicatorCard({ view }: { view: IndicatorView }) {
   );
 }
 
-/** 목록·요약에서 쓰는 작은 줄 — 이름·값·상태만. */
+/**
+ * 목록·요약에서 쓰는 작은 줄 — 이름·값·상태만.
+ *
+ * ⚠ 아직 수집되지 않은 지표를 **`—` 한 글자로 내지 않는다**(2026-08-22 점검).
+ *   그 대시는 "값이 0에 가깝다"로도, "화면이 고장났다"로도 읽혔다. 상세 카드는 이미
+ *   "아직 수집되지 않음"이라고 말하고 있었는데 목록만 말하지 않고 있었다
+ *   — CLAUDE.md §3의 "'값이 없음'과 '읽지 못함'이 같은 화면이 되지 않게"와 같은 규칙이다.
+ */
 export function IndicatorRow({ view }: { view: IndicatorView }) {
+  const collected = view.value !== undefined;
+  // 판정 지표는 배지가 이미 '○ 미수집'이라고 말한다 — 같은 말을 두 번 쓰지 않는다.
+  const hasPill = !!view.indicator.signal;
+
   return (
     <div className="flex items-center justify-between gap-3 py-1.5">
       <span className="min-w-0 truncate text-[12.5px] text-gray-400">{view.indicator.name}</span>
       <span className="flex shrink-0 items-center gap-2">
-        <span className="text-[13px] font-semibold tabular-nums text-white">{view.display}</span>
-        {view.indicator.signal && <SignalPill status={view.status} />}
+        {collected ? (
+          <span className="text-[13px] font-semibold tabular-nums text-white">{view.display}</span>
+        ) : hasPill ? null : (
+          <span className="text-[11.5px] text-gray-600">아직 수집 안 됨</span>
+        )}
+        {hasPill && <SignalPill status={view.status} />}
       </span>
     </div>
   );

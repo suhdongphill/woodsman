@@ -47,9 +47,25 @@ export type BubbleScore = {
   score?: number;
   band?: ScoreBand;
   coverage: { scored: number; total: number; pct: number };
+  /**
+   * 이 점수가 **언제 기준인가**.
+   * ⚠ 한 날짜로 뭉갤 수 없다 — 지표마다 기준일이 다르고, 분기 갱신(`/bubble-review`)이라
+   *   몇 달 묵은 판정이 섞여 있는 것이 정상이다. 그러니 화면은 **가장 오래된 것**까지 말해야
+   *   "이 숫자가 얼마나 묵었는지"를 읽는 사람이 스스로 판단할 수 있다.
+   */
+  asOf: ScoreAsOf;
   /** 우선 경보 3종이 모두 2점인가 */
   priorityFired: boolean;
   priorityText: string;
+};
+
+export type ScoreAsOf = {
+  /** 채점된 것 중 가장 오래된 기준일(YYYY-MM-DD) */
+  oldest?: string;
+  /** 가장 최근 기준일 */
+  newest?: string;
+  /** ⚠ 기준일 없이 채점된 건수 — 날짜 없는 판정이 섞여 있으면 범위가 실제보다 좁아 보인다 */
+  undated: number;
 };
 
 function round1(n: number): number {
@@ -104,9 +120,48 @@ export function scoreBubble(readings: Map<string, BubbleReading>): BubbleScore {
       total: totalCount,
       pct: totalCount ? Math.round((scoredCount / totalCount) * 100) : 0,
     },
+    asOf: asOfRange(layers),
     priorityFired,
     priorityText: PRIORITY_ALERT.text,
   };
+}
+
+/**
+ * 채점에 쓰인 기준일의 범위.
+ * ⚠ 카탈로그에 있는 지표만 센다 — 화면에 안 나오는 옛 판정이 기준일을 끌고 가면 안 된다.
+ */
+function asOfRange(layers: LayerScore[]): ScoreAsOf {
+  const dates: string[] = [];
+  let undated = 0;
+
+  for (const layer of layers) {
+    for (const r of layer.readings) {
+      if (!r) continue;
+      if (r.asOf) dates.push(r.asOf);
+      else undated += 1;
+    }
+  }
+
+  if (dates.length === 0) return { undated };
+  // YYYY-MM-DD는 사전순이 곧 시간순이다.
+  const sorted = [...dates].sort();
+  return { oldest: sorted[0], newest: sorted[sorted.length - 1], undated };
+}
+
+/**
+ * 게이지 아래에 낼 기준일 한 줄. 없으면 null(빈 칸을 지어내지 않는다).
+ *
+ * ⚠ 하루로 뭉치지 않는다. "2026-08-14 기준"이라고 적으면 다섯 달 묵은 판정까지
+ *   그날 잰 것처럼 읽힌다 — 그게 이 화면에서 가장 비싼 거짓말이다.
+ */
+export function asOfNotice(asOf: ScoreAsOf): string | null {
+  const tail = asOf.undated > 0 ? ` · ⚠ 기준일 없는 판정 ${asOf.undated}건` : "";
+
+  if (!asOf.oldest || !asOf.newest) {
+    return asOf.undated > 0 ? `채점에 기준일이 하나도 적혀 있지 않습니다(${asOf.undated}건).` : null;
+  }
+  if (asOf.oldest === asOf.newest) return `${asOf.newest} 기준${tail}`;
+  return `${asOf.newest} 기준 · 가장 오래된 판정은 ${asOf.oldest}${tail}`;
 }
 
 /** 커버리지가 낮으면 점수를 그대로 믿지 말라고 화면이 말해야 한다. */

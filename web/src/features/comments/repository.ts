@@ -166,3 +166,61 @@ export async function createComment(input: NewComment): Promise<void> {
     ],
   );
 }
+
+/* ─────────────── 속도 제한·중복 방지의 입력 ─────────────── */
+
+/**
+ * 판정에 쓸 **최근 댓글**을 최신순으로 읽는다. 판정 자체는 `lib/comment-throttle.ts`가 한다.
+ *
+ * ⚠ 로그인 사용자는 **본인 댓글 전체**를, 익명은 **그 글의 익명 댓글**을 센다.
+ *    익명을 IP로 가르면 정확해지지만 방문자 IP가 DB에 남는다. 그 값을 치르지 않기로 했다
+ *    (`lib/comment-throttle.ts` 머리말에 적어 뒀다).
+ */
+export async function loadRecentCommentsForThrottle(input: {
+  userId?: string;
+  postId: string;
+  since: string;
+  limit: number;
+}): Promise<{ body: string; createdAt: string }[]> {
+  const scope = input.userId
+    ? { where: `c.userId = ?`, params: [input.userId] }
+    : { where: `c.postId = ? AND c.userId IS NULL`, params: [input.postId] };
+
+  return queryAll<{ body: string; createdAt: string }>(
+    `SELECT body, createdAt FROM Comment c
+      WHERE ${scope.where} AND c.createdAt >= ?
+      ORDER BY c.createdAt DESC LIMIT ?`,
+    [...scope.params, input.since, input.limit],
+  );
+}
+
+/** 이 사람이 이 댓글을 이미 신고했나. */
+export async function hasReportedComment(commentId: string, userId: string): Promise<boolean> {
+  const row = await queryOne<{ one: number }>(
+    `SELECT 1 AS one FROM CommentReport WHERE commentId = ? AND userId = ?`,
+    [commentId, userId],
+  );
+  return row !== null;
+}
+
+/** 이 사람이 창 안에서 몇 건이나 신고했나. */
+export async function countRecentReports(userId: string, since: string): Promise<number> {
+  const row = await queryOne<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM CommentReport WHERE userId = ? AND createdAt >= ?`,
+    [userId, since],
+  );
+  return row?.n ?? 0;
+}
+
+/**
+ * 신고 한 건을 남긴다.
+ * ⚠ 기본키가 (댓글, 사용자)라 두 번째는 DB가 거절한다 — `DO NOTHING`으로 받아 넘긴다.
+ *    코드의 중복 검사가 경쟁 상태로 새어도 표는 한 사람당 한 줄을 지킨다.
+ */
+export async function insertCommentReport(commentId: string, userId: string): Promise<void> {
+  await execute(
+    `INSERT INTO CommentReport (commentId, userId, createdAt) VALUES (?, ?, ?)
+     ON CONFLICT(commentId, userId) DO NOTHING`,
+    [commentId, userId, new Date().toISOString()],
+  );
+}

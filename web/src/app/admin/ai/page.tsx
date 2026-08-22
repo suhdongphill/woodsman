@@ -81,7 +81,15 @@ export default async function AdminAiPage() {
               style={{ width: `${Math.min(100, globalPct)}%` }}
             />
           </div>
-          <p className="mt-1.5 text-[11px] text-gray-600">초과하면 모든 AI 호출이 차단됩니다.</p>
+          {/*
+            ⚠ 전에는 "초과하면 모든 AI 호출이 차단됩니다"라고 적혀 있었다. 두 가지가 틀렸다 —
+            (1) 그때는 이 상한을 **아무도 검사하지 않았고**, (2) 지금 검사하는 것도 유료만이다.
+            화면이 하지 않는 일을 한다고 적어 두면 그게 가장 위험한 거짓말이 된다.
+          */}
+          <p className="mt-1.5 text-[11px] text-gray-600">
+            초과하면 <strong className="text-gray-400">유료 제공자가 후보에서 빠집니다.</strong>{" "}
+            무료는 계속 돕니다.
+          </p>
         </Card>
 
         <Card>
@@ -107,7 +115,14 @@ export default async function AdminAiPage() {
 
       <Card className="mb-7">
         <CardTitle>작업별 라우팅</CardTitle>
-        <TaskRouting connectedEnv={connectedEnv} usage={usage} />
+        <TaskRouting
+          connectedEnv={connectedEnv}
+          usage={usage}
+          global={{
+            tokensUsedThisMonth: config.tokensUsedThisMonth,
+            globalMonthlyTokenCap: config.globalMonthlyTokenCap,
+          }}
+        />
       </Card>
 
       <div className="mb-7">

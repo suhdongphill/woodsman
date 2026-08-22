@@ -3,9 +3,11 @@
  *
  * ⚠ 색만으로 국면을 전하지 않는다. 구간 이름(확장·주의·경계·위험·붕괴 초기)을 글자로 쓰고,
  *    커버리지 문장을 항상 함께 낸다 — 점수 하나만 크게 띄우면 그 숫자가 사실처럼 굳는다.
+ * ⚠ **기준일도 함께 낸다**(2026-08-22). 채점은 분기에 한 번 손으로 갱신하는 것이라
+ *    몇 달 묵은 판정이 섞여 있는 게 정상인데, 날짜가 없으면 오늘 잰 숫자처럼 읽힌다.
  */
 import { cx } from "@/lib/format";
-import { coverageNotice } from "@/lib/bubble/score";
+import { asOfNotice, coverageNotice } from "@/lib/bubble/score";
 import type { BubbleScore } from "@/lib/bubble/score";
 
 const TONE: Record<string, string> = {
@@ -48,6 +50,10 @@ export function ScoreGauge({ score }: { score: BubbleScore }) {
       <p className="mt-3 text-[11.5px] leading-relaxed opacity-80">
         {coverageNotice(score.coverage)}
       </p>
+
+      {asOfNotice(score.asOf) && (
+        <p className="mt-1 text-[11.5px] leading-relaxed opacity-70">{asOfNotice(score.asOf)}</p>
+      )}
 
       {score.priorityFired && (
         <p className="mt-3 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-[12.5px] leading-relaxed text-red-200">

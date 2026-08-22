@@ -35,6 +35,7 @@ model User {
   accounts  Account[]
   sessions  Session[]
   comments  Comment[]
+  reports   CommentReport[]
   portfolio Portfolio?
 
   createdAt DateTime @default(now())
@@ -266,9 +267,31 @@ model Comment {
 
   createdAt DateTime @default(now())
 
+  reports CommentReport[]
+
   @@index([postId, status])
   @@index([status, reported])
   @@index([userId])
+  /// 같은 작성자의 최근 댓글을 읽어 속도·중복을 판정한다(`lib/comment-throttle.ts`).
+  @@index([userId, createdAt])
+}
+
+/// 누가 어떤 댓글을 신고했나.
+/// ⚠ `Comment.reported`는 "신고가 있었다"는 표시일 뿐 **누가 몇 번인지 세지 못했다.**
+///    그래서 같은 사람이 무한히, 그리고 로그인 없이도 신고할 수 있었다(2026-08-17 점검).
+/// ⚠ (댓글, 사용자)가 기본키다 — 두 번째 신고는 DB가 거절한다.
+model CommentReport {
+  commentId String
+  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([commentId, userId])
+  /// 한 사람이 창 안에서 몇 건이나 신고했는지 세는 데 쓴다.
+  @@index([userId, createdAt])
 }
 
 // ────────────── 사이트/댓글 전역 설정 ──────────────

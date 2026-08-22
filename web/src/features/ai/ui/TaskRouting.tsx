@@ -7,8 +7,13 @@
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { AlertIcon } from "@/components/icons";
-import type { ProviderUsage } from "@/lib/ai/routing";
-import { estimateCostUsd, routeCandidates, worstCaseWaitMs } from "@/lib/ai/routing";
+import type { GlobalUsage, ProviderUsage } from "@/lib/ai/routing";
+import {
+  estimateCostUsd,
+  isOverGlobalCap,
+  routeCandidates,
+  worstCaseWaitMs,
+} from "@/lib/ai/routing";
 import { PERSONAS, type AiTask } from "@/lib/ai/persona";
 
 /** 1회 호출의 대략적 규모 — 비용 감을 잡기 위한 것이지 정확한 청구액이 아니다. */
@@ -20,19 +25,34 @@ const REQUIRE_LABEL = { deep: "고급", balanced: "중급", cheap: "경량" } as
 export function TaskRouting({
   connectedEnv,
   usage,
+  global: globalUsage,
 }: {
   /** 키가 채워진 env 변수명만 (값 아님) */
   connectedEnv: string[];
   usage: ProviderUsage[];
+  /** 사이트 전체 사용량·상한. ⚠ 넘겨야 전역 상한이 이 미리보기에 반영된다. */
+  global?: GlobalUsage;
 }) {
   // routeCandidates는 env 객체의 '존재 여부'만 본다 — 여기서 값 대신 표식을 넣는다.
   const env = Object.fromEntries(connectedEnv.map((name) => [name, "set"]));
+  const paidClosed = isOverGlobalCap(globalUsage);
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
+      {paidClosed && (
+        <Card className="lg:col-span-2 border-red-900/60">
+          <p className="flex items-center gap-2 text-[12.5px] text-red-300">
+            <AlertIcon size={15} />
+            이번 달 전역 토큰 상한을 넘었습니다 — <strong>유료 제공자가 후보에서 빠져 있습니다.</strong>
+          </p>
+          <p className="mt-1.5 text-[11px] text-gray-500">
+            무료 제공자는 그대로 돕니다. 상한은 청구서를 막는 장치지 사이트를 멈추는 장치가 아닙니다.
+          </p>
+        </Card>
+      )}
       {(Object.keys(PERSONAS) as AiTask[]).map((task) => {
         const persona = PERSONAS[task];
-        const candidates = routeCandidates({ task, env, usage });
+        const candidates = routeCandidates({ task, env, usage, global: globalUsage });
         const primary = candidates[0];
         const cost = primary ? estimateCostUsd(primary.model, SAMPLE_IN, SAMPLE_OUT) : null;
 

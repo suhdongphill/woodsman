@@ -115,16 +115,35 @@ export function CommentSection({
                       {c.authorName ?? "익명"}
                     </span>
                     <span className="text-[11px] text-gray-600">{formatDateTime(c.createdAt)}</span>
-                    <form action={reportCommentAction} className="ml-auto">
-                      <input type="hidden" name="id" value={c.id} />
-                      <button
-                        type="submit"
-                        disabled={c.reported}
-                        className="text-[11px] text-gray-600 transition-colors hover:text-red-400 disabled:cursor-default disabled:text-gray-700 disabled:hover:text-gray-700"
-                      >
-                        {c.reported ? "신고됨" : "신고"}
-                      </button>
-                    </form>
+                    {/*
+                      ⚠ 신고는 **로그인한 사람만** 누른다(2026-08-22). 전에는 누구나 눌렀고,
+                      댓글 id가 화면 HTML에 그대로 있어 모든 댓글을 '신고됨'으로 만드는 데
+                      비용이 0이었다. 여기서 감추는 것은 안내일 뿐이고, 실제 거절은
+                      `reportCommentAction`이 서버에서 다시 한다.
+                    */}
+                    <div className="ml-auto">
+                      {c.reported ? (
+                        <span className="text-[11px] text-gray-700">신고됨</span>
+                      ) : isLoggedIn ? (
+                        <form action={reportCommentAction}>
+                          <input type="hidden" name="id" value={c.id} />
+                          <button
+                            type="submit"
+                            className="text-[11px] text-gray-600 transition-colors hover:text-red-400"
+                          >
+                            신고
+                          </button>
+                        </form>
+                      ) : showAuthLinks ? (
+                        <Link
+                          href="/login"
+                          title="신고는 로그인 후 가능합니다"
+                          className="text-[11px] text-gray-600 transition-colors hover:text-red-400"
+                        >
+                          신고
+                        </Link>
+                      ) : null}
+                    </div>
                   </div>
                   <p className="mt-2.5 text-[13.5px] leading-relaxed text-gray-300">{c.body}</p>
                 </li>

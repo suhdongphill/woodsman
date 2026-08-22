@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ALL_BUBBLE_INDICATORS, BUBBLE_LAYERS, BUBBLE_TRIGGERS, SCORE_BANDS } from "./catalog";
-import { bandFor, coverageNotice, scoreBubble, scoreByScale } from "./score";
+import { asOfNotice, bandFor, coverageNotice, scoreBubble, scoreByScale } from "./score";
 import type { BubbleReading } from "./types";
 
 function readings(entries: [string, 0 | 1 | 2][]): Map<string, BubbleReading> {
@@ -133,5 +133,54 @@ describe("총점", () => {
   it("커버리지가 낮으면 화면이 그렇게 말한다", () => {
     expect(coverageNotice({ scored: 5, total: 28, pct: 18 })).toMatch(/치우칠 수 있습니다/);
     expect(coverageNotice({ scored: 28, total: 28, pct: 100 })).toMatch(/결측은 분모에서 빼고/);
+  });
+});
+
+
+describe("채점 기준일", () => {
+  const dated = (entries: [string, 0 | 1 | 2, string | undefined][]): Map<string, BubbleReading> =>
+    new Map(
+      entries.map(([indicatorKey, points, asOf]) => [
+        indicatorKey,
+        { indicatorKey, points, asOf },
+      ]),
+    );
+
+  it("가장 오래된 것과 가장 최근을 함께 낸다", () => {
+    const score = scoreBubble(
+      dated([
+        ["capex_yoy", 2, "2026-03-31"],
+        ["roi_gap", 1, "2026-08-14"],
+        ["retail_froth", 0, "2026-06-30"],
+      ]),
+    );
+    expect(score.asOf).toMatchObject({ oldest: "2026-03-31", newest: "2026-08-14", undated: 0 });
+  });
+
+  it("⚠ 하루로 뭉치지 않는다 — 다섯 달 묵은 판정이 오늘 잰 것처럼 읽히면 안 된다", () => {
+    const notice = asOfNotice({ oldest: "2026-03-31", newest: "2026-08-14", undated: 0 });
+    expect(notice).toContain("2026-08-14");
+    expect(notice).toContain("2026-03-31");
+  });
+
+  it("모두 같은 날이면 한 번만 적는다", () => {
+    expect(asOfNotice({ oldest: "2026-08-14", newest: "2026-08-14", undated: 0 })).toBe(
+      "2026-08-14 기준",
+    );
+  });
+
+  it("기준일 없는 판정은 건수로 밝힌다 — 범위가 실제보다 좁아 보이면 안 된다", () => {
+    const score = scoreBubble(
+      dated([
+        ["capex_yoy", 2, "2026-08-14"],
+        ["roi_gap", 1, undefined],
+      ]),
+    );
+    expect(score.asOf.undated).toBe(1);
+    expect(asOfNotice(score.asOf)).toContain("1건");
+  });
+
+  it("채점이 하나도 없으면 아무 말도 지어내지 않는다", () => {
+    expect(asOfNotice(scoreBubble(new Map()).asOf)).toBeNull();
   });
 });

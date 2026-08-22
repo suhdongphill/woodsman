@@ -13,6 +13,12 @@
  * 3. 무료 → 유료 순. 같은 등급이면 카탈로그 순서
  * 4. ⚠ 유료 제공자는 **월 토큰 상한을 넘으면 후보에서 빠진다.** 상한이 없으면
  *    실수 한 번이 그대로 청구서가 된다.
+ * 5. ⚠ **사이트 전체 월 상한(`AiConfig.globalMonthlyTokenCap`)을 넘으면 유료가 전부 빠진다.**
+ *    제공자별 상한만으로는 막히지 않는다 — 제공자가 다섯이면 청구서도 다섯 배가 된다.
+ *
+ * ## ⚠ 전역 상한을 넘어도 무료는 남긴다
+ * 이 상한은 **청구서를 막는 장치**지 사이트를 멈추는 장치가 아니다. 무료 제공자까지
+ * 끊으면 돈이 안 드는데도 기능이 죽는다. 넘긴 순간부터 "무료로만 돈다"가 정확한 상태다.
  */
 import { AI_PROVIDERS, type ModelSpec, type Provider } from "./catalog";
 import { PERSONAS, type AiTask } from "./persona";
@@ -45,12 +51,24 @@ export type ProviderUsage = {
   monthlyTokenCap: number | null;
 };
 
+/** 사이트 전체 사용량 — DB(AiConfig)에서 온다. */
+export type GlobalUsage = {
+  tokensUsedThisMonth: number;
+  globalMonthlyTokenCap: number;
+};
+
 export type RoutingInput = {
   task: AiTask;
   /** 키 보유 여부 판정에 쓸 환경 (값은 읽지 않고 존재만 본다) */
   env?: EnvSource;
   /** DB의 제공자 상태. 없으면 전부 활성·사용량 0으로 본다. */
   usage?: ProviderUsage[];
+  /**
+   * 사이트 전체 사용량·상한.
+   * ⚠ 넘기지 않으면 **전역 상한을 검사하지 않는다.** 실제로 모델을 부르는 자리에서는
+   *   반드시 넘긴다 — 안 넘기면 §6의 "유료에는 반드시 상한"이 다시 빈다.
+   */
+  global?: GlobalUsage;
 };
 
 function hasKey(env: EnvSource, name: string): boolean {
@@ -65,6 +83,20 @@ export function isOverCap(u: ProviderUsage | undefined): boolean {
 }
 
 /**
+ * 사이트 전체 월 상한을 넘었는가.
+ *
+ * ⚠ 값이 이상하면(숫자가 아니거나 음수) **넘은 것으로 본다.** 상한을 읽지 못한 것과
+ *   "상한이 없다"를 같게 다루면, 설정을 한 번 잘못 읽은 날 청구서가 열린다.
+ *   여기서 안전한 쪽은 **유료를 끄는 쪽**이다(무료는 그대로 돈다).
+ */
+export function isOverGlobalCap(g: GlobalUsage | undefined): boolean {
+  if (!g) return false;
+  if (!Number.isFinite(g.globalMonthlyTokenCap) || g.globalMonthlyTokenCap < 0) return true;
+  const used = Number.isFinite(g.tokensUsedThisMonth) ? g.tokensUsedThisMonth : 0;
+  return used >= g.globalMonthlyTokenCap;
+}
+
+/**
  * 이 작업을 처리할 수 있는 후보를 **시도 순서대로** 돌려준다.
  * 비어 있으면 "지금 이 작업을 돌릴 수 있는 제공자가 없다"는 뜻이다.
  */
@@ -72,14 +104,18 @@ export function routeCandidates({
   task,
   env = process.env,
   usage = [],
+  global: globalUsage,
 }: RoutingInput): RouteCandidate[] {
   const required = TIER_RANK[PERSONAS[task].requires];
   const usageById = new Map(usage.map((u) => [u.providerId, u]));
+  const paidClosed = isOverGlobalCap(globalUsage);
 
   const candidates: RouteCandidate[] = [];
 
   for (const provider of AI_PROVIDERS) {
     if (!hasKey(env, provider.apiKeyEnv)) continue;
+    // ⚠ 전역 상한을 넘으면 유료는 통째로 빠진다. 무료는 남는다(위 머리말 참고).
+    if (paidClosed && !provider.free) continue;
 
     const u = usageById.get(provider.id);
     if (u && !u.enabled) continue;
@@ -143,10 +179,14 @@ export function estimateCostUsd(
 }
 
 /** 관리자 화면용 요약 — 작업마다 지금 어디로 가는지 */
-export function routingSummary(env: EnvSource = process.env, usage: ProviderUsage[] = []) {
+export function routingSummary(
+  env: EnvSource = process.env,
+  usage: ProviderUsage[] = [],
+  global?: GlobalUsage,
+) {
   return (Object.keys(PERSONAS) as AiTask[]).map((task) => ({
     task,
     persona: PERSONAS[task],
-    candidates: routeCandidates({ task, env, usage }),
+    candidates: routeCandidates({ task, env, usage, global }),
   }));
 }

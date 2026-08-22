@@ -13,6 +13,7 @@ import { PERSONAS, WOODSMAN_DOCTRINE, buildSystemPrompt, listPersonas } from "./
 import {
   estimateCostUsd,
   isOverCap,
+  isOverGlobalCap,
   primaryRoute,
   routeCandidates,
   worstCaseWaitMs,
@@ -169,6 +170,43 @@ describe("라우팅", () => {
     expect(
       isOverCap({ providerId: "groq", enabled: true, tokensUsedThisMonth: 9e9, monthlyTokenCap: null }),
     ).toBe(false);
+  });
+});
+
+describe("전역 월 상한 (CLAUDE.md §6)", () => {
+  const overCap = { tokensUsedThisMonth: 1_000_000, globalMonthlyTokenCap: 1_000_000 };
+
+  it("⚠ 넘기면 유료 제공자가 전부 빠진다 — 제공자별 상한만으로는 청구서가 배수로 는다", () => {
+    const candidates = routeCandidates({ task: "chart-read", env: KEYS, global: overCap });
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(candidates.every((c) => c.free)).toBe(true);
+  });
+
+  it("⚠ 넘겨도 무료는 남는다 — 상한은 청구서를 막는 장치지 사이트를 멈추는 장치가 아니다", () => {
+    expect(isOverGlobalCap(overCap)).toBe(true);
+    expect(routeCandidates({ task: "chart-read", env: KEYS, global: overCap }).length).toBeGreaterThan(0);
+  });
+
+  it("유료만 할 수 있는 작업은 상한을 넘기면 후보가 없어진다", () => {
+    // company-analysis는 deep 급이라 무료(groq)로 내려갈 수 없다.
+    expect(routeCandidates({ task: "company-analysis", env: KEYS, global: overCap })).toEqual([]);
+  });
+
+  it("여유가 있으면 아무것도 바꾸지 않는다", () => {
+    const room = { tokensUsedThisMonth: 10, globalMonthlyTokenCap: 1_000_000 };
+    expect(isOverGlobalCap(room)).toBe(false);
+    expect(routeCandidates({ task: "company-analysis", env: KEYS, global: room })).toEqual(
+      routeCandidates({ task: "company-analysis", env: KEYS }),
+    );
+  });
+
+  it("⚠ 상한을 읽지 못했으면 '상한 없음'이 아니라 '넘은 것'으로 본다", () => {
+    expect(isOverGlobalCap({ tokensUsedThisMonth: 0, globalMonthlyTokenCap: NaN })).toBe(true);
+    expect(isOverGlobalCap({ tokensUsedThisMonth: 0, globalMonthlyTokenCap: -1 })).toBe(true);
+  });
+
+  it("아예 넘기지 않으면 검사하지 않는다 — 화면 미리보기의 기존 동작", () => {
+    expect(isOverGlobalCap(undefined)).toBe(false);
   });
 });
 
