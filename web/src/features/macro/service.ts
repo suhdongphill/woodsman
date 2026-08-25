@@ -7,11 +7,14 @@
  */
 import {
   MACRO_INDICATORS,
+  findIndicator,
   headlineIndicators,
   indicatorsByGroup,
   recessionSignalIndicators,
+  withDerivedComponents,
   type MacroIndicator,
 } from "@/lib/macro/catalog";
+import { composeDerived, derivedMeta } from "@/lib/macro/derived";
 import { MACRO_GROUPS, orderedMacroGroups, type MacroGroup, type MacroGroupKey } from "@/lib/macro/groups";
 import {
   applyTransform,
@@ -52,6 +55,38 @@ export type IndicatorView = {
    */
   freshness: MacroFreshness;
 };
+
+/**
+ * 이 지표에 넣을 원값과 메타를 고른다.
+ *
+ * 보통은 저장된 계열을 그대로 쓴다. **파생 계열은 DB에 자기 행이 없어** 성분에서 만든다
+ * (`lib/macro/derived.ts`).
+ *
+ * ⚠ 성분은 **각자의 변환을 먼저 거친 뒤** 합성한다. 유동성 묶음은 FRED가 계열마다
+ *   백만·십억을 섞어 주기 때문에, 원값끼리 빼면 1000배가 조용히 어긋난다.
+ * ⚠ 합성 결과는 이미 표시 단위라서, 파생 지표의 `transform`은 `level`이어야 한다
+ *   (`validateSectors()`가 강제한다). 안 그러면 변환이 두 번 걸린다.
+ */
+function sourceFor(
+  indicator: MacroIndicator,
+  raw: Map<string, SeriesPoint[]>,
+  meta: Map<string, SeriesMeta>,
+): { points: SeriesPoint[] | undefined; meta: SeriesMeta | undefined } {
+  const spec = indicator.derived;
+  if (!spec) return { points: raw.get(indicator.key), meta: meta.get(indicator.key) };
+
+  const parts = spec.from.map((key) => {
+    const part = findIndicator(key);
+    return part ? applyTransform(raw.get(key) ?? [], part.transform) : [];
+  });
+
+  const composed = derivedMeta(spec.from.map((key) => meta.get(key)));
+  return {
+    points: composeDerived(spec, parts),
+    // ⚠ 성분 하나라도 기준일이 없으면 파생도 기준일이 없다 — "언제 값인지 모르는 선"을 만들지 않는다.
+    meta: composed.asOf ? { asOf: composed.asOf, fetchedAt: composed.fetchedAt } : undefined,
+  };
+}
 
 function buildView(
   indicator: MacroIndicator,
@@ -139,10 +174,8 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
 
   const views = new Map<string, IndicatorView>();
   for (const indicator of MACRO_INDICATORS) {
-    views.set(
-      indicator.key,
-      buildView(indicator, recent.get(indicator.key), meta.get(indicator.key), now),
-    );
+    const src = sourceFor(indicator, recent, meta);
+    views.set(indicator.key, buildView(indicator, src.points, src.meta, now));
   }
 
   const signals = recessionSignalIndicators().map((i) => views.get(i.key)!);
@@ -202,11 +235,15 @@ export async function loadMacroGroup(key: MacroGroupKey): Promise<MacroGroupDeta
 
   const indicators = indicatorsByGroup(key);
   const [series, meta] = await Promise.all([
-    loadSeriesMany(indicators.map((i) => i.key)),
+    // ⚠ 파생의 성분까지 읽는다. 성분이 다른 묶음에 있으면 안 읽고 빈 선을 그리게 된다.
+    loadSeriesMany(withDerivedComponents(indicators.map((i) => i.key))),
     loadSeriesMeta(),
   ]);
   const now = new Date();
-  const items = indicators.map((i) => buildView(i, series.get(i.key), meta.get(i.key), now));
+  const items = indicators.map((i) => {
+    const src = sourceFor(i, series, meta);
+    return buildView(i, src.points, src.meta, now);
+  });
 
   const dates = items.map((v) => v.asOf).filter((d): d is string => !!d);
 
@@ -224,7 +261,10 @@ export async function loadMacroGroup(key: MacroGroupKey): Promise<MacroGroupDeta
 export async function loadMacroStatus(): Promise<IndicatorView[]> {
   const [recent, meta] = await Promise.all([loadRecentPoints(), loadSeriesMeta()]);
   const now = new Date();
-  return MACRO_INDICATORS.map((i) => buildView(i, recent.get(i.key), meta.get(i.key), now));
+  return MACRO_INDICATORS.map((i) => {
+    const src = sourceFor(i, recent, meta);
+    return buildView(i, src.points, src.meta, now);
+  });
 }
 
 /**
@@ -263,11 +303,14 @@ export async function loadMacroOverlay(input: {
     .filter((i): i is MacroIndicator => !!i);
 
   const [series, meta] = await Promise.all([
-    loadSeriesMany(indicators.map((i) => i.key)),
+    loadSeriesMany(withDerivedComponents(indicators.map((i) => i.key))),
     loadSeriesMeta(),
   ]);
   const now = new Date();
-  const views = indicators.map((i) => buildView(i, series.get(i.key), meta.get(i.key), now));
+  const views = indicators.map((i) => {
+    const src = sourceFor(i, series, meta);
+    return buildView(i, src.points, src.meta, now);
+  });
 
   const result = buildOverlay({
     series: views.map((v) => ({

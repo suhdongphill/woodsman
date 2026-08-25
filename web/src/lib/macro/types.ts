@@ -8,6 +8,7 @@
 
 import type { MacroIndicatorType, MacroLayer } from "./layers";
 import type { ReleaseFreq } from "./freshness";
+import type { MacroDerived } from "./derived";
 
 export type MacroGroupKey =
   | "rates"
@@ -33,11 +34,17 @@ export type MacroGroup = {
   order: number;
 };
 
-/** FRED·Yahoo는 서버가 직접 가져온다. MANUAL은 공식 API가 없어 관리자가 손으로 넣는다. */
-export type MacroSource = "FRED" | "YAHOO" | "MANUAL";
+/**
+ * FRED·Yahoo는 서버가 직접 가져온다. MANUAL은 공식 API가 없어 관리자가 손으로 넣는다.
+ * DERIVED는 **받아 오지 않는다** — 다른 지표를 합성해 읽을 때 만든다(`lib/macro/derived.ts`).
+ * ⚠ 파생을 자동 수집 목록에 넣으면 수집기가 있지도 않은 시리즈를 부르러 간다.
+ *   `autoIndicators()`가 빼는 이유다.
+ */
+export type MacroSource = "FRED" | "YAHOO" | "MANUAL" | "DERIVED";
 
 export type { MacroLayer, MacroIndicatorType } from "./layers";
 export type { ReleaseFreq } from "./freshness";
+export type { MacroDerived } from "./derived";
 
 /**
  * 원본 시계열을 화면 값으로 바꾸는 방법.
@@ -70,8 +77,14 @@ export type MacroIndicator = {
   name: string;
   group: MacroGroupKey;
   source: MacroSource;
-  /** FRED 시리즈 ID 또는 Yahoo 심볼. MANUAL이면 없다. */
+  /** FRED 시리즈 ID 또는 Yahoo 심볼. MANUAL·DERIVED면 없다. */
   sourceId?: string;
+  /**
+   * 파생 계열의 합성 규칙. `source: "DERIVED"`면 필수다.
+   * ⚠ 성분은 **각자의 `transform`을 거친 표시 단위**로 합성된다(`derived.ts` 머리말).
+   *   여기에 단위 환산을 또 적지 않는다 — 같은 판단이 두 곳에 생기면 1000배가 어긋난다.
+   */
+  derived?: MacroDerived;
   transform: MacroTransform;
   /**
    * 인과 레이어 L0~L6 — **메커니즘상의 위치**다(`lib/macro/layers.ts`).

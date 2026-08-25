@@ -11,6 +11,7 @@
  * DB에는 **시계열(MacroPoint)과 수집 이력만** 쌓는다.
  */
 export type {
+  MacroDerived,
   MacroGroup,
   MacroGroupKey,
   MacroIndicator,
@@ -25,10 +26,12 @@ export {
   MACRO_SECTORS,
   RECESSION_SIGNAL_KEYS,
   autoIndicators,
+  derivedIndicators,
   findIndicator,
   headlineIndicators,
   indicatorsByGroup,
   manualIndicators,
   recessionSignalIndicators,
   validateSectors,
+  withDerivedComponents,
 } from "./registry";

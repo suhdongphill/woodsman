@@ -105,7 +105,9 @@ export default async function AdminMacroPage() {
         <p className="mt-4 text-[11px] leading-relaxed text-gray-600">
           FRED(미국 연준 통계)와 Yahoo Finance는 API 키가 필요 없어 시크릿 없이 동작합니다.
           처음 받을 때는 1990년부터, 이후에는 최근 500일 구간만 받아 갱신합니다(발표 기관이
-          과거 값을 수정하기 때문에 최근 구간을 통째로 다시 받습니다).
+          과거 값을 수정하기 때문에 최근 구간을 통째로 다시 받습니다). 아래 목록의
+          <strong className="text-gray-400"> 파생</strong> 표시가 붙은 지표는 받아 오지 않고
+          성분 지표에서 계산합니다 — 성분이 채워지면 같이 채워집니다.
         </p>
       </Card>
 
@@ -144,6 +146,13 @@ export default async function AdminMacroPage() {
                   <Td className="text-muted">
                     {s.indicator.source === "MANUAL" ? (
                       <Badge tone="info">수동</Badge>
+                    ) : s.indicator.derived ? (
+                      /* ⚠ 파생은 받아 오는 시리즈가 없다. 성분을 적어 두지 않으면
+                         "가져오기를 눌렀는데 이건 왜 안 채워지나"로 읽힌다. */
+                      <span className="text-[11px] text-gray-500">
+                        <Badge tone="neutral">파생</Badge>{" "}
+                        <span className="font-mono">{s.indicator.derived.from.join(" − ")}</span>
+                      </span>
                     ) : (
                       <span className="font-mono text-[11px] text-gray-500">
                         {s.indicator.sourceId}
@@ -162,7 +171,10 @@ export default async function AdminMacroPage() {
                     )}
                   </Td>
                   <Td className="text-right tabular-nums text-gray-500">
-                    {(counts.get(s.indicator.key) ?? 0).toLocaleString("ko-KR")}
+                    {/* 파생은 저장하지 않고 읽을 때 만든다 — 0으로 적으면 수집 실패로 보인다. */}
+                    {s.indicator.derived
+                      ? "—"
+                      : (counts.get(s.indicator.key) ?? 0).toLocaleString("ko-KR")}
                   </Td>
                   <Td className="text-center">
                     {s.indicator.signal ? <SignalPill status={s.status} /> : <span className="text-[11px] text-gray-600">—</span>}

@@ -76,11 +76,36 @@ export function validateSectors(sectors: MacroSector[] = MACRO_SECTORS): string[
       if (i.group !== s.group.key) {
         problems.push(`${i.key}: 섹터 파일(${s.group.key})과 group(${i.group})이 다르다`);
       }
-      if (i.source !== "MANUAL" && !i.sourceId) {
+      if (i.source !== "MANUAL" && i.source !== "DERIVED" && !i.sourceId) {
         problems.push(`${i.key}: 자동 수집인데 소스 ID가 없다`);
       }
       if (i.source === "MANUAL" && i.sourceId) {
         problems.push(`${i.key}: 수동 지표에 소스 ID가 있다`);
+      }
+
+      /**
+       * ⚠ 파생 계열의 게이트. 파생은 성분이 조용히 빠져도 **선이 그려진다** —
+       *   정의가 깨진 채로 반쯤 동작하는 것을 가장 하기 쉬운 종류라 여기서 막는다.
+       */
+      if (i.source === "DERIVED") {
+        if (i.sourceId) problems.push(`${i.key}: 파생 지표에 소스 ID가 있다`);
+        if (!i.derived) problems.push(`${i.key}: 파생인데 합성 규칙(derived)이 없다`);
+        // 성분이 하나면 파생이 아니라 별칭이다. 이름만 다른 같은 계열을 만들지 않는다.
+        if (i.derived && i.derived.from.length < 2) {
+          problems.push(`${i.key}: 파생인데 성분이 ${i.derived.from.length}개다`);
+        }
+        if (i.derived && i.derived.carryDays <= 0) {
+          problems.push(`${i.key}: 파생의 carryDays가 없다 — 낡은 성분이 무한히 따라온다`);
+        }
+        /**
+         * ⚠ 성분은 **자기 변환을 이미 거친 값**으로 합성된다(`derived.ts` 머리말).
+         *   파생 자체에 또 변환을 걸면 두 번 적용된다 — 볼트 사양서가 경고한 이중 적용이다.
+         */
+        if (i.transform !== "level") {
+          problems.push(`${i.key}: 파생은 transform이 level이어야 한다(변환 이중 적용)`);
+        }
+      } else if (i.derived) {
+        problems.push(`${i.key}: 파생이 아닌데 합성 규칙(derived)이 있다`);
       }
       if (!/^https:\/\//.test(i.url)) problems.push(`${i.key}: 출처 링크가 없다`);
       if (!i.what || !i.why || !i.read) problems.push(`${i.key}: 초보자 설명(3줄)이 비었다`);
@@ -105,6 +130,28 @@ export function validateSectors(sectors: MacroSector[] = MACRO_SECTORS): string[
       }
     }
   }
+
+  /**
+   * 성분이 실제로 있는가. ⚠ 없는 키를 성분으로 적으면 파생은 **조용히 빈 선**이 된다
+   * (`composeDerived`가 빈 배열을 낸다). 빈 화면은 고장과 구분되지 않으므로 여기서 잡는다.
+   */
+  const all = sectors.flatMap((s) => s.indicators);
+  const byKey = new Map(all.map((i) => [i.key, i]));
+  for (const i of all) {
+    if (!i.derived) continue;
+    for (const from of i.derived.from) {
+      const part = byKey.get(from);
+      if (!part) {
+        problems.push(`${i.key}: 성분 ${from}이(가) 없다`);
+        continue;
+      }
+      // 파생의 파생은 허용하지 않는다 — 신선도가 어디서 오는지 따라가기 어려워진다.
+      if (part.source === "DERIVED") {
+        problems.push(`${i.key}: 성분 ${from}도 파생이다 — 파생의 파생은 만들지 않는다`);
+      }
+    }
+  }
+
   return problems;
 }
 
@@ -140,9 +187,34 @@ export function headlineIndicators(): MacroIndicator[] {
   return MACRO_INDICATORS.filter((i) => i.headline);
 }
 
-/** 서버가 직접 가져올 수 있는 지표(FRED·Yahoo). MANUAL은 제외. */
+/**
+ * 서버가 직접 가져올 수 있는 지표(FRED·Yahoo). MANUAL·DERIVED는 제외.
+ * ⚠ 파생을 빼는 이유: 받아 올 시리즈가 애초에 없다. 넣으면 수집기가 매번 실패를 기록한다.
+ */
 export function autoIndicators(): MacroIndicator[] {
-  return MACRO_INDICATORS.filter((i) => i.source !== "MANUAL");
+  return MACRO_INDICATORS.filter((i) => i.source !== "MANUAL" && i.source !== "DERIVED");
+}
+
+/** 다른 지표를 합성해 만드는 지표. 값이 DB에 없고 읽을 때 계산된다. */
+export function derivedIndicators(): MacroIndicator[] {
+  return MACRO_INDICATORS.filter((i) => i.source === "DERIVED");
+}
+
+/**
+ * 주어진 키 목록에 **파생의 성분 키를 더한다.**
+ *
+ * ⚠ 파생은 DB에 자기 행이 없다. 성분을 같이 읽지 않으면 화면이 조용히 빈 선을 그린다.
+ *   시계열을 골라 읽는 곳(그룹 상세·겹쳐 보기)은 반드시 이걸 통과시킬 것.
+ */
+export function withDerivedComponents(keys: string[]): string[] {
+  const out = [...keys];
+  for (const key of keys) {
+    const indicator = findIndicator(key);
+    for (const from of indicator?.derived?.from ?? []) {
+      if (!out.includes(from)) out.push(from);
+    }
+  }
+  return out;
 }
 
 /** 손으로 넣어야 하는 지표. 관리자 화면이 이 목록으로 입력 폼을 만든다. */
