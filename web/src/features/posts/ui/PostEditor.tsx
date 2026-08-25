@@ -232,6 +232,14 @@ export function PostEditor({ post }: { post?: Post }) {
             placeholder="https://suhdp.tistory.com/…"
             className={field}
           />
+          {/*
+            ⚠ 이 칸이 무엇을 하는지 적는다. 전에는 「직접 작성」일 때 저장은 되고 아무 데도
+               쓰이지 않아, 넣어 둔 링크가 조용히 무시됐다(2026-08-25).
+          */}
+          <span className="mt-1 block text-[11px] leading-relaxed text-gray-600">
+            넣어 두면 글 끝의 블로그 버튼이 <strong className="text-gray-500">대표 글이 아니라 이 주소</strong>로
+            갑니다. 「직접 작성」에도 쓸 수 있습니다.
+          </span>
         </label>
         <label>
           <span className={label}>연결 종목</span>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { outboundPostHref } from "@/lib/outbound";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge, PostTypeBadge } from "@/components/ui/Badge";
@@ -81,9 +82,15 @@ export default async function BoardDetailPage({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: post.bodyHtml ?? "" }}
         />
 
-        {post.source === "TISTORY" && post.externalUrl && (
+        {/*
+          ⚠ `source`를 묻지 않는다. 원문 링크가 있으면 그게 곧 "이어지는 글이 있다"는 뜻이다
+             — 「직접 작성」 글에 넣은 링크가 조용히 사라지던 자리다(2026-08-25).
+          ⚠ 주소를 직접 걸지 않고 `/go/post-<slug>`로 경유한다. 직접 걸면 나가는 클릭이
+             안 세지고, 이 사이트의 1순위 지표가 비게 된다.
+        */}
+        {post.externalUrl && (
           <a
-            href={post.externalUrl}
+            href={outboundPostHref(post.slug)}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-6 inline-flex items-center gap-1.5 text-xs text-gold-400 hover:text-gold-500"

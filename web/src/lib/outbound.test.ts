@@ -13,8 +13,7 @@ import {
   outboundHref,
   outboundPostHref,
   outboundStockHref,
-  resolveOutbound,
-} from "./outbound";
+  resolveOutbound, blogLinkForPost } from "./outbound";
 
 describe("오픈 리다이렉트 방지", () => {
   it("등록되지 않은 대상은 전부 거부한다", () => {
@@ -130,5 +129,51 @@ describe("종목 보고서 경유 — stock-<ticker>", () => {
 
   it("경유 링크 모양", () => {
     expect(outboundStockHref("005930")).toBe("/go/stock-005930");
+  });
+});
+
+describe("blogLinkForPost — 글 끝의 블로그 링크를 어디로 보낼 것인가", () => {
+  /**
+   * ⚠ 2026-08-25 사고 재현. 「직접 작성」 인사이트에 티스토리 원문 링크를 넣었는데
+   *   화면이 그 값을 무시하고 대표 글로 보냈다. 입력란이 하는 일이 없는 상태였다.
+   */
+  it("⚠ 직접 작성 글이라도 원문 링크가 있으면 **그 글로** 간다", () => {
+    const link = blogLinkForPost({
+      slug: "rate-cut-2026",
+      source: "SELF",
+      externalUrl: "https://suhdp.tistory.com/12",
+    });
+    expect(link.kind).toBe("post");
+    expect(link.kind === "post" && link.href).toBe("/go/post-rate-cut-2026");
+  });
+
+  it("원문 링크가 없으면 블로그 대표 글로 간다", () => {
+    const link = blogLinkForPost({ slug: "rate-cut-2026", source: "SELF" });
+    expect(link.kind).toBe("default");
+    expect(link.kind === "default" && link.href).toBe("/go/tistory");
+  });
+
+  it("티스토리에서 가져온 글은 본문 위 원문 카드가 이미 링크를 줬으므로 붙이지 않는다", () => {
+    expect(
+      blogLinkForPost({
+        slug: "x",
+        source: "TISTORY",
+        externalUrl: "https://suhdp.tistory.com/3",
+      }).kind,
+    ).toBe("none");
+  });
+
+  it("⚠ 티스토리 글인데 링크가 비었으면 대표 글로 보낸다 — 나가는 길을 없애지 않는다", () => {
+    expect(blogLinkForPost({ slug: "x", source: "TISTORY" }).kind).toBe("default");
+  });
+
+  it("⚠ 어느 경우든 주소를 직접 내주지 않는다 — 경유해야 클릭이 세진다", () => {
+    for (const post of [
+      { slug: "a", source: "SELF", externalUrl: "https://suhdp.tistory.com/1" },
+      { slug: "b", source: "SELF" },
+    ]) {
+      const link = blogLinkForPost(post);
+      expect(link.kind === "none" || link.href.startsWith("/go/")).toBe(true);
+    }
   });
 });

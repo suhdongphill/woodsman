@@ -13,8 +13,13 @@ import { outboundHref } from "@/lib/outbound";
  * 거기 무슨 글이 있는지 알 수 없으니 누를 이유가 없다.
  * 그래서 글의 **제목과 요약**을 보여주고, 카드 전체를 누르면 그 글로 간다.
  *
- * 링크는 `/go/tistory`를 경유해 클릭 수를 센다(`src/lib/outbound.ts`).
+ * 링크는 `/go/…`를 경유해 클릭 수를 센다(`src/lib/outbound.ts`).
  * 성과 판단 기준이 "몇 명이 넘어갔나"라서 그 숫자가 없으면 개선이 감이 된다.
+ *
+ * ## ⚠ 목적지를 받는다 — 기본값은 대표 글이다
+ * 2026-08-25까지 이 컴포넌트는 목적지를 **대표 글로 고정**하고 있었다. 그래서 글마다
+ * 원문 링크를 넣어 두어도 하단 CTA는 전부 같은 곳으로 갔다. 어디로 보낼지는 부르는
+ * 화면이 정해야 한다(`blogLinkForPost`). 여기서 고정하면 그 판단을 감출 수 있다.
  */
 
 type Variant =
@@ -31,6 +36,11 @@ export function TistoryCta({
   postTitle,
   /** 블로그 글 요약 */
   postExcerpt,
+  /**
+   * 나갈 곳. ⚠ **경유 경로여야 한다**(`/go/…`) — 주소를 직접 박으면 클릭이 안 세진다.
+   * 안 주면 블로그 대표 글로 간다.
+   */
+  href,
   className,
 }: {
   variant?: Variant;
@@ -38,14 +48,15 @@ export function TistoryCta({
   description?: string;
   postTitle?: string;
   postExcerpt?: string;
+  href?: string;
   className?: string;
 }) {
-  const href = outboundHref("tistory");
+  const to = href ?? outboundHref("tistory");
 
   if (variant === "compact") {
     return (
       <a
-        href={href}
+        href={to}
         target="_blank"
         rel="noopener"
         className={`group flex items-center justify-between gap-4 rounded-2xl border border-gold-600/30 bg-gradient-to-r from-gold-500/10 to-transparent p-5 transition-colors hover:border-gold-500/60 ${className ?? ""}`}
@@ -72,7 +83,7 @@ export function TistoryCta({
     <aside
       className={`my-10 overflow-hidden rounded-2xl border border-gold-600/40 bg-gradient-to-br from-gold-500/[0.12] via-gold-500/[0.04] to-transparent ${className ?? ""}`}
     >
-      <a href={href} target="_blank" rel="noopener" className="group block p-6 sm:p-7">
+      <a href={to} target="_blank" rel="noopener" className="group block p-6 sm:p-7">
         <p className="text-[11px] font-medium tracking-[0.14em] text-gold-400">
           TISTORY · 원문 블로그
         </p>

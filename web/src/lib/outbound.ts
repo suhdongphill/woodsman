@@ -109,6 +109,44 @@ export function outboundStockHref(ticker: string): string {
   return `/go/${STOCK_PREFIX}${ticker}`;
 }
 
+/**
+ * 글 하나를 다 읽은 자리에 **어떤 블로그 링크**를 붙일 것인가.
+ *
+ * ⚠ 2026-08-25 사고: 「직접 작성」으로 쓴 인사이트에 티스토리 원문 링크를 넣었는데,
+ *   화면은 그 값을 **무시하고 대표 글(기본값)로 보냈다.** 관리자 화면은 링크를 받아 저장까지
+ *   했는데 아무 데도 쓰이지 않았다 — 입력란이 하는 일이 없는 상태였다.
+ *
+ * 원인은 화면이 두 가지를 **한 조건으로 묶은 것**이다. 둘은 다른 질문이다.
+ *
+ * | 질문 | 답하는 값 | 쓰는 곳 |
+ * |---|---|---|
+ * | 이 글은 어디서 왔나 | `source` | 「티스토리」 뱃지, canonical(원문이 정본일 때) |
+ * | 이 글에 이어지는 블로그 글이 있나 | `externalUrl` | **나가는 링크** |
+ *
+ * `source`가 `TISTORY`면 본문 위에 이미 원문 카드가 있으므로 아래에 또 붙이지 않는다.
+ * 그 밖에는 **원문 링크가 있으면 그 글로**, 없으면 대표 글로 보낸다.
+ *
+ * ⚠ 목적지는 언제나 `/go/post-<slug>` 경유다. 주소를 직접 박으면 클릭이 안 세지고,
+ *   1순위 목적(블로그 유입)의 성과 판단이 감(感)이 된다.
+ */
+export type PostBlogLink =
+  /** 본문 위 원문 카드가 이미 링크를 줬다 — 중복해서 붙이지 않는다 */
+  | { kind: "none" }
+  /** 이 글에 딸린 블로그 원문으로 */
+  | { kind: "post"; href: string }
+  /** 딸린 글이 없다 — 블로그 대표 글로 */
+  | { kind: "default"; href: string };
+
+export function blogLinkForPost(post: {
+  slug: string;
+  source: string;
+  externalUrl?: string | null;
+}): PostBlogLink {
+  if (post.source === "TISTORY" && post.externalUrl) return { kind: "none" };
+  if (post.externalUrl) return { kind: "post", href: outboundPostHref(post.slug) };
+  return { kind: "default", href: outboundHref("tistory") };
+}
+
 /** 집계 키 — 날짜(KST 기준 YYYY-MM-DD) */
 export function clickDateKey(now: Date): string {
   // 한국 사용자 기준이라 KST로 하루를 자른다. UTC로 자르면 밤 9시 이후 클릭이 다음 날로 넘어간다.

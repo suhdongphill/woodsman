@@ -7,7 +7,7 @@ import { PostCard } from "@/features/posts/ui/PostCard";
 import { CommentSection } from "@/features/comments/ui/CommentSection";
 import { AdSlot } from "@/components/analytics/AdSlot";
 import { TistoryCta } from "@/features/site/ui/TistoryCta";
-import { outboundPostHref } from "@/lib/outbound";
+import { blogLinkForPost, outboundPostHref } from "@/lib/outbound";
 import { ClockIcon, EyeIcon, ExternalIcon, TagIcon, ChevronRightIcon } from "@/components/icons";
 import { formatDate } from "@/lib/format";
 import { findPublishedName } from "@/features/reports/repository";
@@ -64,6 +64,12 @@ export default async function InsightDetailPage({ params }: Props) {
   const stockName = post.ticker ? await findPublishedName(post.ticker) : null;
   const tags = post.tags?.split(",").filter(Boolean) ?? [];
   const isFromTistory = post.source === "TISTORY" && Boolean(post.externalUrl);
+  /**
+   * 글 끝에 붙일 블로그 링크. ⚠ `source`(어디서 왔나)와 `externalUrl`(이어지는 글이 있나)은
+   * **다른 질문**이다. 둘을 한 조건으로 묶어 뒀더니, 「직접 작성」 글에 넣은 원문 링크가
+   * 조용히 무시되고 전부 대표 글로 나갔다(2026-08-25). 판단은 `lib/outbound.ts`에 있다.
+   */
+  const blogLink = blogLinkForPost(post);
 
   return (
     <article className="mx-auto max-w-3xl px-4 sm:px-6 py-10">
@@ -150,9 +156,27 @@ export default async function InsightDetailPage({ params }: Props) {
 
       {/*
         글을 다 읽은 자리 — 이 사이트의 1순위 목적(블로그 트래픽)이 먼저 온다.
-        원문이 이미 티스토리인 글은 위에서 링크를 줬으므로 중복해서 붙이지 않는다.
+        원문이 이미 티스토리인 글은 위에서 링크를 줬으므로 중복해서 붙이지 않는다(kind: "none").
       */}
-      {!isFromTistory && <TistoryCta />}
+      {blogLink.kind !== "none" && (
+        <TistoryCta
+          href={blogLink.href}
+          {...(blogLink.kind === "post"
+            ? {
+                /**
+                 * ⚠ 이 글에 딸린 원문으로 보낼 때는 문구도 달라야 한다.
+                 *   "이 주제를 다룬 글이 있다"(막연함)와 "이 글의 원문이 있다"(확실함)는
+                 *   누를 이유가 다르다. 다만 **티스토리 글의 제목은 저장하지 않으므로**
+                 *   있는 척하지 않고 이 글의 요약을 쓴다.
+                 */
+                headline: "이 글의 원문을 블로그에서 이어 읽기",
+                description:
+                  post.excerpt ??
+                  "사이트에는 결론과 수치를 정리해 두고, 배경과 근거는 티스토리에 길게 풀어 둡니다.",
+              }
+            : {})}
+        />
+      )}
 
       {/* 광고는 CTA 아래로 — 자리 경쟁에서 트래픽 유도가 이긴다. */}
       <AdSlot placement="article-end" />
