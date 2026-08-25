@@ -106,3 +106,27 @@ export function splitEmphasis(text: string): { text: string; strong: boolean }[]
   if (last < text.length) out.push({ text: text.slice(last), strong: false });
   return out;
 }
+
+/**
+ * 같은 문장을 **기계가 읽는 자리**에 넣을 때 쓴다 — 메타 설명·JSON-LD·AI 검색 색인.
+ *
+ * ⚠ 여기서는 강조를 굵게 만들 수 없으니 **표시만 걷어낸다.** 그대로 흘리면
+ *   검색 결과 미리보기와 구조화 데이터에 `**별표**`가 그대로 찍힌다
+ *   (2026-08-25 운영에서 확인했다 — 화면은 `Emphasis`가 막고 있었지만 메타는 뚫려 있었다).
+ *
+ * `splitEmphasis`와 짝이다. **보이는 자리는 `Emphasis`, 안 보이는 자리는 이 함수**로 통일한다.
+ */
+export function stripEmphasis(text: string): string {
+  return (
+    splitEmphasis(text)
+      .map((p) => p.text)
+      .join("")
+      /**
+       * ⚠ 짝이 안 맞는 별표까지 걷어낸다 — `splitEmphasis`와 **일부러 다르다.**
+       *   보이는 화면에서 짝 안 맞는 별표는 눈에 띄어야 고칠 수 있는 오타지만,
+       *   검색 결과 미리보기에서는 그냥 노이즈다. 이 함수의 약속은
+       *   **"결과에 별표가 없다"** 하나다.
+       */
+      .replace(/\*+/g, "")
+  );
+}

@@ -14,6 +14,7 @@
  * 정직하고 빠르다. 커지면 그때 색인을 두면 된다.
  */
 import { loadPublishedPosts } from "@/features/posts/repository";
+import { stripEmphasis } from "@/lib/format";
 import { loadPublishedJournal, loadSnapshots } from "@/features/journal/repository";
 import { loadPublishedHoldings } from "@/features/portfolio/repository";
 import { loadMacroStatus } from "@/features/macro/service";
@@ -84,7 +85,10 @@ export async function loadKnowledgeDocs(): Promise<KnowledgeDoc[]> {
       id: `macro:${view.indicator.key}`,
       kind: "macro",
       title: `${view.indicator.name} ${view.display}`,
-      text: [view.indicator.what, view.indicator.why, view.indicator.read].join(" "),
+      // ⚠ 색인도 기계가 읽는 자리다. 강조 표시를 걷어내지 않으면 별표가 검색어에 섞인다.
+      text: stripEmphasis(
+        [view.indicator.what, view.indicator.why, view.indicator.read].join(" "),
+      ),
       href: `/macro/${view.indicator.group}`,
       date: view.asOf,
     });

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
+import { Emphasis } from "@/components/ui/Emphasis";
 import { ChevronRightIcon } from "@/components/icons";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AdSlot } from "@/components/analytics/AdSlot";
@@ -14,6 +15,7 @@ import { findMacroGroup, type MacroGroupKey } from "@/lib/macro/groups";
 import { indicatorsByGroup } from "@/lib/macro/catalog";
 import { breadcrumbJsonLd, datasetJsonLd, faqJsonLd } from "@/lib/seo";
 import { getSiteBasics } from "@/lib/site-settings";
+import { stripEmphasis } from "@/lib/format";
 
 type Props = { params: Promise<{ group: string }> };
 
@@ -35,12 +37,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     // 검색 결과에서 질문형 제목이 클릭을 만든다.
     title: `${group.name} 지표 — ${group.question}`,
-    description: `${group.intro} 다루는 지표: ${names}.`.slice(0, 300),
+    // ⚠ 메타·JSON-LD는 강조를 굵게 못 만든다. 표시만 걷어낸다(`stripEmphasis`) —
+    //   그대로 흘리면 검색 결과에 `**별표**`가 그대로 찍힌다.
+    description: `${stripEmphasis(group.intro)} 다루는 지표: ${names}.`.slice(0, 300),
     alternates: { canonical: `/macro/${group.key}` },
     openGraph: {
       type: "article",
       title: `${group.name} 지표 — ${group.question}`,
-      description: group.intro,
+      description: stripEmphasis(group.intro),
       url: `/macro/${group.key}`,
     },
   };
@@ -72,7 +76,7 @@ export default async function MacroGroupPage({ params }: Props) {
       <JsonLd
         data={datasetJsonLd({
           name: `${group.name} 지표`,
-          description: group.intro,
+          description: stripEmphasis(group.intro),
           path: `/macro/${group.key}`,
           dateModified: detail.asOf,
           variables: items.map((i) => i.indicator.name),
@@ -84,7 +88,7 @@ export default async function MacroGroupPage({ params }: Props) {
         data={faqJsonLd(
           items.map((i) => ({
             question: `${i.indicator.name}는(은) 무엇인가요?`,
-            answer: `${i.indicator.what} ${i.indicator.why}`,
+            answer: stripEmphasis(`${i.indicator.what} ${i.indicator.why}`),
           })),
         )}
       />
@@ -110,7 +114,10 @@ export default async function MacroGroupPage({ params }: Props) {
 
         {/* 묶음 소개 — 초보자가 여기서 맥락을 잡는다 */}
         <Card padding="p-5 sm:p-6">
-          <p className="text-[14px] leading-relaxed text-gray-300">{group.intro}</p>
+          {/* ⚠ 보이는 자리는 `Emphasis`로 굵게 낸다. 그냥 찍으면 별표가 그대로 보인다. */}
+          <p className="text-[14px] leading-relaxed text-gray-300">
+            <Emphasis text={group.intro} />
+          </p>
           <p className="mt-3 text-[11.5px] text-gray-600">
             지표 {items.length}개 · {detail.asOf ? `가장 최근 기준일 ${detail.asOf}` : "아직 수집 전"}
           </p>
