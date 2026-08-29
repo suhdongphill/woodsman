@@ -1,0 +1,1272 @@
+<title>Woodsman 개발사</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap">
+<style>
+  /* ── 토큰 ─────────────────────────────────────────────────────────
+     밝은 화면이 기본. 어두운 화면은 토큰만 다시 정의한다.
+     푸른기 도는 중성회색 + 금색 강조 — 사이트 자신의 정체성에서 가져왔다.
+     괘선 #2A2E3A는 사이트 차트 격자와 같은 값이다.                    */
+  :root {
+    --bg:        #F3F4F7;
+    --surface:   #FFFFFF;
+    --surface-2: #EDEFF3;
+    --ink:       #14161B;
+    --ink-2:     #3D434F;
+    --muted:     #6B7280;
+    --rule:      #DCE0E7;
+    --rule-soft: #E8EBF0;
+    --accent:    #9C7B12;
+    --accent-2:  #C9A227;
+    --accent-bg: #FBF4DC;
+    --warn:      #B45309;
+    --warn-bg:   #FDF3E3;
+    --crit:      #A8231B;
+    --crit-bg:   #FBEDEC;
+    --ok:        #16704F;
+    --ok-bg:     #E7F3EE;
+    --shadow:    0 1px 2px rgba(20,22,27,.05), 0 8px 24px -16px rgba(20,22,27,.28);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:        #101216;
+      --surface:   #171A20;
+      --surface-2: #1D212A;
+      --ink:       #E9EBEF;
+      --ink-2:     #C0C6D2;
+      --muted:     #8D95A4;
+      --rule:      #2A2E3A;
+      --rule-soft: #22262F;
+      --accent:    #E3BC4A;
+      --accent-2:  #C9A227;
+      --accent-bg: #2A2412;
+      --warn:      #E8A33D;
+      --warn-bg:   #2B2113;
+      --crit:      #F08C84;
+      --crit-bg:   #2C1917;
+      --ok:        #58C79E;
+      --ok-bg:     #12271F;
+      --shadow:    0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.9);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:        #101216;
+    --surface:   #171A20;
+    --surface-2: #1D212A;
+    --ink:       #E9EBEF;
+    --ink-2:     #C0C6D2;
+    --muted:     #8D95A4;
+    --rule:      #2A2E3A;
+    --rule-soft: #22262F;
+    --accent:    #E3BC4A;
+    --accent-2:  #C9A227;
+    --accent-bg: #2A2412;
+    --warn:      #E8A33D;
+    --warn-bg:   #2B2113;
+    --crit:      #F08C84;
+    --crit-bg:   #2C1917;
+    --ok:        #58C79E;
+    --ok-bg:     #12271F;
+    --shadow:    0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.9);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-weight: 350;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px 120px; }
+
+  /* ── 표제부 ───────────────────────────────────────────────── */
+  .masthead {
+    padding: 72px 0 40px;
+    border-bottom: 2px solid var(--ink);
+    display: grid;
+    gap: 20px;
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11.5px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+  h1 {
+    font-family: "Gowun Batang", "Nanum Myeongjo", Georgia, serif;
+    font-weight: 700;
+    font-size: clamp(38px, 6.5vw, 68px);
+    line-height: 1.08;
+    letter-spacing: -.015em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .standfirst {
+    font-family: "Gowun Batang", Georgia, serif;
+    font-size: clamp(17px, 2.2vw, 20px);
+    line-height: 1.7;
+    color: var(--ink-2);
+    max-width: 60ch;
+    margin: 0;
+  }
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 8px 28px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    color: var(--muted);
+    padding-top: 8px;
+  }
+  .facts b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  /* ── 장 ───────────────────────────────────────────────────── */
+  .part { padding-top: 68px; }
+  .part-head {
+    display: grid; gap: 10px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 34px;
+  }
+  .part-no {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--accent);
+  }
+  h2 {
+    font-family: "Gowun Batang", Georgia, serif;
+    font-weight: 700;
+    font-size: clamp(26px, 3.6vw, 36px);
+    line-height: 1.25;
+    margin: 0;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+  .part-lede { color: var(--ink-2); max-width: 66ch; margin: 0; font-size: 15.5px; }
+
+  h3 {
+    font-family: "Gowun Batang", Georgia, serif;
+    font-weight: 700;
+    font-size: 21px;
+    line-height: 1.4;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  p { margin: 0; max-width: 68ch; }
+  .stack { display: grid; gap: 16px; }
+  .stack-lg { display: grid; gap: 30px; }
+
+  /* ── 사건 카드: 증상 → 원인 → 결정 → 재발 방지 ─────────────
+     이 네 박자는 CHANGELOG.md가 이미 쓰고 있는 형식이다.        */
+  .case {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .case-head {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .case-date {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    flex: 0 0 auto;
+  }
+  .case-head h3 { flex: 1 1 320px; }
+  .beats { display: grid; }
+  .beat {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 20px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--rule-soft);
+  }
+  .beat:first-child { border-top: 0; }
+  .beat-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-top: 5px;
+  }
+  .beat-body { display: grid; gap: 10px; min-width: 0; }
+  .beat-body p { max-width: 62ch; font-size: 15px; }
+  .beat.decide .beat-label { color: var(--accent); }
+  .beat.prevent { background: var(--surface-2); }
+  .beat.prevent .beat-label { color: var(--ok); }
+
+  /* ── 표지 ─────────────────────────────────────────────────── */
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px; letter-spacing: .06em;
+    padding: 3px 9px; border-radius: 2px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+  .tag.dev   { background: var(--accent-bg); color: var(--accent); }
+  .tag.ops   { background: var(--warn-bg);   color: var(--warn); }
+  .tag.crit  { background: var(--crit-bg);   color: var(--crit); }
+  .tag.fixed { background: var(--ok-bg);     color: var(--ok); }
+
+  code, .mono {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .88em;
+  }
+  code {
+    background: var(--surface-2);
+    padding: 1px 5px; border-radius: 2px;
+    color: var(--ink-2);
+  }
+  .beat.prevent code { background: var(--bg); }
+
+  pre {
+    margin: 0;
+    background: var(--surface-2);
+    border-left: 2px solid var(--crit);
+    padding: 12px 16px;
+    overflow-x: auto;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+
+  /* ── 표 ───────────────────────────────────────────────────── */
+  .table-scroll { overflow-x: auto; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 520px;
+    font-size: 14.5px;
+  }
+  th, td {
+    text-align: left;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+  }
+  th {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); font-weight: 500;
+    border-bottom: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+  td.num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  .boxed {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  /* ── 연표: 왼쪽 척추 ──────────────────────────────────────── */
+  .era { display: grid; grid-template-columns: 132px 1fr; gap: 0; }
+  .era + .era { margin-top: 4px; }
+  .era-when {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 18px 18px 18px 0;
+    border-right: 1px solid var(--rule);
+    font-variant-numeric: tabular-nums;
+  }
+  .era-what {
+    padding: 18px 0 18px 26px;
+    position: relative;
+    display: grid; gap: 6px;
+  }
+  .era-what::before {
+    content: "";
+    position: absolute;
+    left: -4.5px; top: 25px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .era-title { font-weight: 500; font-size: 16px; color: var(--ink); }
+  .era-note { color: var(--muted); font-size: 14.5px; max-width: 62ch; }
+
+  /* ── 규칙 목록 ────────────────────────────────────────────── */
+  .rules { display: grid; gap: 0; }
+  .rule-row {
+    display: grid;
+    grid-template-columns: 1fr 210px;
+    gap: 12px 28px;
+    padding: 18px 0;
+    border-top: 1px solid var(--rule-soft);
+    align-items: start;
+  }
+  .rule-row:first-child { border-top: 0; }
+  .rule-text { display: grid; gap: 5px; }
+  .rule-text b {
+    font-family: "Gowun Batang", Georgia, serif;
+    font-size: 18px; font-weight: 700; line-height: 1.45;
+  }
+  .rule-text span { color: var(--ink-2); font-size: 14.5px; max-width: 62ch; }
+  .rule-from {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px; color: var(--muted);
+    padding-top: 6px;
+    line-height: 1.6;
+  }
+
+  .callout {
+    border-left: 2px solid var(--accent);
+    padding: 4px 0 4px 20px;
+    color: var(--ink-2);
+    font-size: 15px;
+    max-width: 66ch;
+  }
+  .callout b { color: var(--ink); font-weight: 600; }
+
+  footer {
+    margin-top: 80px;
+    padding-top: 26px;
+    border-top: 1px solid var(--rule);
+    color: var(--muted);
+    font-size: 13.5px;
+    display: grid; gap: 8px;
+  }
+  footer .mono { font-size: 12px; }
+
+  @media (max-width: 720px) {
+    .beat { grid-template-columns: 1fr; gap: 6px; }
+    .beat-label { padding-top: 0; }
+    .era { grid-template-columns: 1fr; }
+    .era-when { border-right: 0; padding: 20px 0 0; }
+    .era-what { padding: 6px 0 20px 0; border-left: 1px solid var(--rule); padding-left: 20px; }
+    .era-what::before { left: -4.5px; top: 13px; }
+    .rule-row { grid-template-columns: 1fr; }
+    .rule-from { padding-top: 0; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">개발부터 운영까지 · 계속 쓰는 기록</p>
+    <h1>Woodsman 개발사</h1>
+    <p class="standfirst">
+      투자 기록을 공개하는 사이트 하나를 혼자 만들고 운영하면서 남긴 이력.
+      무엇을 만들었는지보다 <b>무엇이 틀렸고 왜 그렇게 정했는지</b>를 남긴다.
+      코드를 보면 알 수 있는 것은 적지 않는다.
+    </p>
+    <div class="facts">
+      <span>착수 <b>2026-06-21</b></span>
+      <span>기록 시점 <b>2026-08-29</b></span>
+      <span>커밋 <b>49</b></span>
+      <span>테스트 <b>843</b></span>
+      <span>운영 <b>portfolio-solutions.net</b></span>
+    </div>
+  </header>
+
+  <!-- ══ 0. 이 기록에 대하여 ══════════════════════════════════ -->
+  <section class="part">
+    <div class="part-head">
+      <span class="part-no">서문</span>
+      <h2>왜 남기나</h2>
+    </div>
+    <div class="stack">
+      <p>
+        기록을 남기는 이유는 두 가지다. 하나는 개발의 단계를 정리하는 것이고,
+        다른 하나는 <b>히스토리를 정리하는 것</b>이다. 뒤쪽이 더 중요하다.
+      </p>
+      <p>
+        코드는 지금 상태만 보여 준다. 왜 그렇게 됐는지는 안 보여 준다.
+        <code>lib/d1.ts</code>가 Prisma 대신 D1 바인딩을 직접 쓰는 이유,
+        신선도 판정에 지표마다 다른 기한이 붙어 있는 이유, 비콘 방어가 세 층으로 쪼개져 있는 이유 —
+        전부 <b>한 번 크게 틀린 뒤에</b> 그렇게 된 것이다. 그 틀림이 안 남으면
+        다음 사람이(그게 몇 달 뒤의 나라도) 같은 곳에서 같이 넘어진다.
+      </p>
+      <div class="callout">
+        실제로 그런 일이 있었다. 계획 문서가 <b>“배포 시크릿 미등록”</b>이라고 적어 둔 탓에
+        세 세션 동안 1순위 목록에 엉뚱한 항목이 올라 있었다. 시크릿은 등록돼 있었고,
+        문제는 다른 데 있었다. <b>틀린 기록은 없는 기록보다 비싸다.</b>
+      </div>
+      <p>
+        그래서 기록은 세 겹이다. <b>왜</b>는 <code>web/CHANGELOG.md</code>에,
+        <b>지금의 상태</b>는 <code>docs/woodsman_개발요구서_v2.md</code>에,
+        <b>다음에 할 일</b>은 <code>docs/계획_&lt;날짜&gt;.md</code>에.
+        이 문서는 그 셋을 가로질러 <b>이야기로</b> 읽는 자리다.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ 연표 ═════════════════════════════════════════════════ -->
+  <section class="part">
+    <div class="part-head">
+      <span class="part-no">연표</span>
+      <h2>네 국면</h2>
+      <p class="part-lede">
+        착수는 6월이지만 실제 개발은 8월 2일 하룻밤에 몰려 있다.
+        그 뒤로는 <b>만드는 일보다 고치는 일</b>이 많아졌다 — 그게 이 기록의 대부분이다.
+      </p>
+    </div>
+
+    <div class="boxed" style="padding: 0 24px;">
+      <div class="era">
+        <div class="era-when">2026-06-21<br>→ 08-02</div>
+        <div class="era-what">
+          <span class="era-title">착수와 전환 — 구상을 통째로 뒤집었다</span>
+          <span class="era-note">
+            첫 커밋은 개발요구서 한 장. 실제로 코드를 쓰기 시작한 8월 2일,
+            구상했던 스택이 전부 바뀌었다. Python 백엔드 → Next.js, 관리형 DB → Cloudflare D1,
+            Pages → Workers, 6메뉴 플랫폼 → <b>읽는 사이트</b>.
+          </span>
+        </div>
+      </div>
+      <div class="era">
+        <div class="era-when">08-02<br>→ 08-07</div>
+        <div class="era-what">
+          <span class="era-title">기능을 채우고, 처음으로 점검을 받았다</span>
+          <span class="era-note">
+            인증·투자일지·포트폴리오·콘텐츠·거시 지표·버블 모니터·AI 모듈.
+            그리고 8월 7일 첫 점검이 <b>36건</b>을 찾았다 — 그중 상당수가
+            “있지도 않은 것을 있다고 적어 둔” 정직성 문제였다.
+          </span>
+        </div>
+      </div>
+      <div class="era">
+        <div class="era-when">08-11<br>→ 08-17</div>
+        <div class="era-what">
+          <span class="era-title">재는 법을 만들고, 규율을 코드로 옮겼다</span>
+          <span class="era-note">
+            “화면을 고치려면 먼저 재야 한다” — 체류·읽힘 집계.
+            종목분석 보고서를 다섯 단계에 걸쳐 붙이면서, 지켜야 할 규율을
+            <b>문서가 아니라 코드가</b> 지키게 했다. 테스트 179개 → 577개.
+          </span>
+        </div>
+      </div>
+      <div class="era">
+        <div class="era-when">08-21<br>→ 08-29</div>
+        <div class="era-what">
+          <span class="era-title">이식과 정직성 — 그리고 배포 자체를 의심했다</span>
+          <span class="era-note">
+            옵시디언 볼트에서 앞서 만든 거시 대시보드를 사이트로 옮겼다(신선도·인과 레이어·순유동성).
+            마지막 주에는 <b>운영본을 직접 열어 보는 습관</b>이 결함 세 건을 잡았고,
+            자동배포가 두 달 내내 고장 나 있었다는 것도 이때 드러났다. 테스트 843개.
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 1부 개발 ═════════════════════════════════════════════ -->
+  <section class="part">
+    <div class="part-head">
+      <span class="part-no">1부 · 개발</span>
+      <h2>구상은 어떻게 뒤집혔나</h2>
+      <p class="part-lede">
+        v1 개발요구서는 착수 전 구상이다. 실제로 만든 것은 거의 전부 다르다.
+        v1을 지우지 않고 <b>발상의 기록으로 남겨 둔</b> 이유는, 왜 바꿨는지가 바꾼 결과보다 오래 쓰이기 때문이다.
+      </p>
+    </div>
+
+    <div class="stack-lg">
+      <div class="boxed table-scroll">
+        <table>
+          <thead>
+            <tr><th>v1 구상</th><th>실제 결정</th><th>왜</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Python(FastAPI) 백엔드 + 별도 호스트</td>
+              <td><b>Next.js 15 App Router 단일 앱</b></td>
+              <td>서버 컴포넌트로 렌더와 질의를 한 곳에서. 호스트를 하나로 줄임</td>
+            </tr>
+            <tr>
+              <td>관리형 MySQL/Postgres</td>
+              <td><b>Cloudflare D1</b> (SQLite at edge)</td>
+              <td>Workers와 같은 런타임. 개인 규모에 운영 부담이 없음</td>
+            </tr>
+            <tr>
+              <td>Prisma를 런타임 ORM으로</td>
+              <td>Prisma는 <b>스키마·마이그레이션 전용</b></td>
+              <td>Workers 번들에 쿼리 엔진이 안 들어가 첫 쿼리에서 죽었다 — 아래 사건</td>
+            </tr>
+            <tr>
+              <td>Cloudflare <b>Pages</b></td>
+              <td>Cloudflare <b>Workers</b> + OpenNext 어댑터</td>
+              <td>SSR·미들웨어를 쓰고, 플랫폼도 Workers로 방향을 옮겼다</td>
+            </tr>
+            <tr>
+              <td>6메뉴 플랫폼 · 다중 사용자</td>
+              <td><b>읽는 사이트 · 운영자 1인</b></td>
+              <td>가입을 파는 곳이 아니라 읽는 곳. 콘텐츠가 유입을 만든다</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-02</span>
+          <h3>배포는 성공하는데 모든 DB 호출이 죽고 있었다</h3>
+          <span class="tag crit">가장 큰 사건</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>
+                배포도 되고 화면도 떴다. 그런데 DB 호출이 전부 실패하고 있었다.
+                <b>알 방법이 없었던 게 진짜 문제다</b> — 실패 결과가 “설정이 비어 있는 정상 상태”와
+                똑같아 보였다. 커뮤니티가 닫혀 있는 것은 정책이기도 하고 DB 실패 시 폴백이기도 했다.
+              </p>
+              <p>D1에서 값을 직접 바꿔도 사이트가 안 바뀌는 것을 보고서야 확정했다.</p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>셋이 겹쳐 있었다.</p>
+              <p>
+                ① <code>prisma-client-js</code>는 <b>바이너리 쿼리 엔진</b>을 찾는데 Workers에는 실행 파일이 없다.
+                ② <code>runtime="cloudflare"</code>로 바꾸니 이번엔 <b>WASM 엔진</b>을 찾는데,
+                OpenNext가 만든 번들에 그 <code>.wasm</code>이 안 들어간다(당시 미해결 이슈).
+                ③ <code>getCloudflareContext()</code>를 동기로 부르면 정적 생성 단계에서 실패한다.
+              </p>
+            </div>
+          </div>
+          <div class="beat decide">
+            <div class="beat-label">결정</div>
+            <div class="beat-body">
+              <p>
+                <b>Prisma를 런타임에서 뺐다.</b> 스키마와 마이그레이션 도구로만 남기고,
+                질의는 D1 바인딩을 직접 쓴다. 당시 쿼리가 6개뿐이라 ORM을 억지로 얹을 이유가 없었다.
+              </p>
+              <p>
+                따라온 것: 우회 설정 두 개가 통째로 불필요해져 삭제됐고, 의존성 3개가 빠졌고,
+                로컬과 운영의 DB 경로가 하나로 합쳐졌다. <b>우회를 걷어내면 대개 더 단순해진다.</b>
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">재발 방지</div>
+            <div class="beat-body">
+              <p>
+                <b>조용한 실패를 만들지 않는다.</b> DB에 못 붙는 상태가 정상처럼 보이면 안 된다.
+                실패는 던지고, 호출부가 로그를 남긴 뒤 안전한 기본값으로 응답한다.
+                이 규칙이 이날 태어났고, 지금도 <code>CLAUDE.md</code> 맨 앞줄에 있다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-15 →</span>
+          <h3>규율을 문서가 아니라 코드가 지키게</h3>
+          <span class="tag dev">방법론</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">문제</div>
+            <div class="beat-body">
+              <p>
+                “빈 칸을 0으로 채우지 않는다”, “화면이 하지 않는 일을 한다고 적지 않는다” 같은 규칙을
+                문서에 적어 두면 <b>지켜지지 않는다.</b> 실제로 첫 점검에서 문서와 코드가 어긋난 곳이
+                여러 건 나왔고, 그중 하나는 <b>점검이 정상 기능을 위반으로 잡을 뻔</b>했다 — 문서 쪽이 낡아 있었다.
+              </p>
+            </div>
+          </div>
+          <div class="beat decide">
+            <div class="beat-label">결정</div>
+            <div class="beat-body">
+              <p>
+                판단을 전부 <code>lib/*</code>의 <b>순수 함수</b>로 내리고 테스트로 못 박았다.
+                질의는 <code>*-repo</code>, 액션은 <code>*-actions</code>, 화면은 <code>ui/*</code>.
+                섞이기 시작하면 <b>화면을 띄워야만 검증할 수 있는 규칙</b>이 생기고, 그때부터 규칙이 조용히 틀린다.
+              </p>
+              <div class="table-scroll">
+                <table style="min-width:420px">
+                  <thead><tr><th>시점</th><th>테스트</th><th>그때 한 일</th></tr></thead>
+                  <tbody>
+                    <tr><td class="num">2026-08-06</td><td class="num">179</td><td>거시·버블·AI 모듈 도입</td></tr>
+                    <tr><td class="num">2026-08-16</td><td class="num">577</td><td>보고서 5단계 · 시드 잔여 검사</td></tr>
+                    <tr><td class="num">2026-08-22</td><td class="num">816</td><td>신선도·인과 레이어·겹쳐 보기</td></tr>
+                    <tr><td class="num">2026-08-29</td><td class="num">843</td><td>순유동성 · 링크 · 강조 표시</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">효과</div>
+            <div class="beat-body">
+              <p>
+                오늘 미시간 소비심리에 기한 예외를 줄 때, <b>새 검증 코드를 한 줄도 안 썼다.</b>
+                카탈로그 검사가 이미 “<code>staleDays</code>가 있으면 <code>staleWhy</code>를 요구”하고
+                테스트가 그것을 지키고 있어서, 근거 없는 예외는 애초에 통과하지 못한다.
+                <b>규율을 코드로 옮겨 두면 나중에 값을 낸다.</b>
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ══ 2부 유지보수 ═════════════════════════════════════════ -->
+  <section class="part">
+    <div class="part-head">
+      <span class="part-no">2부 · 유지보수</span>
+      <h2>사고와 정정</h2>
+      <p class="part-lede">
+        이 사이트는 숫자를 공개해서 신뢰를 버는 곳이다. 그래서 여기서 나는 사고는
+        대개 기능 고장이 아니라 <b>정직성 사고</b>였다 — 없는 것을 있다고 말하거나,
+        예시를 진짜라고 내보이거나, 하지 않는 일을 한다고 적어 둔 것.
+      </p>
+    </div>
+
+    <div class="stack-lg">
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-16</span>
+          <h3>운영본이 예시 데이터를 자기 계좌로 공개하고 있었다</h3>
+          <span class="tag crit">사고</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>
+                대표 포트폴리오 종목을 전부 지웠는데 계좌 곡선이 그대로였다 —
+                <span class="mono">평가액 76,540,000원 · 납입원금 68,000,000원 · +12.56%</span>.
+                “금액이 코드에 박혀 있는 것 같다”는 제보였다.
+              </p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>
+                코드가 아니라 <b>데이터</b>였다. 운영 DB의 값이 시드(예시) 파일과
+                한 자리도 안 틀리고 같았다. 대조해 보니 공개 콘텐츠가 통째로 시드였다 —
+                계좌 스냅숏 7건, 투자일지 6건, 글 4건, 댓글 3건. <b>전부.</b>
+              </p>
+              <p>
+                화면에 “모의 투자” 배지는 있었다. 그건 <b>매매가 가상</b>이라는 뜻이지
+                <b>이 숫자가 예시</b>라는 뜻이 아니다. 두 문장은 다르다.
+              </p>
+            </div>
+          </div>
+          <div class="beat decide">
+            <div class="beat-label">결정</div>
+            <div class="beat-body">
+              <p>
+                운영 DB에서 20건을 지웠다. 거시 지표 107,858 포인트와 버블 채점 28건은
+                <b>손대지 않았다</b> — 사람이 모은 실제 자료다.
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">재발 방지</div>
+            <div class="beat-body">
+              <p>
+                지우는 것으로 끝내지 않고 <code>lib/seed-residue</code>를 만들었다.
+                시드 값에서 <b>지문을 만들어</b> 대조하고, 남아 있으면 화면이 먼저 말한다.
+              </p>
+              <p>
+                설계에서 갈린 지점 셋. <b>완전 일치로만 잡는다</b> — 한 칸이라도 손댄 행은
+                이미 사람의 기록이고, 느슨하게 잡으면 진짜 기록을 예시라고 부르게 되어 그 경고는 곧 무시된다.
+                <b>지우는 버튼은 두지 않는다</b> — 무엇이 진짜인지는 사람이 안다.
+                <b>남은 게 없으면 아무것도 그리지 않는다</b> — 늘 켜져 있는 경고는 아무도 안 읽는다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-07</span>
+          <h3>지어낸 근거를 화면이 진짜처럼 내보이고 있었다</h3>
+          <span class="tag crit">첫 점검 · 36건</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>
+                종목 화면이 <b>Reuters·Bloomberg·CNBC·WSJ 이름을 달고 실재하지 않는 기사 4건</b>을
+                날짜와 함께 보여주고 있었다. 링크는 전부 <code>href="#"</code>.
+                점수 패널은 부르지도 않은 AI 제공자 이름과 있지도 않은 분석 시각을 기본값으로 찍고 있었다.
+              </p>
+              <p>
+                같은 사실을 두 곳에서 다르게 말하는 곳도 있었다 —
+                면책 문구는 “실제로 운용하는 계좌”라 적혀 있는데 화면은 “모의 투자”였다.
+              </p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>
+                목업으로 만든 화면을 실데이터로 갈아 끼우면서 <b>“그럴듯한 자리 채우기”가 남았다.</b>
+                기능은 완성돼 보였고, 그래서 아무도 다시 안 봤다.
+              </p>
+            </div>
+          </div>
+          <div class="beat decide">
+            <div class="beat-label">결정</div>
+            <div class="beat-body">
+              <p>
+                가짜를 전부 걷어내고, 값이 없을 때는 <b>“예시 점수”라고 밝히거나 아예 안 그린다.</b>
+                문장이 두 곳에 있던 것은 한쪽을 지우고 설정에서 읽어 맞췄다.
+              </p>
+              <p>
+                이때 발견한 숫자 오류 하나도 같은 뿌리다 — 주택착공이 화면에 <b>“1천호”</b>로 나오고 있었다.
+                원본이 이미 천호 단위인데 단위 변환을 한 번 더 걸어서, 최고가 “2천호”였다.
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">재발 방지</div>
+            <div class="beat-body">
+              <p>
+                점검을 사람 기억이 아니라 <b>스킬</b>로 만들었다(<code>/site-inspect</code>).
+                운영 점검과 보안 점검은 전문성이 달라 각각 다른 에이전트가 병렬로 보고,
+                화면은 브라우저로 직접 연다. 그리고 <b>문서가 틀렸으면 문서를 고친다</b> —
+                이 점검은 정상 기능을 위반으로 잡을 뻔했고, 낡은 쪽은 코드가 아니라 문서였다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-25</span>
+          <h3>넣어 둔 원문 링크가 조용히 무시되고 있었다</h3>
+          <span class="tag ops">1순위 목적 직결</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>
+                글에 블로그 원문 링크를 넣었는데, 글 끝의 「블로그에서 이어 읽기」 버튼이
+                <b>그 글이 아니라 대표 글로</b> 갔다. 관리자 화면은 링크를 받아 저장까지 했는데
+                <b>아무 데서도 쓰지 않았다.</b> 입력란이 하는 일이 없는 상태였다.
+              </p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>
+                <b>다른 두 질문을 한 조건으로 묶었다.</b>
+                “이 글은 어디서 왔나”와 “이 글에 이어지는 블로그 글이 있나”는 다른 질문인데,
+                코드는 하나의 조건으로 갈랐다. 직접 쓴 글이면 두 번째 질문의 답이 있어도 버려졌다.
+              </p>
+            </div>
+          </div>
+          <div class="beat decide">
+            <div class="beat-label">결정</div>
+            <div class="beat-body">
+              <p>
+                판단을 순수 함수로 빼서 세 갈래로 나눴다. 어느 갈래든 <b>집계 경유로 나간다</b> —
+                주소를 직접 걸면 나가는 클릭이 안 세지고, 그러면 이 사이트의 1순위 성과 지표가 빈다.
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">교훈</div>
+            <div class="beat-body">
+              <p>
+                <b>입력란을 만들었으면 그 값이 실제로 쓰이는지 화면에서 확인한다.</b>
+                저장까지 되니 관리자 화면만 봐서는 정상으로 보였다.
+                운영본을 직접 열어 버튼을 눌러 봐야 드러나는 종류의 결함이다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-29</span>
+          <h3>영원히 켜져 있던 경고를 끄고, 그 경고가 하던 말을 독자에게 옮겼다</h3>
+          <span class="tag fixed">해결</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>
+                미시간대 소비심리 지표에 <b>「기한초과」 회색 딱지가 영원히 켜져 있었다</b> —
+                더 새 값이 존재하지 않는데도. 원 기관은 매월 발표하지만
+                우리가 쓰는 수집처(FRED)의 반영이 <b>구조적으로 두 달 늦다.</b>
+              </p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>
+                기본 월간 기한 75일로 재면 언제나 초과다. 상시 켜진 경고는 경고가 아니고,
+                <b>진짜 낡은 지표가 같은 회색에 묻힌다.</b>
+              </p>
+            </div>
+          </div>
+          <div class="beat decide">
+            <div class="beat-label">결정</div>
+            <div class="beat-body">
+              <p>
+                예외(105일)를 주되, <b>거기서 끝내지 않았다.</b> 판단을 가른 사실이 하나 있었다 —
+                예외의 근거를 적는 필드는 <b>코드에만 있고 화면에 안 나온다.</b>
+                그러면 예외를 주는 순간 독자에게는 아무 설명도 남지 않는다.
+              </p>
+              <p>
+                그래서 <b>딱지가 하던 말을 지표 설명으로 옮기는 것을 예외의 조건으로 삼았다</b> —
+                “오늘의 심리가 아니라 두 달 전 조사 결과로 읽으셔야 합니다.”
+                딱지를 지운 게 아니라 <b>딱지가 하던 말을 글로 바꾼 것</b>이다.
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">남긴 것</div>
+            <div class="beat-body">
+              <p>
+                근본 해법은 원 기관 발표를 직접 받는 수집 경로다. 만들면 예외도 설명도 지우는 게 맞다.
+                다만 어댑터가 하나 더 필요한 일이라 <b>급하지 않다고 적어 두었다</b> —
+                이미 독자에게는 정직해졌기 때문이다. <b>미룰 것은 미룬다고 쓰는 것도 기록이다.</b>
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ══ 3부 클라우드 운영 ════════════════════════════════════ -->
+  <section class="part">
+    <div class="part-head">
+      <span class="part-no">3부 · 클라우드 운영</span>
+      <h2>트러블슈팅</h2>
+      <p class="part-lede">
+        여기 모인 것들의 공통점이 있다. <b>로컬에서는 전부 통과했다.</b>
+        엣지 런타임·캐시·불투명한 관리형 장치·자격증명은 로컬에서 재현되지 않는다 —
+        그래서 이 장의 규칙은 하나로 수렴한다. <b>운영본을 직접 열어 봐야 한다.</b>
+      </p>
+    </div>
+
+    <div class="stack-lg">
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-02</span>
+          <h3>클릭이 3분의 1만 집계되고 있었다</h3>
+          <span class="tag ops">캐시</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>
+                블로그로 나가는 <code>/go/*</code> 리다이렉트가 <b>캐시돼서</b>
+                두 번째 호출부터 Worker가 아예 실행되지 않았다. 3회 중 1회만 기록됐다.
+                이 사이트의 1순위 성과 지표가 바로 이 숫자다.
+              </p>
+            </div>
+          </div>
+          <div class="beat decide">
+            <div class="beat-label">결정</div>
+            <div class="beat-body">
+              <p>
+                프레임워크의 리다이렉트 대신 <code>cache-control: no-store</code>를 붙인 응답을 직접 돌려준다.
+                <b>검증: 7회 호출 → 정확히 7건 기록.</b>
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">교훈</div>
+            <div class="beat-body">
+              <p>
+                <b>세는 경로는 실제로 세어 본다.</b> 숫자가 “그럴듯하게 낮은” 것과
+                “구조적으로 3분의 1인 것”은 화면에서 구분되지 않는다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-11 → 08-15</span>
+          <h3>남의 방어 장치 하나에 방어를 통째로 걸고 있었다</h3>
+          <span class="tag crit">정정 두 번</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>
+                집계 비콘에 관리형 속도 제한(60회/분)을 걸어 뒀는데
+                <b>447건을 보내는 동안 0건을 막았다.</b> 바인딩은 배포 출력에 정상으로 뜨고,
+                클라이언트 IP도 제대로 들어오고, 예외 처리도 아니었다. 전부 통과였다.
+              </p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>
+                <b>첫 가설이 틀렸다.</b> 처음엔 “어댑터가 객체를 제대로 넘기지 못한다”고 봤는데,
+                어댑터 소스를 읽어 반증했다 — 운영에서는 실제 바인딩이 그대로 넘어오고,
+                같은 방식으로 꺼내 쓰는 DB 바인딩은 잘 동작한다.
+              </p>
+              <p>
+                남는 설명은 제공자 문서가 스스로 밝힌 성질뿐이었다 —
+                <b>permissive · eventually consistent · 정확한 계수 시스템으로 쓰지 말 것.</b>
+                즉 <b>꾸준한 남용은 막지만 병렬 폭주는 통째로 빠져나간다.</b>
+              </p>
+            </div>
+          </div>
+          <div class="beat decide">
+            <div class="beat-label">결정</div>
+            <div class="beat-body">
+              <p>
+                방어를 세 층으로 쪼개고 <b>우리가 검증할 수 있는 층을 앞에</b> 세웠다.
+                ① 없는 화면을 만들어 내는 것 ② 본문 크기·외부 호출 ③ 볼륨.
+                ①②는 순수 함수 + 테스트로 고정했고, ③만 관리형 장치에 남겼다.
+              </p>
+              <p>
+                이때 몰랐던 구멍 하나가 같이 닫혔다 — 존재하지 않는 경로를 보내면
+                <b>가짜 화면이 통계표에 그대로 쌓였다.</b> 속도 제한이 동작했어도 이건 안 막혔다.
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">재발 방지</div>
+            <div class="beat-body">
+              <p>
+                <b>불투명한 남의 장치 하나에 방어를 통째로 걸지 않는다.</b> 이것이 이 사고의 구조적 원인이다.
+                일주일 뒤 댓글 제한을 만들 때는 <b>반대로 판단했다</b> — 양이 적은 경로라
+                DB를 한 번 더 읽는 값을 치르고 정확히 세는 쪽을 골랐다.
+                <b>같은 장치라도 경로에 따라 답이 다르다.</b>
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-22</span>
+          <h3>단위 하나가 800배 틀릴 뻔했다</h3>
+          <span class="tag ops">외부 데이터</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>
+                같은 기관이 주는 세 계열의 단위가 서로 달랐다 —
+                둘은 <b>백만</b>, 하나는 <b>십억</b>. 문서만 보고 맞췄으면
+                정부 계좌 잔액이 <b>800배 큰 값</b>으로 화면에 나갔을 것이다.
+              </p>
+            </div>
+          </div>
+          <div class="beat decide">
+            <div class="beat-label">결정</div>
+            <div class="beat-body">
+              <p>
+                <b>실제 응답을 받아 보고 잡았다.</b> 그리고 세 계열을 합성하는 파생 지표를 만들 때는
+                구성요소를 <b>먼저 각각 세워 화면에 띄운 뒤</b> 합쳤다 —
+                잘못 만들면 <b>“그럴듯한데 틀린 한 줄”</b>이 되기 때문이다.
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">규칙</div>
+            <div class="beat-body">
+              <p>
+                파생 계열은 구성요소가 전부 화면에 보이고 나서 만든다.
+                합성값만 있으면 틀렸을 때 <b>어디가 틀렸는지 알 수 없다.</b>
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-25</span>
+          <h3>죽은 줄 알았던 개발 서버가 배포를 막고 있었다</h3>
+          <span class="tag ops">Windows</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>배포가 <code>EPERM</code>(권한 없음)으로 죽었다. 파일을 지울 수 없다는 것이었다.</p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>
+                살아남은 개발 서버 두 개가 빌드 산출 폴더를 잡고 있었다.
+                껐다고 생각한 이유는 <code>pkill -f</code>를 썼기 때문인데,
+                <b>Windows에서 그 명령은 node 프로세스를 못 잡는다.</b> 조용히 성공한 척한다.
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">절차로 굳힘</div>
+            <div class="beat-body">
+              <pre>Get-CimInstance Win32_Process -Filter "Name='node.exe'"   # 세고
+Stop-Process -Force -Id &lt;pid&gt;                              # 끈다</pre>
+              <p>
+                “껐다”가 아니라 <b>“꺼진 것을 셌다”</b>로 절차를 바꿨다.
+                크로스 플랫폼 도구가 한쪽 OS에서만 조용히 실패하는 것은 흔하다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-06 → 08-29</span>
+          <h3>자동배포가 두 달 내내 고장 나 있었고, 진단이 틀려 있었다</h3>
+          <span class="tag crit">가장 오래 방치된 것</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>
+                <code>main</code>에 push하면 자동 배포되도록 만들어 뒀는데,
+                <b>12회 연속 실패</b>했다. 그러다 push 자체를 안 하게 됐고,
+                두 달 동안 배포를 손으로 했다. 마지막에는 실행 기록조차 없어서
+                <b>고장이 안 보였다.</b>
+              </p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">틀린 진단</div>
+            <div class="beat-body">
+              <p>
+                계획 문서에는 “배포 시크릿 미등록”으로 적혀 있었다. <b>아니었다.</b>
+                두 값 모두 8월 6일에 등록돼 있었다.
+                <b>이 오진단 때문에 세 세션 동안 1순위 목록에 엉뚱한 항목이 올라 있었다.</b>
+              </p>
+              <p>실제 오류는 이랬다.</p>
+              <pre>✘ [ERROR] In a non-interactive environment, it's necessary to set
+          a CLOUDFLARE_API_TOKEN environment variable for wrangler to work.</pre>
+              <p>즉 <b>등록은 됐는데 러너에서 값이 비어 보이는</b> 상태였다.</p>
+            </div>
+          </div>
+          <div class="beat decide">
+            <div class="beat-label">고치는 중</div>
+            <div class="beat-body">
+              <p>토큰을 다시 넣자 <b>오류가 바뀌었다</b> — 그게 진전의 신호였다.</p>
+              <pre>A request to the Cloudflare API (…/d1/database/…/query) failed.
+The given account is not valid or is not authorized
+to access this service [code: 7403]</pre>
+              <p>
+                이제 토큰은 전달된다. 남은 것은 <b>계정 불일치 또는 D1 권한 누락</b>이다.
+                범위를 좁히려고 계정 식별자를 로컬 인증에서 확인해 <b>확정된 값으로 다시 넣었다</b> —
+                변수를 하나씩 지우는 방식이다.
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">교훈</div>
+            <div class="beat-body">
+              <p>
+                <b>오류 메시지가 바뀌면 전진이다.</b> 같은 오류가 반복되면 가설이 틀린 것이고,
+                다른 오류가 나오면 한 겹 벗겨진 것이다.
+              </p>
+              <p>
+                그리고 더 큰 것 하나 — <b>“고장 났는데 아무도 안 보는 상태”가 가장 나쁘다.</b>
+                실패한 자동배포는 12번이나 신호를 보냈지만, 손으로 배포하는 우회 경로가 있었기 때문에
+                아무도 그 신호를 볼 이유가 없었다. <b>우회로가 생기면 고장은 영구화된다.</b>
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-25 → 08-29</span>
+          <h3>커밋은 배포가 아니다</h3>
+          <span class="tag ops">나흘</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">무슨 일</div>
+            <div class="beat-body">
+              <p>
+                검색 결과에 강조 기호가 새어 나가던 결함을 고쳐 커밋했는데,
+                <b>배포를 하지 않았다.</b> 나흘 동안 운영본에는 고친 내용이 없었다.
+                작업기록에 “다음 세션의 첫 일: 배포”라고 적어 둔 덕에 살았다.
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">절차로 굳힘</div>
+            <div class="beat-body">
+              <p>
+                <b>배포 후 운영본을 검증한다. 로컬 통과가 배포 성공이 아니고, 커밋은 배포가 아니다.</b>
+                이 셋을 매번 확인하는 목록에 넣었다.
+                그리고 이 사고가 <b>자동배포를 고쳐야 하는 진짜 이유</b>다 — 손이 하는 일은 잊힌다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ══ 4부 규칙 ═════════════════════════════════════════════ -->
+  <section class="part">
+    <div class="part-head">
+      <span class="part-no">4부 · 규칙</span>
+      <h2>사건이 남긴 것</h2>
+      <p class="part-lede">
+        아래는 처음부터 알던 원칙이 아니다. 전부 <b>한 번 크게 틀린 뒤에</b> 생겼다.
+        오른쪽에 출처가 되는 사건을 적어 둔 이유가 그것이다 —
+        규칙만 남으면 잔소리가 되고, 사건이 붙어 있으면 근거가 된다.
+      </p>
+    </div>
+
+    <div class="boxed" style="padding: 4px 24px;">
+      <div class="rules">
+        <div class="rule-row">
+          <div class="rule-text">
+            <b>조용한 실패를 만들지 않는다</b>
+            <span>“값이 없음”과 “읽지 못함”이 같은 화면이 되면 안 된다. 실패는 던지고, 로그를 남긴 뒤 안전한 기본값으로 응답한다.</span>
+          </div>
+          <div class="rule-from">2026-08-02<br>Prisma 런타임 사고</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-text">
+            <b>빈 칸을 0으로 만들지 않는다</b>
+            <span>없는 값을 채우면 없는 사실이 생긴다. 표본이 없으면 비율도 만들지 않는다 — <code>0%</code>는 “재 봤더니 0”으로 읽힌다.</span>
+          </div>
+          <div class="rule-from">2026-08-11<br>체류·읽힘 집계</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-text">
+            <b>화면이 하지 않는 일을 한다고 적지 않는다</b>
+            <span>지어낸 출처, 부르지도 않은 제공자 이름, 같은 사실을 다르게 말하는 두 문장. 숫자로 신뢰를 버는 곳에서 가장 크게 깨진다.</span>
+          </div>
+          <div class="rule-from">2026-08-07<br>첫 점검 36건</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-text">
+            <b>오탐 한 건이 미탐 열 건보다 비싸다</b>
+            <span>상시 켜진 경고는 경고가 아니다. 진짜 문제가 같은 색에 묻힌다. “아무것도 안 뜰 때까지 기준을 늘리기”는 반대편의 과최적화다.</span>
+          </div>
+          <div class="rule-from">2026-08-22 신선도 판정<br>2026-08-29 미시간</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-text">
+            <b>규율은 문서가 아니라 코드가 지킨다</b>
+            <span>판단은 순수 함수로, 테스트로 못 박는다. 화면을 띄워야만 검증할 수 있는 규칙은 조용히 틀린다.</span>
+          </div>
+          <div class="rule-from">2026-08-15 →<br>보고서 1~5단계</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-text">
+            <b>불투명한 남의 장치 하나에 방어를 걸지 않는다</b>
+            <span>검증할 수 있는 층을 앞에 세운다. 다만 경로마다 답이 다르다 — 양이 적으면 값을 치르고 정확히 세는 쪽이 낫다.</span>
+          </div>
+          <div class="rule-from">2026-08-11 → 08-15<br>속도 제한 정정 두 번</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-text">
+            <b>배포 후 운영본을 직접 연다</b>
+            <span>로컬 통과는 배포 성공이 아니고, 커밋은 배포가 아니다. 캐시·엣지 런타임·자격증명은 로컬에서 재현되지 않는다.</span>
+          </div>
+          <div class="rule-from">2026-08-02 클릭 집계<br>2026-08-25 미배포 나흘</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-text">
+            <b>우회로가 생기면 고장은 영구화된다</b>
+            <span>손으로 하는 우회 경로가 있으면, 자동화의 실패 신호를 볼 이유가 사라진다. 12번의 실패가 두 달 동안 안 보였다.</span>
+          </div>
+          <div class="rule-from">2026-08-06 → 08-29<br>자동배포</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-text">
+            <b>틀린 기록은 없는 기록보다 비싸다</b>
+            <span>기준 문서가 실제와 어긋나면 기준이 아니라 착각이 된다. 다음 세션이 틀린 전제에서 출발한다.</span>
+          </div>
+          <div class="rule-from">2026-08-29<br>시크릿 오진단</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-text">
+            <b>병목은 대개 코드가 아니다</b>
+            <span>화면·판정·수집이 다 만들어져 있는데 값이 없어서 비어 있는 상태가 다섯 세션째다. 코드를 더 쌓아도 화면은 그대로 비어 있다.</span>
+          </div>
+          <div class="rule-from">2026-08-22 →<br>계속 진행 중</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 앞으로 ═══════════════════════════════════════════════ -->
+  <section class="part">
+    <div class="part-head">
+      <span class="part-no">맺음</span>
+      <h2>이 기록을 어떻게 이어 쓰나</h2>
+    </div>
+    <div class="stack">
+      <p>
+        이 문서는 완결된 회고가 아니라 <b>계속 자라는 기록</b>이다.
+        작업이 끝날 때마다 세 곳을 갱신하고, 이 문서는 그 셋에서 <b>이야기가 될 만한 것만</b> 끌어올린다.
+      </p>
+      <div class="boxed table-scroll">
+        <table>
+          <thead><tr><th>어디에</th><th>무엇을</th><th>주기</th></tr></thead>
+          <tbody>
+            <tr><td><code>web/CHANGELOG.md</code></td><td><b>왜</b> 그렇게 했는지. 코드를 보면 알 수 있는 건 생략</td><td>작업마다</td></tr>
+            <tr><td><code>docs/woodsman_개발요구서_v2.md</code></td><td><b>지금의 상태</b>. 구조·모델·단계·운영 절차</td><td>작업마다</td></tr>
+            <tr><td><code>docs/계획_&lt;날짜&gt;.md</code></td><td><b>다음에 할 일</b>과 그때의 판단</td><td>세션 끝</td></tr>
+            <tr><td><b>이 문서</b></td><td>위 셋을 가로지르는 <b>이야기</b> — 사건·정정·규칙</td><td>사건이 생길 때</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        새 사건은 <b>「증상 → 원인 → 결정 → 재발 방지」</b> 네 박자로 적는다.
+        이 형식은 개발 로그가 이미 쓰고 있는 것이고, 네 칸이 다 안 채워지면
+        대개 <b>아직 원인을 모르는 것</b>이다 — 그럴 때는 모른다고 적는다.
+      </p>
+      <div class="callout">
+        <b>다음 장에 들어갈 것</b>은 이미 정해져 있다. 자동배포가 실제로 성공하는 순간,
+        그리고 다섯 세션째 비어 있는 화면에 첫 실데이터가 들어가는 순간.
+        둘 다 <b>코드가 아니라 사람이 풀어야 하는 병목</b>이라는 점에서 같은 이야기다.
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div>
+      <b>Woodsman 개발사</b> — 개발부터 운영까지의 이력.
+      출처: <span class="mono">web/CHANGELOG.md</span> · <span class="mono">docs/계획_*.md</span> ·
+      <span class="mono">git log</span> · GitHub Actions 실행 기록.
+    </div>
+    <div class="mono">기록 시점 2026-08-29 · 커밋 49 · 테스트 843 · 운영 portfolio-solutions.net</div>
+  </footer>
+
+</div>
