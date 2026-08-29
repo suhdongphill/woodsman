@@ -368,7 +368,7 @@
     <div class="facts">
       <span>착수 <b>2026-06-21</b></span>
       <span>기록 시점 <b>2026-08-29</b></span>
-      <span>커밋 <b>49</b></span>
+      <span>커밋 <b>54</b></span>
       <span>테스트 <b>843</b></span>
       <span>운영 <b>portfolio-solutions.net</b></span>
     </div>
@@ -1075,16 +1075,26 @@ Stop-Process -Force -Id &lt;pid&gt;                              # 끈다</pre>
             </div>
           </div>
           <div class="beat decide">
-            <div class="beat-label">고치는 중</div>
+            <div class="beat-label">결말</div>
             <div class="beat-body">
-              <p>토큰을 다시 넣자 <b>오류가 바뀌었다</b> — 그게 진전의 신호였다.</p>
+              <p>
+                토큰을 다시 넣자 <b>오류가 바뀌었다</b> — 그게 진전의 신호였다.
+                하지만 거기서 끝이 아니었다. <b>원인이 하나가 아니라 셋이었고, 그래서 여섯 번을 틀렸다.</b>
+              </p>
               <pre>A request to the Cloudflare API (…/d1/database/…/query) failed.
 The given account is not valid or is not authorized
 to access this service [code: 7403]</pre>
               <p>
-                이제 토큰은 전달된다. 남은 것은 <b>계정 불일치 또는 D1 권한 누락</b>이다.
-                범위를 좁히려고 계정 식별자를 로컬 인증에서 확인해 <b>확정된 값으로 다시 넣었다</b> —
-                변수를 하나씩 지우는 방식이다.
+                ① 시크릿은 처음부터 등록돼 있었다(문서의 진단이 틀렸다).
+                ② 토큰 <b>값</b>이 잘못돼 있었다.
+                ③ ⚠ 진짜 벽은 <b>토큰의 종류</b>였다 — 계정 소유 토큰은 계정 범위에서는 정상 동작하지만
+                <b>영역(Zone) 범위 권한을 가질 수 없다.</b> 배포 설정이 커스텀 도메인 두 개를 선언하고 있어
+                매번 그 영역의 라우트를 확인하는데, 그 권한을 붙일 방법이 없었다.
+              </p>
+              <p>
+                사용자 소유 토큰으로 바꾸고 D1 권한을 더하자 <b>전 구간이 처음으로 통과했다.</b>
+                운영본의 판(version)이 손으로 올린 것에서 <b>자동배포가 만든 것으로 바뀐 것</b>이 그 증거였다.
+                두 달 만이었다.
               </p>
             </div>
           </div>
@@ -1094,6 +1104,13 @@ to access this service [code: 7403]</pre>
               <p>
                 <b>오류 메시지가 바뀌면 전진이다.</b> 같은 오류가 반복되면 가설이 틀린 것이고,
                 다른 오류가 나오면 한 겹 벗겨진 것이다.
+              </p>
+              <p>
+                ⚠ 그리고 <b>시크릿은 넣은 뒤 다시 읽을 수 없다.</b> 무엇이 들어 있는지 확인할 방법이
+                없으니 고칠 때마다 추측이 되고, 한 번 왕복에 몇 분이 든다. 결국
+                <b>러너에게 직접 묻는 일회용 워크플로</b>를 만들고 나서야 한 번에 좁혀졌다 —
+                값 대신 해시 앞자리를 찍어 대조하고, 실패하는 호출을 러너에서 그대로 때렸다.
+                <b>못 보는 것을 추측하지 말고, 볼 수 있게 만드는 데 먼저 시간을 쓴다.</b>
               </p>
               <p>
                 그리고 더 큰 것 하나 — <b>“고장 났는데 아무도 안 보는 상태”가 가장 나쁘다.</b>
@@ -1253,9 +1270,10 @@ to access this service [code: 7403]</pre>
         대개 <b>아직 원인을 모르는 것</b>이다 — 그럴 때는 모른다고 적는다.
       </p>
       <div class="callout">
-        <b>다음 장에 들어갈 것</b>은 이미 정해져 있다. 자동배포가 실제로 성공하는 순간,
-        그리고 다섯 세션째 비어 있는 화면에 첫 실데이터가 들어가는 순간.
-        둘 다 <b>코드가 아니라 사람이 풀어야 하는 병목</b>이라는 점에서 같은 이야기다.
+        <b>다음 장에 들어갈 것</b>은 이미 정해져 있다. 다섯 세션째 비어 있는 화면에
+        <b>첫 실데이터가 들어가는 순간</b>이다. 자동배포는 오늘 풀렸지만 그것도 결국
+        사람이 토큰을 다시 만들어야 끝났고, 남은 병목도 같은 종류다 —
+        <b>코드가 아니라 사람이 풀어야 하는 것.</b>
       </div>
     </div>
   </section>
@@ -1266,7 +1284,7 @@ to access this service [code: 7403]</pre>
       출처: <span class="mono">web/CHANGELOG.md</span> · <span class="mono">docs/계획_*.md</span> ·
       <span class="mono">git log</span> · GitHub Actions 실행 기록.
     </div>
-    <div class="mono">기록 시점 2026-08-29 · 커밋 49 · 테스트 843 · 운영 portfolio-solutions.net</div>
+    <div class="mono">기록 시점 2026-08-29 · 커밋 54 · 테스트 843 · 운영 portfolio-solutions.net</div>
   </footer>
 
 </div>
