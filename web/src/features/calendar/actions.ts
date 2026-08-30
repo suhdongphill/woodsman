@@ -51,7 +51,13 @@ export async function saveEventAction(
    *    자정으로 넣으면 KST 화면에서 하루가 밀린다(이 프로젝트가 이미 겪은 사고다).
    */
   const time = text(formData, "time");
-  const at = /^\d{2}:\d{2}$/.test(time)
+  /**
+   * ⚠ 시각을 안 적었으면 **모른다고 저장한다**(`timeKnown: false`).
+   *    자리는 정오(UTC)로 채우지만 화면은 그 값을 그리지 않는다 —
+   *    그대로 그리면 KST 21:00으로 보여서 **모르는 것을 아는 것처럼 단언**하게 된다.
+   */
+  const timeKnown = /^\d{2}:\d{2}$/.test(time);
+  const at = timeKnown
     ? new Date(`${day}T${time}:00+09:00`).toISOString()
     : `${day}T12:00:00.000Z`;
 
@@ -64,6 +70,7 @@ export async function saveEventAction(
       importance,
       note: text(formData, "note") || undefined,
       postSlug: text(formData, "postSlug") || undefined,
+      timeKnown,
     });
   } catch (error) {
     console.error("[calendar] 저장 실패", error);

@@ -10,7 +10,7 @@
  * 이 캘린더는 **콘텐츠 파이프라인**이다. 지나갔는데 글이 없는 항목이 곧 **다음에 쓸 것**이다.
  * 그걸 숨기면 캘린더는 그냥 달력이 되고, 사이트는 최신성을 잃는다.
  */
-import { seoulDay } from "./kst";
+import { seoulDay, seoulTime } from "./kst";
 
 export const EVENT_KINDS = ["EARNINGS", "INDICATOR", "CENTRAL_BANK", "OTHER"] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
@@ -41,6 +41,8 @@ export const IMPORTANCE_LABEL: Record<number, string> = {
 export type CalendarEvent = {
   id: string;
   at: string;
+  /** ⚠ 시각을 아는가. 모르면 화면은 시각을 **지운다** */
+  timeKnown?: boolean;
   title: string;
   kind: string;
   country: string;
@@ -49,6 +51,17 @@ export type CalendarEvent = {
   postSlug?: string;
   source: string;
 };
+
+/**
+ * 화면에 낼 시각. ⚠ **모르면 빈 문자열**이다.
+ *
+ * 시각을 모르는 일정은 그 날 정오(UTC)로 저장한다. 그 값을 그대로 그리면 KST 21:00으로
+ * 보여서 **모르는 것을 아는 것처럼 단언**하게 된다 — 2026-08-30에 FOMC를 넣고 실제로 그랬다.
+ */
+export function eventTime(event: { at: string; timeKnown?: boolean }): string {
+  if (event.timeKnown === false) return "";
+  return seoulTime(event.at);
+}
 
 export function kindLabel(kind: string): string {
   return EVENT_KIND_LABEL[kind as EventKind] ?? kind;

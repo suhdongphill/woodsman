@@ -5,10 +5,11 @@ import { Card, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { TrashIcon } from "@/components/icons";
 import { requireAdmin } from "@/lib/session";
-import { seoulDay, seoulTime } from "@/lib/kst";
+import { seoulDay } from "@/lib/kst";
 import {
   countryLabel,
   eventStatus,
+  eventTime,
   groupByDay,
   importanceLabel,
   kindLabel,
@@ -114,7 +115,7 @@ export default async function AdminCalendarPage() {
                   return (
                     <li key={e.id} className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                       <span className="w-10 shrink-0 font-mono text-[11px] tabular-nums text-ink-3">
-                        {seoulTime(e.at)}
+                        {eventTime(e)}
                       </span>
                       <span className="text-[13px] text-ink">{e.title}</span>
                       <Badge tone="neutral">{kindLabel(e.kind)}</Badge>

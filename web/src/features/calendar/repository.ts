@@ -17,6 +17,7 @@ type Row = {
   note: string | null;
   postSlug: string | null;
   source: string;
+  timeKnown: number;
 };
 
 function toEvent(row: Row): CalendarEvent {
@@ -30,10 +31,11 @@ function toEvent(row: Row): CalendarEvent {
     note: row.note ?? undefined,
     postSlug: row.postSlug ?? undefined,
     source: row.source,
+    timeKnown: row.timeKnown === 1,
   };
 }
 
-const COLUMNS = `id, at, title, kind, country, importance, note, postSlug, source`;
+const COLUMNS = `id, at, title, kind, country, importance, note, postSlug, source, timeKnown`;
 
 /** 최근·다가오는 것을 함께 본다. 창을 넓게 잡고 걸러 쓰는 편이 왕복보다 싸다. */
 export async function loadEvents(limit = 200): Promise<CalendarEvent[]> {
@@ -52,6 +54,8 @@ export async function createEvent(input: {
   importance: number;
   note?: string;
   postSlug?: string;
+  /** ⚠ 시각을 모르면 false — 화면이 시각을 지운다 */
+  timeKnown: boolean;
   /** ⚠ 자동 수집이 붙을 자리. 지금은 언제나 MANUAL이다 */
   source?: string;
   externalId?: string;
@@ -60,8 +64,8 @@ export async function createEvent(input: {
   await execute(
     `INSERT INTO MacroEvent
        (id, at, title, kind, country, importance, note, postSlug, source, externalId,
-        createdAt, updatedAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        timeKnown, createdAt, updatedAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       `ev_${now}_${Math.floor(performance.now())}`,
       input.at,
@@ -73,6 +77,7 @@ export async function createEvent(input: {
       input.postSlug ?? null,
       input.source ?? "MANUAL",
       input.externalId ?? null,
+      input.timeKnown ? 1 : 0,
       now,
       now,
     ],

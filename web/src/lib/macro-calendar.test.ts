@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   eventStatus,
+  eventTime,
   groupByDay,
   icsEscape,
   isEventKind,
@@ -57,6 +58,20 @@ describe("일정의 상태", () => {
   it("⚠ KST로 판단한다 — UTC로 보면 어제 일이 오늘로 보인다", () => {
     // 2026-08-29T23:00Z = KST 2026-08-30 08:00 → 오늘이다
     expect(eventStatus(ev("a", "2026-08-29T23:00:00.000Z"), TODAY).kind).toBe("today");
+  });
+});
+
+describe("시각 표시", () => {
+  it("시각을 알면 KST로 낸다", () => {
+    expect(eventTime({ at: "2026-09-11T12:30:00.000Z", timeKnown: true })).toBe("21:30");
+  });
+
+  it("⚠ 시각을 모르면 빈 문자열 — 정오로 채운 자리를 21:00이라고 단언하지 않는다", () => {
+    expect(eventTime({ at: "2026-09-16T12:00:00.000Z", timeKnown: false })).toBe("");
+  });
+
+  it("값이 없으면(옛 데이터) 아는 것으로 본다", () => {
+    expect(eventTime({ at: "2026-09-11T12:30:00.000Z" })).toBe("21:30");
   });
 });
 

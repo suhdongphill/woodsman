@@ -4,10 +4,11 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { AdSlot } from "@/components/analytics/AdSlot";
-import { seoulDay, seoulTime } from "@/lib/kst";
+import { seoulDay } from "@/lib/kst";
 import {
   countryLabel,
   eventStatus,
+  eventTime,
   groupByDay,
   kindLabel,
   needsReview,
@@ -72,7 +73,7 @@ export default async function MacroCalendarPage() {
                 {next.map((e) => (
                   <Card key={e.id} className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                     <span className="font-mono text-[12px] tabular-nums text-ink-3">
-                      {seoulDay(e.at)} {seoulTime(e.at)}
+                      {seoulDay(e.at)} {eventTime(e)}
                     </span>
                     <span className="text-[13.5px] font-medium text-ink">{e.title}</span>
                     <Badge tone="neutral">{kindLabel(e.kind)}</Badge>
@@ -120,7 +121,7 @@ export default async function MacroCalendarPage() {
                             className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px]"
                           >
                             <span className="w-10 shrink-0 font-mono text-[11px] tabular-nums text-ink-3">
-                              {seoulTime(e.at)}
+                              {eventTime(e)}
                             </span>
                             <span className="text-ink">{e.title}</span>
                             <span className="text-[11px] text-ink-3">{kindLabel(e.kind)}</span>
