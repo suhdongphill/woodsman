@@ -22,10 +22,19 @@ const H = 260;
 const PAD = { top: 16, right: 96, bottom: 26, left: 52 };
 
 /** ⚠ 색은 보조 수단이다. 순서는 명도 차이가 나게 골랐다(흑백에서도 갈린다). */
-export const OVERLAY_COLORS = ["#7fb2ff", "#f0b429", "#4ade80", "#f87171"];
+/**
+ * 겹쳐 보기 계열색. ⚠ 검증된 3계열 + 위험색만 쓴다(임의로 늘리지 않는다).
+ * ⚠ SVG 속성이 아니라 style·CSS로만 넘긴다 — 속성은 var()를 못 읽는다.
+ */
+export const OVERLAY_COLORS = [
+  "var(--w-series-1)",
+  "var(--w-series-2)",
+  "var(--w-series-3)",
+  "var(--w-danger)",
+];
 export const OVERLAY_MARKS = ["●", "▲", "■", "◆"];
 
-const GRID = "#2a2e3a";
+const GRID = "var(--w-border)";
 
 export function OverlayChart({
   lines,
@@ -79,13 +88,13 @@ export function OverlayChart({
         role="img"
         aria-label={`${lines.map((l) => l.label).join(", ")} 겹쳐 보기. ${dates[0]}부터 ${dates[dates.length - 1]}까지. 자세한 값은 아래 표에 있습니다.`}
       >
-        <line x1={PAD.left} y1={PAD.top} x2={W - PAD.right} y2={PAD.top} stroke={GRID} />
+        <line x1={PAD.left} y1={PAD.top} x2={W - PAD.right} y2={PAD.top} style={{ stroke: GRID }} />
         <line
           x1={PAD.left}
           y1={PAD.top + plotH}
           x2={W - PAD.right}
           y2={PAD.top + plotH}
-          stroke={GRID}
+          style={{ stroke: GRID }}
         />
 
         {lines.map((line, i) => {
@@ -106,7 +115,7 @@ export function OverlayChart({
               <path
                 d={d}
                 fill="none"
-                stroke={color}
+                style={{ stroke: color }}
                 strokeWidth="1.8"
                 strokeLinejoin="round"
                 strokeLinecap="round"
@@ -127,25 +136,25 @@ export function OverlayChart({
           );
         })}
 
-        <text x={PAD.left - 8} y={PAD.top + 4} textAnchor="end" className="fill-[#8a97ac] text-[11px] tabular-nums">
+        <text x={PAD.left - 8} y={PAD.top + 4} textAnchor="end" className="fill-[var(--w-ink-3)] text-[11px] tabular-nums">
           {fmt(max)}
         </text>
         <text
           x={PAD.left - 8}
           y={PAD.top + plotH + 4}
           textAnchor="end"
-          className="fill-[#8a97ac] text-[11px] tabular-nums"
+          className="fill-[var(--w-ink-3)] text-[11px] tabular-nums"
         >
           {fmt(min)}
         </text>
-        <text x={PAD.left} y={H - 7} className="fill-[#6c809e] text-[11px] tabular-nums">
+        <text x={PAD.left} y={H - 7} className="fill-[var(--w-ink-3)] text-[11px] tabular-nums">
           {dates[0]}
         </text>
         <text
           x={W - PAD.right}
           y={H - 7}
           textAnchor="end"
-          className="fill-[#6c809e] text-[11px] tabular-nums"
+          className="fill-[var(--w-ink-3)] text-[11px] tabular-nums"
         >
           {dates[dates.length - 1]}
         </text>

@@ -134,7 +134,7 @@ export default async function InsightDetailPage({ params }: Props) {
             href={outboundPostHref(post.slug)}
             target="_blank"
             rel="noopener"
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-gold-500 px-3.5 py-2 text-xs font-semibold text-[#1a1400] transition-colors hover:bg-gold-400"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-gold-500 px-3.5 py-2 text-xs font-semibold text-onAccent transition-colors hover:bg-gold-400"
           >
             원문 보기
             <ExternalIcon size={13} />

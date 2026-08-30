@@ -98,7 +98,7 @@ export function TistoryCta({
             "여기는 계좌와 판단을 기록하는 곳이고, 배경 설명과 긴 분석은 티스토리에 씁니다. 같은 원칙을 다른 각도로 풀어 둔 글들을 이어서 읽어보세요."}
         </p>
 
-        <span className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gold-500 px-5 py-3 text-sm font-semibold text-[#1a1400] transition-colors group-hover:bg-gold-400">
+        <span className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gold-500 px-5 py-3 text-sm font-semibold text-onAccent transition-colors group-hover:bg-gold-400">
           블로그에서 이어 읽기
           <ExternalIcon size={15} />
         </span>

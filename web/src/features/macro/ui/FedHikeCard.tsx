@@ -39,7 +39,7 @@ function Bar({
           {formatProbability(value)}
         </span>
       </div>
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#1c1f2a]">
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
         <div
           className={`h-full rounded-full ${emphasis ? "bg-gold-500" : "bg-gray-600"}`}
           style={{ width: `${Math.round(value * 100)}%` }}

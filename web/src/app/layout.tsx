@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import { Noto_Sans_KR } from "next/font/google";
 import { AdSense } from "@/components/analytics/AdSense";
 import { siteUrl } from "@/lib/site-url";
@@ -37,7 +38,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={notoSansKr.variable}>
+    <html lang="ko" className={notoSansKr.variable} suppressHydrationWarning>
+      <head>
+        {/*
+          ⚠ 첫 페인트 **전에** 저장된 테마를 붙인다. 없으면 다크를 고른 사람이
+             흰 화면을 한 번 맞는다(FOUC). 판단은 lib/theme.ts에 있고 여기서는 실행만 한다.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body className="font-sans bg-bg text-ink antialiased">
         {children}
         <AdSense />

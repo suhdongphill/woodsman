@@ -242,7 +242,7 @@ export default async function MacroComparePage({ searchParams }: Props) {
 
             <button
               type="submit"
-              className="rounded-lg bg-gold-500 px-4 py-2 text-[13px] font-semibold text-[#1a1400] transition-colors hover:bg-gold-400"
+              className="rounded-lg bg-gold-500 px-4 py-2 text-[13px] font-semibold text-onAccent transition-colors hover:bg-gold-400"
             >
               겹쳐 보기
             </button>

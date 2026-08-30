@@ -79,7 +79,7 @@ export default async function PortfolioPage() {
   const segments = [
     ...buckets.map((b) => ({ label: b.name, value: b.targetPct, color: b.color })),
     // ⚠ 남는 몫을 그린다. 빼면 도넛이 100%를 채워 "현금이 없다"로 읽힌다.
-    ...(cashPct > 0 ? [{ label: "현금·미배정", value: cashPct, color: "#3a3f4b" }] : []),
+    ...(cashPct > 0 ? [{ label: "현금·미배정", value: cashPct, color: "var(--w-flat)" }] : []),
   ];
   // ⚠ 어느 버킷에도 없는 종목 — 아래 버킷 목록에서 빠지므로 따로 모아 보여준다.
   const orphans = orphanHoldings(buckets, published);

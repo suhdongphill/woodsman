@@ -21,7 +21,7 @@ export function Th({
   return (
     <th
       className={cx(
-        "px-4 py-3 text-[11px] font-medium text-muted whitespace-nowrap bg-[#161923] border-b border-border",
+        "px-4 py-3 text-[11px] font-medium text-muted whitespace-nowrap bg-surface-2 border-b border-border",
         className,
       )}
     >

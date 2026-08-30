@@ -8,7 +8,7 @@ export type ButtonSize = "sm" | "md" | "lg";
 const VARIANTS: Record<ButtonVariant, string> = {
   emerald:
     "bg-emerald-500 hover:bg-emeraldDark text-ink border border-transparent shadow-[0_2px_10px_rgba(54,160,106,.25)]",
-  gold: "bg-gold-500 hover:bg-gold-400 text-[#1a1400] font-semibold border border-transparent shadow-[0_2px_10px_rgba(201,166,87,.25)]",
+  gold: "bg-gold-500 hover:bg-gold-400 text-onAccent font-semibold border border-transparent shadow-[0_2px_10px_rgba(201,166,87,.25)]",
   ghost: "bg-transparent hover:bg-cardHover text-muted hover:text-ink border border-transparent",
   outline: "bg-transparent hover:bg-cardHover text-ink border border-border hover:border-gold-600",
   danger: "bg-red-600 hover:bg-red-700 text-ink border border-transparent",

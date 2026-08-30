@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Logo } from "@/components/brand/Logo";
@@ -101,6 +102,8 @@ export function TopNav({
           </div>
 
           <div className="hidden md:flex items-center gap-2">
+            {/* 테마 선택 — 로그인 여부와 무관하게 누구나 쓴다 */}
+            <ThemeToggle className="mr-1" />
             {user ? (
               <>
                 {user.role === "ADMIN" && (

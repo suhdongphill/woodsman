@@ -39,7 +39,7 @@ export function AccountStrip({
   const targetSet = isBucketTargetSet(buckets);
   const segments = [
     ...buckets.map((b) => ({ label: b.name, value: b.targetPct, color: b.color })),
-    ...(cashPct > 0 ? [{ label: "현금·미배정", value: cashPct, color: "#3a3f4b" }] : []),
+    ...(cashPct > 0 ? [{ label: "현금·미배정", value: cashPct, color: "var(--w-flat)" }] : []),
   ];
 
   return (

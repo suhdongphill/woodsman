@@ -49,7 +49,7 @@ export function CanslimPanel({
       <div className="flex items-center gap-6">
         {composite === undefined ? (
           /* ⚠ 0.0으로 그리지 않는다 — 0은 '저조'로 읽힌다. 빈 다이얼이 정직하다. */
-          <div className="w-24 h-24 shrink-0 rounded-full border-[7px] border-[#2a2e3a] flex flex-col items-center justify-center">
+          <div className="w-24 h-24 shrink-0 rounded-full border-[7px] border-border flex flex-col items-center justify-center">
             <span className="text-xl font-bold text-gray-600">—</span>
             <span className="text-[10px] text-gray-600">/ 10</span>
           </div>

@@ -82,9 +82,10 @@ export const FUNCTION_LABEL: Record<FunctionType, string> = {
 };
 
 export const FUNCTION_COLOR: Record<FunctionType, string> = {
-  GROWTH: "#36a06a",
-  INCOME: "#c9a657",
-  DEFENSE: "#5b7fa6",
+  // ⚠ 계열색 토큰만 쓴다. hex를 다시 적지 않는다(2026-08-30 개편).
+  GROWTH: "var(--w-series-1)",
+  INCOME: "var(--w-series-2)",
+  DEFENSE: "var(--w-series-3)",
 };
 
 /**

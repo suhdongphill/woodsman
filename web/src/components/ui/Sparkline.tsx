@@ -20,13 +20,14 @@ export function Sparkline({
     const y = height - ((v - min) / span) * (height - 4) - 2;
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   });
-  const color = up ? "#56b98a" : "#ef4444";
+  // ⚠ 한국식 등락: 상승 적 · 하락 청. 색 단독으로 읽히지 않게 부르는 쪽이 값을 함께 낸다.
+  const color = up ? "var(--w-up)" : "var(--w-down)";
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
       <polyline
         points={pts.join(" ")}
         fill="none"
-        stroke={color}
+        style={{ stroke: color }}
         strokeWidth="1.6"
         strokeLinejoin="round"
         strokeLinecap="round"

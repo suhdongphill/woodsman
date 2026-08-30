@@ -40,7 +40,7 @@ export function Toggle({
       className={cx(
         "relative rounded-full transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500/50",
         w,
-        on ? "bg-emerald-500" : "bg-[#3a3f4d]",
+        on ? "bg-emerald-500" : "bg-border",
       )}
     >
       <span

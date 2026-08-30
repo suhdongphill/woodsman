@@ -274,7 +274,7 @@ export function BucketManager({
               <input
                 type="color"
                 name="color"
-                defaultValue="#8b5cf6"
+                defaultValue="#0b6640"
                 className="h-[34px] w-14 cursor-pointer rounded-lg border border-border bg-bg"
                 aria-label="새 분류 색"
               />

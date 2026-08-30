@@ -98,7 +98,7 @@ export default async function AdminModelPortfolioPage({
       color: r.bucket.color,
     })),
     // 남는 몫을 회색으로 그린다 — 100%를 채운 것처럼 보이지 않게.
-    ...(cashPct > 0 ? [{ label: "현금·미배정", value: cashPct, color: "#3a3f4b" }] : []),
+    ...(cashPct > 0 ? [{ label: "현금·미배정", value: cashPct, color: "var(--w-flat)" }] : []),
   ];
 
   // 통화별 원가·평가액 — 환율로 뭉개지 않고 통화 그대로 본다(원가는 통화별로만 의미가 있다).

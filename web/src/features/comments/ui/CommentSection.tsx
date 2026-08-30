@@ -91,7 +91,7 @@ export function CommentSection({
                   </Link>
                   <Link
                     href="/register"
-                    className="rounded-lg bg-gold-500 px-3.5 py-2 text-xs font-semibold text-[#1a1400] transition-colors hover:bg-gold-400"
+                    className="rounded-lg bg-gold-500 px-3.5 py-2 text-xs font-semibold text-onAccent transition-colors hover:bg-gold-400"
                   >
                     회원가입
                   </Link>

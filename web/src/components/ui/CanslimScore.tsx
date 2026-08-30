@@ -49,7 +49,7 @@ export function CanslimDial({ score }: { score: number }) {
   return (
     <div className="relative w-24 h-24 shrink-0">
       <svg viewBox="0 0 80 80" className="w-24 h-24 -rotate-90">
-        <circle cx="40" cy="40" r={r} stroke="#2a2e3a" strokeWidth="7" fill="none" />
+        <circle cx="40" cy="40" r={r} style={{ stroke: "var(--w-border)" }} strokeWidth="7" fill="none" />
         <circle
           cx="40"
           cy="40"

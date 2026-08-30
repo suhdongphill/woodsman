@@ -21,10 +21,11 @@ const W = 720;
 const H = 180;
 const PAD = { top: 14, right: 14, bottom: 22, left: 46 };
 
-const LINE = "#7fb2ff";
-const AREA = "#7fb2ff1f";
-const GRID = "#2a2e3a";
-const BASE = "#8a97ac";
+/** ⚠ SVG의 fill=/stroke= **속성**은 var()를 못 읽는다. 반드시 style로 준다. */
+const LINE = "var(--w-series-3)";
+const AREA = "color-mix(in oklab, var(--w-series-3) 14%, transparent)";
+const GRID = "var(--w-border)";
+const BASE = "var(--w-ink-3)";
 
 function niceBounds(values: number[], baseline?: number): { min: number; max: number } {
   const all = baseline === undefined ? values : [...values, baseline];
@@ -91,13 +92,13 @@ export function SeriesChart({
         aria-label={`${label} 추이 그래프. ${first.date}부터 ${last.date}까지, 최고 ${format(hi.value)}, 최저 ${format(lo.value)}, 최근 ${format(last.value)}.`}
       >
         {/* 위·아래 눈금선 */}
-        <line x1={PAD.left} y1={PAD.top} x2={W - PAD.right} y2={PAD.top} stroke={GRID} strokeWidth="1" />
+        <line x1={PAD.left} y1={PAD.top} x2={W - PAD.right} y2={PAD.top} strokeWidth="1" style={{ stroke: GRID }} />
         <line
           x1={PAD.left}
           y1={PAD.top + plotH}
           x2={W - PAD.right}
           y2={PAD.top + plotH}
-          stroke={GRID}
+          style={{ stroke: GRID }}
           strokeWidth="1"
         />
 
@@ -109,7 +110,7 @@ export function SeriesChart({
               y1={y(baseline)}
               x2={W - PAD.right}
               y2={y(baseline)}
-              stroke={BASE}
+              style={{ stroke: BASE }}
               strokeWidth="1"
               strokeDasharray="4 4"
             />
@@ -117,30 +118,30 @@ export function SeriesChart({
               x={W - PAD.right}
               y={y(baseline) - 5}
               textAnchor="end"
-              className="fill-[#8a97ac] text-[11px]"
+              className="fill-[var(--w-ink-3)] text-[11px]"
             >
               {baselineLabel ?? format(baseline)}
             </text>
           </>
         )}
 
-        <path d={area} fill={AREA} />
-        <path d={line} fill="none" stroke={LINE} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={area} style={{ fill: AREA }} />
+        <path d={line} fill="none" strokeWidth="2" style={{ stroke: LINE }} strokeLinejoin="round" strokeLinecap="round" />
 
         {/* 지금 여기 */}
-        <circle cx={x(points.length - 1)} cy={y(last.value)} r="4" fill={LINE} />
+        <circle cx={x(points.length - 1)} cy={y(last.value)} r="4" style={{ fill: LINE }} />
 
         {/* 축 — 최고·최저·기간만 */}
-        <text x={PAD.left - 8} y={y(hi.value) + 4} textAnchor="end" className="fill-[#8a97ac] text-[11px] tabular-nums">
+        <text x={PAD.left - 8} y={y(hi.value) + 4} textAnchor="end" className="fill-[var(--w-ink-3)] text-[11px] tabular-nums">
           {format(hi.value)}
         </text>
-        <text x={PAD.left - 8} y={y(lo.value) + 4} textAnchor="end" className="fill-[#8a97ac] text-[11px] tabular-nums">
+        <text x={PAD.left - 8} y={y(lo.value) + 4} textAnchor="end" className="fill-[var(--w-ink-3)] text-[11px] tabular-nums">
           {format(lo.value)}
         </text>
-        <text x={PAD.left} y={H - 6} className="fill-[#6c809e] text-[11px] tabular-nums">
+        <text x={PAD.left} y={H - 6} className="fill-[var(--w-ink-3)] text-[11px] tabular-nums">
           {first.date}
         </text>
-        <text x={W - PAD.right} y={H - 6} textAnchor="end" className="fill-[#6c809e] text-[11px] tabular-nums">
+        <text x={W - PAD.right} y={H - 6} textAnchor="end" className="fill-[var(--w-ink-3)] text-[11px] tabular-nums">
           {last.date}
         </text>
       </svg>
