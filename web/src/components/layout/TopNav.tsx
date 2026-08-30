@@ -30,9 +30,14 @@ const BASE_NAV = [
   { href: "/", label: "홈" },
   { href: "/macro", label: "거시 지표" },
   { href: "/insights", label: "인사이트" },
-  { href: "/journal", label: "투자일지" },
   { href: "/portfolio", label: "포트폴리오" },
   { href: "/stocks", label: "종목분석" },
+  /**
+   * ⚠ 투자일지는 **맨 뒤**다(2026-08-30). 흐름(거시·인사이트) → 그에 대한 답
+   * (포트폴리오·종목분석) → 그 판단의 기록(투자일지) 순서다.
+   * 기록은 미끼가 아니라 **근거**라서, 앞의 것을 읽은 사람이 마지막에 확인하는 자리다.
+   */
+  { href: "/journal", label: "투자일지" },
 ];
 
 /** 커뮤니티가 열렸을 때만 끼워 넣는다 */

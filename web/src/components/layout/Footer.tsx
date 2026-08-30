@@ -8,9 +8,9 @@ import { getSiteBasics } from "@/lib/site-settings";
 const CONTENT_LINKS = [
   { href: "/macro", label: "거시 지표" },
   { href: "/insights", label: "인사이트" },
-  { href: "/journal", label: "투자일지" },
   { href: "/portfolio", label: "대표 포트폴리오" },
   { href: "/stocks", label: "종목분석" },
+  { href: "/journal", label: "투자일지" },
 ];
 
 const POLICY_LINKS = [
