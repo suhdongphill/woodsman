@@ -10,6 +10,34 @@
 
 ---
 
+## 2026-08-30 (5) — ⚠ 배포가 한 번 죽었다: 빌드 워커 둘이 같은 D1을 열었다
+
+위 변경을 배포하는데 **첫 실행이 실패했다.** 로컬 `npm run check`(빌드 포함)는 통과했는데 러너에서만 죽었다.
+
+```
+Fatal: workerd/util/sqlite.c++: NOSENTRY database is locked: SQLITE_BUSY
+  at getPlatformProxy → getCloudflareContextFromWrangler
+Next.js build worker exited with code: 1
+```
+
+Next가 페이지 데이터를 모을 때 **워커를 여럿 띄우는데**, 각 워커가 `getCloudflareContext()`로
+miniflare를 올리면서 **같은 로컬 SQLite를 동시에 연다.** 오늘 관리자 화면을 셋 늘린 것
+(`/admin/logs`·`/admin/posts/new`·`/admin/posts/edit`)이 방아쇠였다.
+
+**재시도로 통과했다**(같은 커밋, 같은 코드). 즉 **경합이지 코드 결함이 아니다.**
+
+⚠ 지금은 우회 설정을 넣지 않았다. `next.config.ts`에 병렬도를 1로 고정하면(`experimental.cpus`)
+확실히 막히지만, 이 저장소는 *"문제를 우회하는 설정이 쌓이면 나중에 왜 있는지 아무도 모른다"* 로
+한 번 정리한 적이 있다. **다시 나면 그때 넣고, 이 항목을 근거로 남긴다.**
+
+⚠ **재시도로 넘어간 실패를 "없던 일"로 적지 않는다.** 다음에 같은 로그를 보는 사람이
+"처음 보는 오류"라고 생각하면 또 처음부터 판다.
+
+### 배포 후 운영본 검증 (2026-08-30)
+
+목록에 편집기 JS 없음 · 「편집」이 **첫 클릭에** 먹음 · 옛 주소 `?edit=` 이동 200 ·
+`/admin/logs` 정상(전체 0건 — 표가 생겼다는 뜻) · 공개 홈 200.
+
 ## 2026-08-30 (4) — 게시판 보안 점검 · 초안에 댓글이 달릴 수 있었다
 
 게시판·댓글 경로를 SQL 주입 · XSS · CSRF · 권한 관점으로 훑었다. 대부분 이미 막혀 있었고,
