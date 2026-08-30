@@ -69,3 +69,15 @@ export async function loadViewStats(now = new Date()): Promise<ViewStats> {
 
   return { ...summarizeViews(daily, now), top };
 }
+
+/**
+ * 날짜별 조회수 — **릴리스 전후 비교용**(경로를 합친다).
+ * ⚠ 판정은 하지 않는다. `lib/release-effect.ts`가 한다.
+ */
+export async function loadViewDaily(limit = 60): Promise<{ date: string; count: number }[]> {
+  return queryAll<{ date: string; count: number }>(
+    `SELECT date, SUM(count) AS count FROM PageView
+      GROUP BY date ORDER BY date DESC LIMIT ?`,
+    [limit],
+  );
+}

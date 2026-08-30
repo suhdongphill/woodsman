@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 26 34" role="img" aria-label="WoodsMan">
+  <!--
+    파비콘·앱 아이콘용 나무 마크.
+    ⚠ 파비콘은 CSS 변수를 못 읽는다(문서 밖에서 그려진다). 그래서 여기에만 값을 박는다.
+       라이트/다크 양쪽 탭 배경에서 견디도록 **중간 명도의 숲 녹색**을 쓴다.
+    ⚠ 웹 화면의 로고는 이 파일이 아니라 src/components/brand/Wordmark.tsx다.
+       모양을 바꾸면 두 곳을 같이 고친다.
+  -->
+  <g fill="#0b6640" stroke="#0b6640" stroke-width="2.6" stroke-linejoin="round">
+    <path d="M13 2.6 L19.6 11 L6.4 11 Z"/>
+    <path d="M13 10.5 L21.8 20.4 L4.2 20.4 Z"/>
+    <path d="M13 18.4 L24.4 28.8 L1.6 28.8 Z"/>
+  </g>
+  <rect x="11.5" y="28.4" width="3" height="4.6" rx="1.5" fill="#b8672f"/>
+</svg>

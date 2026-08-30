@@ -47,3 +47,17 @@ export async function loadClickStats(now = new Date()): Promise<ClickStats> {
     recent: daily.slice(0, 7),
   };
 }
+
+/**
+ * 날짜별 클릭 수 — **릴리스 전후 비교용**.
+ *
+ * ⚠ `loadClickStats`는 최근 7일만 돌려준다. 전후 14일씩을 보려면 더 긴 창이 필요해서
+ *    따로 둔다. 판정은 `lib/release-effect.ts`가 하고 여기는 값만 준다.
+ */
+export async function loadClickDaily(limit = 60): Promise<{ date: string; count: number }[]> {
+  return queryAll<{ date: string; count: number }>(
+    `SELECT date, SUM(count) AS count FROM OutboundClick
+      GROUP BY date ORDER BY date DESC LIMIT ?`,
+    [limit],
+  );
+}

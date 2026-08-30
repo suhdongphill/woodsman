@@ -36,11 +36,13 @@ export function renderLlmsTxt(input: LlmsTxtInput): string {
       `- [${p.title}](${absoluteUrl(`/insights/${p.slug}`)})${p.publishedAt ? ` (${p.publishedAt})` : ""}`,
   );
 
-  return `# Woodsman — 계좌를 공개하는 투자 기록
+  return `# Woodsman — 거시 지표로 읽는 경제 흐름과 투자 기록
 
-> 한 사람이 자기 계좌와 판단을 그대로 공개하는 개인 투자 기록 사이트입니다.
+> 금리·물가·유동성 같은 거시 지표를 기준일·출처와 함께 공개하고, **그 흐름에 맞춰 굴린 계좌와
+> 판단을 그대로 남기는** 개인 기록 사이트입니다. 하루의 등락(파도)이 아니라 구조의 변화
+> (바람과 조류)를 봅니다.
 > 매크로 지표 ${MACRO_INDICATORS.length}개와 AI·반도체 버블 지표 ${ALL_BUBBLE_INDICATORS.length}개를
-> 기준일·출처와 함께 공개하고, 매매할 때마다 판단의 근거를 투자일지로 남깁니다.
+> 공개하고, 매매할 때마다 판단의 근거를 투자일지로 남깁니다.
 
 ## 이 사이트가 가진 것
 

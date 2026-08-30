@@ -22,6 +22,8 @@ export const ADMIN_ACTIONS = {
   "post.delete": "글 삭제",
   "macro.ingest": "거시 자료 가져오기",
   "site.basics": "사이트 기본값 변경",
+  "release.create": "릴리스 기록",
+  "release.delete": "릴리스 기록 삭제",
 } as const;
 
 export type AdminAction = keyof typeof ADMIN_ACTIONS;
@@ -50,6 +52,7 @@ export const LOGGED_AREAS = [
   "콘텐츠(작성·수정·삭제)",
   "거시 지표 자료 가져오기",
   "사이트 기본값",
+  "릴리스 기록",
 ] as const;
 
 /** 아직 기록하지 않는 자리. 비워 두지 말고 적는다. */

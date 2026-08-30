@@ -981,3 +981,36 @@ model AdminLog {
 
   @@index([at])
 }
+
+/// 릴리스(배포) 기록 — **바꾼 것**과 **반응**을 잇는 고리.
+///
+/// ⚠ 지금까지 배포는 git에만 있었고 사이트는 자기가 언제 바뀌었는지 몰랐다.
+///    그래서 "이렇게 바꿨더니 이렇게 됐다"를 말할 수 없었고, 다음 결정도 감으로 했다.
+///
+/// ⚠ **가설을 나중에 쓰지 않는다.** 결과를 보고 쓴 가설은 항상 맞는다 —
+///    그건 학습이 아니라 자기기만이다. 배포할 때 같이 적는다.
+model SiteRelease {
+  id String @id @default(cuid())
+
+  /// 배포 시각(UTC 저장 · KST 표시)
+  at DateTime @default(now())
+
+  /// 무엇을 바꿨나 — 한 줄
+  title String
+
+  /// LAYOUT · COPY · NAV · VISUAL · CONTENT · FIX
+  kind String
+
+  /// ⚠ 기대한 것. 비워 둘 수 있지만, 비면 나중에 결과 해석이 사후 정당화가 된다
+  hypothesis String?
+
+  /// 무엇으로 볼 것인가 — TISTORY_CLICK · VIEWS
+  metric String @default("TISTORY_CLICK")
+
+  /// 커밋 해시(개발사·책 원고와 잇는 고리)
+  /// ⚠ 이름이 `commit`이면 안 된다 — **SQLite 예약어**라 인용하지 않은 질의가 통째로 깨진다
+  ///    (2026-08-30에 실제로 겪었다: near "commit": syntax error).
+  commitHash String?
+
+  @@index([at])
+}

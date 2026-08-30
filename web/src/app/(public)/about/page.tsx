@@ -8,7 +8,7 @@ import { getSiteBasics } from "@/lib/site-settings";
 export const metadata: Metadata = {
   title: "사이트 소개",
   description:
-    "Woodsman은 성장·인컴·방어로 나눈 계좌와 그 판단 과정을 공개하는 개인 투자 기록 블로그입니다. 원칙을 나누는 커뮤니티와 인컴 파이프라인 관리 도구로 발전시켜 갑니다.",
+    "Woodsman은 금리·물가·유동성 같은 거시 지표로 경제의 흐름을 읽고, 그 흐름에 맞춰 굴린 계좌와 판단 과정을 공개하는 개인 기록 사이트입니다. 원칙을 나누는 커뮤니티와 인컴 파이프라인 관리 도구로 발전시켜 갑니다.",
 };
 
 export default async function AboutPage() {
