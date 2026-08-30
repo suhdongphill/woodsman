@@ -12,16 +12,27 @@ describe("홈 블록", () => {
     expect(blocks.indexOf("macro")).toBeLessThan(blocks.indexOf("accountStrip"));
   });
 
+  it("⚠ 콘텐츠가 맨 앞이다 — 1순위 목적이 블로그 유입이다", () => {
+    const blocks = visibleHomeBlocks({ homePostCount: 3 });
+    expect(blocks.indexOf("latestInsights")).toBe(1); // 히어로 바로 다음
+    expect(blocks.indexOf("latestInsights")).toBeLessThan(blocks.indexOf("macro"));
+  });
+
+  it("⚠ 「어떻게 기록하나요」는 맨 뒤다 — 콘텐츠가 아니라 소개글이다", () => {
+    const blocks = visibleHomeBlocks({ homePostCount: 3 });
+    expect(blocks[blocks.length - 1]).toBe("principles");
+  });
+
   it("홈에 쌓인 글이 없으면 그 프레임만 뺀다", () => {
     const blocks = visibleHomeBlocks({ homePostCount: 0 });
     expect(blocks).not.toContain("homePosts");
     expect(blocks).toEqual([
       "hero",
-      "macro",
-      "principles",
       "latestInsights",
+      "macro",
       "accountStrip",
       "journalAndReports",
+      "principles",
     ]);
   });
 
