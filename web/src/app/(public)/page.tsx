@@ -11,6 +11,7 @@ import { LatestInsights } from "@/features/home/ui/LatestInsights";
 import { JournalAndReports } from "@/features/home/ui/JournalAndReports";
 import { visibleHomeBlocks, type HomeBlock } from "@/lib/home-layout";
 import { macroLede } from "@/lib/home-lede";
+import { MACRO_INDICATORS } from "@/lib/macro/catalog";
 import { summarizePerformance } from "@/lib/performance";
 import { getSiteBasics } from "@/lib/site-settings";
 import { loadPublishedJournal, loadSnapshots } from "@/features/journal/repository";
@@ -81,6 +82,7 @@ export default async function HomePage() {
         perf={perf}
         rebalances={rebalances}
         journalCount={allJournal.length}
+        indicatorCount={MACRO_INDICATORS.length}
       />
     ),
     macroStrip: <MacroStrip indicators={macro.headlines} />,

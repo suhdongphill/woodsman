@@ -40,7 +40,15 @@ export function macroLede(input: LedeInput): string | null {
   // 판정에 쓴 지표가 0개면 등급 자체가 성립하지 않는다.
   if (input.summary.total <= 0) return null;
 
-  const parts = [input.summary.label];
+  /**
+   * ⚠ **주어를 붙인다.** 등급만 적으면 독자가 "무엇이 안정?"이라고 되묻는다.
+   *    아래 보드에는 「침체 신호 안정」으로 나오는데 첫 줄에서만 주어가 빠져 있었다
+   *    (2026-08-30 독자 관점 점검).
+   */
+  const label = input.summary.label.includes("침체")
+    ? input.summary.label
+    : `침체 신호 ${input.summary.label}`;
+  const parts = [label];
   if (input.summary.alerts > 0) parts.push(`경고 ${input.summary.alerts}개`);
   parts.push(`지표 ${input.summary.total}개 종합`);
   if (input.asOf) parts.push(`${input.asOf} 기준`);

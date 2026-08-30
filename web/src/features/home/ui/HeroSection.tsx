@@ -32,6 +32,7 @@ export function HeroSection({
   perf,
   rebalances,
   journalCount,
+  indicatorCount,
 }: {
   heroTitle: string;
   heroSubtitle: string;
@@ -40,7 +41,29 @@ export function HeroSection({
   perf: PerformanceSummary | null;
   rebalances: Rebalance[];
   journalCount: number;
+  /** 값이 실제로 쌓인 거시 지표 수 */
+  indicatorCount: number;
 }) {
+  /**
+   * ⚠ **기록 셋이 모두 0이면 다른 것을 보여 준다**(2026-08-30 독자 관점 점검).
+   *
+   * 처음 온 사람에게 「기록 개월 0 · 투자일지 0건 · 리밸런싱 0회」는
+   * **"아무것도 없는 사이트"** 로 읽힌다. 0을 감추자는 게 아니라,
+   * **실제로 있는 것**(추적 중인 거시 지표)을 대신 말하자는 것이다 —
+   * 계좌 기록이 시작되면 원래 셋으로 돌아온다.
+   */
+  const hasRecord = (perf?.months ?? 0) > 0 || journalCount > 0 || rebalances.length > 0;
+  const stats = hasRecord
+    ? [
+        { label: "기록 개월", value: String(perf?.months ?? 0) },
+        { label: "투자일지", value: `${journalCount}건` },
+        { label: "리밸런싱", value: `${rebalances.length}회` },
+      ]
+    : [
+        { label: "추적 중인 지표", value: `${indicatorCount}개` },
+        { label: "계좌 기록", value: "준비 중" },
+        { label: "공개 방식", value: "모의 투자" },
+      ];
   return (
     <section className="relative overflow-hidden border-b border-border">
       <div
@@ -80,24 +103,12 @@ export function HeroSection({
             </LinkButton>
           </div>
           <dl className="mt-9 grid grid-cols-3 gap-4 max-w-md">
-            <div>
-              <dt className="text-[11px] text-gray-500">기록 개월</dt>
-              <dd className="text-xl font-bold text-ink tabular-nums mt-0.5">
-                {perf?.months ?? 0}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[11px] text-gray-500">투자일지</dt>
-              <dd className="text-xl font-bold text-ink tabular-nums mt-0.5">
-                {journalCount}건
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[11px] text-gray-500">리밸런싱</dt>
-              <dd className="text-xl font-bold text-ink tabular-nums mt-0.5">
-                {rebalances.length}회
-              </dd>
-            </div>
+            {stats.map((s) => (
+              <div key={s.label}>
+                <dt className="text-[11px] text-gray-500">{s.label}</dt>
+                <dd className="text-xl font-bold text-ink tabular-nums mt-0.5">{s.value}</dd>
+              </div>
+            ))}
           </dl>
         </div>
       </div>

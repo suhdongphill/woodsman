@@ -60,7 +60,8 @@ export function ThemeToggle({ className }: { className?: string }) {
     >
       <ThemeIcon choice={choice} />
       {/* ⚠ 붙기 전에는 라벨을 비워 둔다 — 서버와 다른 글자를 그리면 hydration이 깨진다 */}
-      <span className="tabular-nums">{ready ? THEME_LABEL[choice] : ""}</span>
+      {/* ⚠ "시스템"만 있으면 무엇의 시스템인지 모른다 — 「화면」을 앞에 붙인다 */}
+      <span className="tabular-nums">{ready ? `화면 ${THEME_LABEL[choice]}` : ""}</span>
     </button>
   );
 }
