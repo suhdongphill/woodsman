@@ -52,9 +52,22 @@ describe("scoreColor (CANSLIM 색상 규칙)", () => {
 });
 
 describe("profitColor", () => {
-  it("0 이상은 초록, 음수는 빨강", () => {
-    expect(profitColor(0)).toBe("text-emerald-400");
-    expect(profitColor(-0.1)).toBe("text-red-400");
+  /**
+   * ⚠ **한국식이다** — 상승 적색 · 하락 청색(2026-08-30 결정). 미국과 반대다.
+   *    등락 판단은 이 함수 한 곳에서만 하고, 화면은 결과를 쓰기만 한다.
+   * ⚠ 녹색(`emerald`)은 등락이 아니라 **성공·발행**의 색이다. 여기 다시 들어오면 안 된다.
+   */
+  it("0 이상은 상승(적), 음수는 하락(청)", () => {
+    expect(profitColor(0)).toBe("text-up");
+    expect(profitColor(12.3)).toBe("text-up");
+    expect(profitColor(-0.1)).toBe("text-down");
+  });
+
+  it("⚠ 등락에 emerald·red 클래스를 쓰지 않는다 — 이름이 색을 배신하면 다음 사람이 틀린다", () => {
+    for (const v of [1, 0, -1]) {
+      expect(profitColor(v)).not.toContain("emerald");
+      expect(profitColor(v)).not.toContain("red");
+    }
   });
 });
 
