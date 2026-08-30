@@ -16,10 +16,8 @@
 
 /** 홈의 블록. ⚠ 배열의 **순서가 곧 화면의 순서**다. */
 export const HOME_BLOCKS = [
-  /** 첫 화면 — 문구 + 계좌 요약 카드 */
+  /** 첫 화면 — 문구 + CTA. ⚠ 계좌 카드는 2026-08-30에 내려갔다(아래 accountStrip) */
   "hero",
-  /** 넣은 돈과 불어난 돈 (자금 흐름 차트) */
-  "capitalFlow",
   /** 지금 경제는 어떤 상태인가 (침체 신호 + 헤드라인 지표) */
   "macro",
   /** 어떻게 기록하나요 (운영 원칙 3장) */
@@ -28,6 +26,11 @@ export const HOME_BLOCKS = [
   "homePosts",
   /** 최신 인사이트 + 티스토리 CTA */
   "latestInsights",
+  /**
+   * 계좌 띠 — "이 흐름 속에서 나는 이렇게 하고 있다".
+   * ⚠ 콘텐츠를 읽은 **뒤에** 온다. 계좌는 입구가 아니라 증거다(2026-08-30, Step 2).
+   */
+  "accountStrip",
   /** 최근 투자일지 + 종목 보고서 */
   "journalAndReports",
 ] as const;
@@ -36,8 +39,6 @@ export type HomeBlock = (typeof HOME_BLOCKS)[number];
 
 /** 홈이 실제로 쥐고 있는 것. ⚠ 여기 없는 값으로 블록을 정하지 않는다. */
 export type HomeContent = {
-  /** 계좌 스냅숏이 있어 성과 곡선을 그릴 수 있나 */
-  hasAccountCurve: boolean;
   /** 홈 섹션으로 발행한 글 수 */
   homePostCount: number;
 };
@@ -52,12 +53,13 @@ export type HomeContent = {
 export function visibleHomeBlocks(content: HomeContent): HomeBlock[] {
   return HOME_BLOCKS.filter((block) => {
     switch (block) {
-      /** 스냅숏이 없으면 그릴 곡선 자체가 없다. 0원짜리 차트를 그리지 않는다. */
-      case "capitalFlow":
-        return content.hasAccountCurve;
       /** 홈에 쌓인 글이 없으면 빈 프레임만 남는다. */
       case "homePosts":
         return content.homePostCount > 0;
+      /**
+       * ⚠ 계좌 띠는 **스냅숏이 없어도 그린다.** 값이 없으면 띠를 빼는 게 아니라
+       *    "아직 없다"고 적는다 — 빈 칸을 0원으로 만들지 않는다(2026-08-30, Step 2).
+       */
       default:
         return true;
     }

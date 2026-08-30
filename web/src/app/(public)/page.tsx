@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AdSlot } from "@/components/analytics/AdSlot";
 import { SectionFrame } from "@/features/posts/ui/SectionFrame";
 import { HeroSection } from "@/features/home/ui/HeroSection";
-import { CapitalFlowSection } from "@/features/home/ui/CapitalFlowSection";
+import { AccountStrip } from "@/features/home/ui/AccountStrip";
 import { MacroSection } from "@/features/home/ui/MacroSection";
 import { PrinciplesGrid } from "@/features/home/ui/PrinciplesGrid";
 import { LatestInsights } from "@/features/home/ui/LatestInsights";
@@ -59,10 +59,7 @@ export default async function HomePage() {
   ]);
 
   const perf = summarizePerformance(snapshots);
-  const blocks = visibleHomeBlocks({
-    hasAccountCurve: perf !== null,
-    homePostCount: homePosts.length,
-  });
+  const blocks = visibleHomeBlocks({ homePostCount: homePosts.length });
 
   return (
     <>
@@ -71,17 +68,8 @@ export default async function HomePage() {
           heroTitle={basics.heroTitle}
           heroSubtitle={basics.heroSubtitle}
           perf={perf}
-          buckets={buckets}
           rebalances={rebalances}
           journalCount={allJournal.length}
-        />
-      )}
-
-      {hasBlock(blocks, "capitalFlow") && (
-        <CapitalFlowSection
-          snapshots={snapshots}
-          rebalances={rebalances}
-          dataMode={basics.dataMode}
         />
       )}
 
@@ -102,6 +90,11 @@ export default async function HomePage() {
           featuredTitle={basics.featuredTitle}
           featuredExcerpt={basics.featuredExcerpt}
         />
+      )}
+
+      {/* ⚠ 계좌는 콘텐츠를 읽은 **뒤에** 온다 — 입구가 아니라 증거다(2026-08-30, Step 2). */}
+      {hasBlock(blocks, "accountStrip") && (
+        <AccountStrip perf={perf} buckets={buckets} dataMode={basics.dataMode} />
       )}
 
       {hasBlock(blocks, "journalAndReports") && (

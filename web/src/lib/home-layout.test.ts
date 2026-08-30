@@ -1,36 +1,41 @@
 import { describe, expect, it } from "vitest";
 import { HOME_BLOCKS, hasBlock, visibleHomeBlocks } from "./home-layout";
 
-const full = { hasAccountCurve: true, homePostCount: 3 };
-
 describe("홈 블록", () => {
-  it("다 있으면 정의된 순서 그대로 전부 그린다", () => {
-    expect(visibleHomeBlocks(full)).toEqual([...HOME_BLOCKS]);
+  it("글이 있으면 정의된 순서 그대로 전부 그린다", () => {
+    expect(visibleHomeBlocks({ homePostCount: 3 })).toEqual([...HOME_BLOCKS]);
   });
 
-  it("⚠ 순서가 곧 화면이다 — 조건부 블록을 빼도 나머지 순서는 그대로다", () => {
-    const blocks = visibleHomeBlocks({ hasAccountCurve: false, homePostCount: 0 });
-    expect(blocks).toEqual(["hero", "macro", "principles", "latestInsights", "journalAndReports"]);
+  it("⚠ 계좌는 콘텐츠 뒤에 온다 — 입구가 아니라 증거다 (2026-08-30 Step 2)", () => {
+    const blocks = visibleHomeBlocks({ homePostCount: 3 });
+    expect(blocks.indexOf("accountStrip")).toBeGreaterThan(blocks.indexOf("latestInsights"));
+    expect(blocks.indexOf("macro")).toBeLessThan(blocks.indexOf("accountStrip"));
   });
 
-  it("계좌 스냅숏이 없으면 자금 흐름을 빼다 — 0원짜리 차트를 그리지 않는다", () => {
-    expect(visibleHomeBlocks({ ...full, hasAccountCurve: false })).not.toContain("capitalFlow");
+  it("홈에 쌓인 글이 없으면 그 프레임만 뺀다", () => {
+    const blocks = visibleHomeBlocks({ homePostCount: 0 });
+    expect(blocks).not.toContain("homePosts");
+    expect(blocks).toEqual([
+      "hero",
+      "macro",
+      "principles",
+      "latestInsights",
+      "accountStrip",
+      "journalAndReports",
+    ]);
   });
 
-  it("홈에 쌓인 글이 없으면 그 프레임을 뺀다", () => {
-    expect(visibleHomeBlocks({ ...full, homePostCount: 0 })).not.toContain("homePosts");
+  it("⚠ 계좌 띠는 스냅숏이 없어도 남는다 — 없는 값을 0원으로 만들지 않고 없다고 적는다", () => {
+    // 스냅숏 여부는 이제 블록의 존재를 가르지 않는다. 화면이 "아직 없다"고 말한다.
+    expect(visibleHomeBlocks({ homePostCount: 0 })).toContain("accountStrip");
   });
 
-  it("⚠ 값이 없어도 남는 블록들 — 자기 자리에서 '아직 없다'고 말해야 하는 자리다", () => {
-    const blocks = visibleHomeBlocks({ hasAccountCurve: false, homePostCount: 0 });
-    for (const kept of ["hero", "macro", "principles", "latestInsights", "journalAndReports"]) {
-      expect(blocks, kept).toContain(kept);
-    }
+  it("⚠ 자금 흐름 차트는 홈에 없다 — /portfolio로 옮겼다(같은 차트를 두 번 그리지 않는다)", () => {
+    expect(HOME_BLOCKS).not.toContain("capitalFlow" as never);
   });
 
   it("hasBlock은 목록을 그대로 읽는다", () => {
-    const blocks = visibleHomeBlocks(full);
-    expect(hasBlock(blocks, "macro")).toBe(true);
-    expect(hasBlock(visibleHomeBlocks({ ...full, homePostCount: 0 }), "homePosts")).toBe(false);
+    expect(hasBlock(visibleHomeBlocks({ homePostCount: 3 }), "macro")).toBe(true);
+    expect(hasBlock(visibleHomeBlocks({ homePostCount: 0 }), "homePosts")).toBe(false);
   });
 });
