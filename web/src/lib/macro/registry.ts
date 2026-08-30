@@ -28,6 +28,7 @@ import { sector as consumer } from "./sectors/consumer";
 import { sector as production } from "./sectors/production";
 import { sector as housing } from "./sectors/housing";
 import { sector as semi } from "./sectors/semi";
+import { sector as leaders } from "./sectors/leaders";
 
 /** ⚠ 새 섹터는 여기 한 줄만 추가한다. */
 export const MACRO_SECTORS: MacroSector[] = [
@@ -41,6 +42,7 @@ export const MACRO_SECTORS: MacroSector[] = [
   production,
   housing,
   semi,
+  leaders,
 ];
 
 export const MACRO_GROUPS: MacroGroup[] = MACRO_SECTORS.map((s) => s.group).sort(

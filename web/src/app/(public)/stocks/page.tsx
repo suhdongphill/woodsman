@@ -4,6 +4,10 @@ import { EmptyState } from "@/components/ui/Card";
 import { BarChartIcon } from "@/components/icons";
 import { ReportCard } from "@/features/reports/ui/ReportCard";
 import { loadPublishedSummaries } from "@/features/reports/repository";
+import { loadSeriesMany } from "@/features/macro/repository";
+import { indicatorsByGroup } from "@/lib/macro/catalog";
+import { sectorStrength, type SectorStrength } from "@/lib/sector-strength";
+import { SectorLeaders } from "@/features/stocks/ui/SectorLeaders";
 
 export const metadata: Metadata = {
   title: "종목분석",
@@ -20,8 +24,22 @@ export const dynamic = "force-dynamic";
  *    이제 **발행된 보고서만** 나온다. 비어 있으면 비어 있다고 적는다 —
  *    목업으로 채운 목록은 방문자에게 "이만큼 분석했다"는 거짓 신호를 준다.
  */
+/** ⚠ 시장 기준(SPY)의 키. 이 값이 없으면 상대강도를 내지 않는다 — 기준 없는 강함은 없다. */
+const BENCHMARK_KEY = "spx_etf";
+
 export default async function StocksPage() {
-  const reports = await loadPublishedSummaries();
+  const leaders = indicatorsByGroup("leaders");
+  const [reports, series] = await Promise.all([
+    loadPublishedSummaries(),
+    loadSeriesMany(leaders.map((i) => i.key)),
+  ]);
+
+  const benchmark = series.get(BENCHMARK_KEY);
+  const strengths: SectorStrength[] = leaders
+    // 기준(SPY)은 비교 대상이지 섹터가 아니다 — 표에 넣지 않는다.
+    .filter((i) => i.key !== BENCHMARK_KEY)
+    .map((i) => sectorStrength({ key: i.key, name: i.name, points: series.get(i.key) ?? [] }, benchmark))
+    .filter((s): s is SectorStrength => s !== null);
 
   return (
     <>
@@ -31,7 +49,10 @@ export default async function StocksPage() {
         description="근거·출처·기준일을 갖춘 보고서만 발행합니다. 확인하지 못한 항목은 비운 채 조회처를 적습니다."
       />
 
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
+      <div className="mx-auto max-w-6xl space-y-12 px-4 sm:px-6 py-10">
+        {/* ⚠ 바람·조류(거시)를 읽었다면 파도가 어디서 일고 있는지가 여기 있다 */}
+        <SectorLeaders items={strengths} />
+
         {reports.length === 0 ? (
           <EmptyState
             icon={<BarChartIcon size={30} />}

@@ -20,7 +20,9 @@ export type MacroGroupKey =
   | "consumer"
   | "production"
   | "housing"
-  | "semi";
+  | "semi"
+  /** ⚠ 시장 가격 계열(섹터 ETF)이다. 침체 신호 판정에 쓰지 않는다 — sectors/leaders.ts 참고 */
+  | "leaders";
 
 export type MacroGroup = {
   key: MacroGroupKey;
