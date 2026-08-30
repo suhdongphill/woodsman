@@ -37,6 +37,7 @@ export const PUBLIC_STATIC_PATHS = [
   "/journal",
   "/macro",
   "/macro/bubble",
+  "/macro/calendar",
   "/macro/compare",
   "/portfolio",
   "/privacy",

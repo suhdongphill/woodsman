@@ -1,3 +1,5 @@
+import { seoulDay } from "./kst";
+
 /**
  * 관리자 활동 로그 — 판단·표현을 맡는 순수 모듈.
  *
@@ -23,6 +25,9 @@ export const ADMIN_ACTIONS = {
   "macro.ingest": "거시 자료 가져오기",
   "site.basics": "사이트 기본값 변경",
   "ads.settings": "광고 설정 변경",
+  "calendar.create": "일정 추가",
+  "calendar.link": "일정에 평가 글 연결",
+  "calendar.delete": "일정 삭제",
   "release.create": "릴리스 기록",
   "release.delete": "릴리스 기록 삭제",
 } as const;
@@ -55,6 +60,7 @@ export const LOGGED_AREAS = [
   "사이트 기본값",
   "릴리스 기록",
   "광고 설정",
+  "경제 캘린더",
 ] as const;
 
 /** 아직 기록하지 않는 자리. 비워 두지 말고 적는다. */
@@ -74,33 +80,11 @@ export function postSummary(title: string, published: boolean): string {
 }
 
 /**
- * ⚠ **날짜·시각은 한국 시간으로 읽는다.** 기록은 UTC로 쌓지만, 보는 사람은 KST로 산다.
- *    UTC로 보여 주면 밤에 한 일이 어제 일로 보이고, 그 순간 기록을 못 믿게 된다.
- *
- * 시간대를 **명시**한다 — 서버(UTC)와 브라우저(KST)가 각자 판단하면 같은 기록이
- * 두 날짜로 보인다.
+ * ⚠ 날짜·시각은 **한국 시간**으로 읽는다. 판단은 `lib/kst.ts`에 있다 —
+ *    활동 로그와 경제 캘린더가 **같은 함수**를 써야 두 화면이 다른 날짜를 말하지 않는다.
+ *    (2026-08-30: 캘린더가 생기면서 이 파일에 있던 것을 공용으로 옮겼다.)
  */
-const SEOUL = "Asia/Seoul";
-
-/** ISO → `2026-08-30` (KST 기준) */
-export function seoulDay(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
-  // en-CA는 YYYY-MM-DD로 준다 — 문자열 조립보다 안전하다.
-  return d.toLocaleDateString("en-CA", { timeZone: SEOUL });
-}
-
-/** ISO → `14:05` (KST 기준) */
-export function seoulTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString("en-GB", {
-    timeZone: SEOUL,
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
+export { seoulDay, seoulTime } from "./kst";
 /** 로그를 날짜(KST)별 덩어리로 묶는다. 목록은 이미 최근 것부터 정렬돼 온다. */
 export function groupByDay(entries: AdminLogEntry[]): { day: string; items: AdminLogEntry[] }[] {
   const days: { day: string; items: AdminLogEntry[] }[] = [];

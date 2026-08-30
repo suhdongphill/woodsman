@@ -30,6 +30,8 @@ const MENU = [
   { href: "/admin/journal", label: "투자일지 · 계좌", icon: ClockIcon },
   { href: "/admin/analytics", label: "화면 통계", icon: BarChartIcon },
   { href: "/admin/macro", label: "거시 지표", icon: BarChartIcon },
+  // 일정이 다음에 쓸 글을 알려 준다 — 콘텐츠 파이프라인이다.
+  { href: "/admin/calendar", label: "경제 캘린더", icon: ClockIcon },
   { href: "/admin/bubble", label: "버블 모니터", icon: BotIcon },
   { href: "/admin/stocks", label: "종목 보고서", icon: TrendingUpIcon },
   { href: "/admin/posts", label: "콘텐츠", icon: FileTextIcon },

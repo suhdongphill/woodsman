@@ -1026,3 +1026,48 @@ model SiteRelease {
 
   @@index([at])
 }
+
+/// 경제 캘린더 — 시장을 움직이는 일정.
+///
+/// 실적 발표 · 지표 발표 · 중앙은행(FOMC·금통위) 등을 한 곳에서 관리한다.
+/// ⚠ 이 표의 값은 **콘텐츠 파이프라인**이다: 일정이 다음에 쓸 글을 알려 주고,
+///    쓴 글(`postSlug`)이 다음 일정에서 다시 읽힌다.
+model MacroEvent {
+  id String @id @default(cuid())
+
+  /// 언제 (UTC 저장 · KST 표시). 시각을 모르면 그 날 정오로 넣는다
+  at DateTime
+
+  /// 무엇 — "8월 CPI 발표", "FOMC 정례회의", "엔비디아 실적"
+  title String
+
+  /// EARNINGS(실적) · INDICATOR(지표 발표) · CENTRAL_BANK(중앙은행) · OTHER
+  kind String
+
+  /// US · KR · GLOBAL
+  country String @default("US")
+
+  /// 1(참고) · 2(주목) · 3(중요). 화면이 굵기를 다르게 준다
+  importance Int @default(2)
+
+  /// 한 줄 메모 — 무엇을 볼 것인가
+  note String?
+
+  /// ⚠ 이 일정에 대한 **평가 글**. 지난 일정에 이게 없으면 화면이 "아직 평가 없음"이라고 말한다 —
+  ///    빈 칸을 감추지 않는 것이 다음에 쓸 것을 알려 준다
+  postSlug String?
+
+  /// MANUAL(사람이 넣음) · AUTO(수집기가 넣음)
+  /// ⚠ 사람이 고친 자동 항목을 수집기가 덮지 않게 하려면 이 값이 필요하다
+  source String @default("MANUAL")
+
+  /// 수집원에서의 고유 키 — 같은 일정을 두 번 넣지 않기 위한 것
+  /// ⚠ 자동 수집은 아직 없다. 나중에 붙일 때 이 칸이 중복을 막는다
+  externalId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([source, externalId])
+  @@index([at])
+}
