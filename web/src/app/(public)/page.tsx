@@ -1,13 +1,15 @@
+import { Fragment, type ReactNode } from "react";
 import Link from "next/link";
 import { AdSlot } from "@/components/analytics/AdSlot";
 import { SectionFrame } from "@/features/posts/ui/SectionFrame";
 import { HeroSection } from "@/features/home/ui/HeroSection";
 import { AccountStrip } from "@/features/home/ui/AccountStrip";
 import { MacroSection } from "@/features/home/ui/MacroSection";
+import { MacroStrip } from "@/features/home/ui/MacroStrip";
 import { PrinciplesGrid } from "@/features/home/ui/PrinciplesGrid";
 import { LatestInsights } from "@/features/home/ui/LatestInsights";
 import { JournalAndReports } from "@/features/home/ui/JournalAndReports";
-import { hasBlock, visibleHomeBlocks } from "@/lib/home-layout";
+import { visibleHomeBlocks, type HomeBlock } from "@/lib/home-layout";
 import { macroLede } from "@/lib/home-lede";
 import { summarizePerformance } from "@/lib/performance";
 import { getSiteBasics } from "@/lib/site-settings";
@@ -62,46 +64,53 @@ export default async function HomePage() {
   const perf = summarizePerformance(snapshots);
   const blocks = visibleHomeBlocks({ homePostCount: homePosts.length });
 
+  /**
+   * ⚠ **순서는 `HOME_BLOCKS` 배열이 정한다. 여기서 나열하지 않는다.**
+   *
+   * 2026-08-30 사고: 전에는 이 파일이 블록을 **JSX로 나열**하고 배열은 "보일지 말지"만
+   * 정했다. 그래서 배열 순서를 바꾸고 **테스트까지 통과했는데 화면은 그대로였다** —
+   * 순서를 지킨다고 믿은 테스트가 실제로는 아무것도 지키지 않았다.
+   * 지금은 아래 표에서 **꺼내 쓰기만** 하므로, 배열과 화면이 어긋날 수가 없다.
+   */
+  const rendered: Record<HomeBlock, ReactNode> = {
+    hero: (
+      <HeroSection
+        heroTitle={basics.heroTitle}
+        heroSubtitle={basics.heroSubtitle}
+        lede={macroLede({ empty: macro.empty, summary: macro.summary, asOf: macro.asOf })}
+        perf={perf}
+        rebalances={rebalances}
+        journalCount={allJournal.length}
+      />
+    ),
+    macroStrip: <MacroStrip indicators={macro.headlines} />,
+    latestInsights: (
+      <LatestInsights
+        posts={latestPosts.filter((p) => p.type !== "NOTICE")}
+        featuredTitle={basics.featuredTitle}
+        featuredExcerpt={basics.featuredExcerpt}
+      />
+    ),
+    /* 발행할 때마다 여기가 한 편씩 길어진다(features/posts/ui/SectionFrame). */
+    homePosts: (
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 pb-14">
+        <SectionFrame section="HOME" posts={homePosts} />
+      </div>
+    ),
+    macro: <MacroSection macro={macro} />,
+    /* ⚠ 계좌는 콘텐츠를 읽은 **뒤에** 온다 — 입구가 아니라 증거다(2026-08-30, Step 2). */
+    accountStrip: <AccountStrip perf={perf} buckets={buckets} dataMode={basics.dataMode} />,
+    journalAndReports: (
+      <JournalAndReports entries={allJournal.slice(0, 3)} reports={featuredReports} />
+    ),
+    principles: <PrinciplesGrid />,
+  };
+
   return (
     <>
-      {hasBlock(blocks, "hero") && (
-        <HeroSection
-          heroTitle={basics.heroTitle}
-          heroSubtitle={basics.heroSubtitle}
-          lede={macroLede({ empty: macro.empty, summary: macro.summary, asOf: macro.asOf })}
-          perf={perf}
-          rebalances={rebalances}
-          journalCount={allJournal.length}
-        />
-      )}
-
-      {hasBlock(blocks, "macro") && <MacroSection macro={macro} />}
-
-      {hasBlock(blocks, "principles") && <PrinciplesGrid />}
-
-      {/* 발행할 때마다 여기가 한 편씩 길어진다(features/posts/ui/SectionFrame). */}
-      {hasBlock(blocks, "homePosts") && (
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 pb-14">
-          <SectionFrame section="HOME" posts={homePosts} />
-        </div>
-      )}
-
-      {hasBlock(blocks, "latestInsights") && (
-        <LatestInsights
-          posts={latestPosts.filter((p) => p.type !== "NOTICE")}
-          featuredTitle={basics.featuredTitle}
-          featuredExcerpt={basics.featuredExcerpt}
-        />
-      )}
-
-      {/* ⚠ 계좌는 콘텐츠를 읽은 **뒤에** 온다 — 입구가 아니라 증거다(2026-08-30, Step 2). */}
-      {hasBlock(blocks, "accountStrip") && (
-        <AccountStrip perf={perf} buckets={buckets} dataMode={basics.dataMode} />
-      )}
-
-      {hasBlock(blocks, "journalAndReports") && (
-        <JournalAndReports entries={allJournal.slice(0, 3)} reports={featuredReports} />
-      )}
+      {blocks.map((block) => (
+        <Fragment key={block}>{rendered[block]}</Fragment>
+      ))}
 
       {/* 광고 — 콘텐츠를 다 훑은 자리. 첫 화면은 광고 없이 콘텐츠로 시작한다. */}
       <div className="mx-auto max-w-6xl px-4 sm:px-6">

@@ -14,7 +14,7 @@ describe("홈 블록", () => {
 
   it("⚠ 콘텐츠가 맨 앞이다 — 1순위 목적이 블로그 유입이다", () => {
     const blocks = visibleHomeBlocks({ homePostCount: 3 });
-    expect(blocks.indexOf("latestInsights")).toBe(1); // 히어로 바로 다음
+    expect(blocks.indexOf("latestInsights")).toBeLessThan(blocks.indexOf("macro"));
     expect(blocks.indexOf("latestInsights")).toBeLessThan(blocks.indexOf("macro"));
   });
 
@@ -28,6 +28,7 @@ describe("홈 블록", () => {
     expect(blocks).not.toContain("homePosts");
     expect(blocks).toEqual([
       "hero",
+      "macroStrip",
       "latestInsights",
       "macro",
       "accountStrip",
@@ -43,6 +44,12 @@ describe("홈 블록", () => {
 
   it("⚠ 자금 흐름 차트는 홈에 없다 — /portfolio로 옮겼다(같은 차트를 두 번 그리지 않는다)", () => {
     expect(HOME_BLOCKS).not.toContain("capitalFlow" as never);
+  });
+
+  it("⚠ 거시 스트립은 히어로 바로 다음이다 — 3초 안에 '지금 무슨 바람인가'를 준다", () => {
+    const blocks = visibleHomeBlocks({ homePostCount: 3 });
+    expect(blocks[1]).toBe("macroStrip");
+    expect(blocks.indexOf("macroStrip")).toBeLessThan(blocks.indexOf("latestInsights"));
   });
 
   it("hasBlock은 목록을 그대로 읽는다", () => {
