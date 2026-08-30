@@ -113,10 +113,20 @@ export async function findPostBySlug(slug: string): Promise<Post | null> {
   return row ? toPost(row) : null;
 }
 
-/** slug 중복 확인 — 다른 글이 이미 쓰고 있으면 true. */
-export async function slugTaken(slug: string, exceptId?: string): Promise<boolean> {
-  const row = await queryOne<{ id: string }>(`SELECT id FROM Post WHERE slug = ?`, [slug]);
-  return !!row && row.id !== exceptId;
+/**
+ * 주소 충돌 검사 — `base`와 `base-2`류를 **한 번에** 모아 온다.
+ *
+ * ⚠ 전에는 "쓰이고 있나(true/false)"만 물었고, 겹치면 **저장을 거절**했다. 그러면 쓰던 사람이
+ *    주소를 손으로 고쳐야 했다. 지금은 비켜 갈 자리를 찾아야 하므로 **목록**이 필요하다.
+ *    (`base`는 검증을 통과한 `[a-z0-9-]`뿐이라 LIKE 와일드카드가 섞일 수 없다.)
+ */
+export async function takenSlugs(base: string, exceptId?: string): Promise<string[]> {
+  const rows = await queryAll<{ slug: string }>(
+    `SELECT slug FROM Post WHERE (slug = ? OR slug LIKE ?) AND id <> ?`,
+    // 고치는 글 자신은 뺀다. id는 비어 있을 수 없어 <> "" 는 "전부"와 같다.
+    [base, `${base}-%`, exceptId ?? ""],
+  );
+  return rows.map((row) => row.slug);
 }
 
 export type PostInput = {

@@ -63,11 +63,12 @@ web/
 
 운영 주소: **https://portfolio-solutions.net** (www는 301로 정본에 합침)
 
-⚠ **배포는 지금 손으로 한다** (`cd web; npm run cf:deploy`). `.github/workflows/deploy.yml`에
-자동배포(품질 게이트 → D1 마이그레이션 → OpenNext 빌드 → Workers)가 있지만 **2026-08-06 이후
-12회 연속 실패**했고, 그 뒤로는 push 자체를 안 해서 실행 기록도 없다. 자세한 것은 §7.
+**배포는 `main`에 push하면 자동으로 된다** — `.github/workflows/deploy.yml`
+(품질 게이트 → D1 마이그레이션 → OpenNext 빌드 → Workers). 2026-08-06 이후 12회 연속 실패하던
+것을 **2026-08-29에 고쳤다**(원인 셋: 계획 문서의 오진단 · 잘못된 토큰 값 · ⚠ **계정 소유
+토큰은 Zone 권한을 가질 수 없다** — 사용자 소유 토큰 + D1:Edit로 바꿔 뚫었다). 자세한 것은 §7.
 
-### 순수 모듈 목록 (전부 테스트 있음 — 파일 51개 · **테스트 843개**, 2026-08-29)
+### 순수 모듈 목록 (전부 테스트 있음 — 파일 53개 · **테스트 866개**, 2026-08-30)
 
 사이트 · 접근 제어
 `access` `site-policy` `site-status` `site-url` `site-links` `site-basics` `site-settings`
@@ -76,8 +77,8 @@ web/
 
 계좌 · 콘텐츠
 `allocation` `bucket-target` `manual-price` `performance` `outbound` `outbound-repo`
-`markdown` `sanitize-html` `sections` `seo` `format` `llms-txt` `ads` `ai-crawlers`
-`analytics` `engagement` `comments`
+`markdown` `sanitize-html` `sections` `seo` `format` `llms-txt` `ads` `ai-crawlers` `slug`
+`analytics` `engagement` `comments` `admin-log`
 
 도메인 묶음
 `macro/{registry,catalog,series,signal,parse,freshness,layers,derived,overlay,groups,fedhike}`
@@ -133,6 +134,7 @@ Prisma 스키마 `web/prisma/schema.prisma`가 원본. 주요 모델:
 | `CommentReport` | 댓글 신고 | 스키마·관리자 화면 있음 (커뮤니티 잠금) |
 | `LoginAttempt` | 로그인 시도 제한 | 사용 중 |
 | `Feed` | 티스토리 RSS | 스키마 + `/admin/feeds` |
+| `AdminLog` | **관리자 활동 로그** (누가·언제·무엇을) | 사용 중 (2026-08-30) · `/admin/logs` |
 
 ---
 
@@ -206,7 +208,7 @@ cd web
 npm run dev            # 로컬 (로컬 D1 사용)
 npm run db:setup       # 로컬 D1 마이그레이션 + 시드
 npm run check          # ⚠ dev를 먼저 끄고 실행 (Windows에서 .next가 깨진다)
-npm run cf:deploy      # ⚠ 지금은 이것이 유일한 배포 경로다 (자동배포 고장, 아래 참고)
+npm run cf:deploy      # 손 배포 (평소에는 main push의 자동배포를 쓴다)
 npm run ai:sync        # .env의 AI 키를 Cloudflare 시크릿으로
 npm run admin:set      # 관리자 계정 변경 (대화식)
 npm run admin:apply    # .env에 적힌 값으로 관리자 계정 반영 (비대화식)
@@ -220,29 +222,57 @@ Get-CimInstance Win32_Process -Filter "Name='node.exe'"   # 세고
 Stop-Process -Force -Id <pid>                              # 끈다
 ```
 
-### ⚠ 자동배포가 고장 나 있다 (2026-08-29 확인)
+### 자동배포 — 두 달 만에 살렸다 (2026-08-29)
 
-`gh secret list`에 `CLOUDFLARE_API_TOKEN`·`CLOUDFLARE_ACCOUNT_ID`가 **둘 다 있는데도**
-(2026-08-06 등록) `deploy.yml`의 D1 마이그레이션 단계가 매번 이렇게 죽는다.
+2026-08-06 이후 **12회 연속 실패**하던 것을 고쳤다. ⚠ 원인이 **하나가 아니라 셋**이었고,
+그래서 여섯 번을 틀렸다.
 
-```
-✘ [ERROR] In a non-interactive environment, it's necessary to set
-          a CLOUDFLARE_API_TOKEN environment variable for wrangler to work.
-```
+1. **시크릿은 처음부터 등록돼 있었다.** 계획 문서의 "미등록" 진단이 틀렸다 — 그 오진단 때문에
+   세 세션 동안 1순위 목록에 엉뚱한 항목이 올라 있었다.
+2. **토큰 값이 잘못돼 있었다.** 다시 넣자 오류가 "토큰이 없다"에서 7403으로 바뀌었다 —
+   **오류가 바뀌는 것이 전진의 신호였다.**
+3. ⚠ **진짜 벽은 토큰의 종류였다.** 계정 소유 토큰(`cfat_`)은 Account 범위에서는 정상
+   동작하지만 **Zone 범위 권한을 가질 수 없다.** `wrangler.jsonc`가 커스텀 도메인 두 개를
+   선언하고 있어 배포는 매번 그 영역의 Workers Routes를 확인한다.
+   **사용자 소유 토큰**(My Profile → API Tokens)으로 바꾸고 D1:Edit를 더해 뚫었다.
 
-**2026-08-06 이후 12회 연속 실패**했고, 그 뒤로는 push를 안 해서 실행 기록조차 없다
-(⚠ 2026-08-29 현재 로컬이 `origin/main`보다 **16커밋 앞서 있다**).
+⚠ **시크릿은 넣은 뒤 다시 읽을 수 없다.** 그래서 추측이 반복됐다. 러너에게 직접 묻는
+일회용 워크플로(값 대신 sha256 앞 8자리를 찍고, 실패하는 호출을 러너에서 그대로 때린다)를
+만들고 나서야 한 번에 좁혀졌다. 같은 상황이 또 오면 커밋 `96a1c53`을 되돌려 쓰면 된다.
 
-⚠ **그동안 문서에 적혀 있던 "시크릿 미등록"은 틀린 진단이었다.** 등록은 돼 있고,
-러너에서 값이 비어 보인다 — **토큰 값 자체를 다시 넣어야 한다**(`gh secret set CLOUDFLARE_API_TOKEN`).
-값은 사람만 가지고 있으므로 이 항목은 §6-1과 같은 부류다.
+⚠ 그래도 **배포 후에는 운영본을 직접 열어 확인한다.** 로컬 통과는 배포 성공이 아니다.
 
-⚠ 그때까지는 **배포 후 운영본을 직접 열어 확인한다.** 로컬 통과는 배포 성공이 아니고,
-손 배포는 **잊을 수 있다** — 2026-08-25에 커밋만 하고 배포를 빠뜨려 나흘간 운영본에
-고친 내용이 안 올라가 있었다.
+### 콘텐츠 관리 화면은 **셋으로 나뉘어 있다** (2026-08-30)
 
+`/admin/posts`(목록) · `/admin/posts/new`(새 글) · `/admin/posts/edit?id=…`(수정).
+
+⚠ **목록에 편집기를 다시 얹지 않는다.** 한 화면에 있던 시절, 목록만 보려는 사람도 편집기의
+미리보기 변환기를 클라이언트로 다 받아야 했고 **그 JS가 붙기 전에 누른 「편집」이 삼켜졌다.**
+운영자는 "편집이 안 된다"고 판단해 같은 글을 새로 써서 저장했다 — 중복 글의 원인이었다.
+
+⚠ 글 id는 **경로가 아니라 질의(`?id=`)로** 받는다. id에 `:`와 `.`이 들어 있다.
+
+⚠ 주소(slug)는 **제목에서 자동으로 만든다**(`lib/slug`). 이미 있는 글은 **잠근 채로 시작한다** —
+발행된 주소가 제목을 따라 바뀌면 밖의 링크와 색인이 깨진다. 충돌은 막지 않고 **비켜 가고 알린다.**
+
+### 관리자 활동 로그 (2026-08-30)
+
+`/admin/logs`. 콘텐츠(작성·수정·삭제) · 거시 자료 가져오기 · 사이트 기본값을 기록한다.
+
+⚠ **아직 기록하지 않는 자리를 화면이 그대로 적는다.** 부분만 기록하는 로그의 가장 큰 위험은
+**없는 것을 "안 한 것"으로 읽는 것**이다.
+⚠ **기록이 하던 일을 막지 않는다.** 로그 쓰기 실패는 삼키되 `console.error`로 남긴다.
+⚠ 시각은 **KST로 보여 준다**(`seoulDay`·`seoulTime`). UTC로 보여 주면 밤에 한 일이
+어제 일로 보인다.
+⚠ **보관 정책은 아직 없다** — 무한히 쌓인다. D1 크기는 `/admin/diagnostics`가 본다.
+
+### ⚠ 개발 서버의 관리자 화면 CSP (2026-08-30)
+
+관리자 엄격판 CSP는 `'unsafe-eval'`을 막는데 **Next 개발 모드의 리프레시 런타임이 eval을 쓴다.**
+막힌 동안 **로컬 `/admin/*`은 클라이언트 JS가 통째로 안 살아났다**(화면은 그려지는데 아무것도
+안 먹는다). 지금은 **개발에서만** 예외를 연다 — ⚠ **운영 CSP는 그대로 조여 둔다.**
 
 ---
 
-*문서 버전 **v2.2** · 2026-08-29(P11~P14 반영 · 자동배포 고장 기록 · 다음 할 일 갱신)*
-*이전: v2.1 2026-08-06(P4 완료) · v1 `woodsman_개발요구서_v1.md`(구상 단계 기록)*
+*문서 버전 **v2.3** · 2026-08-30(자동배포 복구 · 콘텐츠 관리 화면 분리 · `slug` 모듈 · 개발 CSP 예외 · 관리자 활동 로그)*
+*이전: v2.2 2026-08-29(자동배포 고장 기록) · v2.1 2026-08-06(P4 완료) · v1 `woodsman_개발요구서_v1.md`(구상 단계 기록)*

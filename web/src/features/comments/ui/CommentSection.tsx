@@ -38,6 +38,8 @@ export function CommentSection({
   const globallyOff = !policy.commentsGloballyEnabled;
   const postLocked = !post.commentsEnabled;
   const canWrite = canSubmitComment({
+    // 화면은 발행된 글만 그리지만, 판단은 서버와 **같은 함수**가 한다.
+    postPublished: post.published,
     commentsGloballyEnabled: policy.commentsGloballyEnabled,
     postCommentsEnabled: post.commentsEnabled,
     requireLoginToComment: policy.requireLoginToComment,

@@ -11,6 +11,8 @@
 import { revalidatePath } from "next/cache";
 import { saveSiteBasics, saveSiteFlags } from "./repository";
 import { emptySiteFormState, type SiteFormState } from "./form-state";
+
+import { recordAdminLog } from "@/features/admin-log/repository";
 import { sanitizeEmail, sanitizeRate, sanitizeUrl } from "@/lib/site-basics";
 import { normalizeDataMode } from "@/lib/data-mode";
 import { requireAdmin } from "@/lib/session";
@@ -35,7 +37,7 @@ export async function saveSiteBasicsAction(
   _prev: SiteFormState,
   formData: FormData,
 ): Promise<SiteFormState> {
-  await requireAdmin("/admin/settings");
+  const admin = await requireAdmin("/admin/settings");
 
   const rawEmail = text(formData, "contactEmail");
   if (rawEmail && !sanitizeEmail(rawEmail)) {
@@ -76,6 +78,14 @@ export async function saveSiteBasicsAction(
     console.error("[site] 기본값 저장 실패", error);
     return { error: "저장하지 못했습니다." };
   }
+
+  // ⚠ 환율·모의/실계좌처럼 **숫자의 뜻을 바꾸는 값**이다. 언제 누가 바꿨는지가 남아야
+  //    나중에 "그때 평가액이 왜 저랬나"를 되짚을 수 있다.
+  await recordAdminLog({
+    actor: admin.email,
+    action: "site.basics",
+    summary: `계좌 성격 ${normalizeDataMode(text(formData, "dataMode"))}${rate ? ` · 기준환율 ${rate}` : ""}`,
+  });
 
   // 기본값은 거의 모든 화면에 나오므로 전부 갱신한다.
   for (const path of ["/", "/portfolio", "/journal", "/about", "/privacy", "/disclaimer", "/admin/settings"]) {

@@ -14,6 +14,7 @@ import { ingestMacro } from "./ingest";
 import { deletePoint, saveManualPoint } from "./repository";
 import { firstIssue, manualPointSchema } from "./schema";
 import { emptyMacroFormState, type MacroFormState } from "./form-state";
+import { recordAdminLog } from "@/features/admin-log/repository";
 
 function text(formData: FormData, key: string): string {
   const v = formData.get(key);
@@ -31,7 +32,7 @@ export async function ingestMacroAction(
   _prev: MacroFormState,
   formData: FormData,
 ): Promise<MacroFormState> {
-  await requireAdmin("/admin/macro");
+  const admin = await requireAdmin("/admin/macro");
 
   const group = text(formData, "group");
   const keys = group
@@ -42,6 +43,15 @@ export async function ingestMacroAction(
 
   try {
     const result = await ingestMacro({ trigger: "MANUAL", keys });
+
+    // ⚠ 바깥 서버를 두드리는 버튼이다. 언제 누가 눌렀는지가 남아야 한다.
+    await recordAdminLog({
+      actor: admin.email,
+      action: "macro.ingest",
+      target: group || "전체",
+      summary: `지표 ${result.okCount}개 갱신 · 실패 ${result.failCount}개`,
+    });
+
     revalidateAll();
 
     const failures = result.detail

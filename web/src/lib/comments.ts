@@ -119,11 +119,21 @@ export function isPubliclyVisible(comment: Pick<Comment, "status">): boolean {
  * 화면의 작성 폼 노출과 서버 액션의 수락 여부가 **같은 답**을 내야 한다.
  */
 export function canSubmitComment(input: {
+  /** ⚠ 발행된 글인가. 2026-08-30 점검에서 이 칸이 없었다 — 아래 주석 참고 */
+  postPublished: boolean;
   commentsGloballyEnabled: boolean;
   postCommentsEnabled: boolean;
   requireLoginToComment: boolean;
   isLoggedIn: boolean;
 }): boolean {
+  /**
+   * ⚠ **작성 중(미발행) 글에는 댓글을 받지 않는다** (2026-08-30 보안 점검).
+   *    공개 화면은 발행된 글만 보여주지만, 서버 액션은 글 id를 폼으로 받는다. 즉 화면에
+   *    안 보이는 것은 보호가 아니다 — id를 알면 **초안에 댓글을 붙일 수 있었다.**
+   *    피해는 크지 않지만(공개 노출은 안 된다) 관리자 목록이 오염되고, 무엇보다
+   *    "화면이 안 보여 주니 괜찮다"는 가정이 한 번 통하면 다음에도 통한다.
+   */
+  if (!input.postPublished) return false;
   if (!input.commentsGloballyEnabled) return false;
   if (!input.postCommentsEnabled) return false;
   return !input.requireLoginToComment || input.isLoggedIn;

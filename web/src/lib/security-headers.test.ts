@@ -88,3 +88,16 @@ describe("next.config가 받는 규칙", () => {
     expect(value(admin.headers, "Content-Security-Policy")).toContain("default-src 'self'");
   });
 });
+
+describe("⚠ 개발 서버에서만 여는 예외", () => {
+  it("개발에서는 unsafe-eval을 연다 — 막으면 관리자 화면 JS가 통째로 안 살아난다", () => {
+    const csp = value(adminSecurityHeaders(true), "Content-Security-Policy");
+    expect(csp).toContain("script-src 'self' 'unsafe-inline' 'unsafe-eval'");
+  });
+
+  it("⚠ 운영에서는 절대 열지 않는다", () => {
+    const csp = value(adminSecurityHeaders(false), "Content-Security-Policy");
+    expect(csp).toContain("script-src 'self' 'unsafe-inline'");
+    expect(csp).not.toContain("unsafe-eval");
+  });
+});

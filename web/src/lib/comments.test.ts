@@ -109,11 +109,16 @@ describe("공개 노출", () => {
 
 describe("작성 가능 여부 — 화면과 서버 액션이 같은 답을 써야 한다", () => {
   const base = {
+    postPublished: true,
     commentsGloballyEnabled: true,
     postCommentsEnabled: true,
     requireLoginToComment: true,
     isLoggedIn: true,
   };
+
+  it("⚠ 작성 중(미발행) 글에는 못 쓴다 — 화면에 안 보이는 것은 보호가 아니다", () => {
+    expect(canSubmitComment({ ...base, postPublished: false })).toBe(false);
+  });
 
   it("전역 스위치가 꺼져 있으면 로그인해도 못 쓴다", () => {
     expect(canSubmitComment({ ...base, commentsGloballyEnabled: false })).toBe(false);

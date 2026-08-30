@@ -39,6 +39,8 @@ const MENU = [
   { href: "/admin/home", label: "홈 편집", icon: HomeIcon },
   { href: "/admin/settings", label: "사이트 기본값", icon: GearIcon },
   { href: "/admin/users", label: "사용자", icon: UsersIcon },
+  // ⚠ 무엇이 언제 바뀌었는지 되짚는 자리. 2026-08-30 「죽은 버튼」 사고의 산물이다.
+  { href: "/admin/logs", label: "활동 로그", icon: ClockIcon },
   // ⚠ 방어 장치가 "붙어 있나"가 아니라 "실제로 막나"를 재는 화면. 2026-08-11 사고의 산물이다.
   { href: "/admin/diagnostics", label: "자가 진단", icon: LockIcon },
 ];

@@ -21,6 +21,7 @@ import Link from "next/link";
 import { savePostAction } from "../actions";
 import { emptyPostFormState } from "../form-state";
 import { markdownToHtml } from "@/lib/markdown";
+import { slugify } from "@/lib/slug";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import type { Post, PostFormat, PostSection } from "@/lib/types";
 
@@ -51,6 +52,17 @@ export function PostEditor({ post }: { post?: Post }) {
   const [mode, setMode] = useState<Mode>("preview");
   const [body, setBody] = useState(post?.body ?? "");
   const [warning, setWarning] = useState<string | null>(null);
+
+  /**
+   * 제목·주소 — **주소는 제목에서 자동으로 만든다**(`lib/slug`).
+   *
+   * ⚠ 이미 있는 글은 **잠근 채로 시작한다.** 발행된 글의 주소가 제목을 따라 바뀌면
+   *    밖에 걸어 둔 링크와 검색 색인이 통째로 깨진다. 새 글일 때만 따라 움직인다.
+   * ⚠ 사람이 주소를 한 번 건드리면 그때부터 자동을 멈춘다 — 사람의 결정이 위다.
+   */
+  const [title, setTitle] = useState(post?.title ?? "");
+  const [slug, setSlug] = useState(post?.slug ?? "");
+  const [slugLocked, setSlugLocked] = useState(Boolean(post));
 
   /** 저장될 것과 같은 결과 */
   const previewHtml = useMemo(
@@ -94,16 +106,33 @@ export function PostEditor({ post }: { post?: Post }) {
       <div className="grid gap-3 sm:grid-cols-6">
         <label className="sm:col-span-4">
           <span className={label}>제목</span>
-          <input name="title" defaultValue={post?.title} className={field} />
+          <input
+            name="title"
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              if (!slugLocked) setSlug(slugify(e.target.value, new Date().getFullYear()));
+            }}
+            className={field}
+          />
         </label>
         <label className="sm:col-span-2">
           <span className={label}>주소 (영문·숫자·하이픈)</span>
           <input
             name="slug"
-            defaultValue={post?.slug}
+            value={slug}
+            onChange={(e) => {
+              setSlug(e.target.value);
+              setSlugLocked(true);
+            }}
             placeholder="rate-cut-2026"
             className={field}
           />
+          <span className="mt-1 block text-[11px] leading-relaxed text-gray-600">
+            {slugLocked
+              ? "직접 정한 주소입니다."
+              : "제목에서 자동으로 만듭니다. 직접 고치면 그때부터 멈춥니다."}
+          </span>
         </label>
       </div>
 
@@ -278,6 +307,13 @@ export function PostEditor({ post }: { post?: Post }) {
           {state.savedAt && !state.error && (
             <span className="text-[12px] text-emerald-400">
               저장했습니다{state.published ? " · 공개됨" : " · 작성중"}
+            </span>
+          )}
+          {/* ⚠ 주소를 비켰으면 반드시 말한다. 조용히 바꾸면 운영자는 자기가 정한 주소인 줄 안다. */}
+          {state.slugAdjusted && (
+            <span className="text-[12px] text-yellow-300">
+              같은 주소가 있어 <span className="font-mono">/{state.slugAdjusted}</span> 로
+              저장했습니다
             </span>
           )}
           {post && (

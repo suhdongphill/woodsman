@@ -113,6 +113,7 @@ export async function submitCommentAction(
   const allowed =
     policy.commentsEnabled &&
     canSubmitComment({
+      postPublished: post.published,
       commentsGloballyEnabled: flags.commentsGloballyEnabled,
       postCommentsEnabled: post.commentsEnabled,
       requireLoginToComment: flags.requireLoginToComment,

@@ -60,9 +60,25 @@ const NO_FALLBACK_CSP = [
  * ⚠ `img-src`에 `https:`를 허용한다 — 소셜 로그인 프로필 사진과 관리자가 붙여넣은
  *    외부 이미지가 여기로 들어온다. `data:`는 붙여넣기 스크린샷 때문이다.
  */
-const ADMIN_CSP = [
+/**
+ * ⚠ **개발 서버에서만** `unsafe-eval`을 연다.
+ *
+ * Next의 개발 모드 리프레시 런타임(`@next/react-refresh-utils`)이 eval을 쓴다. 막으면
+ * `main-app.js` 초기화 도중 EvalError가 터지고 **관리자 화면의 클라이언트 JS가 통째로
+ * 안 살아난다** — 화면은 그려지는데 입력·클릭이 아무것도 안 먹는다(2026-08-30에 반나절 헤맸다).
+ * 공개 화면은 전역 CSP에 `script-src`가 없어 이 문제가 없었고, 그래서 더 늦게 찾았다.
+ *
+ * ⚠ 배포본에는 리프레시 런타임 자체가 없다. **운영 CSP는 그대로 조여 둔다.**
+ */
+function adminScriptSrc(isDev: boolean): string {
+  return isDev
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+    : "script-src 'self' 'unsafe-inline'";
+}
+
+const adminCsp = (isDev: boolean) => [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  adminScriptSrc(isDev),
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https:",
   "font-src 'self' data:",
@@ -97,10 +113,17 @@ export function globalSecurityHeaders(): { key: string; value: string }[] {
   ];
 }
 
-/** 관리자 화면에서 전역판의 CSP를 엄격판으로 덮는다. */
-export function adminSecurityHeaders(): { key: string; value: string }[] {
+/**
+ * 관리자 화면에서 전역판의 CSP를 엄격판으로 덮는다.
+ *
+ * ⚠ `isDev`를 **인자로 받는다.** 안에서 `process.env`를 읽으면 테스트가 두 갈래를 못 본다.
+ */
+export function adminSecurityHeaders(
+  isDev: boolean = process.env.NODE_ENV !== "production",
+): { key: string; value: string }[] {
+  const csp = adminCsp(isDev);
   return globalSecurityHeaders().map((h) =>
-    h.key === "Content-Security-Policy" ? { key: h.key, value: ADMIN_CSP } : h,
+    h.key === "Content-Security-Policy" ? { key: h.key, value: csp } : h,
   );
 }
 

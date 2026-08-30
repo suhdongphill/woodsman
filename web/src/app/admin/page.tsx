@@ -19,7 +19,7 @@ import { ViewStatsCard } from "@/features/analytics/ui/ViewStats";
 import { countMembers } from "@/features/users/repository";
 
 const QUICK = [
-  { href: "/admin/posts", label: "새 글 작성", desc: "인사이트·분석·공지" },
+  { href: "/admin/posts/new", label: "새 글 작성", desc: "인사이트·분석·공지" },
   { href: "/admin/model-portfolio", label: "포트폴리오 편집", desc: "종목·목표비중·thesis" },
   { href: "/admin/comments", label: "댓글 모더레이션", desc: "승인·숨김·신고" },
   { href: "/admin/feeds", label: "RSS 가져오기", desc: "티스토리 큐레이션" },

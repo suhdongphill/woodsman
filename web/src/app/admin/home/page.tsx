@@ -93,7 +93,7 @@ export default async function AdminHomePage() {
                 <div className="flex shrink-0 items-center gap-2">
                   <Badge tone="emerald">발행</Badge>
                   <Link
-                    href={`/admin/posts?edit=${post.id}`}
+                    href={`/admin/posts/edit?id=${encodeURIComponent(post.id)}`}
                     className="text-[12px] text-gold-400 hover:text-gold-500"
                   >
                     수정
