@@ -68,7 +68,7 @@ web/
 것을 **2026-08-29에 고쳤다**(원인 셋: 계획 문서의 오진단 · 잘못된 토큰 값 · ⚠ **계정 소유
 토큰은 Zone 권한을 가질 수 없다** — 사용자 소유 토큰 + D1:Edit로 바꿔 뚫었다). 자세한 것은 §7.
 
-### 순수 모듈 목록 (전부 테스트 있음 — 파일 53개 · **테스트 866개**, 2026-08-30)
+### 순수 모듈 목록 (전부 테스트 있음 — 파일 54개 · **테스트 873개**, 2026-08-30)
 
 사이트 · 접근 제어
 `access` `site-policy` `site-status` `site-url` `site-links` `site-basics` `site-settings`
@@ -78,7 +78,7 @@ web/
 계좌 · 콘텐츠
 `allocation` `bucket-target` `manual-price` `performance` `outbound` `outbound-repo`
 `markdown` `sanitize-html` `sections` `seo` `format` `llms-txt` `ads` `ai-crawlers` `slug`
-`analytics` `engagement` `comments` `admin-log`
+`analytics` `engagement` `comments` `admin-log` `home-layout`
 
 도메인 묶음
 `macro/{registry,catalog,series,signal,parse,freshness,layers,derived,overlay,groups,fedhike}`
@@ -254,6 +254,14 @@ Stop-Process -Force -Id <pid>                              # 끈다
 
 ⚠ 주소(slug)는 **제목에서 자동으로 만든다**(`lib/slug`). 이미 있는 글은 **잠근 채로 시작한다** —
 발행된 주소가 제목을 따라 바뀌면 밖의 링크와 색인이 깨진다. 충돌은 막지 않고 **비켜 가고 알린다.**
+
+### 홈은 블록으로 쪼개져 있다 (2026-08-30, Step 1)
+
+홈 라우트는 **조립만 한다**(400줄 → 133줄). 블록은 `features/home/ui/*` 여섯 개,
+"어떤 블록을 어떤 순서로 그릴지"는 `lib/home-layout.ts`(순수 함수 + 테스트)가 정한다.
+
+⚠ **판단과 문구를 라우트에 다시 넣지 않는다.** 넣는 순간 화면을 띄워야만 확인되는 규칙이
+다시 생긴다. 콘텐츠 중심 재편(Step 2~6)은 `docs/설계_홈_콘텐츠중심_재편.md`에 있다.
 
 ### 관리자 활동 로그 (2026-08-30)
 
