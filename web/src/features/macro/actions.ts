@@ -35,9 +35,15 @@ export async function ingestMacroAction(
   const admin = await requireAdmin("/admin/macro");
 
   const group = text(formData, "group");
+  /**
+   * ⚠ **파생(DERIVED)도 뺀다** (2026-08-30 버그). 받아 올 시리즈가 애초에 없어서
+   *    "소스 ID가 없습니다"로 매번 실패가 기록된다 — 전체 수집은 `autoIndicators()`가
+   *    이미 둘 다 빼는데 묶음별 수집만 MANUAL만 빼고 있었다.
+   *    실패가 쌓이면 **진짜 실패가 묻힌다.**
+   */
   const keys = group
     ? indicatorsByGroup(group as MacroGroupKey)
-        .filter((i) => i.source !== "MANUAL")
+        .filter((i) => i.source !== "MANUAL" && i.source !== "DERIVED")
         .map((i) => i.key)
     : undefined;
 
