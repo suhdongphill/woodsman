@@ -10,7 +10,7 @@ import { emptyBubbleFormState } from "../form-state";
 import type { BubbleTriggerDef, BubbleTriggerState } from "@/lib/bubble/types";
 
 const field =
-  "w-full bg-[#12141c] border border-border rounded-lg px-2.5 py-1.5 text-[12.5px] text-white placeholder:text-gray-600";
+  "w-full bg-bg border border-border rounded-lg px-2.5 py-1.5 text-[12.5px] text-ink placeholder:text-gray-600";
 
 export function TriggerForm({
   trigger,
@@ -68,7 +68,7 @@ export function TriggerForm({
         <button
           type="submit"
           disabled={pending}
-          className="shrink-0 rounded-lg bg-gold-600/90 px-3 py-1.5 text-[12px] font-medium text-black transition-colors hover:bg-gold-600 disabled:opacity-50"
+          className="shrink-0 rounded-lg bg-gold-600/90 px-3 py-1.5 text-[12px] font-medium text-onAccent transition-colors hover:bg-gold-600 disabled:opacity-50"
         >
           {pending ? "…" : "저장"}
         </button>

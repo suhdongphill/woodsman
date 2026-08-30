@@ -12,7 +12,7 @@ import { emptyBubbleFormState } from "../form-state";
 import type { BubbleIndicator, BubbleReading } from "@/lib/bubble/types";
 
 const field =
-  "w-full bg-[#12141c] border border-border rounded-lg px-2.5 py-1.5 text-[12.5px] text-white placeholder:text-gray-600";
+  "w-full bg-bg border border-border rounded-lg px-2.5 py-1.5 text-[12.5px] text-ink placeholder:text-gray-600";
 
 export function ReadingForm({
   indicator,
@@ -28,7 +28,7 @@ export function ReadingForm({
   return (
     <div className="border-t border-border px-5 py-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-[13px] font-medium text-white">{indicator.label}</p>
+        <p className="text-[13px] font-medium text-ink">{indicator.label}</p>
         <p className="text-[11px] text-gray-600">
           {indicator.rule}
           {indicator.source && ` · ${indicator.source}`}
@@ -68,7 +68,7 @@ export function ReadingForm({
         <button
           type="submit"
           disabled={pending}
-          className="shrink-0 rounded-lg bg-gold-600/90 px-3 py-1.5 text-[12px] font-medium text-black transition-colors hover:bg-gold-600 disabled:opacity-50"
+          className="shrink-0 rounded-lg bg-gold-600/90 px-3 py-1.5 text-[12px] font-medium text-onAccent transition-colors hover:bg-gold-600 disabled:opacity-50"
         >
           {pending ? "…" : "저장"}
         </button>

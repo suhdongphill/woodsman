@@ -9,7 +9,7 @@ import { CapitalFlowChart } from "@/features/portfolio/ui/CapitalFlowChart";
 import { JournalTimeline } from "@/features/portfolio/ui/JournalTimeline";
 import { AllocationProgress } from "@/features/portfolio/ui/AllocationProgress";
 import { ChevronRightIcon } from "@/components/icons";
-import { formatDate, formatNumber, formatPct } from "@/lib/format";
+import { formatDate, formatNumber, formatPct, profitColor } from "@/lib/format";
 import { summarizePerformance } from "@/lib/performance";
 import { fillProgressPct, holdingValueKrw, summarizeAllocation } from "@/lib/allocation";
 import { summarizeManualPrices } from "@/lib/manual-price";
@@ -126,7 +126,7 @@ export default async function PortfolioPage() {
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <Card>
                   <p className="text-[11px] text-muted">평가액</p>
-                  <p className="mt-1 text-2xl font-bold tabular-nums text-white">
+                  <p className="mt-1 text-2xl font-bold tabular-nums text-ink">
                     {formatNumber(perf.value)}
                   </p>
                   <p className="mt-1 text-[11px] text-gray-500">
@@ -137,7 +137,7 @@ export default async function PortfolioPage() {
                   <p className="text-[11px] text-muted">평가손익</p>
                   <p
                     className={`mt-1 text-2xl font-bold tabular-nums ${
-                      perf.profit >= 0 ? "text-emerald-400" : "text-red-400"
+                      profitColor(perf.profit)
                     }`}
                   >
                     {formatPct(perf.returnPct)}
@@ -181,7 +181,7 @@ export default async function PortfolioPage() {
                     style={{ backgroundColor: s.color }}
                   />
                   <span className="text-xs text-muted flex-1">{s.label}</span>
-                  <span className="text-sm font-bold text-white tabular-nums">{s.value}%</span>
+                  <span className="text-sm font-bold text-ink tabular-nums">{s.value}%</span>
                 </div>
               ))}
             </div>

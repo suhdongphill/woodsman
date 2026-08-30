@@ -65,7 +65,7 @@ export function Logo({
     >
       <LogoMark size={compact ? 30 : 36} />
       <span className="flex flex-col leading-none">
-        <span className="text-[17px] font-bold tracking-tight text-white group-hover:text-gold-400 transition-colors">
+        <span className="text-[17px] font-bold tracking-tight text-ink group-hover:text-gold-400 transition-colors">
           Woodsman
         </span>
         {!compact && (

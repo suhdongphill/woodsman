@@ -45,7 +45,7 @@ export function MacroSection({ macro }: { macro: MacroOverview }) {
               className="rounded-2xl border border-border bg-card p-4 transition-colors hover:border-gold-600/40 hover:bg-cardHover"
             >
               <p className="text-[11px] text-muted">{h.indicator.name}</p>
-              <p className="mt-1 text-xl font-bold tabular-nums text-white">{h.display}</p>
+              <p className="mt-1 text-xl font-bold tabular-nums text-ink">{h.display}</p>
               <p className="mt-1 text-[11px] text-gray-600">
                 {h.asOf ? `${h.asOf} 기준` : "수집 전"}
               </p>

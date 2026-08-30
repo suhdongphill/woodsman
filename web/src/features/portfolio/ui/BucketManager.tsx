@@ -44,7 +44,7 @@ function Message({ state }: { state: BucketFormState }) {
 }
 
 const input =
-  "w-full rounded-lg border border-border bg-[#12141c] px-2.5 py-1.5 text-[12.5px] text-gray-200 outline-none focus:border-gold-600/50";
+  "w-full rounded-lg border border-border bg-bg px-2.5 py-1.5 text-[12.5px] text-gray-200 outline-none focus:border-gold-600/50";
 
 export function BucketManager({
   buckets,
@@ -107,7 +107,7 @@ export function BucketManager({
                   min={0}
                   max={BUCKET_TARGET_MAX}
                   step="0.1"
-                  className="w-20 rounded-lg border border-border bg-[#12141c] px-2 py-1.5 text-right text-[12.5px] tabular-nums text-gray-200 outline-none focus:border-gold-600/50"
+                  className="w-20 rounded-lg border border-border bg-bg px-2 py-1.5 text-right text-[12.5px] tabular-nums text-gray-200 outline-none focus:border-gold-600/50"
                   aria-label={`${row.bucket.name} 목표 비중 %`}
                 />
                 <span className="text-[12px] text-gray-500">%</span>
@@ -129,7 +129,7 @@ export function BucketManager({
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
             <p className="text-[12.5px] tabular-nums text-gray-400">
-              합계 <span className={sum > BUCKET_TARGET_MAX ? "text-red-400" : "text-white"}>{sum}%</span>
+              합계 <span className={sum > BUCKET_TARGET_MAX ? "text-red-400" : "text-ink"}>{sum}%</span>
               <span className="ml-3 text-gray-600">
                 현금·미배정 <span className="text-gray-400">{cash}%</span>
               </span>
@@ -185,7 +185,7 @@ export function BucketManager({
                     type="color"
                     name="color"
                     defaultValue={row.bucket.color}
-                    className="h-[34px] w-14 cursor-pointer rounded-lg border border-border bg-[#12141c]"
+                    className="h-[34px] w-14 cursor-pointer rounded-lg border border-border bg-bg"
                     aria-label={`${row.bucket.name} 색`}
                   />
                 </label>
@@ -203,7 +203,7 @@ export function BucketManager({
                 <button
                   type="submit"
                   disabled={editing}
-                  className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-white disabled:opacity-40"
+                  className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-ink disabled:opacity-40"
                 >
                   저장
                 </button>
@@ -275,7 +275,7 @@ export function BucketManager({
                 type="color"
                 name="color"
                 defaultValue="#8b5cf6"
-                className="h-[34px] w-14 cursor-pointer rounded-lg border border-border bg-[#12141c]"
+                className="h-[34px] w-14 cursor-pointer rounded-lg border border-border bg-bg"
                 aria-label="새 분류 색"
               />
             </label>

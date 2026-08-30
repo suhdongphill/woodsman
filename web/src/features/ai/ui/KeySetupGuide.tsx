@@ -35,8 +35,8 @@ export function KeySetupGuide({
           <KeyRegisterForm connected={connected} />
 
           <div className="mt-5 border-t border-border/70 pt-4">
-            <p className="text-[12.5px] text-white">배포된 사이트에도 반영하려면</p>
-            <pre className="mt-2 rounded-xl border border-border bg-[#12141c] px-3 py-2.5 text-[11px] text-emerald-400">
+            <p className="text-[12.5px] text-ink">배포된 사이트에도 반영하려면</p>
+            <pre className="mt-2 rounded-xl border border-border bg-bg px-3 py-2.5 text-[11px] text-emerald-400">
               npm run ai:sync
             </pre>
             <p className="mt-1 text-[11.5px] text-muted">
@@ -48,7 +48,7 @@ export function KeySetupGuide({
       ) : (
         <>
           <p className="mb-3 text-[12.5px] leading-relaxed text-gray-300">
-            <span className="text-white">배포된 사이트에서는 키를 입력받지 않습니다.</span>{" "}
+            <span className="text-ink">배포된 사이트에서는 키를 입력받지 않습니다.</span>{" "}
             Cloudflare Workers에는 파일 시스템이 없어 <code>.env</code> 파일이 존재할 수 없기
             때문입니다. 내 PC에서 등록한 뒤 명령 하나로 올립니다.
           </p>

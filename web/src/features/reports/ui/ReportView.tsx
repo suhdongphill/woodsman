@@ -80,7 +80,7 @@ export function ReportView({ report }: { report: StoredReport }) {
           <section key={section.key} className="bg-card border border-border rounded-2xl p-5">
             <div className="flex flex-wrap items-baseline gap-2 mb-3">
               <span className="text-[11px] font-mono text-gold-400">§{section.no}</span>
-              <h2 className="text-[15px] font-semibold text-white">{section.name}</h2>
+              <h2 className="text-[15px] font-semibold text-ink">{section.name}</h2>
               <DataTag tag={block.tag} />
             </div>
 
@@ -103,7 +103,7 @@ export function ReportView({ report }: { report: StoredReport }) {
                 "모른다"를 적을 자리가 없으면 누군가 추정치로 채운다. */}
             {unresearched && (
               <div
-                className={`rounded-xl border border-dashed border-border bg-[#12141c] px-4 py-3 ${
+                className={`rounded-xl border border-dashed border-border bg-bg px-4 py-3 ${
                   blank ? "" : "mt-3"
                 }`}
               >
@@ -148,12 +148,12 @@ export function ReportView({ report }: { report: StoredReport }) {
 
             {/* ⚠ 컨센서스 목표주가는 우리 판단과 **시각적으로 분리**한다 */}
             {section.key === "valuation" && consensus && (
-              <div className="mt-3 rounded-xl border border-border bg-[#12141c] px-3.5 py-3">
+              <div className="mt-3 rounded-xl border border-border bg-bg px-3.5 py-3">
                 <div className="flex flex-wrap items-baseline gap-2">
                   <span className="rounded-md bg-cardHover px-1.5 py-0.5 text-[10.5px] text-gray-400">
                     제3자 컨센서스
                   </span>
-                  <span className="text-[15px] font-bold text-white tabular-nums">
+                  <span className="text-[15px] font-bold text-ink tabular-nums">
                     {formatConsensus(consensus.value, consensus.currency)}
                   </span>
                 </div>

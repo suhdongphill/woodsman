@@ -11,7 +11,7 @@ import { saveSnapshotAction } from "../actions";
 import { emptyJournalFormState } from "../form-state";
 
 const field =
-  "w-full bg-[#12141c] border border-border rounded-xl px-3 py-2 text-[13px] text-white text-right tabular-nums placeholder:text-gray-600";
+  "w-full bg-bg border border-border rounded-xl px-3 py-2 text-[13px] text-ink text-right tabular-nums placeholder:text-gray-600";
 const label = "block text-[11px] text-muted mb-1";
 
 export function SnapshotForm({ today }: { today: string }) {
@@ -54,7 +54,7 @@ export function SnapshotForm({ today }: { today: string }) {
         <button
           type="submit"
           disabled={pending}
-          className="rounded-xl border border-border px-4 py-2 text-[13px] text-gray-300 transition-colors hover:border-gold-600/50 hover:text-white disabled:opacity-50"
+          className="rounded-xl border border-border px-4 py-2 text-[13px] text-gray-300 transition-colors hover:border-gold-600/50 hover:text-ink disabled:opacity-50"
         >
           {pending ? "저장 중…" : "스냅샷 저장"}
         </button>

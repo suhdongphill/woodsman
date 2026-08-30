@@ -59,7 +59,7 @@ export default async function AdminStocksPage() {
         action={
           <Link
             href="/admin/diagnostics"
-            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-white"
+            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-ink"
           >
             자가 진단
           </Link>

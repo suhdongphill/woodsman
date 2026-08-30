@@ -17,7 +17,7 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
         <SourceBadge source={post.source} />
       </div>
 
-      <h3 className="mt-3 text-[15px] font-semibold text-white leading-snug group-hover:text-gold-400 transition-colors line-clamp-2">
+      <h3 className="mt-3 text-[15px] font-semibold text-ink leading-snug group-hover:text-gold-400 transition-colors line-clamp-2">
         {post.title}
       </h3>
 

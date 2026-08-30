@@ -150,7 +150,7 @@ export default async function MacroGroupPage({ params }: Props) {
               className="rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:border-gold-600/40"
             >
               <span className="text-[11px] text-gray-500">이전 묶음</span>
-              <span className="mt-0.5 block text-[13.5px] font-semibold text-white">
+              <span className="mt-0.5 block text-[13.5px] font-semibold text-ink">
                 {prev.emoji} {prev.name}
               </span>
               <span className="text-[12px] text-muted">{prev.question}</span>
@@ -162,7 +162,7 @@ export default async function MacroGroupPage({ params }: Props) {
               className="rounded-xl border border-border bg-card px-4 py-3 text-right transition-colors hover:border-gold-600/40 sm:col-start-2"
             >
               <span className="text-[11px] text-gray-500">다음 묶음</span>
-              <span className="mt-0.5 block text-[13.5px] font-semibold text-white">
+              <span className="mt-0.5 block text-[13.5px] font-semibold text-ink">
                 {next.emoji} {next.name}
               </span>
               <span className="text-[12px] text-muted">{next.question}</span>

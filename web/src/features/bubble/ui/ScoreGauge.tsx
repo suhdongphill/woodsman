@@ -19,7 +19,7 @@ const TONE: Record<string, string> = {
 };
 
 export function ScoreGauge({ score }: { score: BubbleScore }) {
-  const tone = score.band ? TONE[score.band.regime] ?? "" : "border-border bg-white/5 text-gray-400";
+  const tone = score.band ? TONE[score.band.regime] ?? "" : "border-border bg-ink/5 text-gray-400";
 
   return (
     <div className={cx("rounded-2xl border p-5 sm:p-6", tone)}>
@@ -39,7 +39,7 @@ export function ScoreGauge({ score }: { score: BubbleScore }) {
 
       {/* 눈금 — 점수가 어느 구간에 있는지 막대로 */}
       {score.score !== undefined && (
-        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-black/30">
+        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-ink/15">
           <div
             className="h-full rounded-full bg-current opacity-80"
             style={{ width: `${score.score}%` }}

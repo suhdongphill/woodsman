@@ -39,7 +39,7 @@ export default async function AdminHomePage() {
         action={
           <Link
             href="/"
-            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-white"
+            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-ink"
           >
             홈 보기
           </Link>
@@ -84,7 +84,7 @@ export default async function AdminHomePage() {
                 className="flex items-center justify-between gap-3 border-t border-border px-5 py-3.5"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-[13.5px] text-white">{post.title}</p>
+                  <p className="truncate text-[13.5px] text-ink">{post.title}</p>
                   <p className="mt-0.5 text-[11px] text-gray-600">
                     {post.publishedAt ? formatDate(post.publishedAt) : "발행일 없음"} · /
                     {post.slug}

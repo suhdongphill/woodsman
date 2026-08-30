@@ -116,14 +116,14 @@ export default async function AdminDashboardPage() {
             AI 월 토큰 사용량
           </CardTitle>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-white tabular-nums">
+            <span className="text-2xl font-bold text-ink tabular-nums">
               {(aiTokensUsed / 1000).toFixed(0)}K
             </span>
             <span className="text-xs text-muted">
               / {(aiTokenCap / 1000).toFixed(0)}K
             </span>
           </div>
-          <div className="mt-3 h-2 rounded-full bg-[#12141c] overflow-hidden">
+          <div className="mt-3 h-2 rounded-full bg-bg overflow-hidden">
             <div
               className={cx(
                 "h-full rounded-full",
@@ -185,7 +185,7 @@ export default async function AdminDashboardPage() {
                     <Badge tone={c.status === "PENDING" ? "warn" : "danger"}>
                       {c.status === "PENDING" ? "승인대기" : "신고됨"}
                     </Badge>
-                    <span className="text-[12px] text-white">{c.authorName ?? "익명"}</span>
+                    <span className="text-[12px] text-ink">{c.authorName ?? "익명"}</span>
                     <span className="text-[11px] text-gray-600 ml-auto">
                       {formatDateTime(c.createdAt)}
                     </span>
@@ -206,7 +206,7 @@ export default async function AdminDashboardPage() {
                 href={q.href}
                 className="block px-4 py-3.5 rounded-xl border border-border hover:border-gold-600/40 hover:bg-cardHover transition-colors"
               >
-                <p className="text-[13px] font-medium text-white">{q.label}</p>
+                <p className="text-[13px] font-medium text-ink">{q.label}</p>
                 <p className="text-[11px] text-muted mt-1">{q.desc}</p>
               </Link>
             ))}

@@ -37,7 +37,7 @@ export function CardTitle({
 }) {
   return (
     <div className={cx("flex items-center justify-between gap-3 mb-4", className)}>
-      <h3 className="text-sm font-semibold text-white">{children}</h3>
+      <h3 className="text-sm font-semibold text-ink">{children}</h3>
       {action}
     </div>
   );
@@ -56,7 +56,7 @@ export function SectionHeader({
   return (
     <div className="flex items-end justify-between gap-4 mb-5">
       <div>
-        <h2 className="text-lg sm:text-xl font-bold text-white">{title}</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-ink">{title}</h2>
         {subtitle && <p className="text-[13px] text-muted mt-1">{subtitle}</p>}
       </div>
       {action}

@@ -102,7 +102,7 @@ export default async function MacroHubPage() {
         {/* ② 처음 오신 분 — 읽는 순서를 알려준다 */}
         <section aria-labelledby="guide-heading">
           <Card className="border-gold-600/30 bg-gold-500/[0.04]">
-            <h2 id="guide-heading" className="text-[15px] font-semibold text-white">
+            <h2 id="guide-heading" className="text-[15px] font-semibold text-ink">
               처음이신가요? 이 순서로 보세요
             </h2>
             <ol className="mt-3 space-y-2.5 text-[13px] leading-relaxed text-gray-300">
@@ -154,7 +154,7 @@ export default async function MacroHubPage() {
           href="/macro/compare"
           className="block rounded-2xl border border-border bg-card p-5 transition-colors hover:border-gold-600/40 hover:bg-cardHover"
         >
-          <h2 className="text-[15px] font-semibold text-white">📈 지표 겹쳐 보기</h2>
+          <h2 className="text-[15px] font-semibold text-ink">📈 지표 겹쳐 보기</h2>
           <p className="mt-1 text-[13px] leading-relaxed text-muted">
             금리와 유동성, 물가와 기대, 실물과 주가를 <strong>같은 시간축 위에</strong> 세워
             어디서 벌어졌는지를 봅니다. 단위가 다르면 축을 두 개 그리는 대신 척도를 환산합니다 —
@@ -171,7 +171,7 @@ export default async function MacroHubPage() {
           href="/macro/bubble"
           className="block rounded-2xl border border-border bg-card p-5 transition-colors hover:border-gold-600/40 hover:bg-cardHover"
         >
-          <h2 className="text-[15px] font-semibold text-white">🫧 AI·반도체 버블 모니터</h2>
+          <h2 className="text-[15px] font-semibold text-ink">🫧 AI·반도체 버블 모니터</h2>
           <p className="mt-1 text-[13px] leading-relaxed text-muted">
             설비투자·밸류에이션·실물 수요·신용·심리 다섯 층 {ALL_BUBBLE_INDICATORS.length}개 지표를
             채점해 지금 사이클이 어디쯤인지 한 숫자로 봅니다. 판이 바뀌는 사건{" "}

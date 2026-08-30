@@ -65,7 +65,7 @@ export function TistoryCta({
           <p className="text-[11px] font-medium tracking-[0.12em] text-gold-400">
             TISTORY · 블로그 원문
           </p>
-          <h3 className="mt-1.5 text-[15px] font-semibold leading-snug text-white transition-colors group-hover:text-gold-400">
+          <h3 className="mt-1.5 text-[15px] font-semibold leading-snug text-ink transition-colors group-hover:text-gold-400">
             {postTitle ?? headline ?? "티스토리 블로그에서 더 깊게 읽기"}
           </h3>
           {postExcerpt && (
@@ -88,7 +88,7 @@ export function TistoryCta({
           TISTORY · 원문 블로그
         </p>
 
-        <h2 className="mt-2 text-lg font-bold leading-snug text-white transition-colors group-hover:text-gold-400 sm:text-xl">
+        <h2 className="mt-2 text-lg font-bold leading-snug text-ink transition-colors group-hover:text-gold-400 sm:text-xl">
           {postTitle ?? headline ?? "이 주제를 더 길게 다룬 글이 블로그에 있습니다"}
         </h2>
 

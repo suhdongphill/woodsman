@@ -61,7 +61,7 @@ function Nav({ onNavigate }: { onNavigate?: () => void }) {
               "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-colors",
               active
                 ? "bg-gold-500/12 text-gold-400 border border-gold-500/25"
-                : "text-muted hover:text-white hover:bg-cardHover border border-transparent",
+                : "text-muted hover:text-ink hover:bg-cardHover border border-transparent",
             )}
           >
             <Icon size={16} />
@@ -85,7 +85,7 @@ export function AdminSidebar() {
           type="button"
           aria-label="관리자 메뉴"
           onClick={() => setOpen((v) => !v)}
-          className="p-2 -mr-2 text-muted hover:text-white"
+          className="p-2 -mr-2 text-muted hover:text-ink"
         >
           {open ? <CloseIcon size={20} /> : <MenuIcon size={20} />}
         </button>
@@ -108,7 +108,7 @@ export function AdminSidebar() {
         <div className="mt-auto pt-5 border-t border-border">
           <Link
             href="/"
-            className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[13px] text-muted hover:text-white hover:bg-cardHover transition-colors"
+            className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[13px] text-muted hover:text-ink hover:bg-cardHover transition-colors"
           >
             <ExternalIcon size={15} />
             사이트로 이동

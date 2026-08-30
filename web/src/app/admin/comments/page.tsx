@@ -64,7 +64,7 @@ export default async function AdminCommentsPage({
               "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
               t.key === tab
                 ? "border-gold-500/40 bg-gold-500/15 text-gold-400"
-                : "border-border bg-card text-muted hover:border-gold-600/40 hover:text-white",
+                : "border-border bg-card text-muted hover:border-gold-600/40 hover:text-ink",
             )}
           >
             {t.label}
@@ -98,7 +98,7 @@ export default async function AdminCommentsPage({
                   </div>
                 </Td>
                 <Td>
-                  <p className="line-clamp-2 max-w-[360px] text-[12.5px] text-white">{c.body}</p>
+                  <p className="line-clamp-2 max-w-[360px] text-[12.5px] text-ink">{c.body}</p>
                   <span className="text-[11px] text-gray-600">{c.authorName ?? "익명"}</span>
                 </Td>
                 <Td>

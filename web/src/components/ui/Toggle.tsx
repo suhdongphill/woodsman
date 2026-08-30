@@ -45,7 +45,7 @@ export function Toggle({
     >
       <span
         className={cx(
-          "absolute top-1/2 left-1 -translate-y-1/2 rounded-full bg-white transition-transform",
+          "absolute top-1/2 left-1 -translate-y-1/2 rounded-full bg-surface transition-transform",
           on && shift,
         )}
         style={{ width: size === "sm" ? 14 : 18, height: size === "sm" ? 14 : 18 }}
@@ -68,7 +68,7 @@ export function Toggle({
   return (
     <div className="flex items-start justify-between gap-4 py-3.5">
       <div className="min-w-0">
-        <label htmlFor={id} className="text-[13.5px] text-white cursor-pointer">
+        <label htmlFor={id} className="text-[13.5px] text-ink cursor-pointer">
           {label}
         </label>
         {description && (

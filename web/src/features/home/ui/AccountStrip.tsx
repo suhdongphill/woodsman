@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/Card";
 import { StatBar } from "@/components/ui/StatBar";
 import { ChevronRightIcon } from "@/components/icons";
 import { DataModeNotice } from "@/components/ui/DataModeNotice";
-import { formatDate, formatNumber, formatPct } from "@/lib/format";
+import { formatDate, formatNumber, formatPct, profitColor } from "@/lib/format";
 import { cashTargetPct, isBucketTargetSet, type PortfolioBucket } from "@/lib/bucket-target";
 import type { PerformanceSummary } from "@/lib/performance";
 import type { DataMode } from "@/lib/data-mode";
@@ -50,12 +50,12 @@ export function AccountStrip({
             <p className="text-[11px] text-muted">이 흐름 속에서 저는 이렇게 하고 있습니다</p>
             {perf ? (
               <p className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="text-2xl font-bold tabular-nums leading-none text-white">
+                <span className="text-2xl font-bold tabular-nums leading-none text-ink">
                   {formatNumber(perf.value)}
                 </span>
                 <span
                   className={`text-[13px] font-medium tabular-nums ${
-                    perf.profit >= 0 ? "text-emerald-400" : "text-red-400"
+                    profitColor(perf.profit)
                   }`}
                 >
                   {formatPct(perf.returnPct)}

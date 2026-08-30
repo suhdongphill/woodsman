@@ -31,7 +31,7 @@ export function KeyRegisterForm({ connected }: { connected: string[] }) {
           <select
             name="apiKeyEnv"
             defaultValue={AI_PROVIDERS[0].apiKeyEnv}
-            className="w-full bg-[#12141c] border border-border rounded-xl px-3 py-2 text-[13px] text-ink"
+            className="w-full bg-bg border border-border rounded-xl px-3 py-2 text-[13px] text-ink"
           >
             {AI_PROVIDERS.map((p) => (
               <option key={p.id} value={p.apiKeyEnv}>
@@ -51,14 +51,14 @@ export function KeyRegisterForm({ connected }: { connected: string[] }) {
             autoComplete="off"
             spellCheck={false}
             placeholder="발급받은 키를 붙여넣으세요"
-            className="w-full bg-[#12141c] border border-border rounded-xl px-3 py-2 text-[13px] text-white font-mono"
+            className="w-full bg-bg border border-border rounded-xl px-3 py-2 text-[13px] text-ink font-mono"
           />
         </label>
 
         <button
           type="submit"
           disabled={pending}
-          className="px-4 py-2 rounded-xl bg-gold-600/90 hover:bg-gold-600 text-[13px] font-medium text-black disabled:opacity-50 transition-colors"
+          className="px-4 py-2 rounded-xl bg-gold-600/90 hover:bg-gold-600 text-[13px] font-medium text-onAccent disabled:opacity-50 transition-colors"
         >
           {pending ? "저장 중…" : ".env에 저장"}
         </button>

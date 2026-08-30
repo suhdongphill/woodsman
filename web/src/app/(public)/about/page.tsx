@@ -26,7 +26,7 @@ export default async function AboutPage() {
             {BETA_NOTICE.badge}
           </span>
           <p className="mt-2.5 text-[13.5px] leading-relaxed text-gray-300">
-            <strong className="text-white">{BETA_NOTICE.short}.</strong> {BETA_NOTICE.long} 지금은
+            <strong className="text-ink">{BETA_NOTICE.short}.</strong> {BETA_NOTICE.long} 지금은
             운영자 한 사람이 기록을 쌓는 단계이며, 아래 순서로 넓혀 갈 계획입니다.
           </p>
         </div>
@@ -48,7 +48,7 @@ export default async function AboutPage() {
         <p>
           이 사이트는 운영자 Woodsman이 자신의 투자 계좌를 공개하고, 매달 얼마를 넣었고 지금 얼마가
           되었는지를 기록하는 블로그입니다. 종목 추천을 하는 곳이 아니라,{" "}
-          <strong className="text-white">원칙대로 한 투자가 실제로 어떤 결과를 내는지</strong>를
+          <strong className="text-ink">원칙대로 한 투자가 실제로 어떤 결과를 내는지</strong>를
           긴 시간에 걸쳐 확인하는 곳입니다.
         </p>
         <p>
@@ -64,15 +64,15 @@ export default async function AboutPage() {
         <PolicyList
           items={[
             <>
-              <strong className="text-white">성장</strong> — 이익 성장률로 수익을 만든다. 변동성을
+              <strong className="text-ink">성장</strong> — 이익 성장률로 수익을 만든다. 변동성을
               감수하는 자리.
             </>,
             <>
-              <strong className="text-white">인컴</strong> — 배당·이자로 현금흐름을 만든다.
+              <strong className="text-ink">인컴</strong> — 배당·이자로 현금흐름을 만든다.
               하락장에서 심리를 지탱한다.
             </>,
             <>
-              <strong className="text-white">방어</strong> — 지수·현금으로 최악을 막고 리밸런싱
+              <strong className="text-ink">방어</strong> — 지수·현금으로 최악을 막고 리밸런싱
               탄약을 보관한다.
             </>,
           ]}

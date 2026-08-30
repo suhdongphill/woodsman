@@ -16,7 +16,7 @@ import { formatProbability, type FedHikeResult } from "@/lib/macro/fedhike";
 
 const BIAS_STYLE: Record<FedHikeResult["bias"], string> = {
   hawkish: "border-red-500/30 bg-red-500/10 text-red-300",
-  neutral: "border-border bg-[#12141c] text-gray-300",
+  neutral: "border-border bg-bg text-gray-300",
   dovish: "border-sky-500/30 bg-sky-500/10 text-sky-300",
 };
 
@@ -30,11 +30,11 @@ function Bar({
   emphasis: boolean;
 }) {
   return (
-    <li className="rounded-xl border border-border bg-[#12141c] px-3 py-2.5">
+    <li className="rounded-xl border border-border bg-bg px-3 py-2.5">
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-[12px] text-gray-400">{label}</span>
         <span
-          className={`text-[17px] font-bold tabular-nums ${emphasis ? "text-gold-400" : "text-white"}`}
+          className={`text-[17px] font-bold tabular-nums ${emphasis ? "text-gold-400" : "text-ink"}`}
         >
           {formatProbability(value)}
         </span>
@@ -94,7 +94,7 @@ export function FedHikeCard({ result, asOf }: { result: FedHikeResult; asOf?: st
 
       <p className="mt-3 text-[13.5px] leading-relaxed text-gray-300">
         테일러 준칙이 지금 경제에 처방하는 금리는{" "}
-        <strong className="text-white">{result.prescribedRate.toFixed(2)}%</strong>로, 현재 기준금리보다{" "}
+        <strong className="text-ink">{result.prescribedRate.toFixed(2)}%</strong>로, 현재 기준금리보다{" "}
         {result.gap >= 0 ? "높습니다" : "낮습니다"}(처방갭 {sign(result.gap)}%p).{" "}
         {result.gap >= 0
           ? "준칙 기준으로는 지금 정책이 다소 완화적이라는 뜻입니다."

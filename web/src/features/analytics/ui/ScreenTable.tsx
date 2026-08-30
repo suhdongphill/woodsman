@@ -60,7 +60,7 @@ export function ScreenTable({ rows }: { rows: EngagementView[] }) {
               <Td>
                 <span className="font-mono text-[12px] text-gray-300">{r.path}</span>
               </Td>
-              <Td className="text-right tabular-nums text-white">
+              <Td className="text-right tabular-nums text-ink">
                 {r.views.toLocaleString()}
               </Td>
               <Td className="text-right tabular-nums text-gray-500">

@@ -44,7 +44,7 @@ export function RoadmapTimeline() {
             <article className={cx("rounded-2xl border bg-card p-5", style.card)}>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono text-[11px] text-gold-500">{phase.step}</span>
-                <h3 className="text-[15px] font-semibold text-white">{phase.title}</h3>
+                <h3 className="text-[15px] font-semibold text-ink">{phase.title}</h3>
                 <span
                   className={cx(
                     "rounded-lg border px-2 py-0.5 text-[10px] font-medium",

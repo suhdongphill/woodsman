@@ -33,7 +33,7 @@ export async function Footer({ showCommunity = false }: { showCommunity?: boolea
           <div className="max-w-sm">
             <div className="flex items-center gap-2.5">
               <LogoMark size={28} />
-              <span className="text-sm font-bold text-white">Woodsman</span>
+              <span className="text-sm font-bold text-ink">Woodsman</span>
             </div>
             <p className="text-xs text-muted mt-3 leading-relaxed">
               성장·인컴·방어 세 기능으로 자산을 나누고, 매달의 납입과 판단을 기록으로 남기는

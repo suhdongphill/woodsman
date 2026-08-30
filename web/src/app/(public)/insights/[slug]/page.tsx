@@ -88,7 +88,7 @@ export default async function InsightDetailPage({ params }: Props) {
         {post.source === "TISTORY" && <Badge tone="neutral">티스토리</Badge>}
       </div>
 
-      <h1 className="mt-4 text-2xl sm:text-[32px] font-bold text-white leading-snug tracking-tight">
+      <h1 className="mt-4 text-2xl sm:text-[32px] font-bold text-ink leading-snug tracking-tight">
         {post.title}
       </h1>
 
@@ -111,7 +111,7 @@ export default async function InsightDetailPage({ params }: Props) {
           className="mt-6 flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3 hover:border-gold-600/40 transition-colors"
         >
           <span className="text-[11px] text-muted">연결 종목</span>
-          <span className="text-sm font-semibold text-white">{stockName}</span>
+          <span className="text-sm font-semibold text-ink">{stockName}</span>
           <span className="text-[11px] font-mono text-gray-500">{post.ticker}</span>
           <ChevronRightIcon size={14} className="ml-auto text-gold-500" />
         </Link>
@@ -127,7 +127,7 @@ export default async function InsightDetailPage({ params }: Props) {
       {isFromTistory && (
         <Card className="mt-8 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[13px] text-white font-medium">티스토리에서 원문 이어 읽기</p>
+            <p className="text-[13px] text-ink font-medium">티스토리에서 원문 이어 읽기</p>
             <p className="mt-0.5 break-all text-[11px] text-gray-500">{post.externalUrl}</p>
           </div>
           <a
@@ -194,7 +194,7 @@ export default async function InsightDetailPage({ params }: Props) {
       {/* 관련 글 */}
       {related.length > 0 && (
         <section className="mt-14">
-          <h2 className="text-base font-semibold text-white mb-5">함께 읽으면 좋은 글</h2>
+          <h2 className="text-base font-semibold text-ink mb-5">함께 읽으면 좋은 글</h2>
           <div className="grid sm:grid-cols-2 gap-4">
             {related.map((p) => (
               <PostCard key={p.id} post={p} compact />

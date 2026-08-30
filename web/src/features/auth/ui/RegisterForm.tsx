@@ -46,7 +46,7 @@ export function RegisterForm({ next }: { next: string }) {
           type="checkbox"
           name="agree"
           required
-          className="mt-0.5 w-4 h-4 rounded border-border bg-[#12141c] accent-[#36a06a]"
+          className="mt-0.5 w-4 h-4 rounded border-border bg-bg accent-[#36a06a]"
         />
         <span>
           투자 정보 제공 목적임에 동의하며, 모든 투자 판단의 책임은 본인에게 있음을 확인합니다.

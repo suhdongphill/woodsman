@@ -11,7 +11,7 @@ import { emptySiteFormState } from "../form-state";
 import type { SiteBasics } from "@/lib/site-basics";
 
 const field =
-  "w-full bg-[#12141c] border border-border rounded-xl px-3 py-2 text-[13px] text-white placeholder:text-gray-600";
+  "w-full bg-bg border border-border rounded-xl px-3 py-2 text-[13px] text-ink placeholder:text-gray-600";
 const label = "block text-[11px] text-muted mb-1";
 const hint = "mt-1 text-[11px] text-gray-600 leading-relaxed";
 
@@ -21,7 +21,7 @@ export function SiteBasicsForm({ basics }: { basics: SiteBasics }) {
   return (
     <form action={formAction} className="space-y-7">
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-white">계좌 성격</h3>
+        <h3 className="mb-3 text-sm font-semibold text-ink">계좌 성격</h3>
         <div className="space-y-2">
           {(
             [
@@ -39,7 +39,7 @@ export function SiteBasicsForm({ basics }: { basics: SiteBasics }) {
           ).map((option) => (
             <label
               key={option.value}
-              className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-[#12141c] px-3.5 py-3 transition-colors hover:border-gold-600/40"
+              className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-bg px-3.5 py-3 transition-colors hover:border-gold-600/40"
             >
               <input
                 type="radio"
@@ -49,7 +49,7 @@ export function SiteBasicsForm({ basics }: { basics: SiteBasics }) {
                 className="mt-0.5 h-4 w-4 accent-gold-500"
               />
               <span className="min-w-0">
-                <span className="block text-[13px] text-white">{option.title}</span>
+                <span className="block text-[13px] text-ink">{option.title}</span>
                 <span className="mt-0.5 block text-[11.5px] leading-relaxed text-muted">
                   {option.desc}
                 </span>
@@ -63,7 +63,7 @@ export function SiteBasicsForm({ basics }: { basics: SiteBasics }) {
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-white">기준 환율</h3>
+        <h3 className="mb-3 text-sm font-semibold text-ink">기준 환율</h3>
         <label className="block max-w-[220px]">
           <span className={label}>1달러 = ? 원</span>
           <input
@@ -82,7 +82,7 @@ export function SiteBasicsForm({ basics }: { basics: SiteBasics }) {
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-white">홈 문구</h3>
+        <h3 className="mb-3 text-sm font-semibold text-ink">홈 문구</h3>
         <div className="space-y-3">
           <label className="block">
             <span className={label}>제목</span>
@@ -101,7 +101,7 @@ export function SiteBasicsForm({ basics }: { basics: SiteBasics }) {
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-white">티스토리 대표 글</h3>
+        <h3 className="mb-3 text-sm font-semibold text-ink">티스토리 대표 글</h3>
         <p className={`${hint} mb-3 mt-0`}>
           홈·본문 끝의 블로그 카드에 <strong className="text-gray-400">주소 대신 이 제목과 요약</strong>이
           나옵니다. 주소만 보이면 무슨 글인지 알 수 없어 누를 이유가 없습니다.
@@ -132,7 +132,7 @@ export function SiteBasicsForm({ basics }: { basics: SiteBasics }) {
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-white">연락처 · 블로그</h3>
+        <h3 className="mb-3 text-sm font-semibold text-ink">연락처 · 블로그</h3>
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="block">
             <span className={label}>문의 메일</span>
@@ -164,7 +164,7 @@ export function SiteBasicsForm({ basics }: { basics: SiteBasics }) {
         <button
           type="submit"
           disabled={pending}
-          className="rounded-xl bg-gold-600/90 px-5 py-2 text-[13px] font-medium text-black transition-colors hover:bg-gold-600 disabled:opacity-50"
+          className="rounded-xl bg-gold-600/90 px-5 py-2 text-[13px] font-medium text-onAccent transition-colors hover:bg-gold-600 disabled:opacity-50"
         >
           {pending ? "저장 중…" : "기본값 저장"}
         </button>

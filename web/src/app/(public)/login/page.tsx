@@ -44,7 +44,7 @@ export default async function LoginPage({
     <div className="mx-auto max-w-md px-4 sm:px-6 py-16">
       <div className="flex flex-col items-center mb-8">
         <LogoMark size={44} />
-        <h1 className="mt-4 text-xl font-bold text-white">
+        <h1 className="mt-4 text-xl font-bold text-ink">
           {policy.signupEnabled ? "로그인" : "운영자 로그인"}
         </h1>
         <p className="mt-1.5 text-[13px] text-muted">

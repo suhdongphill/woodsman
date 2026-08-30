@@ -46,7 +46,7 @@ export default async function RegisterPage({
     <div className="mx-auto max-w-md px-4 sm:px-6 py-16">
       <div className="flex flex-col items-center mb-8">
         <LogoMark size={44} />
-        <h1 className="mt-4 text-xl font-bold text-white">회원가입</h1>
+        <h1 className="mt-4 text-xl font-bold text-ink">회원가입</h1>
         <p className="mt-1.5 text-[13px] text-muted">30초면 끝납니다.</p>
       </div>
 
@@ -84,7 +84,7 @@ async function SignupClosed() {
           <LockIcon size={12} />
           회원가입 준비 중
         </span>
-        <h1 className="mt-4 text-xl font-bold text-white">
+        <h1 className="mt-4 text-xl font-bold text-ink">
           아직 회원가입은 지원하지 않습니다
         </h1>
         <p className="mt-3 text-[14px] leading-relaxed text-muted">
@@ -96,7 +96,7 @@ async function SignupClosed() {
       </div>
 
       <div className="mt-8 rounded-2xl border border-border bg-card p-6 text-left">
-        <h2 className="text-sm font-semibold text-white">지금 하실 수 있는 것</h2>
+        <h2 className="text-sm font-semibold text-ink">지금 하실 수 있는 것</h2>
         <ul className="mt-3 space-y-2.5 text-[13px] text-gray-300">
           <li className="flex gap-2.5">
             <CheckIcon size={15} className="mt-0.5 shrink-0 text-emerald-400" />

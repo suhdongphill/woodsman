@@ -188,16 +188,16 @@ export default async function AdminModelPortfolioPage({
         {targetSet ? (
           <StatBar segments={segments} height="h-3" />
         ) : (
-          <p className="rounded-lg border border-dashed border-border bg-[#12141c] px-3 py-4 text-center text-[12px] text-gray-500">
+          <p className="rounded-lg border border-dashed border-border bg-bg px-3 py-4 text-center text-[12px] text-gray-500">
             아직 목표 구성비를 정하지 않았습니다. 아래 <strong className="text-gray-400">목표 구성비</strong>에서 정하세요.
           </p>
         )}
 
         <dl className="mt-4 grid gap-3 text-center sm:grid-cols-2 lg:grid-cols-4">
           {rows.map((r) => (
-            <div key={r.functionType} className="rounded-lg bg-[#12141c] py-2.5">
+            <div key={r.functionType} className="rounded-lg bg-bg py-2.5">
               <dt className="text-[10px] text-gray-500">{bucketName(buckets, r.functionType)}</dt>
-              <dd className="mt-0.5 text-[13px] font-bold tabular-nums text-white">
+              <dd className="mt-0.5 text-[13px] font-bold tabular-nums text-ink">
                 {r.currentPct}%
                 <span className="ml-1 text-[11px] font-normal text-gray-500">
                   / 목표 {r.targetPct}%
@@ -206,7 +206,7 @@ export default async function AdminModelPortfolioPage({
             </div>
           ))}
           {cashPct > 0 && (
-            <div className="rounded-lg bg-[#12141c] py-2.5">
+            <div className="rounded-lg bg-bg py-2.5">
               <dt className="text-[10px] text-gray-500">현금·미배정</dt>
               <dd className="mt-0.5 text-[13px] font-bold tabular-nums text-gray-400">
                 <span className="text-[11px] font-normal text-gray-500">목표 </span>
@@ -267,7 +267,7 @@ export default async function AdminModelPortfolioPage({
                         <span className="text-[11px] font-mono text-gray-500">{h.ticker}</span>
                       )}
                     </div>
-                    <h3 className="mt-2 text-[15px] font-semibold text-white truncate">{h.name}</h3>
+                    <h3 className="mt-2 text-[15px] font-semibold text-ink truncate">{h.name}</h3>
                     <p className="text-[11px] text-gray-500 mt-0.5">
                       {h.market ?? "—"} · 수정 {formatDate(h.updatedAt)}
                     </p>
@@ -314,21 +314,21 @@ export default async function AdminModelPortfolioPage({
                 )}
 
                 <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
-                  <div className="bg-[#12141c] rounded-lg py-2">
+                  <div className="bg-bg rounded-lg py-2">
                     <dt className="text-[10px] text-gray-500">목표비중</dt>
                     <dd className="text-[13px] font-bold text-gold-400 tabular-nums mt-0.5">
                       {h.targetWeight ?? "—"}%
                     </dd>
                   </div>
-                  <div className="bg-[#12141c] rounded-lg py-2">
+                  <div className="bg-bg rounded-lg py-2">
                     <dt className="text-[10px] text-gray-500">
                       현재가{h.priceAsOf ? ` (${h.priceAsOf.slice(5)})` : ""}
                     </dt>
-                    <dd className="text-[13px] font-bold text-white tabular-nums mt-0.5">
+                    <dd className="text-[13px] font-bold text-ink tabular-nums mt-0.5">
                       {h.price != null ? formatNumber(h.price, cur) : "—"}
                     </dd>
                   </div>
-                  <div className="bg-[#12141c] rounded-lg py-2">
+                  <div className="bg-bg rounded-lg py-2">
                     <dt className="text-[10px] text-gray-500">평가손익</dt>
                     <dd
                       className={cx(
@@ -347,7 +347,7 @@ export default async function AdminModelPortfolioPage({
                     <Link
                       href={`/admin/model-portfolio?edit=${h.id}`}
                       aria-label={`${h.name} 편집`}
-                      className="p-2 rounded-lg text-gray-500 hover:text-white hover:bg-cardHover transition-colors"
+                      className="p-2 rounded-lg text-gray-500 hover:text-ink hover:bg-cardHover transition-colors"
                     >
                       <EditIcon size={15} />
                     </Link>

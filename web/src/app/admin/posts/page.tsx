@@ -53,7 +53,7 @@ export default async function AdminPostsPage({
         action={
           <Link
             href="/admin/posts/new"
-            className="rounded-xl bg-gold-600/90 px-3 py-2 text-[12.5px] font-medium text-black transition-colors hover:bg-gold-600"
+            className="rounded-xl bg-gold-600/90 px-3 py-2 text-[12.5px] font-medium text-onAccent transition-colors hover:bg-gold-600"
           >
             + 새 글 쓰기
           </Link>
@@ -96,7 +96,7 @@ export default async function AdminPostsPage({
                 const editHref = `/admin/posts/edit?id=${encodeURIComponent(p.id)}`;
                 return (
                   <Tr key={p.id}>
-                    <Td className="text-white">
+                    <Td className="text-ink">
                       {/* 제목 전체가 편집 링크다 — 14px 연필 아이콘만 과녁으로 두면 빗나간다. */}
                       <Link href={editHref} className="block truncate hover:text-gold-400">
                         {p.title}
@@ -138,7 +138,7 @@ export default async function AdminPostsPage({
                         <Link
                           href={editHref}
                           aria-label={`${p.title} 편집`}
-                          className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-cardHover hover:text-white"
+                          className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-cardHover hover:text-ink"
                         >
                           <EditIcon size={14} />
                         </Link>

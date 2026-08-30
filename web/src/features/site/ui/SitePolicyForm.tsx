@@ -83,7 +83,7 @@ export function SitePolicyForm({ flags }: { flags: SiteFlags }) {
             name="bannedWords"
             rows={4}
             defaultValue={flags.bannedWords}
-            className="w-full resize-none rounded-xl border border-border bg-[#12141c] px-3.5 py-3 text-sm text-white focus:border-emerald-500 focus:outline-none"
+            className="w-full resize-none rounded-xl border border-border bg-bg px-3.5 py-3 text-sm text-ink focus:border-emerald-500 focus:outline-none"
           />
           <p className="mt-2 text-[11px] leading-relaxed text-gray-600">
             ⚠ 승인제를 꺼도 금지어는 계속 걸립니다. 대소문자는 구분하지 않습니다.
@@ -103,7 +103,7 @@ export function SitePolicyForm({ flags }: { flags: SiteFlags }) {
         <button
           type="submit"
           disabled={pending}
-          className="rounded-xl bg-gold-600/90 px-5 py-2 text-[13px] font-medium text-black transition-colors hover:bg-gold-600 disabled:opacity-50"
+          className="rounded-xl bg-gold-600/90 px-5 py-2 text-[13px] font-medium text-onAccent transition-colors hover:bg-gold-600 disabled:opacity-50"
         >
           {pending ? "저장 중…" : "정책 저장"}
         </button>

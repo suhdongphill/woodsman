@@ -29,7 +29,7 @@ import type { ModelHolding } from "@/lib/types";
 import type { PortfolioBucket } from "@/lib/bucket-target";
 
 const field =
-  "w-full bg-[#12141c] border border-border rounded-xl px-3 py-2 text-[13px] text-white placeholder:text-gray-600";
+  "w-full bg-bg border border-border rounded-xl px-3 py-2 text-[13px] text-ink placeholder:text-gray-600";
 const label = "block text-[11px] text-muted mb-1";
 
 export function HoldingForm({
@@ -110,7 +110,7 @@ export function HoldingForm({
 
       {/* ── 조회 ── ⚠ 여기서 확인해야 아래 등록 버튼이 열린다 */}
       {!holding && (
-        <div className="rounded-xl border border-border/70 bg-[#12141c] p-3">
+        <div className="rounded-xl border border-border/70 bg-bg p-3">
           <div className="flex flex-wrap items-end gap-2.5">
             <label className="w-40">
               <span className={label}>티커로 조회</span>
@@ -356,7 +356,7 @@ export function HoldingForm({
             type="submit"
             disabled={pending || !verified}
             title={verified ? undefined : "먼저 티커를 조회하세요"}
-            className="rounded-xl bg-gold-600/90 px-4 py-2 text-[13px] font-medium text-black transition-colors hover:bg-gold-600 disabled:opacity-50"
+            className="rounded-xl bg-gold-600/90 px-4 py-2 text-[13px] font-medium text-onAccent transition-colors hover:bg-gold-600 disabled:opacity-50"
           >
             {pending ? "저장 중…" : holding ? "수정 저장" : "종목 추가"}
           </button>

@@ -44,12 +44,12 @@ export default async function AdminUsersPage() {
         <AlertIcon size={16} className="mt-0.5 shrink-0 text-yellow-500" />
         <div className="text-[12.5px] leading-relaxed text-muted">
           <p>
-            삭제는 <strong className="text-white">되돌릴 수 없습니다.</strong> 로그인 수단과 개인
+            삭제는 <strong className="text-ink">되돌릴 수 없습니다.</strong> 로그인 수단과 개인
             포트폴리오가 함께 지워지고, 작성한 댓글은 남되 작성자 표시만 사라집니다.
           </p>
           <p className="mt-2">
-            ⚠ <strong className="text-white">자기 자신</strong>과{" "}
-            <strong className="text-white">마지막 관리자</strong>는 지울 수 없습니다. 지우는 순간
+            ⚠ <strong className="text-ink">자기 자신</strong>과{" "}
+            <strong className="text-ink">마지막 관리자</strong>는 지울 수 없습니다. 지우는 순간
             관리 화면을 다시 열 방법이 없어지기 때문입니다. 관리자 계정은 서버{" "}
             <code className="text-gold-400">.env</code>의 값으로 시드 시 다시 만들어집니다.
           </p>
@@ -78,7 +78,7 @@ export default async function AdminUsersPage() {
 
               return (
                 <Tr key={user.id}>
-                  <Td className="text-white">
+                  <Td className="text-ink">
                     <span className="block truncate">{user.name ?? "(이름 없음)"}</span>
                     <span className="mt-0.5 block text-[11px] text-gray-600">{user.email}</span>
                   </Td>

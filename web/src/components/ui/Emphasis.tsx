@@ -11,7 +11,7 @@ export function Emphasis({ text }: { text: string }) {
     <>
       {splitEmphasis(text).map((part, i) =>
         part.strong ? (
-          <strong key={i} className="font-semibold text-white">
+          <strong key={i} className="font-semibold text-ink">
             {part.text}
           </strong>
         ) : (

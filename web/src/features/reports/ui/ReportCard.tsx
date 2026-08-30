@@ -23,7 +23,7 @@ export function ReportCard({ report }: { report: PublishedSummary }) {
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-white truncate group-hover:text-gold-400 transition-colors">
+          <p className="text-sm font-semibold text-ink truncate group-hover:text-gold-400 transition-colors">
             {report.name}
           </p>
           <p className="text-[11px] font-mono text-gray-500 mt-0.5">

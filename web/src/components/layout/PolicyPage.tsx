@@ -39,7 +39,7 @@ export function PolicySection({
 }) {
   return (
     <section>
-      <h2 className="text-[15px] font-semibold text-white">{title}</h2>
+      <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
       <div className="mt-3 space-y-3 text-[13.5px] leading-relaxed text-gray-300">{children}</div>
     </section>
   );

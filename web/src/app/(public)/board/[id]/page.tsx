@@ -61,7 +61,7 @@ export default async function BoardDetailPage({ params }: Props) {
           {!post.commentsEnabled && <Badge tone="warn">🔒 댓글잠금</Badge>}
         </div>
 
-        <h1 className="mt-4 text-xl sm:text-2xl font-bold text-white leading-snug">
+        <h1 className="mt-4 text-xl sm:text-2xl font-bold text-ink leading-snug">
           {post.title}
         </h1>
 
@@ -112,7 +112,7 @@ export default async function BoardDetailPage({ params }: Props) {
 
       <section className="mt-14">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-white">다른 글</h2>
+          <h2 className="text-base font-semibold text-ink">다른 글</h2>
           <Link href="/board" className="text-[11px] text-gold-400 hover:text-gold-500">
             목록으로
           </Link>

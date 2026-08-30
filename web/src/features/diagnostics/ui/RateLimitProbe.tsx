@@ -36,7 +36,7 @@ export function RateLimitProbe() {
         <button
           type="submit"
           disabled={pending}
-          className="rounded-xl bg-gold-600/90 px-4 py-2 text-[13px] font-medium text-black transition-colors hover:bg-gold-600 disabled:opacity-50"
+          className="rounded-xl bg-gold-600/90 px-4 py-2 text-[13px] font-medium text-onAccent transition-colors hover:bg-gold-600 disabled:opacity-50"
         >
           {pending ? "재는 중…" : "속도 제한 재 보기"}
         </button>
@@ -57,7 +57,7 @@ export function RateLimitProbe() {
           <p className="text-[13.5px] font-medium">{verdict.headline}</p>
           <p className="mt-1 text-[12.5px] leading-relaxed opacity-90">{verdict.detail}</p>
 
-          <div className="mt-3 rounded-lg bg-black/20 px-3 py-2">
+          <div className="mt-3 rounded-lg bg-ink/10 px-3 py-2">
             <Row label="진단 바인딩" value={state.probe.binding} />
             <Row label="바인딩 상태" value={state.probe.state} />
             <Row label="객체 타입" value={state.probe.typeName ?? "—"} />

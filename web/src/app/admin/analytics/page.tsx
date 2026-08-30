@@ -44,7 +44,7 @@ export default async function AdminAnalyticsPage() {
         action={
           <Link
             href="/admin"
-            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-white"
+            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-ink"
           >
             대시보드
           </Link>

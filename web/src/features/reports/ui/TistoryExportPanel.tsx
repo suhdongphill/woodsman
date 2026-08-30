@@ -41,7 +41,7 @@ export function TistoryExportPanel({
     <section className="bg-card border border-border rounded-2xl p-5 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-white">티스토리로 내보내기</h3>
+          <h3 className="text-sm font-semibold text-ink">티스토리로 내보내기</h3>
           <p className="mt-1 text-[11.5px] text-gray-600">
             이 사이트의 1순위 목적은 티스토리로 트래픽을 보내는 것입니다.
           </p>
@@ -51,7 +51,7 @@ export function TistoryExportPanel({
             href={`/admin/stocks/${encodeURIComponent(ticker)}/tistory`}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-white"
+            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-ink"
           >
             미리보기
           </a>
@@ -90,7 +90,7 @@ export function TistoryExportPanel({
           readOnly
           value={html}
           onFocus={(e) => e.currentTarget.select()}
-          className="w-full min-h-[180px] rounded-xl border border-border bg-[#12141c] px-3 py-2 font-mono text-[11px] leading-relaxed text-gray-400"
+          className="w-full min-h-[180px] rounded-xl border border-border bg-bg px-3 py-2 font-mono text-[11px] leading-relaxed text-gray-400"
         />
       </div>
     </section>

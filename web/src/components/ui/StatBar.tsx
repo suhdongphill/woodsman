@@ -21,7 +21,7 @@ export function StatBar({
   const total = segments.reduce((s, x) => s + x.value, 0) || 1;
   return (
     <div className={className}>
-      <div className={cx("flex w-full overflow-hidden rounded-full bg-[#12141c]", height)}>
+      <div className={cx("flex w-full overflow-hidden rounded-full bg-bg", height)}>
         {segments.map((s) => (
           <div
             key={s.label}
@@ -39,7 +39,7 @@ export function StatBar({
                 style={{ backgroundColor: s.color }}
               />
               <span className="text-xs text-muted">{s.label}</span>
-              <span className="text-xs font-semibold text-white">
+              <span className="text-xs font-semibold text-ink">
                 {((s.value / total) * 100).toFixed(1)}%
               </span>
             </div>
@@ -69,7 +69,7 @@ export function StatTile({
         ? "text-red-400"
         : tone === "gold"
           ? "text-gold-400"
-          : "text-white";
+          : "text-ink";
   return (
     <div className="bg-card border border-border rounded-xl px-4 py-3.5">
       <p className="text-[11px] text-muted">{label}</p>

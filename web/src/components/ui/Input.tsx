@@ -3,7 +3,7 @@ import { cx } from "@/lib/format";
 
 /** 폼 입력 공통 스타일 (다크 카드 위 어두운 입력면 + 에메랄드 포커스) */
 export const inputClass =
-  "w-full bg-[#12141c] border border-border rounded-xl px-3.5 py-2.5 text-sm text-white " +
+  "w-full bg-bg border border-border rounded-xl px-3.5 py-2.5 text-sm text-ink " +
   "placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 " +
   "focus:ring-emerald-500/30 transition-colors";
 

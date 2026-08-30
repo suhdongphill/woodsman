@@ -8,7 +8,7 @@ export type BadgeTone = "gold" | "emerald" | "neutral" | "warn" | "danger" | "in
 const TONES: Record<BadgeTone, string> = {
   gold: "bg-gold-500/15 text-gold-400 border-gold-500/30",
   emerald: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  neutral: "bg-white/5 text-gray-400 border-border",
+  neutral: "bg-ink/5 text-gray-400 border-border",
   warn: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
   danger: "bg-red-500/15 text-red-400 border-red-500/30",
   info: "bg-sky-500/15 text-sky-400 border-sky-500/30",
@@ -61,7 +61,7 @@ export function Chip({
       ? "bg-gold-500/15 text-gold-400 border-gold-500/40"
       : "bg-card text-muted border-border",
     // 누를 수 있을 때만 누를 수 있어 보이게 한다.
-    href && "cursor-pointer hover:text-white hover:border-gold-600/40",
+    href && "cursor-pointer hover:text-ink hover:border-gold-600/40",
     className,
   );
 

@@ -70,7 +70,7 @@ export default async function AdminStockReportPage({ params }: Props) {
         action={
           <Link
             href="/admin/stocks"
-            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-white"
+            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-ink"
           >
             목록
           </Link>

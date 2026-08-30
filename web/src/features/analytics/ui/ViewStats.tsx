@@ -9,7 +9,7 @@
  */
 import Link from "next/link";
 import { Card, CardTitle } from "@/components/ui/Card";
-import { cx, formatPct } from "@/lib/format";
+import { cx, formatPct, profitColor } from "@/lib/format";
 import type { ViewStats as Stats } from "../repository";
 
 /**
@@ -36,7 +36,7 @@ export function ViewStatsCard({ stats }: { stats: Stats | null }) {
             <span
               className={cx(
                 "text-[11px] tabular-nums",
-                stats.weekChangePct >= 0 ? "text-emerald-400" : "text-red-400",
+                profitColor(stats.weekChangePct),
               )}
             >
               전주 대비 {formatPct(stats.weekChangePct)}

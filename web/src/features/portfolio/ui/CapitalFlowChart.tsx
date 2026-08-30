@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
-import { formatCompact, formatNumber, formatPct } from "@/lib/format";
+import { formatCompact, formatNumber, formatPct, profitColor } from "@/lib/format";
 import { returnPctAt, sortByDate } from "@/lib/performance";
 import type { AccountSnapshot } from "@/lib/types";
 
@@ -18,12 +18,19 @@ import type { AccountSnapshot } from "@/lib/types";
  * 팔레트는 dataviz 검증기로 CVD·정상시야·대비를 통과시킨 조합이다.
  */
 
-const VALUE_LINE = "#36a06a"; // 평가액
-const MARKER = "#d8bd7a"; // 리밸런싱 이벤트
-const SURFACE = "#1a1d27"; // 카드 배경(마커 링)
-const PRINCIPAL_FILL = "#252a36";
-const PRINCIPAL_EDGE = "#3b4252";
-const GRID = "#2a2e3a";
+/**
+ * ⚠ 색은 **토큰만** 참조한다(2026-08-30 개편). hex를 여기 다시 적지 않는다.
+ * ⚠ SVG의 `fill=`·`stroke=` **속성**은 `var()`를 못 읽는다 — 반드시 `style`로 준다.
+ *    속성에 그대로 넣으면 색이 조용히 사라져 검게 칠해진다.
+ */
+const VALUE_LINE = "var(--w-series-1)"; // 평가액
+const MARKER = "var(--w-series-2)"; // 리밸런싱 이벤트
+const SURFACE = "var(--w-surface)"; // 카드 배경(마커 링)
+const PRINCIPAL_FILL = "var(--w-surface-2)";
+const PRINCIPAL_EDGE = "var(--w-border)";
+const GRID = "var(--w-border)";
+/** ⚠ 원금 아래로 내려간 구간 — 등락색이 아니라 **위험색**이다(한국식 등락과 헷갈리지 않게) */
+const UNDERWATER = "var(--w-danger)";
 
 const W = 720;
 const H = 260;
@@ -131,7 +138,7 @@ export function CapitalFlowChart({
                 x2={W - PAD.right}
                 y1={t.y}
                 y2={t.y}
-                stroke={GRID}
+                style={{ stroke: GRID }}
                 strokeWidth="1"
               />
               <text x={PAD.left - 8} y={t.y + 4} textAnchor="end" className="fill-gray-500 text-[10px]">
@@ -141,22 +148,22 @@ export function CapitalFlowChart({
           ))}
 
           {/* 납입원금 — 쌓아 올린 블록 */}
-          <path d={principalArea} fill={PRINCIPAL_FILL} />
-          <path d={principalPath} fill="none" stroke={PRINCIPAL_EDGE} strokeWidth="1.5" />
+          <path d={principalArea} style={{ fill: PRINCIPAL_FILL }} />
+          <path d={principalPath} fill="none" strokeWidth="1.5" style={{ stroke: PRINCIPAL_EDGE }} />
 
           {/* 손익 구간: 원금 위로 벌어지면 초록(수익), 아래로 벌어지면 빨강(손실) */}
           <g clipPath={`url(#${uid}-underValue)`}>
-            <path d={gapArea} fill={VALUE_LINE} fillOpacity="0.22" />
+            <path d={gapArea} style={{ fill: VALUE_LINE, fillOpacity: 0.22 }} />
           </g>
           <g clipPath={`url(#${uid}-overValue)`}>
-            <path d={gapArea} fill="#dc2626" fillOpacity="0.22" />
+            <path d={gapArea} style={{ fill: UNDERWATER, fillOpacity: 0.22 }} />
           </g>
 
           {/* 평가액 */}
           <path
             d={valuePath}
             fill="none"
-            stroke={VALUE_LINE}
+            style={{ stroke: VALUE_LINE }}
             strokeWidth="2"
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -172,8 +179,7 @@ export function CapitalFlowChart({
                 width="9"
                 height="9"
                 transform={`rotate(45 ${p.x} ${p.yValue})`}
-                fill={MARKER}
-                stroke={SURFACE}
+                style={{ fill: MARKER, stroke: SURFACE }}
                 strokeWidth="2"
               />
             ) : null,
@@ -186,7 +192,7 @@ export function CapitalFlowChart({
               x2={active.x}
               y1={PAD.top}
               y2={baseline}
-              stroke={MARKER}
+              style={{ stroke: MARKER }}
               strokeWidth="1"
               strokeDasharray="3 3"
               opacity="0.7"
@@ -208,8 +214,7 @@ export function CapitalFlowChart({
               cx={active.x}
               cy={active.yValue}
               r="4.5"
-              fill={VALUE_LINE}
-              stroke={SURFACE}
+              style={{ fill: VALUE_LINE, stroke: SURFACE }}
               strokeWidth="2"
             />
           )}
@@ -276,11 +281,11 @@ function FlowTooltip({ point, rebalance }: { point: Point; rebalance?: Rebalance
         </div>
         <div className="flex justify-between gap-3">
           <dt className="text-muted">평가액</dt>
-          <dd className="tabular-nums font-semibold text-white">{formatNumber(s.value)}</dd>
+          <dd className="tabular-nums font-semibold text-ink">{formatNumber(s.value)}</dd>
         </div>
         <div className="flex justify-between gap-3 border-t border-border/70 pt-1">
           <dt className="text-muted">평가손익</dt>
-          <dd className={`tabular-nums font-semibold ${profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+          <dd className={`tabular-nums font-semibold ${profitColor(profit)}`}>
             {profit >= 0 ? "+" : "−"}
             {formatNumber(Math.abs(profit))} ({formatPct(pct)})
           </dd>
@@ -330,11 +335,11 @@ function DataTable({ rows }: { rows: AccountSnapshot[] }) {
                   <td className="py-2 pr-3 text-right tabular-nums text-gray-400">
                     {formatCompact(s.principal)}
                   </td>
-                  <td className="py-2 pr-3 text-right tabular-nums text-white">
+                  <td className="py-2 pr-3 text-right tabular-nums text-ink">
                     {formatCompact(s.value)}
                   </td>
                   <td
-                    className={`py-2 text-right tabular-nums ${pct >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                    className={`py-2 text-right tabular-nums ${profitColor(pct)}`}
                   >
                     {formatPct(pct)}
                   </td>

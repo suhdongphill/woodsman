@@ -100,7 +100,7 @@ export default async function AdminLogsPage() {
                       <Td className="whitespace-nowrap tabular-nums text-muted">
                         {seoulTime(entry.at)}
                       </Td>
-                      <Td className="text-white">{actionLabel(entry.action)}</Td>
+                      <Td className="text-ink">{actionLabel(entry.action)}</Td>
                       <Td className="text-gray-300">{entry.summary ?? "—"}</Td>
                       <Td className="truncate font-mono text-[11px] text-gray-600">
                         {entry.target ?? "—"}

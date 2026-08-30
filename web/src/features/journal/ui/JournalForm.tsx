@@ -20,7 +20,7 @@ const ACTIONS = [
 ] as const;
 
 const field =
-  "w-full bg-[#12141c] border border-border rounded-xl px-3 py-2 text-[13px] text-white placeholder:text-gray-600";
+  "w-full bg-bg border border-border rounded-xl px-3 py-2 text-[13px] text-ink placeholder:text-gray-600";
 const label = "block text-[11px] text-muted mb-1";
 
 export function JournalForm({ entry, today }: { entry?: JournalEntry; today: string }) {
@@ -120,7 +120,7 @@ export function JournalForm({ entry, today }: { entry?: JournalEntry; today: str
           <button
             type="submit"
             disabled={pending}
-            className="rounded-xl bg-gold-600/90 px-4 py-2 text-[13px] font-medium text-black transition-colors hover:bg-gold-600 disabled:opacity-50"
+            className="rounded-xl bg-gold-600/90 px-4 py-2 text-[13px] font-medium text-onAccent transition-colors hover:bg-gold-600 disabled:opacity-50"
           >
             {pending ? "저장 중…" : entry ? "수정 저장" : "일지 추가"}
           </button>

@@ -23,7 +23,7 @@ export function GroupCard({ group, items }: { group: MacroGroup; items: Indicato
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-[15px] font-semibold text-white">
+          <h3 className="text-[15px] font-semibold text-ink">
             <span aria-hidden="true" className="mr-1.5">
               {group.emoji}
             </span>

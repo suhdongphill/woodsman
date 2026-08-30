@@ -63,7 +63,7 @@ export default async function AdminFeedsPage() {
           <tbody>
             {feeds.map((f) => (
               <Tr key={f.id}>
-                <Td className="text-white">{f.name}</Td>
+                <Td className="text-ink">{f.name}</Td>
                 <Td>
                   <a
                     href={f.url}

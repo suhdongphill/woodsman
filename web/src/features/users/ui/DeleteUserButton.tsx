@@ -56,14 +56,14 @@ export function DeleteUserButton({
         <button
           type="button"
           onClick={() => setArmed(false)}
-          className="rounded-lg border border-border px-2 py-1 text-[11px] text-gray-400 hover:text-white"
+          className="rounded-lg border border-border px-2 py-1 text-[11px] text-gray-400 hover:text-ink"
         >
           취소
         </button>
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-red-500/90 px-2.5 py-1 text-[11px] font-medium text-white transition-colors hover:bg-red-500 disabled:opacity-50"
+          className="rounded-lg bg-red-500/90 px-2.5 py-1 text-[11px] font-medium text-ink transition-colors hover:bg-red-500 disabled:opacity-50"
         >
           {pending ? "삭제 중…" : "정말 삭제"}
         </button>

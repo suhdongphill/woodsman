@@ -42,7 +42,7 @@ export function AllocationProgress({
 
       <Card>
         <div className="mb-5 flex items-baseline gap-2.5">
-          <span className="text-3xl font-bold tabular-nums text-white">{fillPct}%</span>
+          <span className="text-3xl font-bold tabular-nums text-ink">{fillPct}%</span>
           <span className="text-[12.5px] text-muted">구성 완료</span>
         </div>
 
@@ -65,7 +65,7 @@ export function AllocationProgress({
                     <span className="text-gray-300">{label}</span>
                   </span>
                   <span className="tabular-nums text-gray-500">
-                    <span className="text-white">{row.currentPct}%</span>
+                    <span className="text-ink">{row.currentPct}%</span>
                     <span className="mx-1 text-gray-700">/</span>
                     목표 {row.targetPct}%
                     <span className={filled ? "ml-2 text-gray-600" : "ml-2 text-gold-500"}>
@@ -76,7 +76,7 @@ export function AllocationProgress({
 
                 {/* 목표 자리는 테두리로, 채운 만큼만 색으로 */}
                 <div
-                  className="relative h-3 rounded-full bg-[#12141c]"
+                  className="relative h-3 rounded-full bg-bg"
                   role="img"
                   aria-label={`${label} 현재 ${row.currentPct}%, 목표 ${row.targetPct}%`}
                 >

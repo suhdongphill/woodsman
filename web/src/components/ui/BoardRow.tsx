@@ -21,7 +21,7 @@ export function BoardRow({ post, rank }: { post: Post; rank?: number }) {
       <Badge tone={post.type === "NOTICE" ? "info" : post.type === "INSIGHT" ? "gold" : "emerald"}>
         {post.category ?? POST_TYPE_LABEL[post.type]}
       </Badge>
-      <span className="flex-1 min-w-0 text-sm text-gray-200 group-hover:text-white truncate">
+      <span className="flex-1 min-w-0 text-sm text-gray-200 group-hover:text-ink truncate">
         {post.title}
       </span>
       <span className="hidden sm:flex items-center gap-1 shrink-0 text-[11px]">

@@ -41,7 +41,7 @@ export default async function AdminDiagnosticsPage() {
         action={
           <Link
             href="/admin"
-            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-white"
+            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-ink"
           >
             대시보드
           </Link>
@@ -94,7 +94,7 @@ export default async function AdminDiagnosticsPage() {
                     {gauge ? gauge.text : "재지 못했습니다"}
                   </span>
                 </div>
-                <div className="mt-2 h-2 rounded-full bg-[#12141c] overflow-hidden">
+                <div className="mt-2 h-2 rounded-full bg-bg overflow-hidden">
                   <div
                     className={`h-full rounded-full ${
                       gauge?.level === "critical"
@@ -109,7 +109,7 @@ export default async function AdminDiagnosticsPage() {
               </div>
 
               {usage.tables.length > 0 && (
-                <div className="rounded-lg bg-black/20 px-3 py-2">
+                <div className="rounded-lg bg-ink/10 px-3 py-2">
                   <p className="mb-1.5 text-[11px] text-muted">행이 많은 표 (무엇이 자리를 먹나)</p>
                   {usage.tables.slice(0, 6).map((t) => (
                     <div key={t.name} className="flex justify-between py-0.5 text-[12px]">

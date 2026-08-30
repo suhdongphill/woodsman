@@ -153,7 +153,7 @@ export default async function StockReportPage({ params }: Props) {
           {/* 관련 글 */}
           {related.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-white mb-3">이 종목 관련 글</h3>
+              <h3 className="text-sm font-semibold text-ink mb-3">이 종목 관련 글</h3>
               <div className="space-y-3">
                 {related.map((p) => (
                   <PostCard key={p.id} post={p} compact />

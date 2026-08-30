@@ -38,7 +38,7 @@ export default async function AdminBubblePage() {
         action={
           <Link
             href="/macro/bubble"
-            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-white"
+            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-ink"
           >
             공개 화면 보기
           </Link>

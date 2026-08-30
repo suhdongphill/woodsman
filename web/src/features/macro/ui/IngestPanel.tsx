@@ -26,7 +26,7 @@ export function IngestPanel() {
           <button
             type="submit"
             disabled={pending}
-            className="rounded-xl bg-gold-600/90 px-4 py-2.5 text-[13px] font-medium text-black transition-colors hover:bg-gold-600 disabled:opacity-50"
+            className="rounded-xl bg-gold-600/90 px-4 py-2.5 text-[13px] font-medium text-onAccent transition-colors hover:bg-gold-600 disabled:opacity-50"
           >
             {pending ? "가져오는 중… (최대 30초)" : "전체 자료 가져오기"}
           </button>
@@ -55,7 +55,7 @@ export function IngestPanel() {
             <button
               type="submit"
               disabled={pending}
-              className="rounded-lg border border-border px-2.5 py-1.5 text-[11.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-white disabled:opacity-50"
+              className="rounded-lg border border-border px-2.5 py-1.5 text-[11.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-ink disabled:opacity-50"
             >
               {g.emoji} {g.name}만
             </button>

@@ -62,7 +62,7 @@ export default async function AdminMacroPage() {
         action={
           <Link
             href="/macro"
-            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-white"
+            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-ink"
           >
             공개 화면 보기
           </Link>
@@ -139,7 +139,7 @@ export default async function AdminMacroPage() {
               const stale = age !== undefined && age > 45;
               return (
                 <Tr key={s.indicator.key}>
-                  <Td className="text-white">{s.indicator.name}</Td>
+                  <Td className="text-ink">{s.indicator.name}</Td>
                   <Td className="text-muted">
                     {findMacroGroup(s.indicator.group)?.name ?? s.indicator.group}
                   </Td>
@@ -159,7 +159,7 @@ export default async function AdminMacroPage() {
                       </span>
                     )}
                   </Td>
-                  <Td className="text-right tabular-nums text-white">{s.display}</Td>
+                  <Td className="text-right tabular-nums text-ink">{s.display}</Td>
                   <Td
                     className={`tabular-nums ${
                       !s.asOf ? "text-red-400" : stale ? "text-yellow-400" : "text-muted"

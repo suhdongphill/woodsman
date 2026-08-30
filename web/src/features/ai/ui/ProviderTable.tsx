@@ -51,7 +51,7 @@ export function ProviderTable({
 
               <Td>
                 <div className="flex items-center gap-2">
-                  <span className="text-white text-[13px]">{p.label}</span>
+                  <span className="text-ink text-[13px]">{p.label}</span>
                   {p.free ? <Badge tone="emerald">무료</Badge> : <Badge tone="gold">유료</Badge>}
                   {isConnected ? (
                     <Badge tone="emerald">연결됨</Badge>
@@ -106,16 +106,16 @@ export function ProviderTable({
                     placeholder="무제한"
                     min={0}
                     step={10000}
-                    className="w-24 bg-[#12141c] border border-border rounded-lg px-2 py-1 text-[11.5px] text-white text-right"
+                    className="w-24 bg-bg border border-border rounded-lg px-2 py-1 text-[11.5px] text-ink text-right"
                   />
                   <button
                     type="submit"
-                    className="shrink-0 whitespace-nowrap text-[11px] px-2 py-1 rounded-lg border border-border text-gray-400 hover:text-white hover:border-gold-600/50 transition-colors"
+                    className="shrink-0 whitespace-nowrap text-[11px] px-2 py-1 rounded-lg border border-border text-gray-400 hover:text-ink hover:border-gold-600/50 transition-colors"
                   >
                     저장
                   </button>
                 </form>
-                <div className="mt-1.5 h-1.5 rounded-full bg-[#12141c] overflow-hidden">
+                <div className="mt-1.5 h-1.5 rounded-full bg-bg overflow-hidden">
                   <div
                     className={cx(
                       "h-full rounded-full",
@@ -143,7 +143,7 @@ export function ProviderTable({
                       "px-2.5 py-1 rounded-full text-[11px] border transition-colors",
                       enabled
                         ? "border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10"
-                        : "border-border text-gray-500 hover:text-white",
+                        : "border-border text-gray-500 hover:text-ink",
                     )}
                   >
                     {enabled ? "켜짐" : "꺼짐"}

@@ -21,8 +21,8 @@ export default async function PrivacyPage() {
       <PolicySection title="1. 회원가입을 지원하지 않습니다">
         <p>
           Woodsman은 운영자 한 사람이 자신의 계좌와 판단을 기록하는 개인 블로그입니다.{" "}
-          <strong className="text-white">현재 공개 회원가입을 지원하지 않으며</strong>, 따라서
-          이름·이메일·연락처 등 <strong className="text-white">회원 개인정보를 수집·저장하지
+          <strong className="text-ink">현재 공개 회원가입을 지원하지 않으며</strong>, 따라서
+          이름·이메일·연락처 등 <strong className="text-ink">회원 개인정보를 수집·저장하지
           않습니다.</strong>
         </p>
         <p>
@@ -42,7 +42,7 @@ export default async function PrivacyPage() {
       <PolicySection title="2. 운영자 계정에 대하여">
         <p>
           사이트 운영을 위한 관리자 계정이 하나 존재합니다. 이 계정의 비밀번호는{" "}
-          <strong className="text-white">bcrypt 해시로만 저장</strong>되며 평문으로 보관하지
+          <strong className="text-ink">bcrypt 해시로만 저장</strong>되며 평문으로 보관하지
           않습니다. 관리자 로그인 화면은 검색엔진에 노출되지 않습니다.
         </p>
       </PolicySection>
@@ -57,7 +57,7 @@ export default async function PrivacyPage() {
           ]}
         />
         <p>
-          조회수는 개인을 구분하지 않으므로 <strong className="text-white">방문자 수가 아니라
+          조회수는 개인을 구분하지 않으므로 <strong className="text-ink">방문자 수가 아니라
           조회수</strong>입니다. 같은 탭에서 같은 화면을 새로고침해도 한 번만 세도록 브라우저
           안에만 남는 값(sessionStorage)을 쓰며, 이 값은 서버로 전송되지 않습니다.
         </p>

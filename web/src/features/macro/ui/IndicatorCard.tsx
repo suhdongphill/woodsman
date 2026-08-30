@@ -26,7 +26,7 @@ function ChangeNote({ view }: { view: IndicatorView }) {
     <span
       className={cx(
         "text-[12px] tabular-nums",
-        flat ? "text-gray-500" : up ? "text-emerald-400" : "text-red-400",
+        flat ? "text-gray-500" : up ? "text-up" : "text-down",
       )}
     >
       {/* 화살표는 방향, 글자는 값 — 색이 없어도 읽힌다 */}
@@ -48,7 +48,7 @@ export function IndicatorCard({ view }: { view: IndicatorView }) {
           {/* h3: 그룹 상세의 h1(그룹명) 아래 단계 */}
           <div className="flex flex-wrap items-center gap-1.5">
             <LayerChip layer={indicator.layer} />
-            <h3 id={indicator.key} className="text-[15px] font-semibold text-white">
+            <h3 id={indicator.key} className="text-[15px] font-semibold text-ink">
               {indicator.name}
             </h3>
           </div>
@@ -78,7 +78,7 @@ export function IndicatorCard({ view }: { view: IndicatorView }) {
           (view.freshness.stale || view.freshness.stalled) && "opacity-55",
         )}
       >
-        <strong className="text-3xl font-bold tabular-nums text-white">{view.display}</strong>
+        <strong className="text-3xl font-bold tabular-nums text-ink">{view.display}</strong>
         <ChangeNote view={view} />
       </div>
 
@@ -162,7 +162,7 @@ export function IndicatorRow({ view }: { view: IndicatorView }) {
         {collected ? (
           <span
             className={cx(
-              "text-[13px] font-semibold tabular-nums text-white",
+              "text-[13px] font-semibold tabular-nums text-ink",
               (view.freshness.stale || view.freshness.stalled) && "opacity-55",
             )}
           >

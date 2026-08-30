@@ -26,7 +26,7 @@ const TONE: Record<string, string> = {
   // 값이 낡은 것 — 기다리거나 사람이 새로 조사한다
   stale: "border-amber-500/40 bg-amber-500/10 text-amber-300",
   // 언제 들어왔는지 모르는 값
-  unknown: "border-border bg-white/5 text-gray-400",
+  unknown: "border-border bg-ink/5 text-gray-400",
 };
 
 export function FreshnessBadge({
@@ -66,7 +66,7 @@ export function LayerChip({ layer, className }: { layer: MacroLayer; className?:
     <span
       title={`${def.key} ${def.label} — ${def.desc}`}
       className={cx(
-        "inline-flex shrink-0 items-center gap-1 rounded border border-border bg-[#12141c] px-1.5 py-0.5 text-[10px] leading-4 text-gray-400",
+        "inline-flex shrink-0 items-center gap-1 rounded border border-border bg-bg px-1.5 py-0.5 text-[10px] leading-4 text-gray-400",
         className,
       )}
     >

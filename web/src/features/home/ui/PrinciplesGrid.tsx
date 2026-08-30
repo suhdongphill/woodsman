@@ -43,7 +43,7 @@ export function PrinciplesGrid() {
             href={p.href}
             className="group bg-card border border-border rounded-2xl p-5 card-hover hover:border-gold-600/40"
           >
-            <h3 className="text-[15px] font-semibold text-white group-hover:text-gold-400 transition-colors">
+            <h3 className="text-[15px] font-semibold text-ink group-hover:text-gold-400 transition-colors">
               {p.title}
             </h3>
             <p className="mt-2 text-[12.5px] text-muted leading-relaxed">{p.desc}</p>

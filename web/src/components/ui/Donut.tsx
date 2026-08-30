@@ -40,7 +40,7 @@ export function Donut({
           inset: size * 0.16,
         }}
       >
-        {centerLabel && <span className="text-2xl font-bold text-white">{centerLabel}</span>}
+        {centerLabel && <span className="text-2xl font-bold text-ink">{centerLabel}</span>}
         {centerSub && <span className="text-[10px] text-gray-500 mt-0.5">{centerSub}</span>}
       </div>
     </div>

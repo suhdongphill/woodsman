@@ -32,7 +32,7 @@ export function CommentForm({
           maxLength={COMMENT_MAX_LENGTH}
           required
           placeholder="근거와 함께 의견을 남겨주세요."
-          className="w-full resize-none rounded-xl border border-border bg-[#12141c] px-3.5 py-3 text-sm text-white placeholder-gray-600 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+          className="w-full resize-none rounded-xl border border-border bg-bg px-3.5 py-3 text-sm text-ink placeholder-gray-600 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
         />
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-[11px] text-gray-600">
@@ -51,7 +51,7 @@ export function CommentForm({
           <button
             type="submit"
             disabled={pending}
-            className="shrink-0 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emeraldDark disabled:opacity-50"
+            className="shrink-0 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-emeraldDark disabled:opacity-50"
           >
             {pending ? "등록 중…" : "등록"}
           </button>

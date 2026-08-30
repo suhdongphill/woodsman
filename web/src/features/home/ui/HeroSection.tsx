@@ -56,7 +56,7 @@ export function HeroSection({
             <span className="w-1.5 h-1.5 rounded-full bg-gold-400 pulse-glow" />
             CULTIVATING WEALTH LIKE A FOREST
           </span>
-          <h1 className="mt-5 text-3xl sm:text-4xl lg:text-[42px] font-bold text-white leading-[1.25] tracking-tight">
+          <h1 className="mt-5 text-3xl sm:text-4xl lg:text-[42px] font-bold text-ink leading-[1.25] tracking-tight">
             {heroTitle}
           </h1>
 
@@ -82,19 +82,19 @@ export function HeroSection({
           <dl className="mt-9 grid grid-cols-3 gap-4 max-w-md">
             <div>
               <dt className="text-[11px] text-gray-500">기록 개월</dt>
-              <dd className="text-xl font-bold text-white tabular-nums mt-0.5">
+              <dd className="text-xl font-bold text-ink tabular-nums mt-0.5">
                 {perf?.months ?? 0}
               </dd>
             </div>
             <div>
               <dt className="text-[11px] text-gray-500">투자일지</dt>
-              <dd className="text-xl font-bold text-white tabular-nums mt-0.5">
+              <dd className="text-xl font-bold text-ink tabular-nums mt-0.5">
                 {journalCount}건
               </dd>
             </div>
             <div>
               <dt className="text-[11px] text-gray-500">리밸런싱</dt>
-              <dd className="text-xl font-bold text-white tabular-nums mt-0.5">
+              <dd className="text-xl font-bold text-ink tabular-nums mt-0.5">
                 {rebalances.length}회
               </dd>
             </div>

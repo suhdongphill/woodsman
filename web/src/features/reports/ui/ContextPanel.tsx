@@ -68,7 +68,7 @@ export function ContextPanel({
     <section className="bg-card border border-border rounded-2xl p-5 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-white">사이트 자료 주입</h3>
+          <h3 className="text-sm font-semibold text-ink">사이트 자료 주입</h3>
           <p className="mt-1 text-[11.5px] text-gray-600">
             시세 · 거시 지표 · 버블 모니터 · 대표 포트폴리오를 손으로 다시 적지 않습니다.
           </p>
@@ -84,7 +84,7 @@ export function ContextPanel({
             <button
               type="submit"
               disabled={fetchingQuotes}
-              className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-white disabled:opacity-40"
+              className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-ink disabled:opacity-40"
             >
               {fetchingQuotes ? "받는 중…" : "시세 가져오기"}
             </button>
@@ -334,7 +334,7 @@ export function ContextPanel({
           )}
 
           {/* M축 — ⚠ 근거만 채운다 */}
-          <div className="rounded-xl border border-border bg-[#12141c] p-3 space-y-2">
+          <div className="rounded-xl border border-border bg-bg p-3 space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-[12.5px] text-gray-200">CANSLIM M축 근거 채우기</span>
               <form action={axisAction}>
@@ -342,7 +342,7 @@ export function ContextPanel({
                 <button
                   type="submit"
                   disabled={filling}
-                  className="rounded-lg border border-border px-3 py-1.5 text-[12px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-white disabled:opacity-40"
+                  className="rounded-lg border border-border px-3 py-1.5 text-[12px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-ink disabled:opacity-40"
                 >
                   {filling ? "채우는 중…" : "근거·출처·기준일 채우기"}
                 </button>
@@ -374,7 +374,7 @@ export function ContextPanel({
               readOnly
               value={markdown}
               onFocus={(e) => e.currentTarget.select()}
-              className="w-full min-h-[150px] rounded-xl border border-border bg-[#12141c] px-3 py-2 font-mono text-[11.5px] leading-relaxed text-gray-300"
+              className="w-full min-h-[150px] rounded-xl border border-border bg-bg px-3 py-2 font-mono text-[11.5px] leading-relaxed text-gray-300"
             />
           </div>
         </>

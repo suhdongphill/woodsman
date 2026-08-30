@@ -25,12 +25,12 @@ export function KnowledgePanel() {
           defaultValue={state.query}
           placeholder="예: 지금 반도체 사이클 어디쯤인가"
           aria-label="찾을 내용"
-          className="min-w-[240px] flex-1 rounded-xl border border-border bg-[#12141c] px-3 py-2 text-[13px] text-white placeholder:text-gray-600"
+          className="min-w-[240px] flex-1 rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-ink placeholder:text-gray-600"
         />
         <button
           type="submit"
           disabled={pending}
-          className="shrink-0 rounded-xl bg-gold-600/90 px-4 py-2 text-[13px] font-medium text-black transition-colors hover:bg-gold-600 disabled:opacity-50"
+          className="shrink-0 rounded-xl bg-gold-600/90 px-4 py-2 text-[13px] font-medium text-onAccent transition-colors hover:bg-gold-600 disabled:opacity-50"
         >
           {pending ? "찾는 중…" : "기록 검색"}
         </button>
@@ -66,9 +66,9 @@ export function KnowledgePanel() {
           ) : (
             <ul className="space-y-2">
               {state.hits.map((hit) => (
-                <li key={hit.id} className="rounded-xl border border-border bg-[#12141c] px-4 py-3">
+                <li key={hit.id} className="rounded-xl border border-border bg-bg px-4 py-3">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="text-[13px] font-medium text-white">
+                    <p className="text-[13px] font-medium text-ink">
                       <span className="mr-1.5 text-[11px] text-gold-400">
                         [{KIND_LABEL[hit.kind]}]
                       </span>
@@ -94,7 +94,7 @@ export function KnowledgePanel() {
           )}
 
           {state.prompt && (
-            <details className="rounded-xl border border-border bg-[#12141c] px-4 py-3">
+            <details className="rounded-xl border border-border bg-bg px-4 py-3">
               <summary className="cursor-pointer text-[12.5px] text-gray-300">
                 모델에게 실제로 넘어갈 문장 보기
               </summary>

@@ -40,7 +40,7 @@ const TYPES = [
 ] as const;
 
 const field =
-  "w-full bg-[#12141c] border border-border rounded-xl px-3 py-2 text-[13px] text-white placeholder:text-gray-600";
+  "w-full bg-bg border border-border rounded-xl px-3 py-2 text-[13px] text-ink placeholder:text-gray-600";
 const label = "block text-[11px] text-muted mb-1";
 
 type Mode = "preview" | "MARKDOWN" | "HTML";
@@ -184,7 +184,7 @@ export function PostEditor({ post }: { post?: Post }) {
           <div
             role="tablist"
             aria-label="본문 편집 방식"
-            className="flex gap-1 rounded-lg border border-border bg-[#12141c] p-1"
+            className="flex gap-1 rounded-lg border border-border bg-bg p-1"
           >
             {tabs.map((t) => (
               <button
@@ -195,8 +195,8 @@ export function PostEditor({ post }: { post?: Post }) {
                 onClick={() => switchTo(t.key)}
                 className={`rounded-md px-3 py-1 text-[12px] transition-colors ${
                   mode === t.key
-                    ? "bg-gold-600/90 font-medium text-black"
-                    : "text-gray-400 hover:text-white"
+                    ? "bg-gold-600/90 font-medium text-onAccent"
+                    : "text-gray-400 hover:text-ink"
                 }`}
               >
                 {t.label}
@@ -215,7 +215,7 @@ export function PostEditor({ post }: { post?: Post }) {
         )}
 
         {mode === "preview" ? (
-          <div className="rounded-xl border border-border bg-[#12141c] p-5">
+          <div className="rounded-xl border border-border bg-bg p-5">
             {previewHtml ? (
               <div
                 className="prose-woodsman text-[14px] leading-relaxed text-gray-200"
@@ -327,7 +327,7 @@ export function PostEditor({ post }: { post?: Post }) {
           <button
             type="submit"
             disabled={pending}
-            className="rounded-xl bg-gold-600/90 px-4 py-2 text-[13px] font-medium text-black transition-colors hover:bg-gold-600 disabled:opacity-50"
+            className="rounded-xl bg-gold-600/90 px-4 py-2 text-[13px] font-medium text-onAccent transition-colors hover:bg-gold-600 disabled:opacity-50"
           >
             {pending ? "저장 중…" : post ? "수정 저장" : "글 저장"}
           </button>

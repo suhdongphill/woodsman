@@ -1,55 +1,185 @@
 @import "tailwindcss";
 
-/* ═══════════════════════════════════════════════════════════════
-   Woodsman 디자인 토큰 — 기존 index.html tailwind.config 그대로 이식
-   bg #0f1117 / card #1a1d27 / cardHover #222633 / border #2a2e3a
-   text #e5e7eb / muted #9ca3af / gold #c9a657(400 #d8bd7a)
-   emerald #2f9e63 · 500 #36a06a · 400(밝게) #56b98a
-   ═══════════════════════════════════════════════════════════════ */
-@theme {
-  --color-bg: #0f1117;
-  --color-card: #1a1d27;
-  --color-cardHover: #222633;
-  --color-border: #2a2e3a;
-  --color-ink: #e5e7eb;
-  --color-muted: #9ca3af;
+/* ═══════════════════════════════════════════════════════════════════════════
+   Woodsman 디자인 토큰 — 2026-08-30 개편 (docs/설계_UI개편_시각언어.md)
 
-  /* gold */
-  --color-gold: #c9a657;
-  --color-gold-400: #d8bd7a;
-  --color-gold-500: #c9a657;
-  --color-gold-600: #a8863f;
+   ⚠ 색 값은 **여기에만** 둔다. 컴포넌트에 hex를 쓰지 않는다.
+   ⚠ 라이트(크림)가 기본이고 다크는 토글이다. 기본은 **시스템 설정**을 따르고,
+      사람이 고르면 `data-theme`가 그것을 이긴다.
+   ⚠ 순색 금지 — #000·#fff를 UI에 쓰지 않는다. 배경은 종이, 잉크는 짙은 숲 녹색이다.
 
-  /* emerald — 기본 팔레트를 지우고 Woodsman 값으로 대체 */
-  --color-emerald-*: initial;
-  --color-emerald: #2f9e63;
-  --color-emerald-200: #c3e6d2;
-  --color-emerald-400: #56b98a;
-  --color-emerald-500: #36a06a;
-  --color-emerald-600: #2d7a4f;
-  --color-emerald-700: #2a6a46;
-  --color-emerald-900: #16402b;
-  --color-emeraldDark: #25744b;
+   ── 등락 색 (2026-08-30 사용자 결정) ──────────────────────────────────────
+   이 사이트는 **한국식**을 쓴다: **상승 적색 · 하락 청색**. (미국과 반대다.)
+   ⚠ 한국식을 택하면서 브랜드 녹색과의 충돌이 사라졌다 — 녹색은 이제 등락이 아니라
+      **성공·발행·계열**의 색이다. 그래도 규칙 하나는 남는다.
+        ⚠ 등락은 **반드시 부호(+/−)나 화살표를 함께** 쓴다. 색 단독 표시 금지 —
+          색맹 사용자와 흑백 인쇄를 위해서다.
+   ⚠ 클래스는 `text-up` `text-down`을 쓴다. `text-emerald-*`를 등락에 쓰지 않는다
+      (이름이 색을 배신하면 다음 사람이 반드시 틀린다).
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-  /* forest */
-  --color-forest: #2d7a4f;
-  --color-forest-400: #4ca677;
-  --color-forest-500: #2d7a4f;
-  --color-forest-600: #246b44;
+:root {
+  /* ── 면 ── */
+  --w-bg: #f4f1e8;
+  --w-surface: #fbfaf5;
+  --w-surface-2: #eae5d8;
+  --w-border: #d9d2c2;
 
-  --font-sans: var(--font-noto-sans-kr), "Noto Sans KR", sans-serif;
+  /* ── 잉크 ── */
+  --w-ink: #1e3a2b;
+  --w-ink-2: #5c6b5f;
+  --w-ink-3: #8a9188;
 
-  --radius-card: 16px;
+  /* ── 계열 (차트·배지) ── */
+  --w-series-1: #0b6640;
+  --w-series-2: #b8672f;
+  --w-series-3: #3b6ea5;
+  --w-danger: #a32d28;
+
+  /* ── 등락 (수치 텍스트 전용) · 한국식: 상승 적 · 하락 청 ── */
+  --w-up: #d0342c;
+  --w-down: #1f63c4;
+  --w-flat: #8a9188;
+
+  /* ── 그림자: 검정이 아니라 숲 잉크 ── */
+  --w-shadow-sm: 0 1px 2px rgba(30, 58, 43, 0.06);
+  --w-shadow-md: 0 2px 4px rgba(30, 58, 43, 0.05), 0 8px 24px rgba(30, 58, 43, 0.07);
+
+  --w-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  color-scheme: light;
 }
 
-/* ═══ 전역 스타일 (기존 index.html <style> 이식) ═══ */
-html {
+/* 시스템이 다크면 다크로 — 단, 사람이 고른 값(data-theme)이 이긴다 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --w-bg: #131c17;
+    --w-surface: #1a251f;
+    --w-surface-2: #223029;
+    --w-border: #2e3f35;
+    --w-ink: #e3ebe5;
+    --w-ink-2: #a8b6ac;
+    --w-ink-3: #778579;
+    --w-series-1: #4aa87a;
+    --w-series-2: #a8622f;
+    --w-series-3: #6b8fd4;
+    --w-danger: #d1554d;
+    --w-up: #e05a52;
+    --w-down: #5a8fd6;
+    --w-flat: #778579;
+    --w-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --w-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(0, 0, 0, 0.3);
+    color-scheme: dark;
+  }
+}
+
+/* 사람이 고른 다크 — 시스템과 무관하게 이긴다 */
+:root[data-theme="dark"] {
+  --w-bg: #131c17;
+  --w-surface: #1a251f;
+  --w-surface-2: #223029;
+  --w-border: #2e3f35;
+  --w-ink: #e3ebe5;
+  --w-ink-2: #a8b6ac;
+  --w-ink-3: #778579;
+  --w-series-1: #4aa87a;
+  --w-series-2: #a8622f;
+  --w-series-3: #6b8fd4;
+  --w-danger: #d1554d;
+  --w-up: #e05a52;
+  --w-down: #5a8fd6;
+  --w-flat: #778579;
+  --w-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --w-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(0, 0, 0, 0.3);
   color-scheme: dark;
 }
 
+/*
+ * ⚠ `@theme inline`이어야 유틸리티가 **변수를 그대로 참조**한다.
+ *    `inline`이 없으면 빌드 때 값이 박혀서 테마 토글이 안 먹는다.
+ *
+ * ⚠ 클래스 이름(`bg-card` `text-muted` `text-gold-500` …)은 **그대로 두고 값만 바꿨다.**
+ *    이름을 한꺼번에 갈면 100개 넘는 파일이 동시에 흔들려 무엇 때문에 깨졌는지 못 가른다.
+ *    이름과 뜻이 어긋나는 자리(gold → 테라코타)는 주석으로 표시해 두고 뒤에 정리한다.
+ */
+@theme inline {
+  --color-bg: var(--w-bg);
+  --color-card: var(--w-surface);
+  --color-cardHover: var(--w-surface-2);
+  --color-border: var(--w-border);
+  --color-ink: var(--w-ink);
+  --color-muted: var(--w-ink-2);
+
+  /* ⚠ 이름은 gold, 실제는 **테라코타**(계열 2). 브랜드 포인트색이 바뀌었다. */
+  --color-gold: var(--w-series-2);
+  --color-gold-400: color-mix(in oklab, var(--w-series-2) 78%, var(--w-bg));
+  --color-gold-500: var(--w-series-2);
+  --color-gold-600: color-mix(in oklab, var(--w-series-2) 82%, var(--w-ink));
+
+  /*
+   * 성공·발행·연결됨 — **숲 녹색**이다. ⚠ 등락이 아니다.
+   * 한국식 등락(상승 적)을 택했으므로 녹색은 등락에서 완전히 빠졌다.
+   */
+  --color-emerald-*: initial;
+  --color-emerald: var(--w-series-1);
+  --color-emerald-200: color-mix(in oklab, var(--w-series-1) 30%, var(--w-bg));
+  --color-emerald-400: var(--w-series-1);
+  --color-emerald-500: var(--w-series-1);
+  --color-emerald-600: color-mix(in oklab, var(--w-series-1) 85%, var(--w-ink));
+  --color-emerald-700: color-mix(in oklab, var(--w-series-1) 70%, var(--w-ink));
+  --color-emerald-900: color-mix(in oklab, var(--w-series-1) 40%, var(--w-ink));
+  --color-emeraldDark: color-mix(in oklab, var(--w-series-1) 85%, var(--w-ink));
+
+  /* 계열 1 — 숲 */
+  --color-forest: var(--w-series-1);
+  --color-forest-400: color-mix(in oklab, var(--w-series-1) 75%, var(--w-bg));
+  --color-forest-500: var(--w-series-1);
+  --color-forest-600: color-mix(in oklab, var(--w-series-1) 85%, var(--w-ink));
+
+  /* 새 이름 — 앞으로는 이쪽을 쓴다 */
+  --color-series-1: var(--w-series-1);
+  --color-series-2: var(--w-series-2);
+  --color-series-3: var(--w-series-3);
+  --color-up: var(--w-up);
+  --color-down: var(--w-down);
+  --color-flat: var(--w-flat);
+  --color-danger: var(--w-danger);
+  --color-surface: var(--w-surface);
+  --color-surface-2: var(--w-surface-2);
+  --color-ink-2: var(--w-ink-2);
+  --color-ink-3: var(--w-ink-3);
+
+  /*
+   * ⚠ 강조면 위의 글자색. 테라코타·숲 버튼 위에는 **크림**이 올라간다.
+   *    예전 `text-black`을 그대로 두면 라이트에서 대비가 무너진다.
+   */
+  --color-onAccent: var(--w-surface);
+
+  /*
+   * ⚠ 회색 계열을 **잉크 톤으로 덮는다.** Tailwind 기본 회색은 푸른기가 돌아
+   *    크림 배경에서 때처럼 보인다. `text-gray-500` 같은 기존 클래스가 그대로 살아 있으므로
+   *    값만 바꿔 준다.
+   */
+  --color-gray-300: var(--w-ink-2);
+  --color-gray-400: var(--w-ink-2);
+  --color-gray-500: var(--w-ink-2);
+  --color-gray-600: var(--w-ink-3);
+  --color-gray-700: var(--w-ink-3);
+  /* ⚠ 일반 오류·위험용 적색이다. 등락 하락은 `text-down`(청)이다 */
+  --color-red-400: var(--w-danger);
+  --color-red-500: var(--w-danger);
+  --color-yellow-200: var(--w-series-2);
+  --color-yellow-300: var(--w-series-2);
+
+  --font-sans: var(--font-noto-sans-kr), "Noto Sans KR", sans-serif;
+
+  /* ⚠ 카드 12px — 인쇄물용 4px는 화면에서 딱딱하게 읽힌다 */
+  --radius-card: 12px;
+}
+
+/* ═══ 전역 ═══ */
 body {
-  background: #0f1117;
-  color: #e5e7eb;
+  background: var(--w-bg);
+  color: var(--w-ink);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -58,12 +188,15 @@ body {
   -webkit-backdrop-filter: blur(8px);
 }
 
+/* ⚠ 그림자는 숲 잉크 계열. 검정 그림자는 크림 배경에서 회색 때처럼 보인다. */
 .card-hover {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.16s var(--w-ease),
+    box-shadow 0.16s var(--w-ease);
 }
 .card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+  box-shadow: var(--w-shadow-md);
 }
 
 input::-webkit-outer-spin-button,
@@ -80,10 +213,10 @@ input[type="number"] {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f1117;
+  background: var(--w-bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2e3a;
+  background: var(--w-border);
   border-radius: 3px;
 }
 
@@ -98,7 +231,7 @@ input[type="number"] {
 }
 .skeleton {
   animation: skeleton-pulse 1.5s ease-in-out infinite;
-  background: #2a2e3a;
+  background: var(--w-surface-2);
   border-radius: 8px;
 }
 
@@ -180,7 +313,7 @@ input[type="number"] {
 }
 
 select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238a9188' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 8px center;
   -webkit-appearance: none;
@@ -188,23 +321,39 @@ select {
   padding-right: 28px;
 }
 
-/* 본문(HTML 콘텐츠) 타이포 */
+/*
+ * ⚠ 움직임을 끄고 싶다고 말한 사람에게는 **전부 끈다.**
+ *    "거의 안 움직인다"가 아니라 0ms다 — 어지럼증은 정도의 문제가 아니다.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 본문(HTML 콘텐츠) 타이포 — ⚠ 순색(#fff) 대신 잉크 토큰을 쓴다 */
 .prose-woodsman h2 {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--w-ink);
   margin: 1.75rem 0 0.75rem;
 }
 .prose-woodsman h3 {
   font-size: 1rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--w-ink);
   margin: 1.5rem 0 0.5rem;
 }
 .prose-woodsman p {
   font-size: 0.9375rem;
+  /* ⚠ 본문 행간 1.7 이상 — 오래 읽는 화면이다 */
   line-height: 1.85;
-  color: #d1d5db;
+  color: var(--w-ink);
   margin-bottom: 1rem;
 }
 .prose-woodsman ul {
@@ -215,21 +364,21 @@ select {
 .prose-woodsman li {
   font-size: 0.9375rem;
   line-height: 1.8;
-  color: #d1d5db;
+  color: var(--w-ink);
   margin-bottom: 0.35rem;
 }
 .prose-woodsman strong {
-  color: #fff;
+  color: var(--w-ink);
   font-weight: 600;
 }
 .prose-woodsman blockquote {
-  border-left: 3px solid #c9a657;
+  border-left: 3px solid var(--w-series-2);
   padding: 0.25rem 0 0.25rem 1rem;
-  color: #9ca3af;
+  color: var(--w-ink-2);
   margin: 1rem 0;
 }
 .prose-woodsman a {
-  color: #d8bd7a;
+  color: var(--w-series-2);
   text-decoration: underline;
   text-underline-offset: 3px;
 }

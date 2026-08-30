@@ -52,7 +52,7 @@ export function RecessionBoard({
           <li
             key={s.indicator.key}
             className={cx(
-              "rounded-xl border border-border bg-[#12141c] px-3 py-2.5",
+              "rounded-xl border border-border bg-bg px-3 py-2.5",
               (s.freshness.stale || s.freshness.stalled) && "border-amber-500/25",
             )}
           >
@@ -65,7 +65,7 @@ export function RecessionBoard({
             </div>
             <p
               className={cx(
-                "mt-1 text-[17px] font-bold tabular-nums text-white",
+                "mt-1 text-[17px] font-bold tabular-nums text-ink",
                 (s.freshness.stale || s.freshness.stalled) && "opacity-55",
               )}
             >

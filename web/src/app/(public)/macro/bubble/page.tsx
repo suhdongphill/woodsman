@@ -76,7 +76,7 @@ export default async function BubbleMonitorPage() {
 
         {/* 읽는 법 — 처음 온 사람에게 필요한 것 */}
         <Card className="border-gold-600/30 bg-gold-500/[0.04]">
-          <h2 className="text-[15px] font-semibold text-white">이 점수를 어떻게 읽나요</h2>
+          <h2 className="text-[15px] font-semibold text-ink">이 점수를 어떻게 읽나요</h2>
           <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-gray-300">
             <li>
               <strong className="text-gold-400">0·1·2 세 칸</strong>으로만 채점합니다. 지표 절반이
@@ -104,7 +104,7 @@ export default async function BubbleMonitorPage() {
             {score.layers.map(({ layer, average, scored, total, readings: rs }) => (
               <Card key={layer.id} padding="p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-[15px] font-semibold text-white">
+                  <h3 className="text-[15px] font-semibold text-ink">
                     <span className="mr-1.5 text-gray-500">{layer.id}</span>
                     {layer.name}
                   </h3>

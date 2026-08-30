@@ -39,7 +39,7 @@ export function CanslimPanel({
   return (
     <div className="bg-card border border-border rounded-2xl p-5">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
           <BotIcon size={16} className="text-gold-400" />
           CANSLIM 분석
         </h3>
@@ -69,7 +69,7 @@ export function CanslimPanel({
                 <span className="hidden sm:block text-[11px] text-muted w-24 shrink-0 truncate">
                   {label}
                 </span>
-                <div className="flex-1 h-1.5 rounded-full bg-[#12141c] overflow-hidden">
+                <div className="flex-1 h-1.5 rounded-full bg-bg overflow-hidden">
                   {axis.points !== undefined && (
                     <div
                       className={cx("h-full rounded-full", sc?.bg)}

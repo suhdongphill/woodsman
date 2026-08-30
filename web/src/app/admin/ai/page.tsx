@@ -54,7 +54,7 @@ export default async function AdminAiPage() {
       <div className="mb-7 grid gap-4 lg:grid-cols-3">
         <Card>
           <p className="text-[11px] text-muted">연결된 제공자</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-white">
+          <p className="mt-1 text-2xl font-bold tabular-nums text-ink">
             {connectedIds.length}
             <span className="ml-1 text-sm font-normal text-gray-500">/ {AI_PROVIDERS.length}</span>
           </p>
@@ -66,13 +66,13 @@ export default async function AdminAiPage() {
 
         <Card>
           <p className="text-[11px] text-muted">이번 달 전역 사용량</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-white">
+          <p className="mt-1 text-2xl font-bold tabular-nums text-ink">
             {(config.tokensUsedThisMonth / 1000).toFixed(0)}K
             <span className="ml-1 text-sm font-normal text-gray-500">
               / {(config.globalMonthlyTokenCap / 1000).toFixed(0)}K
             </span>
           </p>
-          <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-[#12141c]">
+          <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-bg">
             <div
               className={cx(
                 "h-full rounded-full",
@@ -94,7 +94,7 @@ export default async function AdminAiPage() {
 
         <Card>
           <p className="text-[11px] text-muted">실행 권한 · 캐시</p>
-          <p className="mt-1 text-2xl font-bold text-white">{config.allowedRole}</p>
+          <p className="mt-1 text-2xl font-bold text-ink">{config.allowedRole}</p>
           <p className="mt-1.5 text-[11px] text-gray-600">
             같은 질의는 {config.cacheTtlHours}시간 동안 재호출하지 않습니다. 비용 방어를 위해
             기본값은 관리자 전용입니다.
@@ -126,7 +126,7 @@ export default async function AdminAiPage() {
       </Card>
 
       <div className="mb-7">
-        <h2 className="mb-3 text-sm font-semibold text-white">제공자</h2>
+        <h2 className="mb-3 text-sm font-semibold text-ink">제공자</h2>
         <ProviderTable usage={usage} connected={connectedIds} canWriteEnv={canWriteEnv} />
       </div>
 

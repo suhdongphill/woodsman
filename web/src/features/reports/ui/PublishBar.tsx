@@ -34,7 +34,7 @@ export function PublishBar({
             <input type="hidden" name="ticker" value={ticker} />
             <button
               type="submit"
-              className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-red-500/40 hover:text-white"
+              className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-red-500/40 hover:text-ink"
             >
               발행 취소 (초안으로)
             </button>
@@ -49,7 +49,7 @@ export function PublishBar({
               type="submit"
               disabled={pending || blocked}
               title={blocked ? `규율 ${blockerCount}건이 남아 발행할 수 없습니다` : undefined}
-              className="rounded-xl bg-gold-600/90 px-4 py-2 text-[12.5px] font-medium text-black transition-colors hover:bg-gold-600 disabled:opacity-40"
+              className="rounded-xl bg-gold-600/90 px-4 py-2 text-[12.5px] font-medium text-onAccent transition-colors hover:bg-gold-600 disabled:opacity-40"
             >
               {pending ? "발행 중…" : blocked ? `발행 불가 (규율 ${blockerCount}건)` : "발행"}
             </button>

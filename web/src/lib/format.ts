@@ -23,8 +23,16 @@ export function formatPct(n: number) {
   return (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
 }
 
+/**
+ * 등락 색 — **여기 한 곳에서만 정한다.**
+ *
+ * ⚠ 한국식이다: **상승 적색 · 하락 청색**(2026-08-30 결정). 미국과 반대다.
+ * ⚠ 색만으로 등락을 말하지 않는다. 부르는 쪽은 반드시 부호(+/−)나 화살표를 함께 낸다 —
+ *    `formatPct`가 이미 부호를 붙인다.
+ * ⚠ `text-emerald-*`를 등락에 쓰지 않는다. 녹색은 성공·발행의 색이다.
+ */
 export function profitColor(v: number) {
-  return v >= 0 ? "text-emerald-400" : "text-red-400";
+  return v >= 0 ? "text-up" : "text-down";
 }
 
 /** CANSLIM 종합점수 색상 (7↑ 초록 / 5↑ 노랑 / 그 외 빨강) */

@@ -15,7 +15,7 @@ const STYLE: Record<SignalStatus, { box: string; mark: string }> = {
   normal: { box: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300", mark: "●" },
   watch: { box: "border-yellow-500/30 bg-yellow-500/10 text-yellow-300", mark: "▲" },
   alert: { box: "border-red-500/40 bg-red-500/10 text-red-300", mark: "■" },
-  unknown: { box: "border-border bg-white/5 text-gray-400", mark: "○" },
+  unknown: { box: "border-border bg-ink/5 text-gray-400", mark: "○" },
 };
 
 export function SignalPill({
@@ -45,7 +45,7 @@ const LEVEL_STYLE: Record<RecessionLevel, string> = {
   watch: "border-yellow-500/30 bg-yellow-500/10 text-yellow-300",
   caution: "border-orange-500/40 bg-orange-500/10 text-orange-300",
   danger: "border-red-500/40 bg-red-500/10 text-red-300",
-  unknown: "border-border bg-white/5 text-gray-400",
+  unknown: "border-border bg-ink/5 text-gray-400",
 };
 
 /** 침체 시그널 종합 등급 — 홈과 허브의 맨 앞에 나온다. */

@@ -17,7 +17,7 @@ import { saveReportAction } from "../actions";
 import { emptyReportFormState } from "../form-state";
 
 const field =
-  "w-full bg-[#12141c] border border-border rounded-xl px-3 py-2 text-[13px] text-white placeholder:text-gray-600";
+  "w-full bg-bg border border-border rounded-xl px-3 py-2 text-[13px] text-ink placeholder:text-gray-600";
 const area = `${field} min-h-[120px] font-mono leading-relaxed`;
 const label = "block text-[11px] text-muted mb-1";
 
@@ -42,7 +42,7 @@ export function ReportEditor({
 
       {/* 기본 정보 */}
       <section className="bg-card border border-border rounded-2xl p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-white">기본 정보</h3>
+        <h3 className="text-sm font-semibold text-ink">기본 정보</h3>
         <div className="grid gap-3 sm:grid-cols-3">
           <label>
             <span className={label}>종목명</span>
@@ -68,7 +68,7 @@ export function ReportEditor({
 
       {/* 판정 — R3 */}
       <section className="bg-card border border-border rounded-2xl p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-white">판정 · 철회 조건 (R3)</h3>
+        <h3 className="text-sm font-semibold text-ink">판정 · 철회 조건 (R3)</h3>
         <p className="text-[11.5px] text-gray-600">
           ⚠ 반증 조건 없는 판정은 판정이 아니라 소감입니다. 철회 조건이 없으면 발행이 막힙니다.
         </p>
@@ -96,7 +96,7 @@ export function ReportEditor({
 
       {/* 티스토리 원문 — ⚠ 1순위 지표(넘어간 클릭)의 경로다 */}
       <section className="bg-card border border-border rounded-2xl p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-white">티스토리 원문 주소</h3>
+        <h3 className="text-sm font-semibold text-ink">티스토리 원문 주소</h3>
         <p className="text-[11.5px] text-gray-600">
           이 보고서를 티스토리에 옮겨 실었으면 그 글 주소를 적습니다. 적으면 공개 화면이
           <strong className="text-gray-300"> 경유 링크(/go)</strong>로 보내고 클릭을 셉니다 —
@@ -114,7 +114,7 @@ export function ReportEditor({
 
       {/* 밸류에이션 한계 + 컨센서스 — R6·R4 */}
       <section className="bg-card border border-border rounded-2xl p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-white">밸류에이션 한계 (R6) · 컨센서스 (R4)</h3>
+        <h3 className="text-sm font-semibold text-ink">밸류에이션 한계 (R6) · 컨센서스 (R4)</h3>
         <label className="block">
           <span className={label}>
             ⚠ 이 방법이 언제 틀리나 — 밸류에이션 섹션을 쓰면 필수입니다
@@ -180,14 +180,14 @@ export function ReportEditor({
 
       {/* 섹션 본문 */}
       <section className="space-y-4">
-        <h3 className="text-sm font-semibold text-white">섹션 본문</h3>
+        <h3 className="text-sm font-semibold text-ink">섹션 본문</h3>
         {REPORT_SECTIONS.map((section) => {
           const b = blockOf(section.key);
           return (
             <div key={section.key} className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="text-[11px] font-mono text-gold-400">§{section.no}</span>
-                <h4 className="text-[13.5px] font-semibold text-white">{section.name}</h4>
+                <h4 className="text-[13.5px] font-semibold text-ink">{section.name}</h4>
                 {section.required && (
                   <span className="rounded-md bg-gold-500/12 px-1.5 py-0.5 text-[10px] text-gold-400">
                     필수
@@ -266,7 +266,7 @@ export function ReportEditor({
 
       {/* CANSLIM 7축 */}
       <section className="bg-card border border-border rounded-2xl p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-white">CANSLIM 채점</h3>
+        <h3 className="text-sm font-semibold text-ink">CANSLIM 채점</h3>
         <p className="text-[11.5px] text-gray-600">
           ⚠ 점수를 비워 두면 <strong>N/A</strong>입니다. 0점이 아니라 <strong>분모에서 빠집니다</strong>(R1).
           모르는 축을 0으로 적으면 채점을 미룬 종목이 자동으로 저조 등급을 받습니다.
@@ -277,7 +277,7 @@ export function ReportEditor({
             <div key={item.key} className="border-t border-border/60 pt-3 space-y-2">
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="text-[12px] font-bold text-gold-400 w-4">{item.key}</span>
-                <span className="text-[12.5px] text-white">{item.name}</span>
+                <span className="text-[12.5px] text-ink">{item.name}</span>
                 <span className="text-[10.5px] text-gray-500">가중치 {item.weight}</span>
               </div>
               <p className="text-[11px] text-gray-600">{item.rubric}</p>
@@ -349,7 +349,7 @@ export function ReportEditor({
 
       {/* 체크리스트 + 다음 판단 시점 — R7 */}
       <section className="bg-card border border-border rounded-2xl p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-white">미확정 체크리스트 · 다음 판단 시점 (R7)</h3>
+        <h3 className="text-sm font-semibold text-ink">미확정 체크리스트 · 다음 판단 시점 (R7)</h3>
         <p className="text-[11.5px] text-gray-600">
           ⚠ &ldquo;지켜본다&rdquo;는 지켜보지 않는다는 뜻입니다. 날짜가 있어야 갱신이 일어납니다.
         </p>
@@ -393,7 +393,7 @@ export function ReportEditor({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-xl bg-gold-600/90 px-5 py-2.5 text-[13px] font-medium text-black shadow-lg transition-colors hover:bg-gold-600 disabled:opacity-50"
+          className="rounded-xl bg-gold-600/90 px-5 py-2.5 text-[13px] font-medium text-onAccent shadow-lg transition-colors hover:bg-gold-600 disabled:opacity-50"
         >
           {pending ? "저장 중…" : "초안 저장"}
         </button>

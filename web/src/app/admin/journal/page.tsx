@@ -4,7 +4,7 @@ import { Card, CardTitle } from "@/components/ui/Card";
 import { Table, Th, Td, Tr } from "@/components/ui/Table";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
 import { TrashIcon } from "@/components/icons";
-import { formatDate, formatNumber, formatPct } from "@/lib/format";
+import { formatDate, formatNumber, formatPct, profitColor } from "@/lib/format";
 import { returnPctAt, summarizePerformance } from "@/lib/performance";
 import { dataModeNotice } from "@/lib/data-mode";
 import { getSiteBasics } from "@/lib/site-settings";
@@ -88,7 +88,7 @@ export default async function AdminJournalPage() {
         <div className="mb-6 grid gap-3 sm:grid-cols-4">
           <Card>
             <p className="text-[11px] text-muted">평가액</p>
-            <p className="mt-1 text-lg font-bold tabular-nums text-white">
+            <p className="mt-1 text-lg font-bold tabular-nums text-ink">
               {formatNumber(perf.value)}
             </p>
           </Card>
@@ -102,7 +102,7 @@ export default async function AdminJournalPage() {
             <p className="text-[11px] text-muted">수익률</p>
             <p
               className={`mt-1 text-lg font-bold tabular-nums ${
-                perf.returnPct >= 0 ? "text-emerald-400" : "text-red-400"
+                profitColor(perf.returnPct)
               }`}
             >
               {formatPct(perf.returnPct)}
@@ -110,7 +110,7 @@ export default async function AdminJournalPage() {
           </Card>
           <Card>
             <p className="text-[11px] text-muted">기록</p>
-            <p className="mt-1 text-lg font-bold tabular-nums text-white">
+            <p className="mt-1 text-lg font-bold tabular-nums text-ink">
               {perf.months}개월 · {entries.length}건
             </p>
           </Card>
@@ -154,7 +154,7 @@ export default async function AdminJournalPage() {
                     <Td>
                       <Badge tone={meta.tone}>{meta.label}</Badge>
                     </Td>
-                    <Td className="text-white">{e.title}</Td>
+                    <Td className="text-ink">{e.title}</Td>
                     <Td className="text-muted">
                       {e.name ?? "—"}
                       {e.ticker && <span className="ml-1 font-mono text-gray-600">{e.ticker}</span>}
@@ -226,10 +226,10 @@ export default async function AdminJournalPage() {
                     <Td className="text-right tabular-nums text-gray-400">
                       {formatNumber(s.principal)}
                     </Td>
-                    <Td className="text-right tabular-nums text-white">{formatNumber(s.value)}</Td>
+                    <Td className="text-right tabular-nums text-ink">{formatNumber(s.value)}</Td>
                     <Td
                       className={`text-right tabular-nums ${
-                        pct >= 0 ? "text-emerald-400" : "text-red-400"
+                        profitColor(pct)
                       }`}
                     >
                       {formatPct(pct)}

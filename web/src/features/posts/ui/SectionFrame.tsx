@@ -70,7 +70,7 @@ export function SectionFrame({
       {/* 가장 최근 글 — 본문까지 펼친다 */}
       <Card padding="p-5 sm:p-6">
         <PostLink post={latest}>
-          <h3 className="text-[17px] font-semibold text-white group-hover:text-gold-400">
+          <h3 className="text-[17px] font-semibold text-ink group-hover:text-gold-400">
             {latest.title}
             {latest.source === "TISTORY" && (
               <ExternalIcon size={13} className="ml-1.5 inline text-gray-500" />
@@ -102,7 +102,7 @@ export function SectionFrame({
             <li key={post.id}>
               <PostLink post={post}>
                 <div className="px-5 py-4 transition-colors hover:bg-cardHover">
-                  <p className="text-[14px] font-medium text-white group-hover:text-gold-400">
+                  <p className="text-[14px] font-medium text-ink group-hover:text-gold-400">
                     {post.title}
                     {post.source === "TISTORY" && (
                       <ExternalIcon size={12} className="ml-1.5 inline text-gray-500" />

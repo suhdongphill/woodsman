@@ -91,7 +91,7 @@ export function TopNav({
                     "px-3 py-2 text-sm rounded-lg transition-colors",
                     isActive(n.href)
                       ? "text-gold-400 bg-gold-500/10"
-                      : "text-muted hover:text-white hover:bg-cardHover",
+                      : "text-muted hover:text-ink hover:bg-cardHover",
                   )}
                 >
                   {n.label}
@@ -106,7 +106,7 @@ export function TopNav({
                 {user.role === "ADMIN" && (
                   <Link
                     href="/admin"
-                    className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted hover:text-white transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted hover:text-ink transition-colors"
                   >
                     <GearIcon size={15} />
                     관리자
@@ -119,7 +119,7 @@ export function TopNav({
                 <form action={signOutAction}>
                   <button
                     type="submit"
-                    className="px-3 py-2 text-sm text-muted hover:text-white transition-colors"
+                    className="px-3 py-2 text-sm text-muted hover:text-ink transition-colors"
                   >
                     로그아웃
                   </button>
@@ -130,7 +130,7 @@ export function TopNav({
                 <>
                   <Link
                     href="/login"
-                    className="px-3 py-2 text-sm text-muted hover:text-white transition-colors"
+                    className="px-3 py-2 text-sm text-muted hover:text-ink transition-colors"
                   >
                     로그인
                   </Link>
@@ -147,7 +147,7 @@ export function TopNav({
             aria-label="메뉴"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="md:hidden p-2 -mr-2 text-muted hover:text-white transition-colors"
+            className="md:hidden p-2 -mr-2 text-muted hover:text-ink transition-colors"
           >
             {open ? <CloseIcon size={22} /> : <MenuIcon size={22} />}
           </button>

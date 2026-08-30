@@ -20,7 +20,7 @@ import {
 } from "@/lib/macro/overlay";
 import { breadcrumbJsonLd } from "@/lib/seo";
 import { getSiteBasics } from "@/lib/site-settings";
-import { cx } from "@/lib/format";
+import { cx, profitColor } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "지표 겹쳐 보기 — 같은 시간축 위에 세워 괴리를 본다",
@@ -118,7 +118,7 @@ export default async function MacroComparePage({ searchParams }: Props) {
               return (
                 <li
                   key={line.key}
-                  className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-[#12141c] px-3 py-2"
+                  className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-bg px-3 py-2"
                 >
                   <span
                     aria-hidden="true"
@@ -131,14 +131,14 @@ export default async function MacroComparePage({ searchParams }: Props) {
                   <span className="text-[12.5px] text-gray-300">{line.label}</span>
                   <span className="ml-auto flex items-center gap-1.5">
                     {view && <FreshnessBadge freshness={view.freshness} />}
-                    <span className="text-[12px] font-semibold tabular-nums text-white">
+                    <span className="text-[12px] font-semibold tabular-nums text-ink">
                       {view ? view.display : "—"}
                     </span>
                     {line.changePct !== undefined && (
                       <span
                         className={cx(
                           "text-[11px] tabular-nums",
-                          line.changePct > 0 ? "text-emerald-400" : "text-red-400",
+                          profitColor(line.changePct),
                         )}
                       >
                         {line.changePct > 0 ? "▲" : "▼"} {Math.abs(line.changePct).toFixed(1)}%
@@ -171,7 +171,7 @@ export default async function MacroComparePage({ searchParams }: Props) {
 
         {/* ── 고르기 (스크립트 없이 동작하는 GET 폼) ── */}
         <Card padding="p-5 sm:p-6">
-          <h2 className="text-[15px] font-semibold text-white">무엇을 겹쳐 볼까요</h2>
+          <h2 className="text-[15px] font-semibold text-ink">무엇을 겹쳐 볼까요</h2>
           <p className="mt-1 text-[12px] text-gray-500">
             최대 {OVERLAY_MAX}개까지 그립니다(더 고르면 앞에서부터 {OVERLAY_MAX}개). 고른 조합이
             곧 이 페이지 주소라, 그대로 복사해 두거나 공유할 수 있습니다.
@@ -203,7 +203,7 @@ export default async function MacroComparePage({ searchParams }: Props) {
                       className="mt-1"
                     />
                     <span>
-                      <strong className="text-white">{m.label}</strong>
+                      <strong className="text-ink">{m.label}</strong>
                       <span className="ml-1.5 text-gray-500">{m.desc}</span>
                     </span>
                   </label>
@@ -252,7 +252,7 @@ export default async function MacroComparePage({ searchParams }: Props) {
         {/* ── 표 — ⚠ 색만으로 계열을 식별하지 않기 위한 대체 표현 ── */}
         {table.length > 0 && (
           <Card padding="p-5 sm:p-6">
-            <h2 className="text-[15px] font-semibold text-white">표로 보기</h2>
+            <h2 className="text-[15px] font-semibold text-ink">표로 보기</h2>
             <p className="mt-1 text-[12px] text-gray-500">
               그림을 색으로 구분하기 어려운 분과 화면 낭독기를 위한 같은 내용입니다. 값은{" "}
               <strong className="text-gray-300">{modeDef.label}</strong> 기준으로 환산된 숫자입니다
@@ -296,7 +296,7 @@ export default async function MacroComparePage({ searchParams }: Props) {
 
         {/* ⚠ 읽는 법의 선 */}
         <Card className="border-gold-600/30 bg-gold-500/[0.04]">
-          <h2 className="text-[15px] font-semibold text-white">이 그림을 어떻게 읽나요</h2>
+          <h2 className="text-[15px] font-semibold text-ink">이 그림을 어떻게 읽나요</h2>
           <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-gray-300">
             <li>
               <strong className="text-gold-400">축은 하나뿐입니다.</strong> 단위가 다른 지표를

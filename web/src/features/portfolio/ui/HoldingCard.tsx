@@ -40,13 +40,13 @@ export function HoldingCard({
               <span className="text-[11px] font-mono text-gray-500">{h.ticker}</span>
             )}
           </div>
-          <h3 className="mt-2 text-[15px] font-semibold text-white truncate">{h.name}</h3>
+          <h3 className="mt-2 text-[15px] font-semibold text-ink truncate">{h.name}</h3>
           <p className="text-[11px] text-gray-500 mt-0.5">{h.market ?? "—"}</p>
         </div>
         <div className="text-right shrink-0">
           {hasPrice ? (
             <>
-              <p className="text-sm font-semibold text-white tabular-nums">
+              <p className="text-sm font-semibold text-ink tabular-nums">
                 {formatNumber(h.price!, cur)}
               </p>
               {/* ⚠ 등락률이 아니라 '언제 적은 값인가'를 쓴다 — 실시간 시세가 아니다. */}

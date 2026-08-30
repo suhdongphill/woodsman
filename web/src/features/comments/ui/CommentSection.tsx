@@ -50,7 +50,7 @@ export function CommentSection({
 
   return (
     <section className="mt-12">
-      <h2 className="mb-5 flex items-center gap-2 text-base font-semibold text-white">
+      <h2 className="mb-5 flex items-center gap-2 text-base font-semibold text-ink">
         <MessageIcon size={17} />
         댓글
         <span className="tabular-nums text-gold-400">{comments.length}</span>
@@ -113,7 +113,7 @@ export function CommentSection({
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-900 text-[11px] font-semibold text-emerald-200">
                       {(c.authorName ?? "?").slice(0, 1)}
                     </span>
-                    <span className="text-[13px] font-medium text-white">
+                    <span className="text-[13px] font-medium text-ink">
                       {c.authorName ?? "익명"}
                     </span>
                     <span className="text-[11px] text-gray-600">{formatDateTime(c.createdAt)}</span>

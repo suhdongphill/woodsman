@@ -28,7 +28,7 @@ export default async function DisclaimerPage() {
       <PolicySection title="1. 정보 제공 목적입니다">
         <p>
           Woodsman에 실린 모든 글·수치·차트·포트폴리오 내역은 운영자 개인의 기록이자 의견이며,{" "}
-          <strong className="text-white">정보 제공 목적</strong>으로만 공개됩니다. 특정 금융투자상품의
+          <strong className="text-ink">정보 제공 목적</strong>으로만 공개됩니다. 특정 금융투자상품의
           매수·매도를 권유하거나 청약을 유인하지 않습니다.
         </p>
         <p>
@@ -44,7 +44,7 @@ export default async function DisclaimerPage() {
           책임입니다. 운영자는 이용자가 입은 어떠한 손실에 대해서도 법적 책임을 지지 않습니다.
         </p>
         <p>
-          <strong className="text-white">과거의 성과는 미래의 수익을 보장하지 않습니다.</strong>{" "}
+          <strong className="text-ink">과거의 성과는 미래의 수익을 보장하지 않습니다.</strong>{" "}
           공개된 계좌가 지금까지 수익을 냈더라도, 같은 방식이 앞으로도 통한다는 뜻은 아닙니다.
         </p>
       </PolicySection>
@@ -60,7 +60,7 @@ export default async function DisclaimerPage() {
               <Link href="/journal" className="text-gold-400 hover:text-gold-500">
                 투자일지
               </Link>
-              는 <strong className="text-white">{mode.badge}</strong> 기록입니다. {mode.line} 손실
+              는 <strong className="text-ink">{mode.badge}</strong> 기록입니다. {mode.line} 손실
               구간과 잘못된 판단도 지우지 않고 남깁니다.
             </>,
             "평가액·수익률은 기록 시점의 종가 기준이며, 세금·거래비용·환전 수수료가 모두 반영되지 않을 수 있습니다.",
@@ -72,7 +72,7 @@ export default async function DisclaimerPage() {
 
       <PolicySection title="4. 이해관계 고지">
         <p>
-          운영자는 이 사이트에서 언급하는 종목을 <strong className="text-white">직접 보유하고
+          운영자는 이 사이트에서 언급하는 종목을 <strong className="text-ink">직접 보유하고
           있을 수 있습니다.</strong> 보유 여부와 수량은 대표 포트폴리오와 투자일지에 공개합니다.
         </p>
         <p>

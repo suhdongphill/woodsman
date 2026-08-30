@@ -66,7 +66,7 @@ function Metric({
       <p className="text-[11px] text-muted">{label}</p>
       <p
         className={`mt-1 text-xl font-bold tabular-nums ${
-          tone === "gold" ? "text-gold-400" : "text-white"
+          tone === "gold" ? "text-gold-400" : "text-ink"
         }`}
       >
         {value.toLocaleString("ko-KR")}

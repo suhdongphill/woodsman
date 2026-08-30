@@ -67,7 +67,7 @@ export function JournalTimeline({ entries }: { entries: JournalEntry[] }) {
                 )}
               </div>
 
-              <h3 className="mt-2.5 text-[15px] font-semibold text-white">{e.title}</h3>
+              <h3 className="mt-2.5 text-[15px] font-semibold text-ink">{e.title}</h3>
               <p className="mt-2 text-[13px] leading-relaxed text-gray-300">{e.body}</p>
 
               {e.shares != null && e.price != null && (
