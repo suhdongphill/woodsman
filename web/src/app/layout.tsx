@@ -40,13 +40,15 @@ export const metadata: Metadata = {
       "파도가 아니라 바람과 조류를 봅니다. 금리·물가·유동성이 어느 쪽으로 부는지 먼저 읽고, 그 흐름에 맞춘 판단을 그대로 남깁니다.",
   },
   /**
-   * ⚠ 파비콘은 `src/app/icon.svg` **파일 규약**으로 나간다(App Router가 알아서 붙인다).
+   * ⚠ 파비콘은 `src/app/icon.svg`에 두되 **여기서 명시적으로 가리킨다.**
+   *    `metadata.icons`를 하나라도 지정하면 **파일 규약이 통째로 덮여** 자동 `<link rel="icon">`이
+   *    사라진다 — 2026-08-30에 실제로 그랬다(파일은 200으로 있는데 태그만 없었다).
    *    전에는 여기 `icons:`로 지정했는데 **`app/favicon.ico`가 그것을 이겨서** 옛 아이콘이
    *    계속 나갔다 — 코드는 새 아이콘을 가리키는데 브라우저 탭만 옛것이라 알아채기 어려웠다.
    *    그래서 `favicon.ico`를 지우고 규약 하나로 모았다.
    * ⚠ 모양을 바꾸면 `src/app/icon.svg`와 `public/woodsman-mark.svg`(애플 터치용)를 같이 고친다.
    */
-  icons: { apple: "/woodsman-mark.svg" },
+  icons: { icon: "/icon.svg", apple: "/woodsman-mark.svg" },
 };
 
 export default function RootLayout({
