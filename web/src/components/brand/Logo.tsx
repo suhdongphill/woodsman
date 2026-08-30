@@ -1,33 +1,22 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { MouseEvent } from "react";
 import { cx } from "@/lib/format";
+import { TreeMark, Wordmark } from "@/components/brand/Wordmark";
 
 /**
- * Woodsman 엠블럼.
- * 원본은 `logo-data-uri.txt`(428×428 JPEG)를 `public/woodsman-logo.jpg`로 추출한 것.
- * 배경이 짙은 초록/검정이라 컨테이너 배경도 같은 톤으로 맞춰 경계가 보이지 않게 한다.
+ * 엠블럼(나무만).
+ *
+ * ⚠ 2026-08-30: **JPEG를 걷어냈다.** 배경색이 박힌 비트맵이라 크림 배경에서 검은 사각형처럼
+ *    떴고, 24px로 줄이면 뭉개졌으며, 다크/라이트에 따라 색을 바꿀 수 없었다.
+ *    지금은 `TreeMark`(SVG)가 부모의 `color`를 따라간다.
  */
 export function LogoMark({ size = 34, className }: { size?: number; className?: string }) {
   return (
-    <span
-      className={cx(
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gold-600/30 bg-[#0b0f0c]",
-        className,
-      )}
-      style={{ width: size, height: size }}
-    >
-      <Image
-        src="/woodsman-logo.jpg"
-        alt=""
-        width={size}
-        height={size}
-        priority
-        className="h-full w-full object-cover"
-      />
+    <span className={cx("inline-flex shrink-0 items-center text-series-1", className)}>
+      <TreeMark size={size} />
     </span>
   );
 }
@@ -61,19 +50,9 @@ export function Logo({
     <Link
       href={href}
       onDoubleClick={handleDoubleClick}
-      className={cx("flex select-none items-center gap-2.5 group", className)}
+      className={cx("group flex select-none items-center", className)}
     >
-      <LogoMark size={compact ? 30 : 36} />
-      <span className="flex flex-col leading-none">
-        <span className="text-[17px] font-bold tracking-tight text-ink group-hover:text-gold-400 transition-colors">
-          Woodsman
-        </span>
-        {!compact && (
-          <span className="mt-1 text-[9px] text-muted tracking-[0.16em]">
-            DISCIPLINE · PATIENCE · COMPOUNDING
-          </span>
-        )}
-      </span>
+      <Wordmark compact={compact} />
     </Link>
   );
 }

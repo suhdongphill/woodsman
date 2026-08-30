@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     description:
       "매달 얼마를 넣었고 지금 얼마가 되었는지, 그 사이의 판단까지 그대로 공개합니다.",
   },
-  icons: { icon: "/woodsman-logo.jpg", apple: "/woodsman-logo.jpg" },
+  icons: { icon: "/woodsman-mark.svg", apple: "/woodsman-mark.svg" },
 };
 
 export default function RootLayout({
