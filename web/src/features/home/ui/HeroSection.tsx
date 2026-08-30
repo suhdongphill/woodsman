@@ -1,5 +1,6 @@
 import { LinkButton } from "@/components/ui/Button";
-import { ArrowRightIcon } from "@/components/icons";
+import { ArrowRightIcon, ExternalIcon } from "@/components/icons";
+import { outboundHref } from "@/lib/outbound";
 import type { PerformanceSummary } from "@/lib/performance";
 import type { Rebalance } from "@/lib/types";
 
@@ -16,17 +17,26 @@ import type { Rebalance } from "@/lib/types";
  *    **기록이 얼마나 두꺼운가**이고, 처음 온 사람에게 이 사이트가 무엇인지 말해 준다.
  *    셋 다 0이어도 그대로 둔다 — 0은 "아직 없다"는 사실이고, 사실은 감추지 않는다.
  *
- * ⚠ Step 3에서 여기에 **거시 한 줄 요약**과 「블로그에서 이어 읽기」가 붙는다.
+ * ## ⚠ 2026-08-30(Step 3): 첫 줄이 **오늘의 바람**이 됐다
+ * "일기예보를 보고 우산을 챙기듯" 읽는 자리라면, 들어오자마자 **오늘의 하늘**이 보여야 한다.
+ * 그 한 줄은 `lib/home-lede.ts`가 만들고, ⚠ **만들 수 없으면 null이다** — 없는 상태를
+ * 그럴듯한 문장으로 덮지 않는다.
+ *
+ * ⚠ 「블로그에서 이어 읽기」는 **반드시 `/go/…` 경유**다. 주소를 직접 걸면 나가는 클릭이
+ *    안 세지고, 그러면 이 사이트의 1순위 지표가 빈다(2026-08-25 결정).
  */
 export function HeroSection({
   heroTitle,
   heroSubtitle,
+  lede,
   perf,
   rebalances,
   journalCount,
 }: {
   heroTitle: string;
   heroSubtitle: string;
+  /** 오늘의 바람 한 줄. ⚠ 값이 없으면 null이고, 그때는 줄 자체를 그리지 않는다 */
+  lede: string | null;
   perf: PerformanceSummary | null;
   rebalances: Rebalance[];
   journalCount: number;
@@ -49,14 +59,24 @@ export function HeroSection({
           <h1 className="mt-5 text-3xl sm:text-4xl lg:text-[42px] font-bold text-white leading-[1.25] tracking-tight">
             {heroTitle}
           </h1>
+
+          {/* 오늘의 바람 — 값이 없으면 이 줄은 아예 없다(지어내지 않는다). */}
+          {lede && (
+            <p className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card/70 px-3.5 py-2 text-[12.5px] text-gray-300 backdrop-blur">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
+              {lede}
+            </p>
+          )}
           <p className="mt-4 text-[15px] text-muted leading-relaxed max-w-xl">{heroSubtitle}</p>
           <div className="mt-7 flex flex-wrap gap-3">
             <LinkButton href="/macro" variant="gold" size="lg">
               지금 시장 읽기
               <ArrowRightIcon size={16} />
             </LinkButton>
-            <LinkButton href="/insights" variant="outline" size="lg">
-              인사이트 보기
+            {/* ⚠ 1순위 목적이 블로그 유입이다. 그 버튼이 첫 화면에 있어야 한다. */}
+            <LinkButton href={outboundHref("tistory")} variant="outline" size="lg">
+              블로그에서 이어 읽기
+              <ExternalIcon size={14} />
             </LinkButton>
           </div>
           <dl className="mt-9 grid grid-cols-3 gap-4 max-w-md">

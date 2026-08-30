@@ -8,6 +8,7 @@ import { PrinciplesGrid } from "@/features/home/ui/PrinciplesGrid";
 import { LatestInsights } from "@/features/home/ui/LatestInsights";
 import { JournalAndReports } from "@/features/home/ui/JournalAndReports";
 import { hasBlock, visibleHomeBlocks } from "@/lib/home-layout";
+import { macroLede } from "@/lib/home-lede";
 import { summarizePerformance } from "@/lib/performance";
 import { getSiteBasics } from "@/lib/site-settings";
 import { loadPublishedJournal, loadSnapshots } from "@/features/journal/repository";
@@ -52,7 +53,7 @@ export default async function HomePage() {
     getSiteBasics(),
     loadRebalances(),
     loadMacroOverview(),
-    loadPublishedPosts(3),
+    loadPublishedPosts(6),
     loadSectionPosts("HOME", 4),
     loadPublishedSummaries(4),
     loadBuckets(),
@@ -67,6 +68,7 @@ export default async function HomePage() {
         <HeroSection
           heroTitle={basics.heroTitle}
           heroSubtitle={basics.heroSubtitle}
+          lede={macroLede({ empty: macro.empty, summary: macro.summary, asOf: macro.asOf })}
           perf={perf}
           rebalances={rebalances}
           journalCount={allJournal.length}

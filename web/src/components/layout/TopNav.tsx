@@ -19,12 +19,19 @@ import type { Role } from "@/lib/access";
  * 판단은 `src/lib/site-policy.ts`가 한다.
  */
 
+/**
+ * ⚠ 2026-08-30: **순서를 뒤집었다.** 경제 흐름(거시·인사이트)이 앞, 계좌·종목이 뒤다.
+ *
+ * 파도가 아니라 바람과 조류를 본다는 관점에서, 방문자가 먼저 만나야 하는 것은
+ * "지금 어떤 바람이 부는가"이고 포트폴리오·종목분석은 **그에 대한 답**이다.
+ * ⚠ 순서는 곧 우선순위다 — 여기서 앞에 둔 것이 사이트가 무엇을 하는 곳인지 말한다.
+ */
 const BASE_NAV = [
   { href: "/", label: "홈" },
-  { href: "/insights", label: "인사이트" },
-  { href: "/portfolio", label: "포트폴리오" },
-  { href: "/journal", label: "투자일지" },
   { href: "/macro", label: "거시 지표" },
+  { href: "/insights", label: "인사이트" },
+  { href: "/journal", label: "투자일지" },
+  { href: "/portfolio", label: "포트폴리오" },
   { href: "/stocks", label: "종목분석" },
 ];
 

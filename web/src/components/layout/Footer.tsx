@@ -4,11 +4,12 @@ import { ExternalIcon } from "@/components/icons";
 import { outboundHref } from "@/lib/outbound";
 import { getSiteBasics } from "@/lib/site-settings";
 
+/** ⚠ 상단 메뉴와 **같은 순서**를 쓴다(2026-08-30). 두 곳이 다르면 우선순위가 흔들린다. */
 const CONTENT_LINKS = [
-  { href: "/portfolio", label: "대표 포트폴리오" },
-  { href: "/journal", label: "투자일지" },
-  { href: "/insights", label: "인사이트" },
   { href: "/macro", label: "거시 지표" },
+  { href: "/insights", label: "인사이트" },
+  { href: "/journal", label: "투자일지" },
+  { href: "/portfolio", label: "대표 포트폴리오" },
   { href: "/stocks", label: "종목분석" },
 ];
 
