@@ -82,12 +82,21 @@ describe("보안 정책", () => {
     expect(visible).not.toMatch(/admin1234|기본\s*비밀번호|default password/i);
   });
 
-  it("소스 어디에도 실제 API 키 리터럴이 없다", () => {
-    const files = walk(SRC).filter((f) => /\.(ts|tsx|css)$/.test(f));
-    for (const f of files) {
-      const body = readFileSync(f, "utf8");
-      expect(body, f).not.toMatch(/sk-ant-api\d/);
-      expect(body, f).not.toMatch(/["']gsk_[A-Za-z0-9]{10,}["']/);
-    }
-  });
+  /**
+   * ⚠ 소스 **전체**를 읽는 검사라 코드가 늘수록 느려진다. 2026-08-30에 기본 5초를 넘겨
+   *    실패했는데, **규칙이 깨진 게 아니라 한도가 낡은 것**이었다.
+   *    한도를 넉넉히 주되 검사 자체는 줄이지 않는다 — 키가 새는 것보다 20초가 싸다.
+   */
+  it(
+    "소스 어디에도 실제 API 키 리터럴이 없다",
+    () => {
+      const files = walk(SRC).filter((f) => /\.(ts|tsx|css)$/.test(f));
+      for (const f of files) {
+        const body = readFileSync(f, "utf8");
+        expect(body, f).not.toMatch(/sk-ant-api\d/);
+        expect(body, f).not.toMatch(/["']gsk_[A-Za-z0-9]{10,}["']/);
+      }
+    },
+    20_000,
+  );
 });

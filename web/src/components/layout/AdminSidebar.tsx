@@ -36,6 +36,8 @@ const MENU = [
   { href: "/admin/comments", label: "댓글 · 정책", icon: MessageIcon },
   { href: "/admin/ai", label: "AI 제공자", icon: BotIcon },
   { href: "/admin/feeds", label: "RSS 피드", icon: RssIcon },
+  // ⚠ 등록과 노출이 다른 스위치다. 값만 넣어 두고 나중에 켤 수 있다.
+  { href: "/admin/ads", label: "광고", icon: BriefcaseIcon },
   { href: "/admin/home", label: "홈 편집", icon: HomeIcon },
   { href: "/admin/settings", label: "사이트 기본값", icon: GearIcon },
   { href: "/admin/users", label: "사용자", icon: UsersIcon },

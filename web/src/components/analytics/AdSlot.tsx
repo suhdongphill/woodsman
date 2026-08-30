@@ -1,4 +1,5 @@
 import { AD_MIN_HEIGHT, adSlotId, adsenseClientId, type AdPlacement } from "@/lib/ads";
+import { getAdsSettings } from "@/lib/site-settings";
 import { AdUnit } from "./AdUnit";
 
 /**
@@ -10,9 +11,17 @@ import { AdUnit } from "./AdUnit";
  *
  * 배치 의도와 정책은 `src/lib/ads.ts` 주석 참고.
  */
-export function AdSlot({ placement, className }: { placement: AdPlacement; className?: string }) {
-  const client = adsenseClientId();
-  const slot = adSlotId(placement);
+export async function AdSlot({
+  placement,
+  className,
+}: {
+  placement: AdPlacement;
+  className?: string;
+}) {
+  const settings = await getAdsSettings();
+  const client = adsenseClientId(settings);
+  // ⚠ 스위치·퍼블리셔 ID·슬롯 ID가 **셋 다** 있어야 그린다. 하나라도 없으면 자리도 안 만든다.
+  const slot = adSlotId(placement, settings);
   if (!client || !slot) return null;
 
   return (

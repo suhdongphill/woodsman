@@ -339,6 +339,18 @@ model SiteConfig {
   featuredTitle   String?
   featuredExcerpt String?
 
+  /// ── 광고(AdSense) ──────────────────────────────────────────────────────
+  /// ⚠ 퍼블리셔·슬롯 ID는 **비밀이 아니다**(HTML에 그대로 실린다). 그래서 DB에 둔다.
+  ///    AI 키와 다르다 — 그쪽은 절대 DB에 넣지 않는다(src/lib/env.ts 규칙).
+  /// ⚠ 값이 있어도 `adsEnabled`가 꺼져 있으면 **광고를 그리지 않는다.**
+  ///    등록과 노출을 분리한 이유: 심사·정착 전에 값만 넣어 두고 싶을 때가 있고,
+  ///    문제가 생기면 재배포 없이 즉시 내려야 한다.
+  adsEnabled              Boolean @default(false)
+  adsenseClientId         String?
+  adsenseSlotArticleEnd   String?
+  adsenseSlotFeedEnd      String?
+  adsenseSlotContentBottom String?
+
   updatedAt DateTime @updatedAt
 }
 

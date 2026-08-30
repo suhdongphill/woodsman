@@ -8,7 +8,8 @@
  *    "커뮤니티 닫힘"과 똑같아서 배포가 멀쩡해 보였다. 실패는 로그로 남아야 구분된다.
  */
 import { cache } from "react";
-import { queryOne } from "./d1";
+import { execute, queryOne } from "./d1";
+import { EMPTY_ADS_SETTINGS, type AdsSettings } from "./ads";
 import {
   CLOSED_SITE_FLAGS,
   resolveSiteFlags,
@@ -70,3 +71,71 @@ export const getSiteBasics = cache(async (): Promise<SiteBasics> => {
     return DEFAULT_SITE_BASICS;
   }
 });
+
+/**
+ * 광고(AdSense) 설정.
+ *
+ * ⚠ **읽지 못하면 광고를 끈다.** 설정을 못 읽었다는 이유로 광고가 나가면,
+ *    내리고 싶을 때 못 내리는 상태가 된다 — 안전한 쪽은 "안 나가는 쪽"이다.
+ * ⚠ 값은 공개값이라 DB에 둔다. AI 키와 혼동하지 말 것(그쪽은 절대 DB에 넣지 않는다).
+ */
+export const getAdsSettings = cache(async (): Promise<AdsSettings> => {
+  try {
+    const row = await queryOne<{
+      adsEnabled: number | null;
+      adsenseClientId: string | null;
+      adsenseSlotArticleEnd: string | null;
+      adsenseSlotFeedEnd: string | null;
+      adsenseSlotContentBottom: string | null;
+    }>(
+      `SELECT adsEnabled, adsenseClientId, adsenseSlotArticleEnd, adsenseSlotFeedEnd,
+              adsenseSlotContentBottom
+         FROM SiteConfig WHERE id = ?`,
+      ["singleton"],
+    );
+    if (!row) return EMPTY_ADS_SETTINGS;
+    return {
+      enabled: row.adsEnabled === 1,
+      clientId: row.adsenseClientId,
+      slots: {
+        "article-end": row.adsenseSlotArticleEnd,
+        "feed-end": row.adsenseSlotFeedEnd,
+        "content-bottom": row.adsenseSlotContentBottom,
+      },
+    };
+  } catch (error) {
+    console.error("[site-settings] 광고 설정 조회 실패 — 광고를 끕니다.", error);
+    return EMPTY_ADS_SETTINGS;
+  }
+});
+
+/** 관리자 화면 저장용. ⚠ 형식 검증은 액션이 하고, 여기서는 쓰기만 한다. */
+export async function saveAdsSettings(input: {
+  enabled: boolean;
+  clientId: string | null;
+  articleEnd: string | null;
+  feedEnd: string | null;
+  contentBottom: string | null;
+}): Promise<void> {
+  await execute(
+    `INSERT INTO SiteConfig (id, adsEnabled, adsenseClientId, adsenseSlotArticleEnd,
+                             adsenseSlotFeedEnd, adsenseSlotContentBottom, updatedAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       adsEnabled = excluded.adsEnabled,
+       adsenseClientId = excluded.adsenseClientId,
+       adsenseSlotArticleEnd = excluded.adsenseSlotArticleEnd,
+       adsenseSlotFeedEnd = excluded.adsenseSlotFeedEnd,
+       adsenseSlotContentBottom = excluded.adsenseSlotContentBottom,
+       updatedAt = excluded.updatedAt`,
+    [
+      "singleton",
+      input.enabled ? 1 : 0,
+      input.clientId,
+      input.articleEnd,
+      input.feedEnd,
+      input.contentBottom,
+      new Date().toISOString(),
+    ],
+  );
+}
