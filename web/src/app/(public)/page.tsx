@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from "react";
 import Link from "next/link";
 import { AdSlot } from "@/components/analytics/AdSlot";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { SectionFrame } from "@/features/posts/ui/SectionFrame";
 import { HeroSection } from "@/features/home/ui/HeroSection";
 import { AccountStrip } from "@/features/home/ui/AccountStrip";
@@ -20,6 +21,8 @@ import { loadBuckets } from "@/features/portfolio/buckets-repo";
 import { loadMacroOverview } from "@/features/macro/service";
 import { loadPublishedSummaries } from "@/features/reports/repository";
 import { loadPublishedPosts, loadSectionPosts } from "@/features/posts/repository";
+import { websiteJsonLd } from "@/lib/seo";
+import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site-identity";
 
 /**
  * 홈 — **조립만 한다.**
@@ -110,6 +113,13 @@ export default async function HomePage() {
 
   return (
     <>
+      {/*
+        ⚠ 홈에 구조화 데이터가 **하나도 없었다**(2026-08-31, Step 5). 지표 묶음 화면은
+        `Dataset`으로 자기를 밝히는데, 정작 "이 사이트가 무엇인가"는 검색·AI가 HTML로
+        추측하고 있었다. 홈의 성격이 계좌에서 콘텐츠로 바뀐 마당에 가장 먼저 정정할 자리다.
+      */}
+      <JsonLd data={websiteJsonLd({ name: SITE_NAME, description: SITE_DESCRIPTION })} />
+
       {blocks.map((block) => (
         <Fragment key={block}>{rendered[block]}</Fragment>
       ))}

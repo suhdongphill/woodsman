@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { breadcrumbJsonLd, datasetJsonLd, faqJsonLd } from "./seo";
+import { breadcrumbJsonLd, datasetJsonLd, faqJsonLd, websiteJsonLd } from "./seo";
 
 describe("구조화 데이터", () => {
   it("빵부스러기는 순서를 1부터 매기고 절대 URL을 쓴다", () => {
@@ -47,5 +47,29 @@ describe("구조화 데이터", () => {
     const jsonLd = faqJsonLd([{ question: "금리가 뭔가요?", answer: "돈의 값입니다." }]);
     expect(jsonLd.mainEntity[0].name).toBe("금리가 뭔가요?");
     expect(jsonLd.mainEntity[0].acceptedAnswer.text).toBe("돈의 값입니다.");
+  });
+});
+
+describe("사이트 자체(WebSite)", () => {
+  const jsonLd = websiteJsonLd({ name: "Woodsman", description: "거시 지표로 읽는 흐름" });
+
+  it("발행 주체와 언어를 밝히고 절대 URL을 쓴다", () => {
+    expect(jsonLd["@type"]).toBe("WebSite");
+    expect(jsonLd.inLanguage).toBe("ko-KR");
+    expect(jsonLd.publisher.name).toBe("Woodsman");
+    expect(jsonLd.url).toMatch(/^https?:\/\//);
+    expect(jsonLd.publisher.url).toMatch(/^https?:\/\//);
+  });
+
+  it("⚠ 없는 기능을 적지 않는다 — 사이트 검색 화면이 없으므로 SearchAction을 넣지 않는다", () => {
+    // 화면에 없는 것을 구조화 데이터에만 넣으면 스팸으로 취급된다(seo.ts 맨 위 규칙).
+    expect("potentialAction" in jsonLd).toBe(false);
+  });
+
+  it("sameAs가 없으면 빈 배열을 만들지 않는다", () => {
+    expect("sameAs" in jsonLd.publisher).toBe(false);
+    expect(websiteJsonLd({ name: "a", description: "b", sameAs: [] }).publisher).not.toHaveProperty(
+      "sameAs",
+    );
   });
 });

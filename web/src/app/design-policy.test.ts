@@ -159,3 +159,28 @@ describe("설명글의 강조 표시", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+/**
+ * 검색·AI가 읽는 문장은 **한 곳에서만** 정한다(`lib/site-identity.ts`).
+ *
+ * ⚠ 이 사고는 두 번 났다 — 2026-08-25에 화면을 고치고 메타를 두었고, 2026-08-30에
+ *    홈이 흐름 이야기로 바뀌었는데 검색결과는 계좌 이야기였다. 화면은 눈에 보이니까
+ *    고쳐지고, 이 문장들은 안 보이니까 안 고쳐진다.
+ */
+describe("사이트 자기소개 문장 (Step 5)", () => {
+  const TAGLINE = "거시 지표로 읽는 경제 흐름과 투자 기록";
+
+  it("⚠ 한 곳에서만 정한다 — 메타·llms.txt·JSON-LD가 같은 상수를 읽는다", () => {
+    const owners: string[] = [];
+    for (const f of walk(SRC)) {
+      if (!/\.tsx?$/.test(f) || /\.test\.tsx?$/.test(f)) continue;
+      // 주석에 적힌 것은 설명이다. 실제로 쓰는 문자열 리터럴만 센다.
+      const body = readFileSync(f, "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/^\s*\/\/.*$/gm, "");
+      if (body.includes(TAGLINE)) owners.push(f);
+    }
+    expect(owners).toHaveLength(1);
+    expect(owners[0].endsWith("site-identity.ts"), owners[0]).toBe(true);
+  });
+});

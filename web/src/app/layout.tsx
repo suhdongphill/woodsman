@@ -3,6 +3,12 @@ import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import { Noto_Sans_KR } from "next/font/google";
 import { AdSense } from "@/components/analytics/AdSense";
 import { siteUrl } from "@/lib/site-url";
+import {
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_OG_DESCRIPTION,
+  SITE_TITLE,
+} from "@/lib/site-identity";
 import "./globals.css";
 
 const notoSansKr = Noto_Sans_KR({
@@ -22,22 +28,20 @@ export const metadata: Metadata = {
    * 구글이 보여 주는 건 화면이 아니라 이 문장이라, 그대로 두면 **금리·유동성을 찾는 사람에게
    * 안 걸린다.** 화면만 고치고 메타를 두는 사고는 2026-08-25에 이미 한 번 겪었다.
    *
-   * ⚠ 지표 개수 같은 **숫자를 여기 적지 않는다.** 정적 문자열이라 지표가 늘면 조용히 거짓이 된다
-   *    (수를 세어 말하는 자리는 `lib/llms-txt.ts`뿐이고, 거기서는 실제로 센다).
+   * ⚠ 2026-08-31(Step 5): 문장 자체는 **`lib/site-identity.ts` 한 곳**으로 옮겼다.
+   *    같은 문장이 여기와 `llms-txt.ts`와 홈 JSON-LD에 따로 박혀 있으면 하나만 고쳐진다.
    */
   title: {
-    default: "Woodsman — 거시 지표로 읽는 경제 흐름과 투자 기록",
-    template: "%s | Woodsman",
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "금리·물가·유동성·고용 같은 거시 지표를 기준일·출처와 함께 공개하고, 침체 신호를 종합해 지금 경제가 어느 쪽으로 부는지 읽습니다. 그 흐름에 맞춘 포트폴리오와 판단 근거까지 그대로 남깁니다. 종목 추천이 아닌 정보 제공 목적입니다.",
+  description: SITE_DESCRIPTION,
   openGraph: {
     type: "website",
-    siteName: "Woodsman",
+    siteName: SITE_NAME,
     locale: "ko_KR",
-    title: "Woodsman — 거시 지표로 읽는 경제 흐름과 투자 기록",
-    description:
-      "파도가 아니라 바람과 조류를 봅니다. 금리·물가·유동성이 어느 쪽으로 부는지 먼저 읽고, 그 흐름에 맞춘 판단을 그대로 남깁니다.",
+    title: SITE_TITLE,
+    description: SITE_OG_DESCRIPTION,
   },
   /**
    * ⚠ 파비콘은 `src/app/icon.svg`에 두되 **여기서 명시적으로 가리킨다.**

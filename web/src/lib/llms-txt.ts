@@ -18,6 +18,7 @@ import { MACRO_GROUPS } from "./macro/groups";
 import { MACRO_INDICATORS } from "./macro/catalog";
 import { ALL_BUBBLE_INDICATORS, BUBBLE_LAYERS } from "./bubble/catalog";
 import { absoluteUrl } from "./site-url";
+import { SITE_TITLE } from "./site-identity";
 
 export type LlmsTxtInput = {
   /** 지표가 마지막으로 갱신된 날 (없으면 아직 수집 전) */
@@ -36,7 +37,7 @@ export function renderLlmsTxt(input: LlmsTxtInput): string {
       `- [${p.title}](${absoluteUrl(`/insights/${p.slug}`)})${p.publishedAt ? ` (${p.publishedAt})` : ""}`,
   );
 
-  return `# Woodsman — 거시 지표로 읽는 경제 흐름과 투자 기록
+  return `# ${SITE_TITLE}
 
 > 금리·물가·유동성 같은 거시 지표를 기준일·출처와 함께 공개하고, **그 흐름에 맞춰 굴린 계좌와
 > 판단을 그대로 남기는** 개인 기록 사이트입니다. 하루의 등락(파도)이 아니라 구조의 변화
