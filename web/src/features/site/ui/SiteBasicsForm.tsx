@@ -63,7 +63,7 @@ export function SiteBasicsForm({ basics }: { basics: SiteBasics }) {
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-ink">기준 환율</h3>
+        <h3 className="mb-3 text-sm font-semibold text-ink">기준 환율 (예비값)</h3>
         <label className="block max-w-[220px]">
           <span className={label}>1달러 = ? 원</span>
           <input
@@ -76,8 +76,15 @@ export function SiteBasicsForm({ basics }: { basics: SiteBasics }) {
           />
         </label>
         <p className={hint}>
-          달러 종목과 원화 종목을 한 축에서 비교하려면 필요합니다. 실시간 시세가 아니라 운영자가
-          정하는 기준값이고, 포트폴리오 화면에 그렇게 밝혀 둡니다.
+          ⚠ 평소에는 <strong className="font-medium text-ink">이 값이 쓰이지 않습니다.</strong>{" "}
+          환율은 거시 지표 「원/달러 환율」로 <strong className="font-medium text-ink">자동
+          수집</strong>되며, 화면은 그 값을 <strong className="font-medium text-ink">기준일과
+          함께</strong> 보여 줍니다(2026-08-31 변경).
+        </p>
+        <p className={hint}>
+          여기 적은 값은 <strong className="font-medium text-ink">아직 한 번도 수집하지
+          못했을 때만</strong> 쓰이는 안전망입니다. 그때는 화면이 「설정값을 씁니다」라고
+          밝힙니다 — 조용히 이 값으로 떨어지지 않습니다.
         </p>
       </section>
 

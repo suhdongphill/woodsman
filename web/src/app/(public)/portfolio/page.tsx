@@ -24,6 +24,7 @@ import type { ModelHolding } from "@/lib/types";
 import { loadBuckets } from "@/features/portfolio/buckets-repo";
 import { loadReportLinkEntries } from "@/features/reports/repository";
 import { loadMacroOverview } from "@/features/macro/service";
+import { loadUsdKrwRate } from "@/features/macro/fx-service";
 import { macroLede } from "@/lib/home-lede";
 import { buildReportIndex, publicReportHref } from "@/lib/report/link";
 import {
@@ -72,13 +73,19 @@ export default async function PortfolioPage() {
     loadMacroOverview(),
   ]);
 
+  /**
+   * ⚠ 환율은 **수집값**을 쓴다(2026-08-31). `basics.usdKrwRate`는 수집 전·수집 실패 때의
+   *    설정값이고, 그때는 화면이 그렇다고 밝힌다(`lib/fx-rate.ts`).
+   */
+  const usdKrw = await loadUsdKrwRate(basics.usdKrwRate);
+
   // 목표 비중 대비 현재 비중 — 한 번에 완성되지 않는다는 사실을 그대로 보여준다.
   const allocationRows = summarizeAllocation(
     published.map((h) => ({
       functionType: h.functionType,
       targetWeight: h.targetWeight,
       // ⚠ 반드시 원화로 환산해서 넘긴다 — 통화를 섞으면 비중이 통째로 틀린다.
-      marketValue: holdingValueKrw(h, basics.usdKrwRate),
+      marketValue: holdingValueKrw(h, usdKrw.rate),
     })),
     buckets,
   );
@@ -184,7 +191,7 @@ export default async function PortfolioPage() {
             rows={allocationRows}
             buckets={buckets}
             fillPct={fillPct}
-            usdKrwRate={basics.usdKrwRate}
+            usdKrw={usdKrw}
           />
         )}
 

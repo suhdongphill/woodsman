@@ -22,6 +22,7 @@ import { deleteHoldingAction, deleteRebalanceAction } from "@/features/portfolio
 import { HoldingForm } from "@/features/portfolio/ui/HoldingForm";
 import { BucketManager } from "@/features/portfolio/ui/BucketManager";
 import { loadBuckets } from "@/features/portfolio/buckets-repo";
+import { loadUsdKrwRate } from "@/features/macro/fx-service";
 import { loadReportLinkEntries } from "@/features/reports/repository";
 import { adminReportLink, buildReportIndex } from "@/lib/report/link";
 import {
@@ -66,12 +67,15 @@ export default async function AdminModelPortfolioPage({
   const today = new Date().toISOString().slice(0, 10);
   const published = holdings.filter((h) => h.published);
 
+  // ⚠ 환율은 **수집값**이다(2026-08-31). 설정값은 수집 전·실패 때의 안전망일 뿐이다.
+  const usdKrw = await loadUsdKrwRate(basics.usdKrwRate);
+
   // ⚠ 비중은 반드시 원화로 환산한 뒤 계산한다 — 통화를 섞으면 통째로 틀린다.
   const rows = summarizeAllocation(
     published.map((h) => ({
       functionType: h.functionType,
       targetWeight: h.targetWeight,
-      marketValue: holdingValueKrw(h, basics.usdKrwRate),
+      marketValue: holdingValueKrw(h, usdKrw.rate),
     })),
     buckets,
   );
@@ -172,7 +176,7 @@ export default async function AdminModelPortfolioPage({
         <StatTile
           label="구성 완료"
           value={`${fillProgressPct(rows)}%`}
-          sub={`1달러 = ${formatNumber(basics.usdKrwRate)} 기준`}
+          sub={usdKrw.caption}
           tone="gold"
         />
       </div>

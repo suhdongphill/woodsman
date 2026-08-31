@@ -22,19 +22,34 @@ export const sector: MacroSector = {
       key: "usdkrw",
       name: "원/달러 환율",
       group: "fx",
-      source: "FRED",
-      sourceId: "DEXKOUS",
+      /**
+       * ⚠ 2026-08-31 **FRED → Yahoo로 출처를 바꿨다.**
+       *
+       * 연준 H.10(DEXKOUS)은 일별 값을 **월요일에 직전 금요일치까지** 한 번에 낸다.
+       * 그래서 8월 31일에 화면이 보여 주는 최신값이 **8월 21일**이었다 — 다른 FRED 계열이
+       * 8월 28일치를 가진 날에도 이 계열만 일주일 더 뒤처졌다.
+       *
+       * ⚠ 그냥 늦는 게 아니라 **신뢰의 문제다.** 이 값은 달러 종목을 원화로 환산해
+       * **대표 포트폴리오의 비중과 평가액**을 만든다. 열흘 전 환율로 계산한 오늘의 비중은
+       * 틀린 숫자이고, 이 사이트는 숫자로 신뢰를 사는 곳이다.
+       *
+       * ⚠ **키(`usdkrw`)는 그대로다** — 바꾸면 쌓아 둔 시계열이 통째로 끊긴다(dxy 때와 같다).
+       * ⚠ 과거 구간(FRED)과 최근 구간(Yahoo)은 **출처가 다르다.** DEXKOUS는 뉴욕 정오
+       *    매입률이고 `KRW=X`는 장중 스팟이라, 이음매에서 값이 미세하게 어긋날 수 있다.
+       * ⚠ `staleDays: 14` 예외를 **뺐다.** 그건 H.10의 주간 발표를 봐주려던 것이고,
+       *    이제 일별 발표라 기본 규칙(`d` = 7일)이 맞다. 예외를 남겨 두면 진짜로 끊겼을 때
+       *    일주일을 더 못 알아챈다.
+       */
+      source: "YAHOO",
+      sourceId: "KRW=X",
       transform: "level",
       layer: "L2",
       type: "level",
       freq: "d",
-      staleDays: 14,
-      staleWhy:
-        "연준 H.10 주간 릴리스(월요일, 직전 금요일까지). 일별 관측이지만 발표는 주 1회.",
       unit: "원",
       decimals: 1,
-      url: FRED("DEXKOUS"),
-      sourceLabel: "FRED · DEXKOUS",
+      url: "https://finance.yahoo.com/quote/KRW=X/",
+      sourceLabel: "Yahoo Finance · KRW=X",
       what: "1달러를 사는 데 필요한 원화입니다.",
       why: "한국에서 투자하면 환율이 수익률의 일부가 됩니다. 달러 자산은 환율이 오를 때 원화 환산 수익이 함께 늘어납니다.",
       read: "오르면 원화 약세입니다. 수입 물가가 오르고 외국인 자금이 빠져나가기 쉬운 환경이 됩니다.",

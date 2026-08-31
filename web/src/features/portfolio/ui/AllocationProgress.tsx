@@ -14,12 +14,13 @@
 import { Card, SectionHeader } from "@/components/ui/Card";
 import { bucketColor, bucketName, type PortfolioBucket } from "@/lib/bucket-target";
 import type { AllocationRow } from "@/lib/allocation";
+import type { UsdKrwRate } from "@/lib/fx-rate";
 
 export function AllocationProgress({
   rows,
   buckets,
   fillPct,
-  usdKrwRate,
+  usdKrw,
   className,
 }: {
   rows: AllocationRow[];
@@ -27,8 +28,12 @@ export function AllocationProgress({
   buckets: PortfolioBucket[];
   /** 구성 완료율 0~100 */
   fillPct: number;
-  /** 달러 종목 환산에 쓴 기준 환율 — 화면에 밝힌다 */
-  usdKrwRate: number;
+  /**
+   * 달러 종목 환산에 쓴 환율 — 화면에 밝힌다.
+   * ⚠ 숫자만 받지 않는다. **기준일과 출처가 붙어 온다**(2026-08-31) —
+   *    전에는 숫자만 받아서 「1달러 = 1,350원」이 언제 기준인지 아무도 몰랐다.
+   */
+  usdKrw: UsdKrwRate;
   className?: string;
 }) {
   const maxScale = Math.max(100, ...rows.map((r) => Math.max(r.targetPct, r.currentPct)));
@@ -97,8 +102,16 @@ export function AllocationProgress({
         <p className="mt-5 border-t border-border/70 pt-3.5 text-[11.5px] leading-relaxed text-gray-600">
           점선은 목표 비중, 채워진 막대는 현재 비중입니다. 목표에 맞추기 위해 한꺼번에 사고팔지
           않고, 매달 들어오는 자금으로 부족한 자리부터 채웁니다. 달러 종목은{" "}
-          <span className="text-gray-500">1달러 = {usdKrwRate.toLocaleString("ko-KR")}원</span>{" "}
-          기준으로 환산했습니다(실시간 시세가 아닌 기준 환율).
+          {/* ⚠ 문구는 `lib/fx-rate.ts`가 만든다 — 화면마다 조립하면 어딘가는 날짜를 빠뜨린다. */}
+          {/* ⚠ 낡았거나 설정값으로 떨어졌으면 눈에 띄게 — 조용히 지나가면 안 본다. */}
+          <span
+            className={
+              usdKrw.stale || usdKrw.origin === "SETTING" ? "text-gold-500" : "text-gray-500"
+            }
+          >
+            {usdKrw.caption}
+          </span>{" "}
+          기준으로 환산했습니다.
         </p>
       </Card>
     </section>
