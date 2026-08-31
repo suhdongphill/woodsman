@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { cx } from "@/lib/format";
+import { Emphasis } from "@/components/ui/Emphasis";
 import type { IndicatorView } from "@/features/macro/service";
 import type { SignalStatus } from "@/lib/macro/signal";
 
@@ -128,8 +129,14 @@ export function MacroStrip({ indicators }: { indicators: IndicatorView[] }) {
               {open.indicator.sourceLabel}
             </span>
           </p>
-          <p className="mt-2.5 text-[12.5px] leading-relaxed text-muted">{open.indicator.what}</p>
-          <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">{open.indicator.read}</p>
+          {/* ⚠ 카탈로그 설명글은 `**강조**`를 품고 있다. 그대로 그리면 화면에 별표가 보인다 —
+              2026-08-31에 실제로 그랬다(홈이 유일하게 `Emphasis`를 안 쓰고 있었다). */}
+          <p className="mt-2.5 text-[12.5px] leading-relaxed text-muted">
+            <Emphasis text={open.indicator.what} />
+          </p>
+          <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
+            <Emphasis text={open.indicator.read} />
+          </p>
           <Link
             href={`/macro/${open.indicator.group}`}
             className="mt-3 inline-block text-[12px] text-gold-500 hover:text-gold-400"

@@ -135,3 +135,27 @@ describe("홈과 포트폴리오의 자리 나눔 (Step 4)", () => {
     expect(note).not.toContain("침체");
   });
 });
+
+/**
+ * 카탈로그 설명글(`what`·`why`·`read`)은 `**강조**`를 품고 있다.
+ *
+ * ⚠ 2026-08-31 사고: 홈의 `MacroStrip`이 그것을 **그대로** 그려서, 지표 칩을 펼치면
+ *    화면에 별표가 보였다. 다른 화면은 전부 `components/ui/Emphasis`를 쓰고 있었는데
+ *    새로 만든 화면 하나만 빠져 있었다 — 사람이 잊는 자리라 테스트가 센다.
+ *    (기계가 읽는 자리는 `Emphasis`가 아니라 `stripEmphasis`다 — 별표가 검색결과로 새지 않게.)
+ */
+describe("설명글의 강조 표시", () => {
+  it("⚠ 화면이 what·why·read를 날것으로 그리지 않는다 — Emphasis를 거친다", () => {
+    const offenders: string[] = [];
+    for (const f of walk(SRC).filter((f) => f.endsWith(".tsx") && !f.endsWith(".test.tsx"))) {
+      // JSX 자식으로 그대로 꽂은 자리만 잡는다: {…indicator.read}
+      // ⚠ `text={indicator.what}`(올바른 용법)이 아니라 **JSX 자식**으로 꽂은 자리만 잡는다.
+      //    `=` 뒤는 속성값, `$` 뒤는 템플릿 문자열이다 — 둘 다 그리는 자리가 아니다.
+      const raw = /(?<![=$\w])[{]\s*[\w.]*(indicator|group)[.](what|why|read|intro)\s*[}]/;
+      if (raw.test(readFileSync(f, "utf8"))) {
+        offenders.push(f.replace(SRC, ""));
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});
