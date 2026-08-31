@@ -10,6 +10,7 @@ import { sectorStrength, type SectorStrength } from "@/lib/sector-strength";
 import { SectorLeaders } from "@/features/stocks/ui/SectorLeaders";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/stocks" },
   title: "종목분석",
   description: "정직성 규율을 통과해 발행한 종목분석 보고서 목록입니다.",
 };

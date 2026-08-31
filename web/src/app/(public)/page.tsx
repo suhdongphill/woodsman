@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { AdSlot } from "@/components/analytics/AdSlot";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -40,6 +41,15 @@ import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site-identity";
  *    ⚠ **판단과 문구를 여기에 다시 넣지 않는다.** 넣는 순간 화면을 띄워야만 확인되는 규칙이
  *    다시 생긴다(CLAUDE.md §1).
  */
+
+/**
+ * ⚠ canonical은 **여기(홈)에만** 둔다. `app/layout.tsx`에 두면 그 값이 상속돼
+ *    사이트의 **모든 페이지가 "/"를 정본이라고 말한다** — 나머지가 통째로 색인에서 빠진다.
+ *    제목·설명과 달리 canonical은 물려받으면 안 되는 값이다.
+ */
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 /** ⚠ 정적 생성 금지 — 기록을 올려도 홈이 안 바뀐다. */
 export const dynamic = "force-dynamic";

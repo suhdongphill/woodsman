@@ -39,10 +39,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
      * 검색엔진이 둘을 중복으로 보고 서로 순위를 깎는 일을 막는다.
      * (우리가 순위를 가져가는 게 아니라, 원문으로 트래픽이 모이는 게 목적이다.)
      */
-    alternates:
-      post.source === "TISTORY" && post.externalUrl
-        ? { canonical: post.externalUrl }
-        : undefined,
+    alternates: {
+      canonical:
+        post.source === "TISTORY" && post.externalUrl
+          ? post.externalUrl
+          : // ⚠ 자체 글은 **자기 자신이 정본**이다. 비워 두면 정본 선언이 없어서
+            //    검색엔진이 다른 주소(파라미터가 붙은 것 등)를 정본으로 고를 수 있다.
+            `/insights/${post.slug}`,
+    },
   };
 }
 

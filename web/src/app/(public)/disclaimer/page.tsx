@@ -5,6 +5,7 @@ import { getSiteBasics } from "@/lib/site-settings";
 import { dataModeNotice } from "@/lib/data-mode";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/disclaimer" },
   title: "투자 판단 책임 고지",
   description:
     "Woodsman의 모든 콘텐츠는 정보 제공 목적이며 투자 권유나 자문이 아닙니다. 투자 판단과 그 결과의 책임은 투자자 본인에게 있습니다.",

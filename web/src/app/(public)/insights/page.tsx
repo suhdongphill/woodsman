@@ -9,6 +9,7 @@ import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { loadPublishedPosts } from "@/features/posts/repository";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/insights" },
   title: "인사이트",
   description: "포트폴리오 전략, 종목 분석, 인컴 투자에 대한 기록.",
 };

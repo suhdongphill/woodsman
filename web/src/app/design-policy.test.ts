@@ -184,3 +184,30 @@ describe("사이트 자기소개 문장 (Step 5)", () => {
     expect(owners[0].endsWith("site-identity.ts"), owners[0]).toBe(true);
   });
 });
+
+/**
+ * 색인되는 공개 화면은 **정본 주소(canonical)를 스스로 밝힌다**.
+ *
+ * ⚠ 2026-08-31에 세어 보니 `/macro/*` 넷에만 붙어 있고 **홈을 포함해 열넷이 없었다.**
+ *    정본 선언이 없으면 검색엔진이 파라미터가 붙은 주소 같은 것을 정본으로 고를 수 있다.
+ * ⚠ 이건 화면을 띄워도 안 보이는 규칙이라 사람이 잊는다 — `beacon-path.test.ts`가
+ *    집계 경로를 지키는 것과 같은 방식으로, App Router 디렉터리를 직접 걸어서 센다.
+ * ⚠ `app/layout.tsx`에 몰아 두는 것으로는 **고칠 수 없다.** 상속되면 모든 페이지가
+ *    "/"를 정본이라고 말한다 — 그래서 화면마다 자기 주소를 적어야 한다.
+ */
+describe("공개 화면의 정본 주소", () => {
+  /** robots.txt가 색인을 막는 화면은 정본을 밝힐 이유가 없다. */
+  const NOT_INDEXED = ["login", "register"];
+
+  it("⚠ 색인되는 공개 page.tsx는 전부 canonical을 선언한다", () => {
+    const publicDir = join(SRC, "app", "(public)");
+    const missing: string[] = [];
+    for (const f of walk(publicDir)) {
+      if (!f.endsWith("page.tsx")) continue;
+      const rel = f.slice(publicDir.length);
+      if (NOT_INDEXED.some((seg) => rel.includes(seg))) continue;
+      if (!readFileSync(f, "utf8").includes("canonical")) missing.push(rel);
+    }
+    expect(missing).toEqual([]);
+  });
+});

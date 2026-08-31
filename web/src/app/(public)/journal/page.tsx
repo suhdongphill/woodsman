@@ -13,6 +13,7 @@ import { getSiteBasics } from "@/lib/site-settings";
 import { loadPublishedJournal, loadSnapshots } from "@/features/journal/repository";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/journal" },
   title: "투자일지",
   description:
     "매수·매도·리밸런싱을 언제 왜 했는지, 체결 수량과 단가까지 함께 남기는 기록입니다. 잘못된 판단도 지우지 않습니다.",

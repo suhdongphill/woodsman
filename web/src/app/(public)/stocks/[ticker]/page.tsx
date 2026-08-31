@@ -41,6 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${report.name} (${report.ticker}) 종목분석`,
     description: report.headline,
+    alternates: { canonical: `/stocks/${report.ticker}` },
   };
 }
 

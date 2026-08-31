@@ -35,6 +35,7 @@ import {
 } from "@/lib/bucket-target";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/portfolio" },
   title: "대표 포트폴리오",
   description:
     "지표가 말하는 흐름에 대해 실제로 계좌를 어떻게 굴렸는지 그대로 공개합니다. 납입원금 대비 평가액 추이, 기능별 배분, 종목별 편입 논리(thesis)와 목표 비중을 채워 가는 과정까지 기록합니다.",

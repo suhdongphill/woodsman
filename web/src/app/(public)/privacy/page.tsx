@@ -4,6 +4,7 @@ import { PolicyList, PolicyPage, PolicySection } from "@/components/layout/Polic
 import { getSiteBasics } from "@/lib/site-settings";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/privacy" },
   title: "개인정보 처리방침",
   description:
     "Woodsman은 현재 회원가입을 지원하지 않으며, 방문자의 개인정보를 직접 수집하지 않습니다.",

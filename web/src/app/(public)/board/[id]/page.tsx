@@ -24,7 +24,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const post = await findPost(id);
   if (!post) return { title: "글을 찾을 수 없습니다" };
-  return { title: post.title, description: post.excerpt };
+  return {
+    title: post.title,
+    description: post.excerpt,
+    alternates: { canonical: `/board/${post.id}` },
+  };
 }
 
 export default async function BoardDetailPage({ params }: Props) {

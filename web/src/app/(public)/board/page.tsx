@@ -9,6 +9,7 @@ import { MessageIcon, LockIcon } from "@/components/icons";
 import { loadPublishedPosts } from "@/features/posts/repository";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/board" },
   title: "커뮤니티",
   description: "인사이트·종목분석·공지 게시판. 댓글로 의견을 나눕니다.",
 };

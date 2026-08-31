@@ -32,6 +32,7 @@ const TEXT = {
 };
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/macro/calendar" },
   title: TEXT.title,
   description:
     "FOMC·금통위, CPI·고용 등 지표 발표, 주요 기업 실적 발표 일정을 모았습니다. 지나간 일정에는 무엇이 바뀌었는지 평가를 답니다.",
