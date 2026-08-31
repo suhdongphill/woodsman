@@ -5,11 +5,12 @@ import { Card, SectionHeader } from "@/components/ui/Card";
 import { Donut } from "@/components/ui/Donut";
 import { StatTile } from "@/components/ui/StatBar";
 import { HoldingCard } from "@/features/portfolio/ui/HoldingCard";
-import { CapitalFlowChart } from "@/features/portfolio/ui/CapitalFlowChart";
+import { CapitalFlowSection } from "@/features/portfolio/ui/CapitalFlowSection";
+import { MacroAnswerNote } from "@/features/portfolio/ui/MacroAnswerNote";
 import { JournalTimeline } from "@/features/portfolio/ui/JournalTimeline";
 import { AllocationProgress } from "@/features/portfolio/ui/AllocationProgress";
 import { ChevronRightIcon } from "@/components/icons";
-import { formatDate, formatNumber, formatPct, profitColor } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { summarizePerformance } from "@/lib/performance";
 import { fillProgressPct, holdingValueKrw, summarizeAllocation } from "@/lib/allocation";
 import { summarizeManualPrices } from "@/lib/manual-price";
@@ -22,6 +23,8 @@ import { SectionFrame } from "@/features/posts/ui/SectionFrame";
 import type { ModelHolding } from "@/lib/types";
 import { loadBuckets } from "@/features/portfolio/buckets-repo";
 import { loadReportLinkEntries } from "@/features/reports/repository";
+import { loadMacroOverview } from "@/features/macro/service";
+import { macroLede } from "@/lib/home-lede";
 import { buildReportIndex, publicReportHref } from "@/lib/report/link";
 import {
   cashTargetPct,
@@ -33,7 +36,7 @@ import {
 export const metadata: Metadata = {
   title: "대표 포트폴리오",
   description:
-    "납입원금 대비 평가액 추이, 성장·인컴·방어 기능별 배분, 종목별 편입 논리(thesis)를 그대로 공개합니다. 목표 비중을 단계적으로 채워 가는 과정을 기록합니다.",
+    "지표가 말하는 흐름에 대해 실제로 계좌를 어떻게 굴렸는지 그대로 공개합니다. 납입원금 대비 평가액 추이, 기능별 배분, 종목별 편입 논리(thesis)와 목표 비중을 채워 가는 과정까지 기록합니다.",
 };
 
 /** ⚠ 정적 생성 금지 — 기록을 올려도 화면이 안 바뀐다. */
@@ -47,8 +50,17 @@ function bucketNames(holdings: ModelHolding[], key: string): string {
 }
 
 export default async function PortfolioPage() {
-  const [snapshots, recentJournal, basics, published, rebalances, sectionPosts, buckets, reportEntries] =
-    await Promise.all([
+  const [
+    snapshots,
+    recentJournal,
+    basics,
+    published,
+    rebalances,
+    sectionPosts,
+    buckets,
+    reportEntries,
+    macro,
+  ] = await Promise.all([
     loadSnapshots(),
     loadPublishedJournal(3),
     getSiteBasics(),
@@ -57,6 +69,7 @@ export default async function PortfolioPage() {
     loadSectionPosts("PORTFOLIO", 5),
     loadBuckets(),
     loadReportLinkEntries(),
+    loadMacroOverview(),
   ]);
 
   // 목표 비중 대비 현재 비중 — 한 번에 완성되지 않는다는 사실을 그대로 보여준다.
@@ -99,71 +112,28 @@ export default async function PortfolioPage() {
 
   return (
     <>
+      {/* ⚠ 머리말은 **흐름에 대한 나의 답**이다(2026-08-31, 재편 Step 4). 계좌 자랑이 아니라,
+          위에서 읽은 바람에 대해 실제로 무엇을 했는지가 이 페이지의 자리다. */}
       <PageHeader
         eyebrow="MODEL PORTFOLIO"
         title="대표 포트폴리오"
-        description="매달 얼마를 넣었고 지금 얼마가 되었는지, 각 종목이 맡은 '기능'과 편입 논리까지 그대로 공개합니다."
+        description="지표가 말하는 흐름에 대한 저의 답입니다. 매달 얼마를 넣어 지금 얼마가 되었는지, 각 종목이 맡은 '기능'과 편입 논리까지 그대로 공개합니다."
       />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 space-y-12">
         <DataModeNotice mode={basics.dataMode} />
-        {/* ─── 자금 흐름: 넣은 돈과 불어난 돈 ─── */}
-        {perf && (
-          <section>
-            <SectionHeader
-              title="넣은 돈과 불어난 돈"
-              subtitle={`${perf.months}개월 기록 · ${formatDate(perf.asOf)} 기준`}
-            />
 
-            <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
-              <Card className="min-w-0">
-                <CapitalFlowChart
-                  snapshots={snapshots}
-                  rebalances={rebalances.map((r) => ({ date: r.date, memo: r.memo }))}
-                />
-              </Card>
+        {/* 무엇에 대한 답인가 — 값이 없으면 이 줄은 사라진다(지어내지 않는다) */}
+        <MacroAnswerNote
+          lede={macroLede({ empty: macro.empty, summary: macro.summary, asOf: macro.asOf })}
+        />
 
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <Card>
-                  <p className="text-[11px] text-muted">평가액</p>
-                  <p className="mt-1 text-2xl font-bold tabular-nums text-ink">
-                    {formatNumber(perf.value)}
-                  </p>
-                  <p className="mt-1 text-[11px] text-gray-500">
-                    납입원금 {formatNumber(perf.principal)}
-                  </p>
-                </Card>
-                <Card>
-                  <p className="text-[11px] text-muted">평가손익</p>
-                  <p
-                    className={`mt-1 text-2xl font-bold tabular-nums ${
-                      profitColor(perf.profit)
-                    }`}
-                  >
-                    {formatPct(perf.returnPct)}
-                  </p>
-                  <p className="mt-1 text-[11px] text-gray-500">
-                    {perf.profit >= 0 ? "+" : "−"}
-                    {formatNumber(Math.abs(perf.profit))} · 배당·이자 누적{" "}
-                    {formatNumber(perf.income)}
-                  </p>
-                </Card>
-                {perf.worst && (
-                  <Card className="sm:col-span-2 lg:col-span-1">
-                    <p className="text-[11px] text-muted">원금 아래로 내려갔던 구간</p>
-                    <p className="mt-1 text-base font-semibold tabular-nums text-red-400">
-                      {formatPct(perf.worst.pct)}
-                    </p>
-                    <p className="mt-1 text-[11px] leading-relaxed text-gray-500">
-                      {formatDate(perf.worst.date)} · 총 {perf.underwaterMonths}개월. 손실 구간도
-                      지우지 않고 남깁니다.
-                    </p>
-                  </Card>
-                )}
-              </div>
-            </div>
-          </section>
-        )}
+        {/* ─── 자금 흐름: 넣은 돈과 불어난 돈. ⚠ 스냅숏이 없어도 섹션을 빼지 않는다 ─── */}
+        <CapitalFlowSection
+          snapshots={snapshots}
+          rebalances={rebalances.map((r) => ({ date: r.date, memo: r.memo }))}
+          perf={perf}
+        />
 
         {/* 요약 */}
         <section className="grid lg:grid-cols-[auto_1fr] gap-8 items-center">

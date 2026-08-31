@@ -100,3 +100,38 @@ describe("보안 정책", () => {
     20_000,
   );
 });
+
+/**
+ * 홈과 `/portfolio`의 **자리 나눔** — 홈 콘텐츠 중심 재편(`docs/설계_홈_콘텐츠중심_재편.md`).
+ *
+ * ⚠ 이 규칙들은 화면을 띄우지 않으면 안 보인다. 그래서 **소스를 직접 훑어** 지킨다 —
+ *    `beacon-path.test.ts`가 라우트 목록을 지키는 것과 같은 방식이다(CLAUDE.md §2-1).
+ */
+describe("홈과 포트폴리오의 자리 나눔 (Step 4)", () => {
+  const routes = walk(join(SRC, "app")).filter((f) => f.endsWith("page.tsx"));
+  const uses = (needle: string) =>
+    routes.filter((f) => readFileSync(f, "utf8").includes(needle));
+
+  it("⚠ 자금흐름 차트는 한 화면에만 있다 — 홈에서 내려온 것이라 두 번 그리면 중복이다", () => {
+    // 컴포넌트를 감싼 섹션이 어느 라우트에 들어갔는지로 센다.
+    const owners = uses("CapitalFlowSection");
+    expect(owners.map((f) => f.replace(SRC, ""))).toHaveLength(1);
+    expect(owners[0]).toContain("portfolio");
+    // 라우트가 차트를 직접 조립하지 않는다(조립은 섹션이 한다 — CLAUDE.md §1).
+    expect(uses("<CapitalFlowChart")).toHaveLength(0);
+  });
+
+  /* ⚠ "스냅숏이 없어도 섹션이 남는가"는 소스가 아니라 **렌더 결과**로 지킨다 —
+     `features/portfolio/ui/CapitalFlowSection.test.tsx`. */
+
+  it("⚠ 「흐름에 대한 답」 한 줄은 판정을 다시 만들지 않는다 — macroLede 한 곳에서만 만든다", () => {
+    const note = readFileSync(
+      join(SRC, "features", "portfolio", "ui", "MacroAnswerNote.tsx"),
+      "utf8",
+    );
+    // 값이 없으면 줄을 지운다(지어내지 않는다).
+    expect(note).toContain("if (!lede) return null;");
+    // 등급 문구를 여기서 조립하면 홈과 다른 말을 하게 된다.
+    expect(note).not.toContain("침체");
+  });
+});
