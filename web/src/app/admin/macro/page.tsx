@@ -204,6 +204,11 @@ export default async function AdminMacroPage() {
                     <span className="tabular-nums text-gray-400">
                       {new Date(run.startedAt).toLocaleString("ko-KR")}
                     </span>
+                    {/* ⚠ 자동인지 수동인지 구분해 보여준다. 구분이 없으면 "스케줄이 도는 줄
+                        알았는데 사실 내가 누른 것뿐이었다"를 화면에서 알 수 없다. */}
+                    <Badge tone={run.trigger === "CRON" ? "info" : "neutral"}>
+                      {run.trigger === "CRON" ? "자동" : "수동"}
+                    </Badge>
                     <Badge tone={run.failCount === 0 ? "emerald" : "warn"}>
                       성공 {run.okCount} · 실패 {run.failCount}
                     </Badge>

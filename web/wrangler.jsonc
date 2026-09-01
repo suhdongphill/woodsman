@@ -13,7 +13,14 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "woodsman",
-  "main": ".open-next/worker.js",
+  /**
+   * ⚠ **커스텀 진입점이다.** `.open-next/worker.js`가 아니라 `worker.js`를 가리킨다 —
+   *    OpenNext가 만드는 파일에는 `fetch`만 있어서 Cron Trigger를 받을 수 없다.
+   *    `worker.js`가 그 핸들러를 감싸고 `scheduled`를 얹는다.
+   *    ⚠ 이 줄을 `.open-next/worker.js`로 되돌리면 **자동 수집이 조용히 멈춘다.**
+   *    `src/lib/cron.test.ts`가 이 값을 대조한다.
+   */
+  "main": "worker.js",
   "compatibility_date": "2025-09-23",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
 
@@ -24,6 +31,22 @@
 
   "observability": {
     "enabled": true
+  },
+
+  /**
+   * 자동 수집 — 2026-09-01 추가.
+   *
+   * ⚠ 그 전까지 **모든 지표 수집이 관리자 버튼 하나뿐**이었다. 사람이 안 누르면 모든 지표가
+   *    조용히 낡는다. 실제로 8월 31일에 환율이 열흘 뒤처진 값으로 화면에 떠 있었고,
+   *    봐주려고 달아 둔 `staleDays: 14`가 그 경고까지 덮고 있었다.
+   *
+   * `0 21 * * *` = 21:00 UTC = **06:00 KST**. 미국 장 마감 뒤라 전날 종가까지 들어온다.
+   * ⚠ 표현식은 `src/lib/cron.ts`의 `CRON_PLAN`과 **같아야 한다** — `cron.test.ts`가 대조한다.
+   * ⚠ 실행에는 시크릿 `CRON_SECRET`이 필요하다(`wrangler secret put CRON_SECRET`).
+   *    없으면 스케줄이 돌아도 아무것도 하지 않고 로그에 남긴다.
+   */
+  "triggers": {
+    "crons": ["0 21 * * *"]
   },
 
   /**

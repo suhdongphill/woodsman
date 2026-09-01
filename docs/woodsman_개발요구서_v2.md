@@ -222,6 +222,33 @@ Get-CimInstance Win32_Process -Filter "Name='node.exe'"   # 세고
 Stop-Process -Force -Id <pid>                              # 끈다
 ```
 
+### 자동 수집 — Cron Trigger (2026-09-01)
+
+⚠ 그 전까지 **모든 지표 수집이 관리자 버튼 하나뿐**이었다. 사람이 안 누르면 모든 지표가
+조용히 낡는다(8/31에 환율이 열흘 뒤처진 값으로 화면에 떠 있었다).
+
+- **매일 06:00 KST**(`0 21 * * *` UTC)에 거시 지표 + 종목 시세를 함께 받는다.
+- 진입점은 `web/worker.js`다. ⚠ **`main`이 `.open-next/worker.js`가 아니다** —
+  OpenNext가 만드는 파일에는 `fetch`만 있어 Cron을 받을 수 없어서, 그것을 감싸는 파일을
+  두고 `scheduled`를 얹었다. Durable Object 셋을 다시 export 해야 배포가 산다.
+- 수집 자체는 **관리자 버튼과 같은 함수**가 한다(`ingestMacro`·`ingestQuotes`).
+  자동 실행은 이력에 `trigger: "CRON"`으로 쌓이고 `/admin/macro`가 「자동/수동」으로 보여준다.
+- ⚠ 시크릿 `CRON_SECRET`(32자 이상)이 **필요하다**. 없으면 스케줄이 돌아도 아무것도 하지
+  않고 로그에만 남는다 — 설정 누락이 "누구나 통과"가 되면 안 되기 때문이다.
+
+```bash
+npx wrangler secret put CRON_SECRET   # 배포본에 넣는다(로컬에는 없어도 된다)
+```
+
+### ⚠ 무료 한도 — 요청당 subrequest 50개 (2026-09-01)
+
+지표가 59개가 되면서 `자료 가져오기`가 **51번째부터 통째로 실패**했다
+(`Too many subrequests by single Worker invocation`). 카탈로그 끝의 섹터 9개가 잘렸다.
+
+⚠ **우회 설계로 가지 않았다.** 수집을 쪼개 여러 번 호출하면 지표가 더 늘 때 또 걸린다.
+**Workers Paid 전환**(월 $5, 한도 50 → 1,000)이 답이다.
+지표를 더 붙일 때는 이 한도를 먼저 생각한다.
+
 ### 자동배포 — 두 달 만에 살렸다 (2026-08-29)
 
 2026-08-06 이후 **12회 연속 실패**하던 것을 고쳤다. ⚠ 원인이 **하나가 아니라 셋**이었고,

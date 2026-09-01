@@ -27,6 +27,13 @@ const serverEnvSchema = z.object({
   ADSENSE_CLIENT_ID: optionalSecret,
 
   /**
+   * 자동 수집(Cron Trigger)이 자기 자신임을 밝히는 값. 32자 이상.
+   * ⚠ 없으면 스케줄이 돌아도 `/api/cron`이 **거부**한다 — 설정 누락이 "누구나 통과"가 되면
+   *    바깥 서버를 대신 두드리는 문이 열린다(`src/lib/cron.ts`).
+   */
+  CRON_SECRET: optionalSecret,
+
+  /**
    * AI 제공자 키. 이름은 `src/lib/ai/catalog.ts`의 apiKeyEnv와 1:1로 맞춰야 한다
    * (여기에 없으면 `npm run ai:sync`가 Cloudflare로 올리지 못한다).
    */
