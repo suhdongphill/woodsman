@@ -334,3 +334,99 @@ def calendar_cmd(ctx: click.Context, days: int) -> None:
         return
     for row in rows:
         click.echo(f"{row['release_date']}  {row['indicator']:<12} {row['period']}  {row['note'] or ''}")
+
+
+@rates.command("daily")
+@click.option("--commit", is_flag=True, help="rates.json을 커밋한다(푸시하면 배포로 이어진다).")
+@click.option("--log-dir", default=None, help="실행 로그 폴더. 기본값 logs/.")
+@click.pass_context
+def daily_cmd(ctx: click.Context, commit: bool, log_dir: str | None) -> None:
+    """fetch → compute → export를 한 번에 (명세 §7 A안).
+
+    ⚠ **실패하면 이전 rates.json을 그대로 둔다.** 다만 그 파일의 meta.stale을 켜서
+       화면이 「이 자료는 언제 기준이고 갱신이 실패했다」고 말하게 한다 —
+       오래된 데이터를 최신인 것처럼 보여주지 않는다.
+    ⚠ 커밋은 **기본값이 아니다.** 스케줄러가 저 혼자 저장소를 밀지 않게 한다.
+    """
+    import json
+    import subprocess
+
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    logs = log_dir or os.path.join(root, "logs")
+    os.makedirs(logs, exist_ok=True)
+    log_path = os.path.join(logs, f"rates_{date.today():%Y%m%d}.log")
+
+    def log(line: str) -> None:
+        stamp = datetime.now().astimezone().isoformat(timespec="seconds")
+        click.echo(line)
+        with open(log_path, "a", encoding="utf-8") as fp:
+            fp.write(f"{stamp} {line}" + chr(10))
+
+    asof = date.today().isoformat()
+    out_path = default_export_path()
+
+    try:
+        with _conn(ctx) as conn:
+            catalog = load_catalog()
+            upsert_series(conn, (s.as_row() for s in catalog))
+
+            ecos = sources.ecos_key()
+            failed: list[str] = []
+            for definition in catalog:
+                known = last_obs_date(conn, definition.series_id)
+                start = (
+                    (datetime.strptime(known, "%Y-%m-%d").date() - timedelta(days=REWIND_DAYS)).isoformat()
+                    if known
+                    else DEFAULT_SINCE
+                )
+                try:
+                    if definition.source == "FRED":
+                        points = sources.fred_observations(definition.series_id, since=start)
+                    else:
+                        if not ecos:
+                            raise sources.SourceError("ECOS_API_KEY가 없습니다")
+                        points = sources.ecos_observations(
+                            definition.table or "", definition.item or "",
+                            definition.cycle or definition.frequency, ecos, start, asof,
+                        )
+                except sources.SourceError as exc:
+                    failed.append(f"{definition.series_id}({exc})")
+                    continue
+                upsert_observations(
+                    conn, definition.series_id, points,
+                    datetime.now().astimezone().isoformat(timespec="seconds"),
+                )
+
+            log(f"fetch 완료 · 실패 {len(failed)}건")
+            if failed:
+                log("  실패: " + ", ".join(failed))
+
+            metrics = compute_all(conn, asof)
+            save_metrics(conn, asof, metrics)
+            log(f"compute 완료 · 지표 {len(metrics)}개 · 값 없음 {sum(1 for m in metrics if m.value is None)}개")
+
+            payload = build_payload(conn, asof)
+
+        size = write_payload(payload, out_path)
+        log(f"export 완료 · {out_path} · {size / 1024:.0f}KB")
+
+    except Exception as exc:  # noqa: BLE001 — 스케줄러는 어떤 예외에도 상태를 남겨야 한다
+        log(f"⚠ 실패: {exc}")
+        # ⚠ 이전 파일을 지우지 않는다. 대신 낡았다고 표시한다.
+        if os.path.exists(out_path):
+            with open(out_path, "r", encoding="utf-8") as fp:
+                stale = json.load(fp)
+            stale["meta"]["stale"] = True
+            stale["meta"]["stale_since"] = asof
+            write_payload(stale, out_path)
+            log("이전 rates.json을 유지하고 meta.stale을 켰습니다 — 화면이 그 사실을 말합니다.")
+        raise SystemExit(1)
+
+    if commit:
+        rel = os.path.relpath(out_path, root)
+        subprocess.run(["git", "add", rel], cwd=root, check=True)
+        result = subprocess.run(
+            ["git", "commit", "-m", f"금리 자료 갱신 ({asof})"], cwd=root, capture_output=True, text=True
+        )
+        log(result.stdout.strip() or result.stderr.strip())
+        log("⚠ push는 하지 않았습니다 — 배포로 이어지는 단계는 사람이 누릅니다.")
