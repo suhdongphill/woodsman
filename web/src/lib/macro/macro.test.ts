@@ -132,6 +132,23 @@ describe("지표 카탈로그 무결성", () => {
     }
   });
 
+  /**
+   * ⚠ 2026-09-05. 연준 H.10(FRED의 `DEX*` 환율 계열)은 **일별 값을 주 1회(월요일)** 낸다.
+   *    관측은 일간이라 `freq: "d"`로 적게 되는데, 그러면 화면은 최대 일주일 뒤처진 값을
+   *    「최신」이라 부르고 신선도 판정도 같이 거짓말을 한다. 8월 31일 원/달러 사고
+   *    (열흘 전 1,350원)와 9월 5일 엔·위안(8월 28일 값)이 **같은 원인**이었다.
+   *    발표가 주 1회인 계열은 일간 지표로 쓰지 않는다 — Yahoo 일봉으로 받는다.
+   */
+  it("⚠ 일간 지표를 연준 H.10 주간 계열(FRED DEX*)로 받지 않는다", () => {
+    const weekly = MACRO_INDICATORS.filter(
+      (i) => i.freq === "d" && i.source === "FRED" && /^DEX/.test(i.sourceId ?? ""),
+    );
+    expect(
+      weekly.map((i) => i.key),
+      "H.10은 주 1회 발표라 일간 지표의 최신값이 최대 일주일 뒤처진다",
+    ).toEqual([]);
+  });
+
   it("수동 지표는 소스 ID가 없고, 출처 표기에 '수동'이 들어간다", () => {
     for (const i of manualIndicators()) {
       expect(i.sourceId).toBeUndefined();

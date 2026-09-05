@@ -5,7 +5,8 @@
  *    (볼트 인수인계 사양서 1-1: 흩어져 있으면 하나 추가에 여러 곳을 고치게 된다).
  *    새 섹터를 만들 때만 `registry.ts`에 한 줄 등록한다.
  */
-import { FRED_URL as FRED, type MacroSector } from "../types";
+// ⚠ 2026-09-05부터 이 섹터에 FRED 계열이 없다(넷 다 Yahoo 일봉). FRED_URL import를 함께 지웠다.
+import type { MacroSector } from "../types";
 
 export const sector: MacroSector = {
   group: {
@@ -86,19 +87,30 @@ export const sector: MacroSector = {
       key: "usdjpy",
       name: "엔/달러 환율",
       group: "fx",
-      source: "FRED",
-      sourceId: "DEXJPUS",
+      /**
+       * ⚠ 2026-09-05 **FRED → Yahoo로 출처를 바꿨다**(usdkrw가 8월 31일에 간 길과 같다).
+       *
+       * 연준 H.10(DEXJPUS)은 일별 값을 **월요일에 직전 금요일치까지** 몰아서 낸다.
+       * 9월 5일 현재 이 계열의 최신값은 **8월 28일**이었다 — 같은 날 Yahoo는 9월 4일치를
+       * 갖고 있었다. 일주일 뒤처진 값으로 「엔 캐리가 흔들리는가」를 읽을 수는 없다.
+       *
+       * ⚠ `staleDays: 14` 예외를 **뺐다.** 그건 H.10의 주간 발표를 봐주던 것이고, 이제
+       *    일별로 들어오니 기본 규칙(`d` = 7일)이 맞다. 예외를 남기면 진짜로 끊겼을 때
+       *    일주일을 더 못 알아챈다 — 8월 31일 환율 사고가 정확히 이 모양이었다.
+       * ⚠ **키(`usdjpy`)는 그대로다** — 바꾸면 쌓아 둔 시계열이 통째로 끊긴다.
+       * ⚠ 과거 구간(FRED)과 최근 구간(Yahoo)은 출처가 다르다. DEXJPUS는 뉴욕 정오 매입률,
+       *    `JPY=X`는 장중 스팟이라 이음매에서 값이 미세하게 어긋날 수 있다.
+       */
+      source: "YAHOO",
+      sourceId: "JPY=X",
       transform: "level",
       layer: "L2",
       type: "level",
       freq: "d",
-      staleDays: 14,
-      staleWhy:
-        "연준 H.10 주간 릴리스(월요일, 직전 금요일까지). 일별 관측이지만 발표는 주 1회.",
       unit: "엔",
       decimals: 1,
-      url: FRED("DEXJPUS"),
-      sourceLabel: "FRED · DEXJPUS",
+      url: "https://finance.yahoo.com/quote/JPY=X/",
+      sourceLabel: "Yahoo Finance · JPY=X",
       what: "1달러를 사는 데 필요한 엔화입니다.",
       why: "싼 엔화를 빌려 다른 자산에 투자하는 '엔 캐리'가 세계 유동성의 한 축이라, 급변하면 시장 전체가 흔들립니다.",
       read: "엔이 급하게 강해지면(숫자가 급락하면) 캐리 자금이 되돌아오며 위험자산이 함께 흔들리는 일이 있었습니다.",
@@ -108,19 +120,17 @@ export const sector: MacroSector = {
       key: "usdcny",
       name: "위안/달러 환율",
       group: "fx",
-      source: "FRED",
-      sourceId: "DEXCHUS",
+      /** ⚠ 2026-09-05 FRED(DEXCHUS) → Yahoo. 이유는 바로 위 `usdjpy`와 같다(H.10 주간 발표). */
+      source: "YAHOO",
+      sourceId: "CNY=X",
       transform: "level",
       layer: "L2",
       type: "level",
       freq: "d",
-      staleDays: 14,
-      staleWhy:
-        "연준 H.10 주간 릴리스(월요일, 직전 금요일까지). 일별 관측이지만 발표는 주 1회.",
       unit: "위안",
       decimals: 2,
-      url: FRED("DEXCHUS"),
-      sourceLabel: "FRED · DEXCHUS",
+      url: "https://finance.yahoo.com/quote/CNY=X/",
+      sourceLabel: "Yahoo Finance · CNY=X",
       what: "1달러를 사는 데 필요한 위안화입니다.",
       why: "중국 경기와 수출 경쟁력의 신호이고, 원화는 위안화를 따라 움직이는 경향이 있습니다.",
       read: "위안 약세가 이어지면 원화도 같이 눌리는 국면이 많습니다.",
