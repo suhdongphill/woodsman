@@ -37,12 +37,18 @@ export type MacroGroup = {
 };
 
 /**
- * FRED·Yahoo는 서버가 직접 가져온다. MANUAL은 공식 API가 없어 관리자가 손으로 넣는다.
- * DERIVED는 **받아 오지 않는다** — 다른 지표를 합성해 읽을 때 만든다(`lib/macro/derived.ts`).
+ * FRED·Yahoo·ECOS는 서버가 직접 가져온다. MANUAL은 **공식 무료 API가 없어** 관리자가 손으로
+ * 넣는다. DERIVED는 받아 오지 않는다 — 다른 지표를 합성해 읽을 때 만든다(`lib/macro/derived.ts`).
+ *
  * ⚠ 파생을 자동 수집 목록에 넣으면 수집기가 있지도 않은 시리즈를 부르러 간다.
  *   `autoIndicators()`가 빼는 이유다.
+ * ⚠ **MANUAL은 마지막 수단이다.** 손으로 넣기로 한 지표는 결국 안 들어간다 —
+ *   2026-09-05 확인 결과 수동 지표 일곱 개에 **값이 한 점도 없었다.** 새 지표를 MANUAL로
+ *   둘 때는 "왜 자동이 불가능한가"를 `sourceLabel`에 적는다(라이선스·유료 등).
+ * ⚠ `ECOS`는 한국은행 오픈API다. **인증키(`ECOS_API_KEY`)가 필요**하고, 키가 없으면
+ *   그 지표만 실패로 남는다(조용히 건너뛰지 않는다).
  */
-export type MacroSource = "FRED" | "YAHOO" | "MANUAL" | "DERIVED";
+export type MacroSource = "FRED" | "YAHOO" | "ECOS" | "MANUAL" | "DERIVED";
 
 export type { MacroLayer, MacroIndicatorType } from "./layers";
 export type { ReleaseFreq } from "./freshness";

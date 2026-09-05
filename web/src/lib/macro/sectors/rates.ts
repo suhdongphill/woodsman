@@ -41,7 +41,20 @@ export const sector: MacroSector = {
       key: "kr_policy_rate",
       name: "한국 기준금리",
       group: "rates",
-      source: "MANUAL",
+      /**
+       * ⚠ 2026-09-05 **수동 → 자동(한국은행 ECOS)으로 바꿨다.**
+       *
+       * 수동으로 둔 동안 이 지표에는 **값이 한 점도 들어오지 않았다.** 화면은 계속
+       * 「수집 전」이었고, 그래서 한미 금리차를 이 사이트에서는 한 번도 볼 수 없었다.
+       * 손으로 넣기로 한 지표는 결국 안 들어간다 — dxy(2026-08-22)와 같은 판단이다.
+       *
+       * `722Y001/0101000` = 통계표 「한국은행 기준금리 및 여수신금리」의 「한국은행 기준금리」.
+       * ⚠ 인증키(`ECOS_API_KEY`)가 필요하다. 없으면 이 지표만 실패로 남는다.
+       * ⚠ 금통위는 연 8회라 **발표가 없는 달에도 ECOS는 같은 값을 매월 낸다.** 그래서
+       *    월간(`m`)으로 받아도 기한초과가 뜨지 않는다.
+       */
+      source: "ECOS",
+      sourceId: "722Y001/0101000",
       transform: "level",
       layer: "L0",
       type: "level",
@@ -50,8 +63,8 @@ export const sector: MacroSector = {
         "금통위는 연 8회(약 6주 간격)라 발표가 없는 기간에도 값은 유효하다. 기한초과는 '값이 틀렸다'가 아니라 '회의 결과를 반영했는지 확인하라'는 뜻.",
       unit: "%",
       decimals: 2,
-      url: "https://www.bok.or.kr/portal/singl/baseRate/list.do?dataSeCd=01&menuNo=200643",
-      sourceLabel: "수동 입력 · 한국은행 금통위",
+      url: "https://ecos.bok.or.kr/#/Short/07f8f0",
+      sourceLabel: "한국은행 ECOS · 722Y001",
       what: "한국은행이 정하는 정책금리입니다. 국내 예금·대출 금리와 원화 유동성이 여기서 갈립니다.",
       why: "미국과의 금리 차이가 벌어지면 원화가 약해지기 쉽습니다. 한국에서 투자한다면 미국 금리만큼이나 중요한 숫자입니다.",
       read: "미국 기준금리와 나란히 놓고 차이(한미 금리차)를 봅니다. 차이가 클수록 환율에 압력이 됩니다.",

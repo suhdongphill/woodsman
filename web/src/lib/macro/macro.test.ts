@@ -22,7 +22,7 @@ import {
   type SeriesPoint,
 } from "./series";
 import { judgeSignal, summarizeRecession, type SignalStatus } from "./signal";
-import { dedupeByDate, parseFredCsv, parseYahooChart } from "./parse";
+import { dedupeByDate, parseEcosJson, parseFredCsv, parseYahooChart } from "./parse";
 
 describe("⚠ 단위 환산 — 유동성 묶음이 조용히 1000배 틀리는 자리", () => {
   /**
@@ -153,6 +153,25 @@ describe("지표 카탈로그 무결성", () => {
     for (const i of manualIndicators()) {
       expect(i.sourceId).toBeUndefined();
       expect(i.sourceLabel).toContain("수동");
+    }
+  });
+
+  /**
+   * ⚠ 2026-09-05. 수동으로 둔 지표 일곱 개에 **값이 한 점도 없었다** — 손으로 넣기로 한
+   *    것은 결국 안 들어간다. 그래서 수동은 "아직 안 붙였다"가 아니라 **"무료로는 못 받는다"**
+   *    일 때만 남긴다. 무엇이 막고 있는지를 `sourceLabel`이 말해야, 나중에 길이 열렸을 때
+   *    다시 볼 수 있다(ISM·컨퍼런스보드·NAHB는 유료 라이선스, 선행 PER은 유료 데이터다).
+   */
+  it("⚠ 수동으로 남긴 지표는 출처 기관을 밝힌다 — 왜 자동이 아닌지 추적할 수 있게", () => {
+    for (const i of manualIndicators()) {
+      expect(i.sourceLabel.replace("수동 입력", "").trim().length, `${i.key}`).toBeGreaterThan(2);
+      expect(i.url, `${i.key}`).toMatch(/^https:\/\//);
+    }
+  });
+
+  it("ECOS 지표는 `통계표/항목` 꼴의 소스 ID를 갖는다", () => {
+    for (const i of MACRO_INDICATORS.filter((x) => x.source === "ECOS")) {
+      expect(i.sourceId, `${i.key}`).toMatch(/^[A-Z0-9]+\/[A-Z0-9]+$/i);
     }
   });
 
@@ -366,6 +385,48 @@ describe("침체 시그널 판정", () => {
     const s = summarizeRecession(["unknown", "unknown"]);
     expect(s.level).toBe("unknown");
     expect(s.label).toBe("미수집");
+  });
+});
+
+describe("한국은행 ECOS 응답", () => {
+  const ok = {
+    StatisticSearch: {
+      row: [
+        { TIME: "202601", DATA_VALUE: "2.5" },
+        { TIME: "202602", DATA_VALUE: "2.25" },
+      ],
+    },
+  };
+
+  it("월간 응답을 그 달 1일로 읽는다", () => {
+    expect(parseEcosJson(ok)).toEqual([
+      { date: "2026-01-01", value: 2.5 },
+      { date: "2026-02-01", value: 2.25 },
+    ]);
+  });
+
+  /**
+   * ⚠ ECOS는 **인증키가 틀려도 HTTP 200**으로 답한다. 빈 배열로 넘기면
+   *    "받을 값이 없었다"와 구분이 안 되고, 수집 이력에는 아무 이유도 안 남는다.
+   */
+  it("⚠ 오류 응답(200)은 던진다 — 조용히 빈 목록이 되지 않는다", () => {
+    expect(() =>
+      parseEcosJson({ RESULT: { CODE: "INFO-100", MESSAGE: "인증키가 유효하지 않습니다" } }),
+    ).toThrow(/인증키/);
+  });
+
+  it("값이 비어 있는 행은 버린다 — 0으로 채우면 기준금리 0%가 된다", () => {
+    const out = parseEcosJson({
+      StatisticSearch: { row: [{ TIME: "202601", DATA_VALUE: "" }, { TIME: "202602", DATA_VALUE: "2.25" }] },
+    });
+    expect(out).toEqual([{ date: "2026-02-01", value: 2.25 }]);
+  });
+
+  it("일간·연간 표기도 읽는다", () => {
+    const out = parseEcosJson({
+      StatisticSearch: { row: [{ TIME: "20260105", DATA_VALUE: "1" }, { TIME: "2026", DATA_VALUE: "2" }] },
+    });
+    expect(out.map((p) => p.date)).toEqual(["2026-01-05", "2026-01-01"]);
   });
 });
 

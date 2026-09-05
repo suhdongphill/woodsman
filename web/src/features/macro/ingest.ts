@@ -14,8 +14,9 @@
  * - ⚠ 받은 값은 **원값 그대로** 넣는다. YoY 같은 변환은 읽을 때 한다.
  * - 처음 받을 때는 오래된 것까지, 이미 쌓여 있으면 최근 구간만 받는다(왕복을 줄인다).
  */
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { autoIndicators, findIndicator, type MacroIndicator } from "@/lib/macro/catalog";
-import { dedupeByDate, parseFredCsv, parseYahooChart } from "@/lib/macro/parse";
+import { dedupeByDate, parseEcosJson, parseFredCsv, parseYahooChart } from "@/lib/macro/parse";
 import type { SeriesPoint } from "@/lib/macro/series";
 import {
   finishIngest,
@@ -31,6 +32,9 @@ const HISTORY_START = "1990-01-01";
 const REFRESH_DAYS = 500;
 
 const FETCH_TIMEOUT_MS = 20_000;
+
+/** ECOS 한 번 요청으로 받는 최대 행 수. 월간 계열 30년치가 360행이라 넉넉하다. */
+const ECOS_MAX_ROWS = 1_000;
 
 function daysAgo(days: number): string {
   return new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
@@ -85,9 +89,75 @@ async function fetchYahoo(symbol: string, full: boolean, daily: boolean): Promis
   return points;
 }
 
+/** ECOS 주기 코드 — 발표 주기를 한국은행의 표기로 바꾼다. */
+const ECOS_CYCLE: Record<string, string> = { d: "D", m: "M", q: "Q" };
+
+/** 주기별 기간 표기. `M`이면 `202601`, `D`면 `20260105`. */
+function ecosPeriod(day: string, cycle: string): string {
+  const digits = day.replace(/-/g, "");
+  if (cycle === "D") return digits;
+  if (cycle === "Q" || cycle === "M") return digits.slice(0, 6);
+  return digits.slice(0, 4);
+}
+
+/**
+ * 한국은행 ECOS.
+ *
+ * ⚠ **인증키가 필요하다**(`ECOS_API_KEY`). 없으면 이 지표만 실패로 남긴다 —
+ *    키가 없는 것과 한국은행이 값을 안 준 것이 같아 보이면 안 된다.
+ * ⚠ 오류도 **HTTP 200**으로 오기 때문에 판정은 `parseEcosJson`이 한다.
+ * `sourceId`는 `통계표/항목` 꼴이다(예: `722Y001/0101000` = 한국은행 기준금리).
+ */
+async function fetchEcos(
+  sourceId: string,
+  freq: string,
+  apiKey: string,
+  from: string,
+): Promise<SeriesPoint[]> {
+  if (!apiKey) {
+    throw new Error("ECOS_API_KEY가 없습니다 — 한국은행 오픈API 키를 등록하세요");
+  }
+
+  const [stat, item] = sourceId.split("/");
+  if (!stat || !item) throw new Error(`ECOS 소스 ID 형식이 틀렸습니다: ${sourceId}`);
+
+  const cycle = ECOS_CYCLE[freq];
+  if (!cycle) throw new Error(`ECOS가 지원하지 않는 주기입니다: ${freq}`);
+
+  const start = ecosPeriod(from, cycle);
+  const end = ecosPeriod(new Date().toISOString().slice(0, 10), cycle);
+  const url = `https://ecos.bok.or.kr/api/StatisticSearch/${encodeURIComponent(apiKey)}/json/kr/1/${ECOS_MAX_ROWS}/${stat}/${cycle}/${start}/${end}/${item}`;
+
+  const res = await fetchWithTimeout(url);
+  if (!res.ok) throw new Error(`ECOS ${stat} 응답 ${res.status}`);
+
+  const points = parseEcosJson(await res.json());
+  if (points.length === 0) throw new Error(`ECOS ${stat} 응답에 값이 없습니다`);
+  return points;
+}
+
+/**
+ * 인증키를 읽는다 — 배포본은 Cloudflare 시크릿, 로컬은 `.env`.
+ * ⚠ 예외를 삼키지 않는다. "키가 비었다"와 "context를 못 읽었다"는 다른 상태다(CLAUDE.md 3장).
+ */
+async function readEcosKey(): Promise<string> {
+  const fromProcess = (process.env.ECOS_API_KEY ?? "").trim();
+  if (fromProcess) return fromProcess;
+
+  try {
+    const { env } = await getCloudflareContext({ async: true });
+    const value = (env as unknown as Record<string, unknown>).ECOS_API_KEY;
+    return typeof value === "string" ? value.trim() : "";
+  } catch (error) {
+    console.error("[macro] ECOS 키를 읽지 못했습니다", error);
+    return "";
+  }
+}
+
 async function fetchIndicator(
   indicator: MacroIndicator,
   hasHistory: boolean,
+  ecosKey: string,
 ): Promise<SeriesPoint[]> {
   if (!indicator.sourceId) throw new Error("소스 ID가 없습니다(수동 지표)");
 
@@ -96,6 +166,14 @@ async function fetchIndicator(
   }
   if (indicator.source === "YAHOO") {
     return fetchYahoo(indicator.sourceId, !hasHistory, indicator.freq === "d");
+  }
+  if (indicator.source === "ECOS") {
+    return fetchEcos(
+      indicator.sourceId,
+      indicator.freq,
+      ecosKey,
+      hasHistory ? daysAgo(REFRESH_DAYS) : HISTORY_START,
+    );
   }
   throw new Error(`알 수 없는 출처: ${indicator.source}`);
 }
@@ -155,6 +233,8 @@ export async function ingestMacro(
   const runId = await startIngest(trigger);
   /** 지표별로 이미 가진 마지막 기준일. 여기부터 새로 쓴다. */
   const maxDates = await loadMaxDates();
+  // 한 번만 읽는다 — 지표마다 읽으면 같은 값을 수십 번 꺼내게 된다.
+  const ecosKey = targets.some((t) => t.source === "ECOS") ? await readEcosKey() : "";
   const detail: IngestDetail[] = [];
   let addedPoints = 0;
 
@@ -174,7 +254,7 @@ export async function ingestMacro(
       wave.map(async (indicator) => {
         try {
           const known = maxDates.get(indicator.key);
-          const raw = await fetchIndicator(indicator, !!known);
+          const raw = await fetchIndicator(indicator, !!known, ecosKey);
           return { indicator, points: dedupeByDate(raw), known };
         } catch (error) {
           // ⚠ 실패를 삼키지 않는다. 로그와 이력 양쪽에 남긴다.

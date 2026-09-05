@@ -74,3 +74,46 @@ export function dedupeByDate(points: SeriesPoint[]): SeriesPoint[] {
     .map(([date, value]) => ({ date, value }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
+
+/** ECOS 응답에서 오류를 알리는 자리. ⚠ 인증키 오류가 여기로 온다(HTTP는 200이다). */
+type EcosResponse = {
+  RESULT?: { CODE?: string; MESSAGE?: string };
+  StatisticSearch?: { row?: { TIME?: string; DATA_VALUE?: string }[] };
+};
+
+/** `202601` · `20260105` · `2026` → `2026-01-01` 꼴로 맞춘다. 형식이 낯설면 버린다. */
+function ecosTimeToDate(time: string): string | null {
+  if (/^\d{4}$/.test(time)) return `${time}-01-01`;
+  if (/^\d{6}$/.test(time)) return `${time.slice(0, 4)}-${time.slice(4, 6)}-01`;
+  if (/^\d{8}$/.test(time)) return `${time.slice(0, 4)}-${time.slice(4, 6)}-${time.slice(6, 8)}`;
+  return null;
+}
+
+/**
+ * 한국은행 ECOS 응답.
+ *
+ * ⚠ **오류도 HTTP 200으로 온다.** 인증키가 틀려도 `{"RESULT":{"CODE":"INFO-100",...}}`가
+ *    200으로 돌아온다. 빈 배열로 넘기면 "받을 값이 없었다"와 구분이 안 되므로 **던진다** —
+ *    수집 이력(`MacroIngest.detail`)에 한국은행이 준 문장이 그대로 남아야 한다.
+ */
+export function parseEcosJson(json: unknown): SeriesPoint[] {
+  const data = (json ?? {}) as EcosResponse;
+
+  const message = data.RESULT?.MESSAGE;
+  if (message) throw new Error(`ECOS ${data.RESULT?.CODE ?? ""} ${message}`.trim());
+
+  const rows = data.StatisticSearch?.row ?? [];
+  const out: SeriesPoint[] = [];
+
+  for (const row of rows) {
+    const date = ecosTimeToDate(String(row.TIME ?? ""));
+    if (!date) continue;
+
+    const value = Number(row.DATA_VALUE);
+    // ⚠ 빈 값을 0으로 채우지 않는다. 기준금리 0%는 실제로 있을 법한 값이라 더 위험하다.
+    if (row.DATA_VALUE == null || row.DATA_VALUE === "" || !Number.isFinite(value)) continue;
+
+    out.push({ date, value });
+  }
+  return out;
+}

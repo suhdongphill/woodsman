@@ -34,6 +34,13 @@ const serverEnvSchema = z.object({
   CRON_SECRET: optionalSecret,
 
   /**
+   * 한국은행 ECOS 오픈API 인증키(무료 발급). 한국 기준금리를 자동으로 받는 데 쓴다.
+   * ⚠ 없으면 그 지표만 실패로 남는다 — 조용히 건너뛰지 않는다(`features/macro/ingest.ts`).
+   * 발급: https://ecos.bok.or.kr/api/#/AuthKeyApply
+   */
+  ECOS_API_KEY: optionalSecret,
+
+  /**
    * AI 제공자 키. 이름은 `src/lib/ai/catalog.ts`의 apiKeyEnv와 1:1로 맞춰야 한다
    * (여기에 없으면 `npm run ai:sync`가 Cloudflare로 올리지 못한다).
    */
