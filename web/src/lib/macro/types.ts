@@ -45,10 +45,12 @@ export type MacroGroup = {
  * ⚠ **MANUAL은 마지막 수단이다.** 손으로 넣기로 한 지표는 결국 안 들어간다 —
  *   2026-09-05 확인 결과 수동 지표 일곱 개에 **값이 한 점도 없었다.** 새 지표를 MANUAL로
  *   둘 때는 "왜 자동이 불가능한가"를 `sourceLabel`에 적는다(라이선스·유료 등).
+ * ⚠ `NAVER`는 컨센서스 기반 「추정PER」처럼 **공표 시계열이 없는 값**을 오늘 시점으로 재는
+ *   자리다. 과거를 소급할 수 없고 관측일부터 하루씩 쌓인다.
  * ⚠ `ECOS`는 한국은행 오픈API다. **인증키(`ECOS_API_KEY`)가 필요**하고, 키가 없으면
  *   그 지표만 실패로 남는다(조용히 건너뛰지 않는다).
  */
-export type MacroSource = "FRED" | "YAHOO" | "ECOS" | "MANUAL" | "DERIVED";
+export type MacroSource = "FRED" | "YAHOO" | "ECOS" | "NAVER" | "MANUAL" | "DERIVED";
 
 export type { MacroLayer, MacroIndicatorType } from "./layers";
 export type { ReleaseFreq } from "./freshness";

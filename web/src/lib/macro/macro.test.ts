@@ -22,7 +22,13 @@ import {
   type SeriesPoint,
 } from "./series";
 import { judgeSignal, summarizeRecession, type SignalStatus } from "./signal";
-import { dedupeByDate, parseEcosJson, parseFredCsv, parseYahooChart } from "./parse";
+import {
+  dedupeByDate,
+  parseEcosJson,
+  parseFredCsv,
+  parseNaverTotalInfo,
+  parseYahooChart,
+} from "./parse";
 
 describe("⚠ 단위 환산 — 유동성 묶음이 조용히 1000배 틀리는 자리", () => {
   /**
@@ -427,6 +433,33 @@ describe("한국은행 ECOS 응답", () => {
       StatisticSearch: { row: [{ TIME: "20260105", DATA_VALUE: "1" }, { TIME: "2026", DATA_VALUE: "2" }] },
     });
     expect(out.map((p) => p.date)).toEqual(["2026-01-05", "2026-01-01"]);
+  });
+});
+
+describe("네이버 금융 응답", () => {
+  const json = {
+    totalInfos: [
+      { code: "per", key: "PER", value: "7.34배" },
+      { code: "estimatePer", key: "추정PER", value: "4.71배" },
+      { code: "marketValue", key: "시총", value: "1,203조 1,209억" },
+    ],
+  };
+
+  it("고른 항목의 숫자만 뽑는다", () => {
+    expect(parseNaverTotalInfo(json, "추정PER", "2026-09-05")).toEqual([
+      { date: "2026-09-05", value: 4.71 },
+    ]);
+  });
+
+  /** ⚠ 항목 이름이 바뀌면 조용히 다른 숫자를 가져오지 않고 실패해야 한다. */
+  it("⚠ 없는 항목이면 던진다 — 엉뚱한 값을 대신 넣지 않는다", () => {
+    expect(() => parseNaverTotalInfo(json, "선행PER", "2026-09-05")).toThrow(/없습니다/);
+  });
+
+  /** ⚠ PER 0배는 「싸다」가 아니라 「모른다」다. */
+  it("⚠ 숫자로 읽히지 않거나 0 이하면 던진다", () => {
+    const bad = { totalInfos: [{ key: "추정PER", value: "N/A" }] };
+    expect(() => parseNaverTotalInfo(bad, "추정PER", "2026-09-05")).toThrow();
   });
 });
 

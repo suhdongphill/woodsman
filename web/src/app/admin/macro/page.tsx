@@ -16,6 +16,7 @@ import { CRON_PLAN, CRON_SECRET_LABEL, cronSecretState, nextDailyRun } from "@/l
 import { seoulTime, seoulDay } from "@/lib/kst";
 import { IngestPanel } from "@/features/macro/ui/IngestPanel";
 import { ManualPointForm } from "@/features/macro/ui/ManualPointForm";
+import { ExtractPanel } from "@/features/macro/ui/ExtractPanel";
 import { SignalPill } from "@/features/macro/ui/SignalPill";
 
 export const metadata: Metadata = { title: "거시 지표" };
@@ -127,7 +128,14 @@ export default async function AdminMacroPage() {
       </Card>
 
       <Card className="mb-6">
-        <CardTitle>수동 지표 입력 ({manualIndicators().length}개)</CardTitle>
+        {/* ⚠ 모델은 **읽기만** 한다 — 서버가 받아 온 본문 안에서만 값을 찾고, 인용문을 원문과
+          대조한 뒤, 저장은 사람이 누른다(features/macro/extract-actions.ts 머리말) */}
+      <Card className="mb-6">
+        <CardTitle>AI로 값 옮겨 적기 ({manualIndicators().length}개 대상)</CardTitle>
+        <ExtractPanel indicators={manualIndicators()} />
+      </Card>
+
+      <CardTitle>수동 지표 입력 ({manualIndicators().length}개)</CardTitle>
         <ManualPointForm indicators={manualIndicators()} today={today} />
       </Card>
 

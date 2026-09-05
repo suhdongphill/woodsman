@@ -16,7 +16,13 @@
  */
 import { resolveApiEnv } from "@/features/ai/credentials";
 import { autoIndicators, findIndicator, type MacroIndicator } from "@/lib/macro/catalog";
-import { dedupeByDate, parseEcosJson, parseFredCsv, parseYahooChart } from "@/lib/macro/parse";
+import {
+  dedupeByDate,
+  parseEcosJson,
+  parseFredCsv,
+  parseNaverTotalInfo,
+  parseYahooChart,
+} from "@/lib/macro/parse";
 import type { SeriesPoint } from "@/lib/macro/series";
 import {
   finishIngest,
@@ -146,6 +152,28 @@ async function readEcosKey(): Promise<string> {
   return (env.ECOS_API_KEY ?? "").trim();
 }
 
+/**
+ * 네이버 금융 — 컨센서스 기반 「추정PER」처럼 **공표 시계열이 없는 값**을 오늘 시점으로 잰다.
+ *
+ * ⚠ 발표 계열이 아니라 **매일 다시 재는 관측**이다. 그래서 기준일이 관측일(KST)이고,
+ *    과거를 소급해 받을 수 없다 — 오늘부터 하루씩 쌓인다.
+ * ⚠ 공개 웹 화면이 쓰는 것과 같은 응답이다. 키가 필요 없다.
+ * `sourceId`는 `종목코드/항목이름` 꼴이다(예: `000660/추정PER`).
+ */
+async function fetchNaver(sourceId: string): Promise<SeriesPoint[]> {
+  const [code, key] = sourceId.split("/");
+  if (!code || !key) throw new Error(`네이버 소스 ID 형식이 틀렸습니다: ${sourceId}`);
+
+  const res = await fetchWithTimeout(
+    `https://m.stock.naver.com/api/stock/${encodeURIComponent(code)}/integration`,
+  );
+  if (!res.ok) throw new Error(`네이버 ${code} 응답 ${res.status}`);
+
+  // 관측일은 **KST 기준 오늘**이다. UTC로 찍으면 밤에 받은 값이 어제로 들어간다.
+  const today = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10);
+  return parseNaverTotalInfo(await res.json(), key, today);
+}
+
 async function fetchIndicator(
   indicator: MacroIndicator,
   hasHistory: boolean,
@@ -158,6 +186,9 @@ async function fetchIndicator(
   }
   if (indicator.source === "YAHOO") {
     return fetchYahoo(indicator.sourceId, !hasHistory, indicator.freq === "d");
+  }
+  if (indicator.source === "NAVER") {
+    return fetchNaver(indicator.sourceId);
   }
   if (indicator.source === "ECOS") {
     return fetchEcos(
@@ -214,7 +245,14 @@ export type IngestResult = {
 export async function ingestMacro(
   options: { trigger?: string; keys?: string[]; concurrency?: number } = {},
 ): Promise<IngestResult> {
-  const { trigger = "MANUAL", concurrency = 4 } = options;
+  /**
+   * ⚠ 동시 요청 수. 2026-09-05에 4 → 6으로 올렸다.
+   *    무료 플랜의 subrequest 한도(요청당 50)가 풀리면서 60개 지표가 한 번에 나가게 됐고,
+   *    4개씩 15물결이면 한 번 수집에 30초 가까이 걸린다. 다만 **상대 서버가 기준**이라
+   *    무한정 올리지 않는다 — FRED·Yahoo는 같은 IP의 폭주에 429로 답한다.
+   *    DB 쓰기는 여전히 순차다(2026-08-06에 연결이 끊겼던 자리).
+   */
+  const { trigger = "MANUAL", concurrency = 6 } = options;
 
   const targets = options.keys?.length
     ? options.keys

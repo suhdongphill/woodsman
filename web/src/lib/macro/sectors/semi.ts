@@ -137,36 +137,62 @@ export const sector: MacroSector = {
     },
     {
       key: "hynix_fwd_per",
-      name: "SK하이닉스 12개월 선행 PER",
+      name: "SK하이닉스 추정 PER",
       group: "semi",
-      source: "MANUAL",
+      /**
+       * ⚠ 2026-09-05 **수동 → 자동(네이버 금융 「추정PER」)으로 바꿨다.**
+       *
+       * 수동으로 둔 동안 값이 **한 점도 들어오지 않았다.** 유료 컨센서스(FnGuide 등)가 필요하다고
+       * 보고 미뤄 뒀는데, 네이버 금융 화면이 쓰는 공개 응답에 컨센서스 기반 **추정PER**이 그대로
+       * 들어 있었다. Yahoo의 `quoteSummary`는 막혀 있지만(Invalid Crumb) 이쪽은 열려 있다.
+       *
+       * ⚠ **「12개월 선행」이 아니라 「추정(당해 컨센서스)」이다.** 이름과 출처 표기를 그에 맞게
+       *    고쳤다 — 화면이 실제보다 정교한 척하지 않게 한다.
+       * ⚠ 발표 계열이 아니라 **매일 다시 재는 관측**이라 과거 소급이 안 된다. 오늘부터 쌓인다.
+       *    그래서 `freq`도 월간이 아니라 일간이다.
+       */
+      source: "NAVER",
+      sourceId: "000660/추정PER",
       transform: "level",
       layer: "L4",
       type: "level",
-      freq: "m",
+      freq: "d",
       unit: "배",
       decimals: 1,
       url: "https://finance.naver.com/item/main.naver?code=000660",
-      sourceLabel: "수동 입력 · 네이버 금융/IR",
-      what: "앞으로 1년 예상 이익 대비 주가가 몇 배인지입니다.",
+      sourceLabel: "네이버 금융 · 추정PER(컨센서스)",
+      what: "올해 예상 이익 대비 주가가 몇 배인지입니다(증권사 컨센서스 기준).",
       why: "싸 보이는지 비싸 보이는지를 한 숫자로 봅니다. 다만 경기 순환주에서는 함정이 있습니다.",
       read: "이익 정점 부근에서는 PER이 오히려 낮게 보입니다(고점 이익 함정). 낮은 PER 하나만으로 싸다고 읽지 않습니다.",
       order: 7,
     },
     {
       key: "samsung_fwd_per",
-      name: "삼성전자 12개월 선행 PER",
+      name: "삼성전자 추정 PER",
       group: "semi",
-      source: "MANUAL",
+      /**
+       * ⚠ 2026-09-05 **수동 → 자동(네이버 금융 「추정PER」)으로 바꿨다.**
+       *
+       * 수동으로 둔 동안 값이 **한 점도 들어오지 않았다.** 유료 컨센서스(FnGuide 등)가 필요하다고
+       * 보고 미뤄 뒀는데, 네이버 금융 화면이 쓰는 공개 응답에 컨센서스 기반 **추정PER**이 그대로
+       * 들어 있었다. Yahoo의 `quoteSummary`는 막혀 있지만(Invalid Crumb) 이쪽은 열려 있다.
+       *
+       * ⚠ **「12개월 선행」이 아니라 「추정(당해 컨센서스)」이다.** 이름과 출처 표기를 그에 맞게
+       *    고쳤다 — 화면이 실제보다 정교한 척하지 않게 한다.
+       * ⚠ 발표 계열이 아니라 **매일 다시 재는 관측**이라 과거 소급이 안 된다. 오늘부터 쌓인다.
+       *    그래서 `freq`도 월간이 아니라 일간이다.
+       */
+      source: "NAVER",
+      sourceId: "005930/추정PER",
       transform: "level",
       layer: "L4",
       type: "level",
-      freq: "m",
+      freq: "d",
       unit: "배",
       decimals: 1,
       url: "https://finance.naver.com/item/main.naver?code=005930",
-      sourceLabel: "수동 입력 · 네이버 금융/IR",
-      what: "앞으로 1년 예상 이익 대비 주가 배수입니다.",
+      sourceLabel: "네이버 금융 · 추정PER(컨센서스)",
+      what: "올해 예상 이익 대비 주가 배수입니다(증권사 컨센서스 기준).",
       why: "메모리 사이클 정점의 이익이 얼마나 반영돼 있는지를 가늠합니다.",
       read: "하이닉스와 나란히 놓고 봅니다. 같은 사이클에서 두 회사의 배수 차이가 벌어지는 이유를 찾는 것이 출발점입니다.",
       order: 8,

@@ -117,3 +117,29 @@ export function parseEcosJson(json: unknown): SeriesPoint[] {
   }
   return out;
 }
+
+/**
+ * 네이버 금융 모바일 통합 API.
+ *
+ * `totalInfos`가 `{ code, key, value }` 목록으로 온다 — 그중 하나를 골라 숫자만 뽑는다.
+ * ⚠ **여기서 파는 것은 「추정PER」**이다(컨센서스 기준 선행 PER). 화면에 "선행"이라고 쓰는
+ *    숫자의 출처가 무엇인지 헷갈리지 않게 키 이름을 그대로 지정해서 가져온다.
+ * ⚠ 값은 `"4.71배"`·`"1,596,000"`처럼 단위·쉼표가 붙어 온다. 숫자만 남긴다.
+ * ⚠ 이 값은 **오늘 시점의 관측**이다. 발표 시계열이 아니라 매일 다시 재는 값이라,
+ *    기준일을 호출부가 준다(수집일).
+ */
+type NaverTotalInfo = { code?: string; key?: string; value?: string };
+
+export function parseNaverTotalInfo(json: unknown, key: string, date: string): SeriesPoint[] {
+  const rows = ((json ?? {}) as { totalInfos?: NaverTotalInfo[] }).totalInfos ?? [];
+  const hit = rows.find((r) => r.key === key || r.code === key);
+
+  if (!hit) throw new Error(`네이버 응답에 「${key}」 항목이 없습니다`);
+
+  const value = Number(String(hit.value ?? "").replace(/[^0-9.\-]/g, ""));
+  // ⚠ 0이나 NaN을 그대로 넣지 않는다. PER 0배는 "모른다"이지 "싸다"가 아니다.
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`네이버 「${key}」 값을 숫자로 읽지 못했습니다`);
+  }
+  return [{ date, value }];
+}
