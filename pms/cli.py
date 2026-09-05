@@ -44,6 +44,12 @@ def cli(ctx: click.Context, db_path: str | None) -> None:
     ctx.obj["db_path"] = db_path or db.default_db_path()
 
 
+# 금리·거시 섹션은 파일이 여럿이라 별도 패키지에 두고 여기서 붙이기만 한다.
+from .rates.cli import rates as rates_group  # noqa: E402
+
+cli.add_command(rates_group)
+
+
 @cli.command("init-db")
 @click.pass_context
 def init_db_cmd(ctx: click.Context) -> None:

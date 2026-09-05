@@ -1,0 +1,350 @@
+# 금리·거시(rates) 섹션이 수집하는 계열 — **계열 ID의 단일 출처.**
+#
+# ⚠ 코드 어디에도 계열 ID를 하드코딩하지 않는다(명세 §0-4). 여기가 유일한 목록이고,
+#    `pms rates verify`가 각 ID의 존재·최신 관측일·단위를 실제 API로 확인한다.
+# ⚠ `definition_ko`는 `docs/금리섹션_지표해설.md`와 **같은 문장**을 쓴다. 세 곳에서 갈라지면
+#    화면 툴팁·DB·문서가 서로 다른 말을 하게 된다(명세 §9).
+# ⚠ `unit_verified: false`는 "관측치는 받아 봤지만 단위를 메타데이터로 확인하지 못했다"는 뜻이다.
+#    FRED 메타데이터 API에는 키가 필요하다 — `FRED_API_KEY`를 넣고 verify를 다시 돌리면 채워진다.
+#
+# 확인 이력: 2026-09-05 — FRED 34개 전부 관측치 응답 확인, ECOS 4개 항목코드 확인.
+#   ⚠ 명세가 후보로 적은 ECOS `721Y001`(시장금리 일별)은 **틀렸다.** 그 표에는 일별 주기가
+#     없다(A/M/Q뿐). 일별 시장금리는 `817Y002`다.
+
+meta:
+  verified_at: "2026-09-05"
+  note: "관측치 응답으로 확인. 단위·계절조정은 FRED_API_KEY 등록 후 verify가 채운다."
+
+fred:
+  # ── 정책·시장금리 ────────────────────────────────────────────
+  - id: DFF
+    name_ko: 실효 연방기금금리
+    name_en: Effective Federal Funds Rate
+    unit: percent
+    frequency: D
+    seasonal_adj: NSA
+    layer: policy
+    definition_ko: 미국 은행 간 1일물 무담보 자금거래의 실제 체결금리 가중평균이다. 연준이 목표범위를 정하면 시장이 그 안에서 만드는 값이다.
+  - id: SOFR
+    name_ko: SOFR (담보부 익일물 금리)
+    name_en: Secured Overnight Financing Rate
+    unit: percent
+    frequency: D
+    seasonal_adj: NSA
+    layer: policy
+    definition_ko: 미 국채를 담보로 한 익일물 환매조건부 거래의 금리다. LIBOR를 대체한 달러 조달금리의 기준이다.
+  - id: DGS3MO
+    name_ko: 미 국채 3개월
+    unit: percent
+    frequency: D
+    seasonal_adj: NSA
+    layer: policy
+    definition_ko: 만기 3개월 미 국채의 시장 수익률(고정만기 기준)이다.
+  - id: DGS2
+    name_ko: 미 국채 2년
+    unit: percent
+    frequency: D
+    seasonal_adj: NSA
+    layer: policy
+    definition_ko: 만기 2년 미 국채의 시장 수익률로, 향후 2년의 정책금리 경로 기대가 가장 크게 반영된다.
+  - id: DGS10
+    name_ko: 미 국채 10년
+    unit: percent
+    frequency: D
+    seasonal_adj: NSA
+    layer: policy
+    definition_ko: 만기 10년 미 국채의 시장 수익률이다. 자산 가치를 현재로 당겨오는 할인율의 기준선으로 쓰인다.
+  - id: DGS30
+    name_ko: 미 국채 30년
+    unit: percent
+    frequency: D
+    seasonal_adj: NSA
+    layer: policy
+    definition_ko: 만기 30년 미 국채의 시장 수익률로, 재정·기간 프리미엄의 압력이 가장 늦게까지 남는 구간이다.
+  - id: T10Y2Y
+    name_ko: 장단기 금리차 (10년−2년)
+    unit: percent
+    frequency: D
+    seasonal_adj: NSA
+    layer: policy
+    definition_ko: 10년물에서 2년물을 뺀 값이다. 음수(역전)가 오래 이어진 뒤 다시 양수로 돌아설 때가 과거 침체 국면과 겹쳤다.
+  - id: T10Y3M
+    name_ko: 장단기 금리차 (10년−3개월)
+    unit: percent
+    frequency: D
+    seasonal_adj: NSA
+    layer: policy
+    definition_ko: 10년물에서 3개월물을 뺀 값으로, 연준 연구에서 침체 예측력이 가장 높다고 인용되는 조합이다.
+  - id: DFII10
+    name_ko: 10년 물가연동국채 실질금리
+    unit: percent
+    frequency: D
+    seasonal_adj: NSA
+    layer: policy
+    definition_ko: 물가연동국채(TIPS) 10년물의 수익률로, 물가를 뺀 뒤 남는 실질 조달비용이다.
+  - id: T10YIE
+    name_ko: 10년 기대인플레이션 (BEI)
+    unit: percent
+    frequency: D
+    seasonal_adj: NSA
+    layer: inflation
+    definition_ko: 명목 10년물에서 물가연동국채 10년물을 뺀 값으로, 시장이 향후 10년 평균 물가상승률을 얼마로 보는지를 나타낸다.
+  - id: MORTGAGE30US
+    name_ko: 30년 고정 모기지 금리
+    unit: percent
+    frequency: W
+    seasonal_adj: NSA
+    layer: policy
+    definition_ko: 미국 30년 고정금리 주택담보대출의 평균 금리다. 정책금리가 가계에 닿는 가장 굵은 통로다.
+
+  # ── 인플레이션 ──────────────────────────────────────────────
+  - id: PCEPI
+    name_ko: PCE 물가지수 (헤드라인)
+    unit: index
+    frequency: M
+    seasonal_adj: SA
+    layer: inflation
+    definition_ko: 연준이 목표(2%)를 정할 때 기준으로 삼는 개인소비지출 물가지수다. 지수이므로 전년동월비는 계산해서 쓴다.
+  - id: PCEPILFE
+    name_ko: 근원 PCE 물가지수
+    unit: index
+    frequency: M
+    seasonal_adj: SA
+    layer: inflation
+    definition_ko: PCE 물가지수에서 식품·에너지를 뺀 것이다. 지수이므로 전년동월비는 계산해서 쓴다.
+  - id: PCETRIM12M159SFRBDAL
+    name_ko: 절사평균 PCE (12개월)
+    unit: percent
+    frequency: M
+    seasonal_adj: SA
+    layer: inflation
+    definition_ko: 품목별 가격변동의 양 끝을 잘라낸 뒤 구한 12개월 물가상승률이다. ⚠ 이미 % 단위라 전년동월비를 다시 계산하지 않는다.
+  - id: CPIAUCSL
+    name_ko: 소비자물가지수 (CPI)
+    unit: index
+    frequency: M
+    seasonal_adj: SA
+    layer: inflation
+    definition_ko: 도시 소비자가 실제로 치르는 가격의 지수다. 발표가 PCE보다 빠르고 주거비 비중이 더 크다.
+  - id: CPILFESL
+    name_ko: 근원 CPI
+    unit: index
+    frequency: M
+    seasonal_adj: SA
+    layer: inflation
+    definition_ko: CPI에서 식품·에너지를 뺀 지수다.
+
+  # ── 노동 ───────────────────────────────────────────────────
+  - id: PAYEMS
+    name_ko: 비농업부문 고용 (수준)
+    unit: thousands
+    frequency: M
+    seasonal_adj: SA
+    layer: labor
+    definition_ko: 사업체 조사로 집계한 비농업 부문 취업자 수(천 명)다. ⚠ 발표 뒤 두 차례 개정되므로 전월차는 개정에 따라 바뀐다.
+  - id: UNRATE
+    name_ko: 실업률
+    unit: percent
+    frequency: M
+    seasonal_adj: SA
+    layer: labor
+    definition_ko: 경제활동인구 중 일자리를 찾고 있으나 취업하지 못한 사람의 비율이다. 구직을 포기하면 분모에서도 빠진다.
+  - id: CIVPART
+    name_ko: 경제활동참가율
+    unit: percent
+    frequency: M
+    seasonal_adj: SA
+    layer: labor
+    definition_ko: 생산가능인구 중 취업자와 구직자의 비율이다. 이 값이 떨어지면 실업률은 개선된 것처럼 보인다.
+  - id: CNP16OV
+    name_ko: 16세 이상 생산가능인구
+    unit: thousands
+    frequency: M
+    seasonal_adj: NSA
+    layer: labor
+    definition_ko: 군인·시설수용자를 뺀 16세 이상 인구(천 명)다. 참가율 조정 실업률의 분모를 만드는 데 쓴다.
+  - id: CE16OV
+    name_ko: 취업자 수 (가계조사)
+    unit: thousands
+    frequency: M
+    seasonal_adj: SA
+    layer: labor
+    definition_ko: 가계조사 기준 취업자 수(천 명)다. 사업체 조사(PAYEMS)와 다른 표본이라 방향이 갈릴 수 있다.
+  - id: JTSJOL
+    name_ko: 구인 건수 (JOLTS)
+    unit: thousands
+    frequency: M
+    seasonal_adj: SA
+    layer: labor
+    definition_ko: 월말 기준 채우지 못한 일자리 수(천 건)다.
+  - id: JTSHIR
+    name_ko: 채용률
+    unit: percent
+    frequency: M
+    seasonal_adj: SA
+    layer: labor
+    definition_ko: 그 달의 채용 건수를 고용 수준으로 나눈 비율이다. 노동시장이 식으면 해고보다 먼저 떨어진다.
+  - id: JTSQUR
+    name_ko: 자발적 이직률
+    unit: percent
+    frequency: M
+    seasonal_adj: SA
+    layer: labor
+    definition_ko: 스스로 그만둔 사람의 비율이다. 다음 일자리에 대한 자신감의 대리 지표로 읽는다.
+  - id: JTSLDR
+    name_ko: 해고율
+    unit: percent
+    frequency: M
+    seasonal_adj: SA
+    layer: labor
+    definition_ko: 해고·감원으로 일자리를 잃은 사람의 비율이다. 낮게 유지되면 "저채용·저해고"의 한쪽 조건이 된다.
+
+  # ── 수요·신용 ───────────────────────────────────────────────
+  - id: PSAVERT
+    name_ko: 개인저축률
+    unit: percent
+    frequency: M
+    seasonal_adj: SA
+    layer: credit
+    definition_ko: 가처분소득 중 쓰지 않고 남긴 비율이다. 낮아질수록 소비가 저축을 헐어 유지되고 있다는 뜻이다.
+  - id: RSAFS
+    name_ko: 소매·외식 판매액
+    unit: millions_usd
+    frequency: M
+    seasonal_adj: SA
+    layer: credit
+    definition_ko: 소매업과 음식점의 월 매출액(백만 달러)이다. ⚠ 물가가 빠지지 않은 명목값이라 실질 여부를 구분해 읽는다.
+  - id: DRCCLACBS
+    name_ko: 신용카드 대출 연체율 (잔액 기준)
+    name_en: Delinquency Rate on Credit Card Loans, All Commercial Banks
+    unit: percent
+    frequency: Q
+    seasonal_adj: SA
+    layer: credit
+    definition_ko: 상업은행 신용카드 대출 **잔액 중** 연체 상태인 금액의 비율이다. ⚠ 뉴욕 연준의 연율화 연체 전이율(신규 연체 진입 비율)과는 **전혀 다른 숫자**다 — 섞지 않는다.
+  - id: REVOLSL
+    name_ko: 회전신용 잔액
+    unit: millions_usd
+    frequency: M
+    seasonal_adj: SA
+    layer: credit
+    definition_ko: 신용카드처럼 한도 안에서 돌려 쓰는 소비자신용의 잔액(백만 달러)이다.
+  - id: BAMLH0A0HYM2
+    name_ko: 하이일드 OAS
+    unit: percent
+    frequency: D
+    seasonal_adj: NSA
+    layer: credit
+    definition_ko: 투기등급 회사채가 국채 대비 얹어 받는 가산금리다. 신용시장이 위험을 어떻게 값 매기는지를 한 숫자로 보여준다.
+
+  # ── 금리 민감 vs 현금 조달 부문 ──────────────────────────────
+  - id: HOUST
+    name_ko: 주택착공
+    unit: thousands
+    frequency: M
+    seasonal_adj: SA
+    layer: two_speed
+    definition_ko: 착공한 신규 주택의 연율 환산 호수(천 호)다. 금리에 가장 먼저 반응하는 실물 지표다.
+  - id: EXHOSLUSM495S
+    name_ko: 기존주택 판매
+    unit: units
+    frequency: M
+    seasonal_adj: SA
+    layer: two_speed
+    definition_ko: 기존 주택의 월 거래 건수(연율)다. 모기지 금리에 직접 눌린다.
+  - id: BUSLOANS
+    name_ko: 상업·산업(C&I) 대출 잔액
+    unit: billions_usd
+    frequency: M
+    seasonal_adj: SA
+    layer: two_speed
+    definition_ko: 상업은행이 기업에 내준 대출의 잔액(십억 달러)이다.
+  - id: PNFI
+    name_ko: 민간 비주거 고정투자
+    unit: billions_usd
+    frequency: Q
+    seasonal_adj: SA
+    layer: two_speed
+    definition_ko: 기업이 건물·설비·지식재산에 쓴 투자액(연율, 십억 달러)이다.
+
+  # ── 유동성 (버블 대시보드와 공유) ────────────────────────────
+  - id: WALCL
+    name_ko: 연준 총자산
+    unit: millions_usd
+    frequency: W
+    seasonal_adj: NSA
+    layer: liquidity
+    definition_ko: 연방준비제도가 보유한 자산 총액(백만 달러)이다. ⚠ 백만 달러 단위라 십억으로 읽으면 1000배 어긋난다.
+  - id: RRPONTSYD
+    name_ko: 역레포 잔액
+    unit: billions_usd
+    frequency: D
+    seasonal_adj: NSA
+    layer: liquidity
+    definition_ko: 연준이 하룻밤 흡수해 둔 자금(십억 달러)이다. 줄어들면 그만큼이 시장으로 풀린다.
+  - id: WTREGEN
+    name_ko: 재무부 일반계정 (TGA)
+    unit: millions_usd
+    frequency: W
+    seasonal_adj: NSA
+    layer: liquidity
+    definition_ko: 미 재무부가 연준에 둔 예금 잔액(백만 달러)이다. 늘면 시중 유동성이 그만큼 빠진다.
+  - id: DEXKOUS
+    name_ko: 원/달러 환율 (연준 H.10)
+    unit: krw_per_usd
+    frequency: D
+    seasonal_adj: NSA
+    layer: krus
+    definition_ko: 뉴욕 정오 기준 원/달러 환율이다. ⚠ 관측은 일별이지만 발표는 주 1회(월요일)라 최신값이 최대 일주일 뒤처진다.
+
+# ⚠ 설비투자 실질 성장률은 **사람이 고르기 전까지 비워 둔다**(명세 §3-1).
+#    2026-09-05 확인한 후보(둘 다 응답 정상, 분기, 최신 2026 Q2):
+#      Y033RX1Q020SBEA — 실질 민간 비주거 고정투자: 설비 (연쇄 2017달러, 십억)
+#      A680RX1Q020SBEA — 실질 민간 비주거 고정투자: 설비 중 정보처리장비
+#    고른 뒤 아래 목록으로 옮기고 `two_speed.cash_financed` 구성에 넣는다.
+fred_pending:
+  - id: Y033RX1Q020SBEA
+    name_ko: 실질 설비투자
+    unit: billions_chained_usd
+    frequency: Q
+    seasonal_adj: SA
+    layer: two_speed
+    definition_ko: 기업이 설비에 쓴 투자를 물가 영향을 뺀 실질로 본 값(연쇄 2017달러, 십억)이다.
+    chosen: false
+
+# ── ECOS (한국은행) ────────────────────────────────────────────
+# ⚠ 통계표·항목 코드를 추정하지 않는다. 아래는 2026-09-05에 StatisticItemList로 **실제 확인**한 값이고,
+#    `pms rates verify`가 매번 다시 대조한다.
+ecos:
+  - table: "722Y001"
+    item: "0101000"
+    cycle: D
+    name_ko: 한국은행 기준금리
+    unit: percent
+    frequency: D
+    layer: krus
+    definition_ko: 한국은행 금융통화위원회가 정하는 정책금리다. 국내 예금·대출 금리와 원화 유동성이 여기서 갈린다.
+  - table: "817Y002"
+    item: "010200000"
+    cycle: D
+    name_ko: 국고채 3년
+    unit: percent
+    frequency: D
+    layer: krus
+    definition_ko: 만기 3년 국고채의 일별 시장 수익률이다. 국내 중기 금리의 기준선이다.
+  - table: "817Y002"
+    item: "010210000"
+    cycle: D
+    name_ko: 국고채 10년
+    unit: percent
+    frequency: D
+    layer: krus
+    definition_ko: 만기 10년 국고채의 일별 시장 수익률이다. 미 국채 10년과 견줘 한·미 장기 금리차를 만든다.
+  - table: "817Y002"
+    item: "010502000"
+    cycle: D
+    name_ko: CD 91일
+    unit: percent
+    frequency: D
+    layer: krus
+    definition_ko: 만기 91일 양도성예금증서의 시장 금리로, 국내 단기 조달금리의 지표다.

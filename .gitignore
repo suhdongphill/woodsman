@@ -1,0 +1,16 @@
+# 파이썬
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# 금리 섹션의 로컬 SQLite — ⚠ 관측치는 언제든 다시 받는다(`pms rates fetch`).
+#    저장소에 넣으면 커밋마다 수십 MB가 흔들리고, 개정된 값과 옛 값이 뒤섞인다.
+rates.db
+pms.db
+
+# 스케줄러 로그
+logs/
+
+# 환경변수 — ⚠ API 키가 들어간다. 절대 커밋하지 않는다.
+.env

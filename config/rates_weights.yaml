@@ -1,0 +1,18 @@
+# 인하 압력 지수(easing_pressure_index)의 레이어 가중 — 명세 §4-7.
+# ⚠ 레이어 하나가 NULL이면 나머지를 합이 100이 되도록 재정규화한다(코드가 자동으로 한다).
+layers:
+  inflation: 25
+  labor: 25
+  policy_stance: 20
+  credit: 15
+  external: 15
+
+# 두 속도 경제의 부문 가중. 단순 평균으로 시작한다(명세 §4-3).
+two_speed:
+  rate_sensitive:
+    HOUST: 1
+    EXHOSLUSM495S: 1
+    PNFI: 1
+  cash_financed:
+    BUSLOANS: 1
+    # ⚠ 설비투자 계열은 사람이 고른 뒤 여기에 더한다(config/rates_series.yaml의 fred_pending).
