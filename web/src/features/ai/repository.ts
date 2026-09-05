@@ -88,6 +88,34 @@ export async function setProviderEnabled(apiKeyEnv: string, enabled: boolean): P
   ]);
 }
 
+/**
+ * 쓴 토큰을 누적한다 — **제공자별과 사이트 전체 양쪽**에.
+ *
+ * ⚠ 한쪽만 세면 상한이 반만 걸린다. 제공자별 상한은 한 곳의 사고를 막고, 전역 상한은
+ *    제공자가 다섯일 때 청구서가 다섯 배가 되는 것을 막는다(`lib/ai/routing.ts` §6).
+ * ⚠ 실패해도 호출 자체를 되돌리지 않는다. 다만 **조용히 넘어가지는 않는다** — 사용량을
+ *    못 센 상태로 계속 도는 것이 상한이 없는 것과 같기 때문이다.
+ */
+export async function recordAiUsage(apiKeyEnv: string, tokens: number): Promise<void> {
+  if (!Number.isFinite(tokens) || tokens <= 0) return;
+  const now = new Date().toISOString();
+
+  try {
+    await execute(
+      `UPDATE AiProvider SET tokensUsedThisMonth = tokensUsedThisMonth + ?, updatedAt = ?
+        WHERE apiKeyEnv = ?`,
+      [Math.round(tokens), now, apiKeyEnv],
+    );
+    await execute(
+      `UPDATE AiConfig SET tokensUsedThisMonth = tokensUsedThisMonth + ?, updatedAt = ?
+        WHERE id = 'singleton'`,
+      [Math.round(tokens), now],
+    );
+  } catch (error) {
+    console.error("[ai-repo] 사용량 기록 실패 — 상한이 헐거워집니다.", error);
+  }
+}
+
 /** 월 토큰 상한. null이면 무제한 — ⚠ 유료 제공자에는 쓰지 않는다. */
 export async function setProviderCap(apiKeyEnv: string, cap: number | null): Promise<void> {
   await execute(`UPDATE AiProvider SET monthlyTokenCap = ?, updatedAt = ? WHERE apiKeyEnv = ?`, [

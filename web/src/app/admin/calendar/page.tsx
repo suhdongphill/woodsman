@@ -18,6 +18,7 @@ import {
 import { loadEvents } from "@/features/calendar/repository";
 import { deleteEventAction, linkPostAction } from "@/features/calendar/actions";
 import { EventForm } from "@/features/calendar/ui/EventForm";
+import { AiDraftPanel } from "@/features/calendar/ui/AiDraftPanel";
 
 export const metadata: Metadata = { title: "경제 캘린더" };
 
@@ -31,8 +32,11 @@ export const dynamic = "force-dynamic";
  * 일정이 다음에 쓸 글을 알려 주고, 쓴 글이 다음 일정에서 다시 읽힌다.
  * ⚠ 그래서 맨 위에 **「평가가 밀린 일정」**을 둔다. 지나갔는데 글이 없는 것이 곧 할 일이다.
  *
- * ⚠ 자동 수집은 아직 없다. 스키마에 `source`·`externalId` 자리를 만들어 뒀으니,
- *    붙일 때 사람이 넣은 일정을 덮지 않게 할 수 있다.
+ * ## 일정은 어디서 오나 (2026-09-05)
+ * 손으로 넣는 길과 **AI 초안**을 받는 길, 둘이다. 손으로만 넣으면 캘린더는 결국 빈다 —
+ * 수집이 사람의 기억에 걸려 있어 환율이 열흘 늙었던 것과 같은 자리다(2026-09-01).
+ * ⚠ 그래도 **AI가 직접 쓰지는 않는다.** 받아 온 것은 후보로만 뜨고 채택은 사람이 한다.
+ *    날짜는 틀려도 화면이 멀쩡해 보이는 값이라, 마지막 한 걸음을 사람에게 남긴다.
  */
 export default async function AdminCalendarPage() {
   await requireAdmin("/admin/calendar");
@@ -60,6 +64,12 @@ export default async function AdminCalendarPage() {
       <Card className="mb-6">
         <CardTitle>일정 추가</CardTitle>
         <EventForm today={today} />
+      </Card>
+
+      {/* ⚠ 제안까지만 한다. 채택은 사람이 누른다 — `features/calendar/ai-actions.ts` 머리말 */}
+      <Card className="mb-6">
+        <CardTitle>AI 초안</CardTitle>
+        <AiDraftPanel />
       </Card>
 
       {/* ⚠ 빈 칸을 감추지 않는다 — 지나갔는데 글이 없는 것이 다음에 쓸 것이다. */}
