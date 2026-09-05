@@ -24,8 +24,17 @@ import { execute, queryAll } from "@/lib/d1";
 import { readRuntimeEnvMany } from "@/lib/runtime-env";
 import { MASTER_MIN_LENGTH, open, seal, sealFingerprint } from "@/lib/secret-box";
 
-/** ECOS는 AI 제공자가 아니지만 성격이 같다 — 바깥 서비스를 부르는 열쇠다. */
-export const EXTRA_KEY_NAMES = ["ECOS_API_KEY"] as const;
+/**
+ * AI 제공자가 아니지만 성격이 같은 열쇠들 — 바깥 서비스를 부른다.
+ *
+ * ⚠ **누가 쓰는지가 서로 다르다.** 화면이 그 사실을 적어야 "등록했는데 왜 안 먹지"가 안 생긴다.
+ * - `ECOS_API_KEY` — **사이트가 쓴다**(거시 수집의 한국 기준금리). 넣으면 바로 동작한다.
+ * - `FRED_API_KEY` — **사이트는 쓰지 않는다.** FRED 관측치는 키 없이 받고 있고, 이 키가
+ *   필요한 곳은 `pms rates verify`(단위·계절조정 대조)와 계열 검색뿐이다.
+ *   ⚠ 그 CLI는 이 보관함을 **읽지 못한다**(마스터 키가 Worker 시크릿이다).
+ *   여기 넣는 것은 **보관**이고, CLI가 읽으려면 저장소 `.env`에도 같은 값이 있어야 한다.
+ */
+export const EXTRA_KEY_NAMES = ["ECOS_API_KEY", "FRED_API_KEY"] as const;
 
 /** 보관함이 다루는 이름 전부. ⚠ 이 목록 밖의 이름은 저장하지 않는다. */
 export function storedKeyNames(): string[] {

@@ -41,6 +41,13 @@ const serverEnvSchema = z.object({
   ECOS_API_KEY: optionalSecret,
 
   /**
+   * FRED(세인트루이스 연준) API 키. ⚠ **사이트는 쓰지 않는다** — 관측치는 키 없이
+   * `fredgraph.csv`로 받는다. 이 키가 필요한 곳은 `pms rates verify`의 단위·계절조정
+   * 대조와 계열 검색이고, 그 CLI는 저장소 `.env`를 읽는다.
+   */
+  FRED_API_KEY: optionalSecret,
+
+  /**
    * 인증키 보관함(`ApiCredential`)을 잠그는 마스터 키. 32자 이상.
    * ⚠ 없으면 `AUTH_SECRET`에서 파생하고 화면이 그 사실을 밝힌다 — 다만 그 경우
    *    **세션 키를 바꾸면 저장된 인증키를 못 푼다.** 따로 등록하는 편이 맞다.

@@ -14,8 +14,24 @@ import { AI_PROVIDERS } from "@/lib/ai/catalog";
 import { saveAiKeyAction } from "../actions";
 import { emptyKeyFormState } from "../key-form-state";
 
-/** AI 제공자가 아니지만 성격이 같은 열쇠들 — 바깥 서비스를 부른다. */
-const EXTRA_ITEMS = [{ name: "ECOS_API_KEY", label: "한국은행 ECOS", free: true }];
+/**
+ * AI 제공자가 아니지만 성격이 같은 열쇠들.
+ * ⚠ `note`는 **누가 이 키를 쓰는지**다. 안 적으면 "등록했는데 왜 안 먹지"가 생긴다.
+ */
+const EXTRA_ITEMS = [
+  {
+    name: "ECOS_API_KEY",
+    label: "한국은행 ECOS",
+    free: true,
+    note: "사이트가 씁니다 — 거시 수집의 한국 기준금리. 넣으면 다음 수집부터 바로 들어옵니다.",
+  },
+  {
+    name: "FRED_API_KEY",
+    label: "FRED (세인트루이스 연준)",
+    free: true,
+    note: "⚠ 사이트는 쓰지 않습니다(관측치는 키 없이 받습니다). pms rates verify의 단위·계절조정 대조에만 필요하고, 그 CLI는 이 보관함을 읽지 못하므로 저장소 .env에도 같은 값을 넣어야 합니다.",
+  },
+];
 
 const TEXT = {
   target: "어디 키",
@@ -85,6 +101,15 @@ export function KeyRegisterForm({ stored }: { stored: string[] }) {
           {state.error}
         </p>
       )}
+      {/* ⚠ 어느 키를 어디서 쓰는지 화면이 말한다 — 보관과 사용은 다른 일이다. */}
+      <ul className="space-y-1">
+        {EXTRA_ITEMS.map((item) => (
+          <li key={item.name} className="text-[11.5px] leading-relaxed text-ink-3">
+            <code className="text-gray-400">{item.name}</code> — {item.note}
+          </li>
+        ))}
+      </ul>
+
       {state.savedName && (
         <p className="text-[12px] text-emerald-400">
           <code>{state.savedName}</code> 를 암호화해 저장했습니다. 다음 호출부터 이 값을 씁니다.

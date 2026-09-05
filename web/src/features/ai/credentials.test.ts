@@ -35,9 +35,10 @@ describe("마스터 키 고르기", () => {
 
 describe("보관함이 다루는 이름", () => {
   /** ⚠ 폼 값으로 아무 이름이나 만들지 못하게 한다. */
-  it("카탈로그의 AI 키와 ECOS만 허용한다", () => {
+  it("카탈로그의 AI 키와 ECOS·FRED만 허용한다", () => {
     expect(isStoredKeyName("GROQ_API_KEY")).toBe(true);
     expect(isStoredKeyName("ECOS_API_KEY")).toBe(true);
+    expect(isStoredKeyName("FRED_API_KEY")).toBe(true);
     expect(isStoredKeyName("AUTH_SECRET")).toBe(false);
     expect(isStoredKeyName("../../etc/passwd")).toBe(false);
   });
