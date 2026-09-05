@@ -11,6 +11,9 @@ import { manualIndicators } from "@/lib/macro/catalog";
 import { findMacroGroup } from "@/lib/macro/groups";
 import { loadMacroStatus } from "@/features/macro/service";
 import { loadIngestRuns, countPointsBySeries } from "@/features/macro/repository";
+import { readRuntimeEnv } from "@/lib/runtime-env";
+import { CRON_PLAN, CRON_SECRET_LABEL, cronSecretState, nextDailyRun } from "@/lib/cron";
+import { seoulTime, seoulDay } from "@/lib/kst";
 import { IngestPanel } from "@/features/macro/ui/IngestPanel";
 import { ManualPointForm } from "@/features/macro/ui/ManualPointForm";
 import { SignalPill } from "@/features/macro/ui/SignalPill";
@@ -35,11 +38,23 @@ function ageDays(asOf: string | undefined, today: string): number | undefined {
 export default async function AdminMacroPage() {
   await requireAdmin("/admin/macro");
 
-  const [status, runs, counts] = await Promise.all([
+  const [status, runs, counts, cronSecret] = await Promise.all([
     loadMacroStatus(),
     loadIngestRuns(5),
     countPointsBySeries(),
+    // ⚠ 값을 쓰려는 게 아니다. **등록됐는지 길이만** 본다(화면에도 값은 안 나간다).
+    readRuntimeEnv("CRON_SECRET"),
   ]);
+
+  /**
+   * ⚠ 자동 수집이 실제로 켜져 있는가.
+   *    9월 1일에 스케줄을 만들어 두고도 시크릿이 없어 **나흘간 한 번도 돌지 않았는데**,
+   *    그 사실을 화면 어디에서도 알 수 없었다. 이 카드가 그 자리다.
+   */
+  const secretState = cronSecretState(cronSecret);
+  const plan = CRON_PLAN[0];
+  const nextRun = plan ? nextDailyRun(plan.expr, new Date()) : null;
+  const lastAuto = runs.find((r) => r.trigger === "CRON");
 
   const today = new Date().toISOString().slice(0, 10);
   const collected = status.filter((s) => s.asOf);
@@ -184,6 +199,41 @@ export default async function AdminMacroPage() {
             })}
           </tbody>
         </Table>
+      </Card>
+
+      {/* ⚠ 스케줄은 아무도 보고 있지 않는 자리다. 켜져 있는지를 화면이 말해야 한다. */}
+      <Card className="mb-6">
+        <CardTitle>자동 수집</CardTitle>
+        <div className="space-y-1.5 text-[12.5px]">
+          <p className="text-muted">
+            일정: <span className="text-ink">{plan?.note ?? "설정 없음"}</span>
+            {nextRun && (
+              <>
+                {" · "}다음 실행{" "}
+                <span className="text-ink">
+                  {seoulDay(nextRun.toISOString())} {seoulTime(nextRun.toISOString())}
+                </span>
+              </>
+            )}
+          </p>
+          <p className="text-muted">
+            시크릿:{" "}
+            <span className={secretState === "ok" ? "text-emerald-400" : "text-red-400"}>
+              {CRON_SECRET_LABEL[secretState]}
+            </span>
+          </p>
+          <p className="text-muted">
+            마지막 자동 실행:{" "}
+            {lastAuto ? (
+              <span className="text-ink">
+                {new Date(lastAuto.startedAt).toLocaleString("ko-KR")} · 성공 {lastAuto.okCount} ·
+                실패 {lastAuto.failCount}
+              </span>
+            ) : (
+              <span className="text-gold-500">아직 없습니다 — 아래 이력이 전부 수동입니다</span>
+            )}
+          </p>
+        </div>
       </Card>
 
       <Card padding="p-0">

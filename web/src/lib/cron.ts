@@ -128,3 +128,47 @@ export function cronSummary(results: readonly CronJobResult[]): string {
 export function allSucceeded(results: readonly CronJobResult[]): boolean {
   return results.length > 0 && results.every((r) => r.ok);
 }
+
+/**
+ * 시크릿이 쓸 만한 상태인가 — **화면에 보여주기 위한 판정**이다.
+ *
+ * ⚠ 값을 담지 않는다. 길이만 본다.
+ * ⚠ 왜 화면에 내보이나: 시크릿이 없으면 스케줄은 **아무 일도 하지 않고 조용히 끝난다.**
+ *    그 상태를 볼 수 있는 자리가 어디에도 없으면 "도는 줄 알았는데 몇 달째"가 된다
+ *    (이 프로젝트가 반복해서 데인 조용한 실패다).
+ */
+export type CronSecretState = "ok" | "short" | "missing";
+
+export function cronSecretState(secret: string | undefined | null): CronSecretState {
+  const value = typeof secret === "string" ? secret.trim() : "";
+  if (value.length === 0) return "missing";
+  return value.length >= CRON_SECRET_MIN_LENGTH ? "ok" : "short";
+}
+
+export const CRON_SECRET_LABEL: Record<CronSecretState, string> = {
+  ok: "등록됨",
+  short: `⚠ 너무 짧습니다(${CRON_SECRET_MIN_LENGTH}자 이상)`,
+  missing: "⚠ 없습니다 — 스케줄이 돌아도 아무것도 하지 않습니다",
+};
+
+/**
+ * 다음 실행 시각(UTC).
+ *
+ * ⚠ **`분 시 * * *` 꼴만** 계산한다. 그 밖의 표현식은 `null`이다 —
+ *    범용 cron 파서를 흉내 내다가 틀린 시각을 단언하느니, 모른다고 하는 편이 낫다
+ *    (사이트맵 lastmod에서 이미 배운 규칙이다).
+ */
+export function nextDailyRun(expr: string, from: Date): Date | null {
+  const match = /^(\d{1,2}) (\d{1,2}) \* \* \*$/.exec(expr.trim());
+  if (!match) return null;
+
+  const minute = Number(match[1]);
+  const hour = Number(match[2]);
+  if (minute > 59 || hour > 23) return null;
+
+  const next = new Date(
+    Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate(), hour, minute, 0, 0),
+  );
+  if (next.getTime() <= from.getTime()) next.setUTCDate(next.getUTCDate() + 1);
+  return next;
+}
