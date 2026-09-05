@@ -384,6 +384,28 @@ model AiProvider {
   @@index([enabled, priority])
 }
 
+/// 외부 서비스 인증키 보관함 (2026-09-05).
+///
+/// ⚠ **값은 암호문만 저장한다**(`src/lib/secret-box.ts` · AES-GCM 256).
+///    마스터 키는 DB 밖에 있다 — Worker 시크릿 `KEY_ENCRYPTION_KEY`,
+///    없으면 `AUTH_SECRET`에서 파생하고 그 사실을 화면에 밝힌다.
+/// ⚠ 푼 값은 **제공자를 부르는 그 자리에서만** 쓴다. 화면·폼·로그·에러 메시지에 싣지 않는다.
+/// ⚠ 세션·수집 시크릿(AUTH_SECRET·CRON_SECRET)은 여기 넣지 않는다 —
+///    앱이 자기 자신을 여는 열쇠라 DB에 두면 순환이 된다.
+model ApiCredential {
+  /// env 변수명과 같은 이름. 코드가 키를 찾는 유일한 열쇠다(GROQ_API_KEY · ECOS_API_KEY …)
+  name String @id
+
+  /// `v1.<iv>.<암호문>`
+  cipher String
+
+  /// 누가 마지막으로 넣었나. ⚠ 값 자체는 남기지 않는다
+  updatedBy String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model AiConfig {
   id String @id @default("singleton")
 

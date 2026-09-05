@@ -1,20 +1,31 @@
 "use client";
 
 /**
- * 키 등록 폼 — 입력하면 프로그램이 `.env`에 써 준다.
+ * 키 등록 폼 — 입력하면 **암호화해서 DB에 저장**한다(2026-09-05에 바뀌었다).
  *
- * ⚠ **로컬 개발 서버에서만 보인다.** 배포본(Workers)에는 파일 시스템이 없어
- * `.env`라는 파일 자체가 존재할 수 없다. 화면(page.tsx)이 그 판단을 하고,
- * 서버 액션도 한 번 더 막는다.
+ * 전에는 로컬 `.env`에만 쓸 수 있어서 내 PC 앞에 있어야 했고, 그래서 실제로는
+ * 키가 하나도 등록되지 않은 채였다. 이제 배포된 화면에서도 등록된다.
  *
- * ⚠ 저장된 키를 **다시 보여주지 않는다.** 입력칸은 저장 후 비운다.
+ * ⚠ 저장된 키를 **다시 보여주지 않는다.** 입력칸은 저장 후 비우고, 서버도 값을 돌려주지 않는다.
+ * ⚠ 화면에 나오는 것은 「어디에 저장됐는지 · 언제 · 지문」까지다.
  */
 import { useActionState, useEffect, useRef } from "react";
 import { AI_PROVIDERS } from "@/lib/ai/catalog";
 import { saveAiKeyAction } from "../actions";
 import { emptyKeyFormState } from "../key-form-state";
 
-export function KeyRegisterForm({ connected }: { connected: string[] }) {
+/** AI 제공자가 아니지만 성격이 같은 열쇠들 — 바깥 서비스를 부른다. */
+const EXTRA_ITEMS = [{ name: "ECOS_API_KEY", label: "한국은행 ECOS", free: true }];
+
+const TEXT = {
+  target: "어디 키",
+  key: "API 키",
+  keyPlaceholder: "발급받은 키를 붙여넣으세요",
+  submit: "암호화해서 저장",
+  saving: "저장 중…",
+};
+
+export function KeyRegisterForm({ stored }: { stored: string[] }) {
   const [state, formAction, pending] = useActionState(saveAiKeyAction, emptyKeyFormState);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -23,44 +34,49 @@ export function KeyRegisterForm({ connected }: { connected: string[] }) {
     if (state.savedName && inputRef.current) inputRef.current.value = "";
   }, [state.savedName]);
 
+  const items = [
+    ...AI_PROVIDERS.map((p) => ({ name: p.apiKeyEnv, label: p.label, free: p.free })),
+    ...EXTRA_ITEMS,
+  ];
+
   return (
     <form action={formAction} className="space-y-3">
       <div className="flex flex-wrap items-end gap-2">
-        <label className="flex-1 min-w-[190px]">
-          <span className="block text-[11px] text-muted mb-1">제공자</span>
+        <label className="min-w-[190px] flex-1">
+          <span className="mb-1 block text-[11px] text-muted">{TEXT.target}</span>
           <select
             name="apiKeyEnv"
-            defaultValue={AI_PROVIDERS[0].apiKeyEnv}
-            className="w-full bg-bg border border-border rounded-xl px-3 py-2 text-[13px] text-ink"
+            defaultValue={items[0].name}
+            className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-ink"
           >
-            {AI_PROVIDERS.map((p) => (
-              <option key={p.id} value={p.apiKeyEnv}>
-                {p.label} {p.free ? "(무료)" : "(유료)"}
-                {connected.includes(p.apiKeyEnv) ? " · 설정됨" : ""}
+            {items.map((item) => (
+              <option key={item.name} value={item.name}>
+                {item.label} {item.free ? "(무료)" : "(유료)"}
+                {stored.includes(item.name) ? " · 저장됨" : ""}
               </option>
             ))}
           </select>
         </label>
 
-        <label className="flex-[2] min-w-[240px]">
-          <span className="block text-[11px] text-muted mb-1">API 키</span>
+        <label className="min-w-[240px] flex-[2]">
+          <span className="mb-1 block text-[11px] text-muted">{TEXT.key}</span>
           <input
             ref={inputRef}
             name="apiKey"
             type="password"
             autoComplete="off"
             spellCheck={false}
-            placeholder="발급받은 키를 붙여넣으세요"
-            className="w-full bg-bg border border-border rounded-xl px-3 py-2 text-[13px] text-ink font-mono"
+            placeholder={TEXT.keyPlaceholder}
+            className="w-full rounded-xl border border-border bg-bg px-3 py-2 font-mono text-[13px] text-ink"
           />
         </label>
 
         <button
           type="submit"
           disabled={pending}
-          className="px-4 py-2 rounded-xl bg-gold-600/90 hover:bg-gold-600 text-[13px] font-medium text-onAccent disabled:opacity-50 transition-colors"
+          className="rounded-xl bg-gold-600/90 px-4 py-2 text-[13px] font-medium text-onAccent transition-colors hover:bg-gold-600 disabled:opacity-50"
         >
-          {pending ? "저장 중…" : ".env에 저장"}
+          {pending ? TEXT.saving : TEXT.submit}
         </button>
       </div>
 
@@ -71,9 +87,7 @@ export function KeyRegisterForm({ connected }: { connected: string[] }) {
       )}
       {state.savedName && (
         <p className="text-[12px] text-emerald-400">
-          <code>{state.savedName}</code> 를 `.env`에 기록했습니다. 개발 서버를 다시 시작하면
-          &ldquo;연결됨&rdquo;으로 바뀝니다. 배포본에도 반영하려면{" "}
-          <code className="text-gray-300">npm run ai:sync</code> 를 실행하세요.
+          <code>{state.savedName}</code> 를 암호화해 저장했습니다. 다음 호출부터 이 값을 씁니다.
         </p>
       )}
     </form>

@@ -14,7 +14,7 @@
  * - ⚠ 받은 값은 **원값 그대로** 넣는다. YoY 같은 변환은 읽을 때 한다.
  * - 처음 받을 때는 오래된 것까지, 이미 쌓여 있으면 최근 구간만 받는다(왕복을 줄인다).
  */
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { resolveApiEnv } from "@/features/ai/credentials";
 import { autoIndicators, findIndicator, type MacroIndicator } from "@/lib/macro/catalog";
 import { dedupeByDate, parseEcosJson, parseFredCsv, parseYahooChart } from "@/lib/macro/parse";
 import type { SeriesPoint } from "@/lib/macro/series";
@@ -137,21 +137,13 @@ async function fetchEcos(
 }
 
 /**
- * 인증키를 읽는다 — 배포본은 Cloudflare 시크릿, 로컬은 `.env`.
- * ⚠ 예외를 삼키지 않는다. "키가 비었다"와 "context를 못 읽었다"는 다른 상태다(CLAUDE.md 3장).
+ * 인증키를 읽는다 — **관리자 화면 보관함(암호화 DB) 우선, 없으면 시크릿·`.env`.**
+ * ⚠ 판단을 여기서 다시 구현하지 않는다. AI 키와 **같은 보관함·같은 순서**를 쓴다
+ *    (`features/ai/credentials.ts`) — 순서가 갈리면 "등록했는데 안 먹네"가 생긴다.
  */
 async function readEcosKey(): Promise<string> {
-  const fromProcess = (process.env.ECOS_API_KEY ?? "").trim();
-  if (fromProcess) return fromProcess;
-
-  try {
-    const { env } = await getCloudflareContext({ async: true });
-    const value = (env as unknown as Record<string, unknown>).ECOS_API_KEY;
-    return typeof value === "string" ? value.trim() : "";
-  } catch (error) {
-    console.error("[macro] ECOS 키를 읽지 못했습니다", error);
-    return "";
-  }
+  const env = await resolveApiEnv();
+  return (env.ECOS_API_KEY ?? "").trim();
 }
 
 async function fetchIndicator(

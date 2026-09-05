@@ -41,6 +41,14 @@ const serverEnvSchema = z.object({
   ECOS_API_KEY: optionalSecret,
 
   /**
+   * 인증키 보관함(`ApiCredential`)을 잠그는 마스터 키. 32자 이상.
+   * ⚠ 없으면 `AUTH_SECRET`에서 파생하고 화면이 그 사실을 밝힌다 — 다만 그 경우
+   *    **세션 키를 바꾸면 저장된 인증키를 못 푼다.** 따로 등록하는 편이 맞다.
+   * ⚠ 이 값은 보관함에 넣지 않는다(자기 자신을 여는 열쇠다).
+   */
+  KEY_ENCRYPTION_KEY: optionalSecret,
+
+  /**
    * AI 제공자 키. 이름은 `src/lib/ai/catalog.ts`의 apiKeyEnv와 1:1로 맞춰야 한다
    * (여기에 없으면 `npm run ai:sync`가 Cloudflare로 올리지 못한다).
    */

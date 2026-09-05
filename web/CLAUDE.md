@@ -24,7 +24,8 @@
 `macro/{registry,series,signal,parse}` `bubble/{catalog,score}`
 `canslim/{catalog,score}` `report/{catalog,rules,context,tistory,link}` `quota`
 `quote/{kpi,envelope,parse,lookup}` `bucket-target`
-`ai/{catalog,persona,context,routing,retrieval}` `security-headers` `login-throttle`
+`ai/{catalog,persona,context,routing,retrieval,client}` `security-headers` `login-throttle`
+`calendar-draft` `secret-box`
 — 전부 테스트가 있다.
 
 거시 지표는 **섹터 하나 = 파일 하나**다(`src/lib/macro/sectors/<key>.ts`).
@@ -98,10 +99,20 @@ Worker 런타임은 `wrangler.jsonc`를 읽을 수 없어, 상한 같은 값을 
 ## 6. 보안·정책 (되돌리지 말 것)
 
 - ⚠ 시크릿은 **서버 전용**. `NEXT_PUBLIC_` 접두사 금지. `src/lib/env.ts`를 클라이언트에서 import 금지.
-- ⚠ AI API 키를 **DB에 저장하지 않는다.** env 변수명만 기록하고 화면엔 "연결됨/미설정"만.
-  키 입력칸은 **로컬 개발 서버에서만** 연다(`features/ai/ui/KeyRegisterForm`) — 입력하면
-  프로그램이 `.env`에 써 준다. ⚠ **배포본 반영은 `npm run ai:sync` 한 경로뿐**이고 자동으로
-  돌리지 않는다. 저장된 키는 화면·폼 상태·에러 메시지에 다시 싣지 않는다.
+- ⚠ **API 키는 암호화해서만 저장한다** (2026-09-05에 바뀐 규칙).
+  전에는 "DB에 저장하지 않는다 · 로컬 `.env`에만 · 배포 반영은 `npm run ai:sync`"였다.
+  그 결과 **내 PC 앞에 있어야만 등록이 가능**했고, 실제로 키가 하나도 등록되지 않은 채
+  AI 기능이 놀고 있었다. 사용자 결정으로 관리자 화면에서 등록하게 바꾸되 조건을 걸었다.
+  - ⚠ 저장은 `ApiCredential` 테이블에 **암호문만**(`lib/secret-box.ts` · AES-GCM 256,
+    이름을 추가 인증 데이터로 함께 잠근다). **평문 저장 경로는 만들지 않는다.**
+  - ⚠ 마스터 키는 DB 밖 — `KEY_ENCRYPTION_KEY`, 없으면 `AUTH_SECRET`에서 파생하고
+    **그 사실을 화면에 표시한다**(조용한 폴백 금지). 마스터 키가 없으면 **저장을 거부**한다.
+  - ⚠ 읽는 순서는 **DB 우선 · 없으면 env**이고, 화면이 지금 어느 쪽을 쓰는지 보여준다.
+    (`features/ai/credentials.ts`가 유일한 경로다 — 거시 수집의 ECOS 키도 여기서 온다.)
+  - ⚠ 푼 값은 **제공자를 부르는 그 자리에서만** 쓴다. 화면·폼 상태·로그·에러 메시지에
+    다시 싣지 않는다. 화면에 나가는 것은 출처·시각·암호문 지문까지다.
+  - ⚠ 보관함에 **`AUTH_SECRET`·`CRON_SECRET`은 넣지 않는다.** 앱이 자기 자신을 여는
+    열쇠라 DB에 두면 순환이 된다.
 - ⚠ AI 프롬프트는 `src/lib/ai/persona.ts`의 공통 규범(`WOODSMAN_DOCTRINE`)을 항상 앞에 붙인다.
   매수 권유·목표주가·방향 단정 금지는 `/disclaimer`의 문장과 연결돼 있다. 약화시키지 않는다.
 - ⚠ 유료 AI 제공자에는 **월 토큰 상한을 반드시 둔다.** 상한이 없으면 실수 한 번이 청구서가 된다.

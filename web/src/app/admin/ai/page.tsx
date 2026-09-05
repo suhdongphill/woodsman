@@ -6,9 +6,8 @@ import { ProviderTable } from "@/features/ai/ui/ProviderTable";
 import { TaskRouting } from "@/features/ai/ui/TaskRouting";
 import { KeySetupGuide } from "@/features/ai/ui/KeySetupGuide";
 import { loadAiConfig, loadProviderUsage } from "@/features/ai/repository";
-import { canWriteEnvFile } from "@/features/ai/env-writer";
+import { credentialStatuses, masterKeyStatus } from "@/features/ai/credentials";
 import { AI_PROVIDERS } from "@/lib/ai/catalog";
-import { hasEnvKey } from "@/lib/env";
 import { requireAdmin } from "@/lib/session";
 import { cx } from "@/lib/format";
 
@@ -23,16 +22,20 @@ export const dynamic = "force-dynamic";
 export default async function AdminAiPage() {
   await requireAdmin("/admin/ai");
 
-  const [usage, config] = await Promise.all([loadProviderUsage(), loadAiConfig()]);
-  const canWriteEnv = canWriteEnvFile();
+  const [usage, config, statuses, master] = await Promise.all([
+    loadProviderUsage(),
+    loadAiConfig(),
+    credentialStatuses(),
+    masterKeyStatus(),
+  ]);
 
-  // ⚠ 키 '값'은 이 경계를 넘지 않는다. 아래로는 존재 여부만 내려간다.
-  const connectedEnv = AI_PROVIDERS.filter((p) => hasEnvKey(p.apiKeyEnv)).map((p) => p.apiKeyEnv);
+  /**
+   * ⚠ 키 '값'은 이 경계를 넘지 않는다. 아래로는 **어디에 저장돼 있는지**만 내려간다.
+   * ⚠ DB와 env를 함께 본다 — 둘 중 하나에 있으면 부를 수 있다(DB가 우선).
+   */
+  const connectedEnv = statuses.filter((s) => s.source !== "NONE").map((s) => s.name);
   const connectedIds = AI_PROVIDERS.filter((p) => connectedEnv.includes(p.apiKeyEnv)).map(
     (p) => p.id,
-  );
-  const missing = AI_PROVIDERS.filter((p) => !connectedEnv.includes(p.apiKeyEnv)).map(
-    (p) => p.apiKeyEnv,
   );
 
   const globalPct = (config.tokensUsedThisMonth / config.globalMonthlyTokenCap) * 100;
@@ -44,11 +47,7 @@ export default async function AdminAiPage() {
     <AdminShell>
       <AdminPageHeader
         title="AI 제공자"
-        description={
-          canWriteEnv
-            ? "무료 제공자를 앞에 세우고, 작업이 요구하는 급을 만족하는 가장 싼 모델을 고릅니다. 아래에서 키를 입력하면 프로그램이 .env에 기록합니다(로컬 개발 서버)."
-            : "무료 제공자를 앞에 세우고, 작업이 요구하는 급을 만족하는 가장 싼 모델을 고릅니다. 키는 서버에만 있고 이 화면에 표시되지 않습니다."
-        }
+        description="무료 제공자를 앞에 세우고, 작업이 요구하는 급을 만족하는 가장 싼 모델을 고릅니다. 키는 아래에서 등록하면 암호화되어 저장되고, 이 화면에 다시 표시되지 않습니다."
       />
 
       <div className="mb-7 grid gap-4 lg:grid-cols-3">
@@ -127,10 +126,10 @@ export default async function AdminAiPage() {
 
       <div className="mb-7">
         <h2 className="mb-3 text-sm font-semibold text-ink">제공자</h2>
-        <ProviderTable usage={usage} connected={connectedIds} canWriteEnv={canWriteEnv} />
+        <ProviderTable usage={usage} connected={connectedIds} />
       </div>
 
-      <KeySetupGuide missing={missing} connected={connectedEnv} canWriteEnv={canWriteEnv} />
+      <KeySetupGuide statuses={statuses} master={master} />
     </AdminShell>
   );
 }

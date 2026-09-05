@@ -19,6 +19,7 @@ import { requireAdmin } from "@/lib/session";
 import { seoulDay } from "@/lib/kst";
 import { runAiTask } from "@/lib/ai/client";
 import { loadAiConfig, loadProviderUsage, recordAiUsage } from "@/features/ai/repository";
+import { resolveApiEnv } from "@/features/ai/credentials";
 import { recordAdminLog } from "@/features/admin-log/repository";
 import { buildDraftPrompt, draftAt, parseDraft } from "@/lib/calendar-draft";
 import { createEvent, loadEvents } from "./repository";
@@ -42,11 +43,17 @@ export async function draftEventsAction(
   const today = seoulDay(new Date().toISOString());
   const existing = await loadEvents();
 
-  const [usage, config] = await Promise.all([loadProviderUsage(), loadAiConfig()]);
+  // ⚠ 키는 보관함(암호화 DB) → env 순서로 온다. process.env만 보면 화면에서 등록한 키가 무시된다.
+  const [usage, config, env] = await Promise.all([
+    loadProviderUsage(),
+    loadAiConfig(),
+    resolveApiEnv(),
+  ]);
 
   const run = await runAiTask({
     task: "calendar-draft",
     user: buildDraftPrompt({ today, existing }),
+    env,
     usage,
     global: {
       tokensUsedThisMonth: config.tokensUsedThisMonth,

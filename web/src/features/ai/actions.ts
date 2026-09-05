@@ -12,8 +12,9 @@
  */
 import { revalidatePath } from "next/cache";
 import { setProviderCap, setProviderEnabled } from "./repository";
-import { saveAiKeyToEnvFile } from "./env-writer";
+import { deleteApiKey, isStoredKeyName, saveApiKey } from "./credentials";
 import { allApiKeyEnvNames } from "@/lib/ai/catalog";
+import { recordAdminLog } from "@/features/admin-log/repository";
 import { requireAdmin } from "@/lib/session";
 import type { KeyFormState } from "./key-form-state";
 
@@ -22,6 +23,12 @@ function assertKnownEnv(name: string): string {
   if (!allApiKeyEnvNames().includes(name)) {
     throw new Error(`알 수 없는 제공자입니다: ${name}`);
   }
+  return name;
+}
+
+/** 키 보관함이 다루는 이름인가 — ⚠ AI 제공자보다 넓다(ECOS도 여기 들어온다). */
+function assertStoredKeyName(name: string): string {
+  if (!isStoredKeyName(name)) throw new Error(`알 수 없는 항목입니다: ${name}`);
   return name;
 }
 
@@ -50,24 +57,38 @@ export async function updateCapAction(formData: FormData): Promise<void> {
 }
 
 /**
- * 키를 `.env`에 기록한다. **로컬 개발 서버 전용.**
+ * 키를 **암호화해서 저장**한다(2026-09-05).
  *
- * ⚠ 성공/실패 메시지에 키 값을 넣지 않는다. 폼 상태는 클라이언트로 내려간다.
- * ⚠ 저장 후 자동으로 서버에 올리지 않는다 — 배포본 반영은 `npm run ai:sync`가
- *    사람이 의도해서 돌리는 별도 단계다(실수로 운영에 올라가는 걸 막는다).
+ * 전에는 로컬 `.env`에만 쓸 수 있었다(Workers에 파일 시스템이 없어서). 그래서 내 PC 앞에
+ * 있어야만 등록이 됐고, 실제로는 **키가 하나도 등록되지 않은 채** 기능이 놀고 있었다.
+ *
+ * ⚠ 평문으로 저장하지 않는다. 마스터 키가 없으면 **저장 자체를 거부**한다.
+ * ⚠ 성공/실패 메시지에 키 값을 넣지 않는다 — 폼 상태는 클라이언트로 내려간다.
+ * ⚠ 활동 로그에도 **이름만** 남긴다.
  */
 export async function saveAiKeyAction(
   _prev: KeyFormState,
   formData: FormData,
 ): Promise<KeyFormState> {
-  await requireAdmin("/admin/ai");
+  const admin = await requireAdmin("/admin/ai");
 
   const name = String(formData.get("apiKeyEnv") ?? "");
   const value = String(formData.get("apiKey") ?? "");
 
-  const result = await saveAiKeyToEnvFile(name, value);
+  const result = await saveApiKey(name, value, admin.email ?? "관리자");
   if (!result.ok) return { error: result.message };
 
+  await recordAdminLog({ actor: admin.email, action: "ai.key.save", target: name });
   revalidatePath("/admin/ai");
-  return { savedName: result.name };
+  return { savedName: name };
+}
+
+/** 저장된 키를 지운다. env에 같은 이름이 있으면 다시 그쪽을 쓰게 된다. */
+export async function deleteAiKeyAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin("/admin/ai");
+  const name = assertStoredKeyName(String(formData.get("apiKeyEnv") ?? ""));
+
+  await deleteApiKey(name);
+  await recordAdminLog({ actor: admin.email, action: "ai.key.delete", target: name });
+  revalidatePath("/admin/ai");
 }
