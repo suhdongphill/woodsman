@@ -24,7 +24,12 @@ import { requireAdmin } from "@/lib/session";
 import { seoulDay } from "@/lib/kst";
 import { runAiTask } from "@/lib/ai/client";
 import { resolveApiEnv } from "@/features/ai/credentials";
-import { loadAiConfig, loadProviderUsage, recordAiUsage } from "@/features/ai/repository";
+import {
+  loadAiConfig,
+  loadProviderUsage,
+  loadTaskModes,
+  recordAiUsage,
+} from "@/features/ai/repository";
 import { recordAdminLog } from "@/features/admin-log/repository";
 import { findIndicator } from "@/lib/macro/catalog";
 import { htmlToText } from "@/lib/html-text";
@@ -112,14 +117,17 @@ export async function extractIndicatorAction(
 
   // ── 2. 모델은 그 본문 안에서만 찾는다 ────────────────────────
   const today = seoulDay(new Date().toISOString());
-  const [usage, config, env] = await Promise.all([
+  const [usage, config, env, modes] = await Promise.all([
     loadProviderUsage(),
     loadAiConfig(),
     resolveApiEnv(),
+    loadTaskModes(),
   ]);
 
   const run = await runAiTask({
     task: "indicator-extract",
+    // ⚠ 관리자가 정한 품질 모드를 그대로 따른다(기본 cheapest).
+    mode: modes["indicator-extract"],
     user: buildExtractPrompt({
       indicatorName: indicator.name,
       unit: indicator.unit,

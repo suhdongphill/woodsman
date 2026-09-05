@@ -5,7 +5,7 @@ import { KnowledgePanel } from "@/features/ai/ui/KnowledgePanel";
 import { ProviderTable } from "@/features/ai/ui/ProviderTable";
 import { TaskRouting } from "@/features/ai/ui/TaskRouting";
 import { KeySetupGuide } from "@/features/ai/ui/KeySetupGuide";
-import { loadAiConfig, loadProviderUsage } from "@/features/ai/repository";
+import { loadAiConfig, loadProviderUsage, loadTaskModes } from "@/features/ai/repository";
 import { credentialStatuses, masterKeyStatus } from "@/features/ai/credentials";
 import { AI_PROVIDERS } from "@/lib/ai/catalog";
 import { requireAdmin } from "@/lib/session";
@@ -22,11 +22,12 @@ export const dynamic = "force-dynamic";
 export default async function AdminAiPage() {
   await requireAdmin("/admin/ai");
 
-  const [usage, config, statuses, master] = await Promise.all([
+  const [usage, config, statuses, master, taskModes] = await Promise.all([
     loadProviderUsage(),
     loadAiConfig(),
     credentialStatuses(),
     masterKeyStatus(),
+    loadTaskModes(),
   ]);
 
   /**
@@ -117,6 +118,7 @@ export default async function AdminAiPage() {
         <TaskRouting
           connectedEnv={connectedEnv}
           usage={usage}
+          modes={taskModes}
           global={{
             tokensUsedThisMonth: config.tokensUsedThisMonth,
             globalMonthlyTokenCap: config.globalMonthlyTokenCap,

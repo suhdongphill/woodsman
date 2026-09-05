@@ -57,8 +57,23 @@ export type GlobalUsage = {
   globalMonthlyTokenCap: number;
 };
 
+/**
+ * 이 작업을 **어떤 기준으로** 고를 것인가.
+ *
+ * - `cheapest` — 무료를 앞에 세우고, 요구 급을 만족하는 **가장 싼 모델**을 쓴다(기본값).
+ * - `best` — **품질을 먼저** 본다. 가장 깊은 급을 가진 제공자를 앞에 세우고 그 제공자의
+ *   최고 급 모델을 고른다.
+ *
+ * ⚠ 모드가 상한을 이기지 않는다. `best`여도 월 상한을 넘긴 유료는 후보에서 빠지고,
+ *    그러면 자동으로 무료로 떨어진다 — 화면이 그 사실을 말한다. 상한은 청구서를 막는
+ *    장치이고, 품질 선택이 그걸 무력화하면 상한이 아니게 된다.
+ */
+export type RoutingMode = "cheapest" | "best";
+
 export type RoutingInput = {
   task: AiTask;
+  /** 기본값은 `cheapest` — 아무것도 안 정하면 지금까지와 똑같이 돈다. */
+  mode?: RoutingMode;
   /** 키 보유 여부 판정에 쓸 환경 (값은 읽지 않고 존재만 본다) */
   env?: EnvSource;
   /** DB의 제공자 상태. 없으면 전부 활성·사용량 0으로 본다. */
@@ -102,6 +117,7 @@ export function isOverGlobalCap(g: GlobalUsage | undefined): boolean {
  */
 export function routeCandidates({
   task,
+  mode = "cheapest",
   env = process.env,
   usage = [],
   global: globalUsage,
@@ -121,11 +137,16 @@ export function routeCandidates({
     if (u && !u.enabled) continue;
     if (isOverCap(u)) continue;
 
-    // 요구 급 이상 중 가장 저렴한(=급이 낮은) 모델을 고른다.
-    // 필요 이상으로 비싼 모델을 부르지 않기 위해서다.
-    const model = provider.models
-      .filter((m) => TIER_RANK[m.strength] >= required)
-      .sort((a, b) => TIER_RANK[a.strength] - TIER_RANK[b.strength])[0];
+    /**
+     * 어떤 모델을 쓸 것인가.
+     * - `cheapest`: 요구 급 **이상** 중 가장 낮은 급 — 필요 이상으로 비싼 모델을 부르지 않는다.
+     * - `best`: 그 제공자가 가진 **가장 높은 급** — 품질을 사기로 한 모드다.
+     */
+    const eligible = provider.models.filter((m) => TIER_RANK[m.strength] >= required);
+    const model =
+      mode === "best"
+        ? eligible.sort((a, b) => TIER_RANK[b.strength] - TIER_RANK[a.strength])[0]
+        : eligible.sort((a, b) => TIER_RANK[a.strength] - TIER_RANK[b.strength])[0];
     if (!model) continue;
 
     candidates.push({
@@ -138,6 +159,19 @@ export function routeCandidates({
       free: provider.free,
       timeoutMs: resolveTimeoutMs(provider, model),
     });
+  }
+
+  if (mode === "best") {
+    /**
+     * ⚠ 품질 우선이어도 **무료를 버리지 않는다.** 뒤에 남겨 폴백으로 쓴다 —
+     *    유료가 상한에 걸리거나 실패해도 기능이 죽지 않아야 한다.
+     * 정렬: 모델 급이 높은 순 → 같으면 유료 우선(유료 쪽이 대체로 더 깊다) → 카탈로그 순서.
+     */
+    return candidates.sort(
+      (a, b) =>
+        TIER_RANK[b.model.strength] - TIER_RANK[a.model.strength] ||
+        Number(a.free) - Number(b.free),
+    );
   }
 
   // 무료 먼저. 그 안에서는 카탈로그 순서(=선호 순서)를 유지한다.
@@ -183,10 +217,69 @@ export function routingSummary(
   env: EnvSource = process.env,
   usage: ProviderUsage[] = [],
   global?: GlobalUsage,
+  modes: Partial<Record<AiTask, RoutingMode>> = {},
 ) {
   return (Object.keys(PERSONAS) as AiTask[]).map((task) => ({
     task,
     persona: PERSONAS[task],
-    candidates: routeCandidates({ task, env, usage, global }),
+    mode: modes[task] ?? "cheapest",
+    candidates: routeCandidates({ task, mode: modes[task], env, usage, global }),
   }));
+}
+
+
+/**
+ * 왜 후보가 되지 못했는가 — **제공자마다 이유를 따로 말한다.**
+ *
+ * ## ⚠ 왜 필요한가 (2026-09-05 사고)
+ * 키를 아홉 개 다 등록했는데 화면은 "제공자가 없습니다 — 키를 등록했는지, 월 상한을 넘지
+ * 않았는지 보세요"라고 했다. 진짜 원인은 **`AiProvider.enabled`가 전부 0**이었던 것이다.
+ * 세 가지 다른 원인을 한 문장으로 뭉뚱그리면, 화면이 사람을 **틀린 곳으로 보낸다.**
+ * 조용한 실패보다 나쁜 것은 **엉뚱한 곳을 가리키는 실패**다.
+ */
+export type BlockedProvider = {
+  providerId: Provider["id"];
+  providerLabel: string;
+  reason: string;
+};
+
+export function diagnoseRouting({
+  task,
+  mode = "cheapest",
+  env = process.env,
+  usage = [],
+  global: globalUsage,
+}: RoutingInput): { candidates: RouteCandidate[]; blocked: BlockedProvider[] } {
+  const required = TIER_RANK[PERSONAS[task].requires];
+  const usageById = new Map(usage.map((u) => [u.providerId, u]));
+  const paidClosed = isOverGlobalCap(globalUsage);
+  const blocked: BlockedProvider[] = [];
+
+  for (const provider of AI_PROVIDERS) {
+    const note = (reason: string) =>
+      blocked.push({ providerId: provider.id, providerLabel: provider.label, reason });
+
+    if (!hasKey(env, provider.apiKeyEnv)) {
+      note(`키가 없습니다(${provider.apiKeyEnv})`);
+      continue;
+    }
+    if (paidClosed && !provider.free) {
+      note("사이트 전체 월 상한을 넘겨 유료가 잠겼습니다");
+      continue;
+    }
+    const u = usageById.get(provider.id);
+    if (u && !u.enabled) {
+      note("꺼져 있습니다 — /admin/ai의 제공자 표에서 켜세요");
+      continue;
+    }
+    if (isOverCap(u)) {
+      note("이 제공자의 월 토큰 상한을 넘겼습니다");
+      continue;
+    }
+    if (!provider.models.some((m) => TIER_RANK[m.strength] >= required)) {
+      note(`이 작업이 요구하는 급(${PERSONAS[task].requires}) 이상의 모델이 없습니다`);
+    }
+  }
+
+  return { candidates: routeCandidates({ task, mode, env, usage, global: globalUsage }), blocked };
 }

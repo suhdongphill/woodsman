@@ -16,10 +16,11 @@
  */
 import { buildSystemPrompt, type AiTask } from "./persona";
 import {
-  routeCandidates,
+  diagnoseRouting,
   type GlobalUsage,
   type ProviderUsage,
   type RouteCandidate,
+  type RoutingMode,
 } from "./routing";
 import type { EnvSource } from "../env";
 
@@ -228,20 +229,27 @@ export async function runAiTask(input: {
   usage?: ProviderUsage[];
   global?: GlobalUsage;
   maxTokens?: number;
+  /** 품질 우선으로 고를 것인가. 기본값은 지금까지와 같은 `cheapest`. */
+  mode?: RoutingMode;
 }): Promise<AiRunResult> {
   const env = input.env ?? process.env;
-  const candidates = routeCandidates({
+  const { candidates, blocked } = diagnoseRouting({
     task: input.task,
+    mode: input.mode,
     env,
     usage: input.usage ?? [],
     global: input.global,
   });
 
   if (candidates.length === 0) {
+    // ⚠ 뭉뚱그리지 않는다. 제공자마다 왜 빠졌는지 그대로 말한다 —
+    //    "키를 등록했는지 보세요"가 정답이 아닌 경우가 실제로 있었다(2026-09-05).
+    const why = blocked.map((b) => `${b.providerLabel}: ${b.reason}`).join(" · ");
     return {
       ok: false,
-      reason:
-        "지금 이 작업을 돌릴 수 있는 제공자가 없습니다. /admin/ai에서 키를 등록했는지, 월 상한을 넘지 않았는지 보세요.",
+      reason: why
+        ? `지금 이 작업을 돌릴 수 있는 제공자가 없습니다 — ${why}`
+        : "지금 이 작업을 돌릴 수 있는 제공자가 없습니다.",
       attempts: [],
     };
   }

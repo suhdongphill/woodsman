@@ -124,3 +124,34 @@ export async function setProviderCap(apiKeyEnv: string, cap: number | null): Pro
     apiKeyEnv,
   ]);
 }
+
+
+/**
+ * 작업별 라우팅 정책. 행이 없는 작업은 **기본값 `cheapest`**다.
+ *
+ * ⚠ 못 읽으면 빈 맵을 돌려주되 로그를 남긴다 — "정책이 없다"와 "못 읽었다"는 다른 상태이고,
+ *    조용히 넘어가면 유료로 돌리기로 한 작업이 무료로 돌아가는 것을 아무도 모른다.
+ */
+export async function loadTaskModes(): Promise<Record<string, "cheapest" | "best">> {
+  try {
+    const rows = await queryAll<{ task: string; mode: string }>(
+      `SELECT task, mode FROM AiTaskPolicy`,
+    );
+    const out: Record<string, "cheapest" | "best"> = {};
+    for (const row of rows) out[row.task] = row.mode === "best" ? "best" : "cheapest";
+    return out;
+  } catch (error) {
+    console.error("[ai-repo] 작업 정책을 읽지 못했습니다 — 전부 기본값(cheapest)으로 돕니다.", error);
+    return {};
+  }
+}
+
+/** 한 작업의 모드를 정한다. */
+export async function setTaskMode(task: string, mode: "cheapest" | "best"): Promise<void> {
+  const now = new Date().toISOString();
+  await execute(
+    `INSERT INTO AiTaskPolicy (task, mode, updatedAt) VALUES (?, ?, ?)
+     ON CONFLICT(task) DO UPDATE SET mode = excluded.mode, updatedAt = excluded.updatedAt`,
+    [task, mode, now],
+  );
+}

@@ -418,6 +418,21 @@ model AiConfig {
   updatedAt DateTime @updatedAt
 }
 
+/// 작업별 라우팅 정책 (2026-09-05).
+///
+/// ⚠ 기본은 `cheapest`(무료 우선·요구 급의 가장 싼 모델)다. 품질이 필요한 작업만
+///    `best`로 바꾼다 — 유료라도 가장 깊은 모델을 먼저 부른다.
+/// ⚠ **모드가 상한을 이기지 않는다.** `best`여도 월 상한을 넘긴 유료는 후보에서 빠지고
+///    무료로 떨어진다. 상한은 청구서를 막는 장치이고, 품질 선택이 그걸 무력화하면 안 된다.
+model AiTaskPolicy {
+  /// lib/ai/persona.ts의 AiTask 값
+  task String @id
+  /// cheapest | best
+  mode String @default("cheapest")
+
+  updatedAt DateTime @updatedAt
+}
+
 model AiCache {
   id        String   @id @default(cuid())
   key       String   @unique

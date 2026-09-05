@@ -15,6 +15,8 @@ import {
   worstCaseWaitMs,
 } from "@/lib/ai/routing";
 import { PERSONAS, type AiTask } from "@/lib/ai/persona";
+import type { RoutingMode } from "@/lib/ai/routing";
+import { updateTaskModeAction } from "../actions";
 
 /** 1회 호출의 대략적 규모 — 비용 감을 잡기 위한 것이지 정확한 청구액이 아니다. */
 const SAMPLE_IN = 4_000;
@@ -26,12 +28,15 @@ export function TaskRouting({
   connectedEnv,
   usage,
   global: globalUsage,
+  modes = {},
 }: {
   /** 키가 채워진 env 변수명만 (값 아님) */
   connectedEnv: string[];
   usage: ProviderUsage[];
   /** 사이트 전체 사용량·상한. ⚠ 넘겨야 전역 상한이 이 미리보기에 반영된다. */
   global?: GlobalUsage;
+  /** 작업별 품질 모드. 행이 없으면 `cheapest`. */
+  modes?: Partial<Record<AiTask, RoutingMode>>;
 }) {
   // routeCandidates는 env 객체의 '존재 여부'만 본다 — 여기서 값 대신 표식을 넣는다.
   const env = Object.fromEntries(connectedEnv.map((name) => [name, "set"]));
@@ -52,7 +57,8 @@ export function TaskRouting({
       )}
       {(Object.keys(PERSONAS) as AiTask[]).map((task) => {
         const persona = PERSONAS[task];
-        const candidates = routeCandidates({ task, env, usage, global: globalUsage });
+        const mode: RoutingMode = modes[task] ?? "cheapest";
+        const candidates = routeCandidates({ task, mode, env, usage, global: globalUsage });
         const primary = candidates[0];
         const cost = primary ? estimateCostUsd(primary.model, SAMPLE_IN, SAMPLE_OUT) : null;
 
@@ -67,6 +73,25 @@ export function TaskRouting({
                 {REQUIRE_LABEL[persona.requires]} 이상
               </Badge>
             </div>
+
+            {/*
+              ⚠ 무엇을 사는지 화면이 말한다 — 「비용 우선」은 무료를 앞에, 「품질 우선」은
+                 가장 깊은 모델을 앞에 세운다. 다만 **모드가 상한을 이기지 않는다**:
+                 상한을 넘긴 유료는 그대로 빠지고 무료로 떨어진다.
+            */}
+            <form action={updateTaskModeAction} className="mt-3 flex items-center gap-2">
+              <input type="hidden" name="task" value={task} />
+              <input type="hidden" name="mode" value={mode === "best" ? "cheapest" : "best"} />
+              <span className="text-[11px] text-muted">
+                {mode === "best" ? "품질 우선 — 가장 깊은 모델부터" : "비용 우선 — 무료부터"}
+              </span>
+              <button
+                type="submit"
+                className="rounded-lg border border-border px-2.5 py-1 text-[11.5px] text-muted transition-colors hover:border-gold-600/40 hover:text-ink"
+              >
+                {mode === "best" ? "비용 우선으로" : "품질 우선으로"}
+              </button>
+            </form>
 
             {primary ? (
               <>

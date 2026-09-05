@@ -13,6 +13,8 @@
 import { revalidatePath } from "next/cache";
 import { setProviderCap, setProviderEnabled } from "./repository";
 import { deleteApiKey, isStoredKeyName, saveApiKey } from "./credentials";
+import { setTaskMode } from "./repository";
+import { PERSONAS, type AiTask } from "@/lib/ai/persona";
 import { allApiKeyEnvNames } from "@/lib/ai/catalog";
 import { recordAdminLog } from "@/features/admin-log/repository";
 import { requireAdmin } from "@/lib/session";
@@ -90,5 +92,30 @@ export async function deleteAiKeyAction(formData: FormData): Promise<void> {
 
   await deleteApiKey(name);
   await recordAdminLog({ actor: admin.email, action: "ai.key.delete", target: name });
+  revalidatePath("/admin/ai");
+}
+
+
+/**
+ * 작업별 품질 모드를 바꾼다.
+ *
+ * ⚠ `best`는 **유료를 먼저 부른다**는 뜻이다. 그래도 월 상한은 그대로 걸린다 —
+ *    상한을 넘기면 자동으로 무료로 떨어지고 화면이 그 사실을 말한다.
+ */
+export async function updateTaskModeAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin("/admin/ai");
+
+  const task = String(formData.get("task") ?? "");
+  if (!(task in PERSONAS)) throw new Error(`알 수 없는 작업입니다: ${task}`);
+
+  const mode = String(formData.get("mode")) === "best" ? "best" : "cheapest";
+  await setTaskMode(task as AiTask, mode);
+
+  await recordAdminLog({
+    actor: admin.email,
+    action: "ai.task.mode",
+    target: task,
+    summary: mode === "best" ? "품질 우선(유료 먼저)" : "비용 우선(무료 먼저)",
+  });
   revalidatePath("/admin/ai");
 }
