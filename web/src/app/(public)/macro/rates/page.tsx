@@ -148,6 +148,8 @@ export default async function RatesPage() {
   const adjUnrate = metric("participation_adjusted_unrate");
   const gap = metric("participation_gap");
   const cooling = metric("labor_cooling");
+  const wage = metric("wage_yoy");
+  const payems3m = metric("payems_change_3m_avg");
   const priceGap = metric("headline_trimmed_gap");
   const netLiq = metric("net_liquidity");
   const spread30 = metric("spread_30y_10y");
@@ -454,6 +456,27 @@ export default async function RatesPage() {
           </span>
         </div>
 
+        {/*
+          ⚠ 한 달 값은 노이즈이고, 게다가 **나중에 수정된다.** 그래서 고용은 3개월 평균으로,
+             임금은 전년비로 본다 — 수준(달러)은 그대로 읽을 값이 아니다.
+        */}
+        <div className="mb-3 grid gap-2 sm:grid-cols-2">
+          <div className="rounded-xl border border-border px-3 py-2.5">
+            <p className="text-[11px] text-muted">비농업 고용 · 월 증감 3개월 평균</p>
+            <p className="mt-0.5 text-[17px] font-semibold tabular-nums text-ink">
+              {payems3m?.value === null || payems3m?.value === undefined
+                ? "—"
+                : `${payems3m.value > 0 ? "+" : ""}${Math.round(payems3m.value).toLocaleString("ko-KR")}천 명`}
+            </p>
+          </div>
+          <div className="rounded-xl border border-border px-3 py-2.5">
+            <p className="text-[11px] text-muted">시간당 평균임금 (전년비)</p>
+            <p className="mt-0.5 text-[17px] font-semibold tabular-nums text-ink">
+              {formatMetric(wage?.value, "percent")}
+            </p>
+          </div>
+        </div>
+
         <RatesChart
           lines={[
             { label: "실업률", observations: obs("UNRATE"), sourceUrl: src("UNRATE") },
@@ -471,8 +494,8 @@ export default async function RatesPage() {
         </p>
 
         <ReadingNote
-          how="해고가 없어도 채용이 멈추면 노동시장은 식습니다. 「저채용·저해고」가 그 상태입니다."
-          cannot="참가율이 왜 떨어졌는지(은퇴·이민·돌봄)는 이 숫자가 구분하지 못합니다."
+          how="해고가 없어도 채용이 멈추면 노동시장은 식습니다. 「저채용·저해고」가 그 상태입니다. 임금 전년비를 물가와 견주면 실질 임금이 오르는지 내리는지가 보입니다."
+          cannot="참가율이 왜 떨어졌는지(은퇴·이민·돌봄)는 이 숫자가 구분하지 못합니다. ⚠ 그리고 고용 값은 **나중에 수정됩니다** — 여기 3개월 평균도 이미 수정된 값으로 계산한 것이라, 발표 당시 무엇이었는지는 말하지 않습니다."
         />
       </Card>
 

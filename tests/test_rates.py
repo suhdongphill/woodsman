@@ -23,10 +23,16 @@ import sqlite3
 import pytest
 
 from pms.rates import compute, transforms as T
+from pms.db import default_db_path
 from pms.rates.catalog import load_catalog
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH = os.environ.get("PMS_DB") or os.path.join(REPO_ROOT, "rates.db")
+
+# ⚠ **CLI와 같은 자리를 본다.** 2026-09-07까지 이 파일은 `rates.db`를 보고 있었는데
+#   `pms rates`가 쓰는 곳은 `pms.db`였다. 둘이 갈린 채로 골든 테스트가 **9월 5일에 멈춘
+#   DB를 검사하며 통과**하고 있었다 — 초록인데 아무것도 지키지 않는 상태다(2026-08-30에
+#   같은 종류를 한 번 겪었다). 경로 판단을 두 곳에 두지 않는다.
+DB_PATH = default_db_path()
 
 JULY = "2026-07"
 JULY_DAY = "2026-07-01"
@@ -369,3 +375,26 @@ def test_net_liquidity_refuses_to_guess_when_a_part_is_missing():
 
     out = {m.key: m for m in net_liquidity([("2026-09-02", 6_740_000.0)], [], [], "2026-09-02")}
     assert out["net_liquidity"].value is None
+
+
+def test_payems_3m_averages_the_change_not_the_level():
+    """⚠ 수준을 평균 내면 「몇 명 늘었나」가 아니라 「몇 명인가」가 된다 — 질문이 바뀐다."""
+    from pms.rates.compute import payems_change_3m
+
+    payems = [
+        ("2026-05-01", 158_800.0),
+        ("2026-06-01", 158_900.0),
+        ("2026-07-01", 159_000.0),
+        ("2026-08-01", 159_100.0),
+    ]
+    m = payems_change_3m(payems, "2026-08")
+    assert round(m.value, 1) == 100.0  # (159,100 − 158,800) / 3
+
+
+def test_wage_growth_is_year_over_year_not_the_level():
+    from pms.rates.compute import wage_growth
+
+    ces = [("2025-08-01", 36.00), ("2026-08-01", 37.08)]
+    m = wage_growth(ces, "2026-08")
+    assert round(m.value, 2) == 3.0
+    assert m.inputs["level"] == 37.08

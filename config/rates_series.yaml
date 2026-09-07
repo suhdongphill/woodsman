@@ -259,6 +259,13 @@ fred:
     seasonal_adj: SA
     layer: two_speed
     definition_ko: 상업은행이 기업에 내준 대출의 잔액(십억 달러)이다.
+  - id: CES0500000003
+    name_ko: 시간당 평균임금 (민간 전체)
+    unit: usd
+    frequency: M
+    seasonal_adj: SA
+    layer: labor
+    definition_ko: 민간 부문 전체 근로자의 시간당 평균 임금(달러)이다. ⚠ 수준이라 그대로 읽지 않고 전년비로 본다 — 물가와 견줘야 실질 임금이 오르는지 알 수 있다.
   - id: PNFI
     name_ko: 민간 비주거 고정투자
     unit: billions_usd
@@ -275,6 +282,13 @@ fred:
     seasonal_adj: NSA
     layer: liquidity
     definition_ko: 연방준비제도가 보유한 자산 총액(백만 달러)이다. ⚠ 백만 달러 단위라 십억으로 읽으면 1000배 어긋난다.
+  - id: RESPPLLOPNWW
+    name_ko: 연준 이연자산
+    unit: millions_usd
+    frequency: W
+    seasonal_adj: NSA
+    layer: liquidity
+    definition_ko: 연준이 손실을 낸 기간 동안 재무부에 넘기지 못한 금액을 쌓아 둔 계정(백만 달러)이다. ⚠ FRED는 이것을 **음수로** 낸다(준비금을 흡수하는 항목이라 부호가 반대다) — 절댓값이 이연자산 규모다. 값이 0에 가까워지면 연준이 다시 흑자로 돌아섰다는 뜻이다.
   - id: RRPONTSYD
     name_ko: 역레포 잔액
     unit: billions_usd

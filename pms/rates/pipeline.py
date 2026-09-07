@@ -74,6 +74,8 @@ def compute_all(conn: sqlite3.Connection, asof: str) -> list[compute.Metric]:
     metrics.append(compute.curve_spread_30y_10y(get("DGS30"), get("DGS10"), asof))
     metrics.append(compute.headline_trimmed_gap(pcepi, trimmed, core, month))
     metrics.extend(compute.net_liquidity(get("WALCL"), get("WTREGEN"), get("RRPONTSYD"), asof))
+    metrics.append(compute.wage_growth(get("CES0500000003"), labor_month))
+    metrics.append(compute.payems_change_3m(payems, labor_month))
 
     fx = get("DEXKOUS")
     # 금리차 시계열을 만들어 상관을 잰다(관측이 둘 다 있는 날만).

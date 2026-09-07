@@ -599,3 +599,39 @@ def net_liquidity(
             )
         )
     return out
+
+
+# ── 4-11. 노동 — 임금과 고용의 「속도」 ─────────────────────────
+#
+# ⚠ 한 달 값은 노이즈다. 그리고 **수정된다** — 이 사이트가 계속 하는 말이다.
+#   그래서 고용은 3개월 평균으로, 임금은 전년비로 본다(수준은 그대로 읽을 값이 아니다).
+
+
+def wage_growth(ces: Sequence[Point], month: str) -> Metric:
+    """시간당 평균임금 전년비. ⚠ 수준(달러)이 아니라 **오르는 속도**를 본다."""
+    day = f"{month}-01"
+    series = T.to_map(ces)
+    yoy = T.yoy(series, day)
+    return Metric(
+        "wage_yoy", yoy, "percent",
+        inputs={"as_of": day, "level": T.value_at(series, day)},
+        note="물가와 견줘야 실질 임금이 오르는지 알 수 있다",
+    )
+
+
+def payems_change_3m(payems: Sequence[Point], month: str) -> Metric:
+    """비농업 고용 **월 증감의 3개월 평균**(천 명).
+
+    ⚠ 3개월 평균 *수준*이 아니라 **증감의 평균**이다. 수준을 평균 내면 「몇 명 늘었나」가
+      아니라 「몇 명인가」가 되어 질문이 바뀐다.
+    """
+    day = f"{month}-01"
+    series = T.to_map(payems)
+    now = T.value_at(series, day)
+    then = T.value_at(series, T.shift_months(day, -3))
+    avg = None if now is None or then is None else (now - then) / 3.0
+    return Metric(
+        "payems_change_3m_avg", avg, "thousands",
+        inputs={"from": T.shift_months(day, -3), "to": day, "from_value": then, "to_value": now},
+        note="한 달 값은 노이즈이고, 게다가 나중에 수정된다",
+    )
