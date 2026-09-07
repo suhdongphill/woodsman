@@ -26,7 +26,14 @@ from .db import (
     upsert_observations,
     upsert_series,
 )
-from .pipeline import build_payload, compute_all, default_export_path, save_metrics, write_payload
+from .pipeline import (
+    DEFAULT_HISTORY_MONTHS,
+    build_payload,
+    compute_all,
+    default_export_path,
+    save_metrics,
+    write_payload,
+)
 from .verify import verify_ecos_items, verify_series
 
 # 처음 받을 때 어디까지 거슬러 올라가나. 사이클을 보려면 두 번의 침체가 필요하다.
@@ -293,7 +300,7 @@ def compute_cmd(ctx: click.Context, asof: str | None) -> None:
 
 @rates.command("export")
 @click.option("--out", "out_path", default=None, help="내보낼 파일 경로.")
-@click.option("--history-months", default=120, show_default=True)
+@click.option("--history-months", default=DEFAULT_HISTORY_MONTHS, show_default=True)
 @click.option("--asof", default=None)
 @click.pass_context
 def export_cmd(ctx: click.Context, out_path: str | None, history_months: int, asof: str | None) -> None:

@@ -41,6 +41,8 @@ export type RatesPayload = {
     schema_version: number;
     partial: boolean;
     missing_series: string[];
+    /** 내보낸 관측 기간(개월). 화면이 「표시 기간 N년」을 스스로 말한다. */
+    history_months?: number;
     stale?: boolean;
     stale_since?: string;
   };

@@ -8,6 +8,10 @@
  *   분기값이 매달 관측된 것처럼 보인다.
  * - 목표선·중립금리선은 **점선 + 라벨**.
  *
+ * - **표시 기간은 7년**이고, 그보다 긴 흐름은 범례의 계열 이름을 눌러 원출처(FRED·ECOS)로
+ *   넘긴다. ⚠ 10년치를 그대로 실으면 `rates.json`이 1MB에 붙는다 — 긴 역사는 원출처가
+ *   우리보다 잘 보여준다(사용자 결정, 2026-09-07).
+ *
  * ⚠ 축은 0을 자르지 않는다. 자를 때는 축에 그렇게 적는다.
  * ⚠ SVG의 `fill=`/`stroke=` **속성**은 `var()`를 못 읽는다. 반드시 `style`로 준다.
  */
@@ -26,6 +30,8 @@ export type ChartLine = {
   observations: RatesObservation[];
   /** 분기 계열은 계단으로 — 월간과 눈으로 구분되게 */
   step?: boolean;
+  /** 원출처(FRED·ECOS). 주면 범례의 이름이 그리로 가는 링크가 된다. */
+  sourceUrl?: string;
 };
 
 export type ChartGuide = { value: number; label: string };
@@ -35,11 +41,14 @@ export function RatesChart({
   guides = [],
   format,
   ariaLabel,
+  spanMonths,
 }: {
   lines: ChartLine[];
   guides?: ChartGuide[];
   format: (value: number) => string;
   ariaLabel: string;
+  /** 이 차트가 담은 기간(개월). 주면 범례 아래에 「표시 기간」을 적는다. */
+  spanMonths?: number;
 }) {
   const drawable = lines.filter((l) => l.observations.some(([, v]) => v !== null));
   if (drawable.length === 0) {
@@ -137,18 +146,40 @@ export function RatesChart({
         ))}
       </svg>
 
-      <figcaption className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted">
-        {drawable.map((line, index) => (
-          <span key={line.label} className="inline-flex items-center gap-1.5">
-            <span
-              aria-hidden
-              className="inline-block h-[2px] w-4"
-              style={{ background: PALETTE[index % PALETTE.length] }}
-            />
-            {line.label}
-            {line.step && <span className="text-ink-3">(분기 · 계단)</span>}
+      <figcaption className="mt-1.5 text-[11px] text-muted">
+        <span className="flex flex-wrap gap-x-3 gap-y-1">
+          {drawable.map((line, index) => (
+            <span key={line.label} className="inline-flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="inline-block h-[2px] w-4"
+                style={{ background: PALETTE[index % PALETTE.length] }}
+              />
+              {line.sourceUrl ? (
+                <a
+                  href={line.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline-offset-2 hover:text-ink hover:underline"
+                  title={`${line.label} — 원출처에서 더 긴 기간 보기`}
+                >
+                  {line.label}
+                </a>
+              ) : (
+                line.label
+              )}
+              {line.step && <span className="text-ink-3">(분기 · 계단)</span>}
+            </span>
+          ))}
+        </span>
+
+        {/* ⚠ 「그래프가 짧다」와 「자료가 없다」는 다른 말이다. 어느 쪽인지 먼저 적는다. */}
+        {spanMonths !== undefined && (
+          <span className="mt-1 block text-[10.5px] text-ink-3">
+            표시 기간 {spanMonths >= 12 ? `${Math.round(spanMonths / 12)}년` : `${spanMonths}개월`}
+            {drawable.some((l) => l.sourceUrl) && " · 더 긴 기간은 계열 이름을 눌러 원출처에서"}
           </span>
-        ))}
+        )}
       </figcaption>
     </figure>
   );

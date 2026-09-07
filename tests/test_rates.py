@@ -257,3 +257,46 @@ def test_credit_card_series_definition_warns_about_the_other_definition():
     definition = catalog["DRCCLACBS"].definition_ko
     assert "잔액" in definition
     assert "전이율" in definition
+
+
+# ── 내보내기 기간 ────────────────────────────────────────────────
+#
+# ⚠ 7년으로 좁힌 것은 파일 크기 때문이고(10년치는 977KB로 1MB 경계에 붙었다), 그래서
+#   「짧아진 것」과 「자료가 없는 것」을 화면이 구분해 말할 수 있어야 한다. meta에 기간을
+#   싣는 이유가 그것이다 — 이 둘이 무너지면 화면이 다시 사람을 엉뚱한 곳으로 보낸다.
+
+
+def test_payload_records_the_history_window_it_wrote():
+    from pms.rates.pipeline import build_payload
+
+    if not os.path.exists(DB_PATH):
+        pytest.skip(f"{DB_PATH}가 없습니다 — `pms rates fetch`를 먼저 돌리세요")
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        asof = conn.execute("SELECT MAX(asof_date) FROM rates_snapshot").fetchone()[0]
+        if not asof:
+            pytest.skip("스냅숏이 없습니다 — `pms rates compute`를 먼저 돌리세요")
+
+        payload = build_payload(conn, asof, 84)
+        assert payload["meta"]["history_months"] == 84
+
+        cutoff = T.shift_months(f"{asof[:7]}-01", -84)
+        for sid, item in payload["series"].items():
+            for obs_date, _ in item["observations"]:
+                assert obs_date >= cutoff, f"{sid}의 {obs_date}가 기간 밖이다"
+
+        # 좁히면 실제로 점이 줄어든다 — 기간 인자가 먹지 않는 채로 통과하지 않게.
+        narrow = build_payload(conn, asof, 12)
+        assert narrow["meta"]["history_months"] == 12
+        wide_points = sum(len(v["observations"]) for v in payload["series"].values())
+        narrow_points = sum(len(v["observations"]) for v in narrow["series"].values())
+        assert narrow_points < wide_points
+    finally:
+        conn.close()
+
+
+def test_default_history_window_is_seven_years():
+    from pms.rates.pipeline import DEFAULT_HISTORY_MONTHS
+
+    assert DEFAULT_HISTORY_MONTHS == 84

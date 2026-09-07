@@ -135,7 +135,11 @@ export default async function RatesPage() {
   const staleDays = staleness(data.meta, today);
   const metric = (key: string) => data.metrics[key];
   const series = (id: string) => data.series[id];
-  const obs = (id: string, months = 120) => tail(series(id)?.observations ?? [], months);
+  /** 내보낸 기간. ⚠ 화면이 임의로 정하지 않는다 — `rates.json`이 담은 만큼만 그린다. */
+  const span = data.meta.history_months ?? 84;
+  const obs = (id: string, months = span) => tail(series(id)?.observations ?? [], months);
+  /** 범례 이름에 붙는 원출처. 7년보다 긴 흐름은 여기로 넘긴다. */
+  const src = (id: string) => series(id)?.source_url;
 
   const realPolicy = metric("real_policy_rate");
   const headline = metric("real_policy_rate_headline");
@@ -196,11 +200,16 @@ export default async function RatesPage() {
 
         <RatesChart
           lines={[
-            { label: "명목 정책금리 (DFF)", observations: obs("DFF", 120) },
-            { label: "절사평균 PCE", observations: obs("PCETRIM12M159SFRBDAL", 120) },
+            { label: "명목 정책금리 (DFF)", observations: obs("DFF"), sourceUrl: src("DFF") },
+            {
+              label: "절사평균 PCE",
+              observations: obs("PCETRIM12M159SFRBDAL"),
+              sourceUrl: src("PCETRIM12M159SFRBDAL"),
+            },
           ]}
           guides={[{ value: 2, label: "물가목표 2%" }]}
           format={pct}
+          spanMonths={span}
           ariaLabel="명목 정책금리와 절사평균 물가상승률 추이"
         />
 
@@ -278,10 +287,11 @@ export default async function RatesPage() {
 
         <RatesChart
           lines={[
-            { label: "실업률", observations: obs("UNRATE", 120) },
-            { label: "경제활동참가율", observations: obs("CIVPART", 120) },
+            { label: "실업률", observations: obs("UNRATE"), sourceUrl: src("UNRATE") },
+            { label: "경제활동참가율", observations: obs("CIVPART"), sourceUrl: src("CIVPART") },
           ]}
           format={pct}
+          spanMonths={span}
           ariaLabel="실업률과 경제활동참가율 추이"
         />
 
@@ -315,10 +325,15 @@ export default async function RatesPage() {
 
         <RatesChart
           lines={[
-            { label: "미 국채 10년", observations: obs("DGS10", 60) },
-            { label: "한국 국고채 10년", observations: obs("ECOS:817Y002:010210000", 60) },
+            { label: "미 국채 10년", observations: obs("DGS10", 60), sourceUrl: src("DGS10") },
+            {
+              label: "한국 국고채 10년",
+              observations: obs("ECOS:817Y002:010210000", 60),
+              sourceUrl: src("ECOS:817Y002:010210000"),
+            },
           ]}
           format={pct}
+          spanMonths={60}
           ariaLabel="미 국채 10년과 한국 국고채 10년 추이"
         />
 
@@ -380,7 +395,13 @@ export default async function RatesPage() {
         </div>
       </Card>
 
-      <p className="mt-5 text-[11.5px] leading-relaxed text-ink-3">
+      <p className="mt-3 text-[11.5px] leading-relaxed text-ink-3">
+        이 화면은 최근 {Math.round(span / 12)}년치를 그립니다. 그보다 긴 역사는 계열 ID를 누르면
+        원출처(FRED·한국은행 ECOS)에서 전체 기간으로 볼 수 있습니다 — 긴 역사는 원출처가 우리보다
+        잘 보여줍니다.
+      </p>
+
+      <p className="mt-3 text-[11.5px] leading-relaxed text-ink-3">
         지표의 정의와 계산식은 <code>docs/금리섹션_지표해설.md</code>가 단일 출처입니다. 값은{" "}
         <Link href="/macro" className="underline underline-offset-2 hover:text-ink">
           거시 지표

@@ -153,6 +153,11 @@ def save_metrics(conn: sqlite3.Connection, asof: str, metrics: list[compute.Metr
 # ── 내보내기 ────────────────────────────────────────────────────
 
 
+# 화면이 그리는 기간(개월). ⚠ 7년이다 — 10년치는 977KB가 되어 1MB 경계에 붙었다.
+#   더 긴 흐름은 계열마다 원출처(FRED·ECOS) 링크로 넘긴다(사용자 결정, 2026-09-07).
+DEFAULT_HISTORY_MONTHS = 84
+
+
 def default_export_path() -> str:
     """⚠ 명세의 ``portal/``이 이 저장소에 없다. 사이트가 읽는 자리로 낸다(사용자 결정, 2026-09-05)."""
     here = os.path.dirname(os.path.abspath(__file__))
@@ -161,7 +166,7 @@ def default_export_path() -> str:
 
 
 def build_payload(
-    conn: sqlite3.Connection, asof: str, history_months: int = 120
+    conn: sqlite3.Connection, asof: str, history_months: int = DEFAULT_HISTORY_MONTHS
 ) -> dict[str, Any]:
     """``rates.json``의 내용을 만든다.
 
@@ -210,6 +215,9 @@ def build_payload(
             "asof": asof,
             "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
             "schema_version": 1,
+            # 화면이 「표시 기간」을 스스로 말할 수 있게 한다 — 몇 년 치인지 모르면
+            # 「그래프가 짧다」와 「자료가 없다」를 구분하지 못한다.
+            "history_months": history_months,
             "partial": bool(headline_metric.get("inputs", {}).get("missing_layers")),
             "missing_series": missing,
             "stale": False,
