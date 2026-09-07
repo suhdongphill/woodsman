@@ -69,6 +69,12 @@ def compute_all(conn: sqlite3.Connection, asof: str) -> list[compute.Metric]:
     gaps = compute.kr_us_gaps(dff, kr_policy, get("DGS10"), kr_10y, asof)
     metrics.extend(gaps)
 
+    # ── 커브의 모양 · 물가 격차 · 순유동성 방향 (사용자 요청 2026-09-07) ──
+    metrics.extend(compute.curve_levels({sid: get(sid) for _, sid in compute.CURVE_TENORS}, asof))
+    metrics.append(compute.curve_spread_30y_10y(get("DGS30"), get("DGS10"), asof))
+    metrics.append(compute.headline_trimmed_gap(pcepi, trimmed, core, month))
+    metrics.extend(compute.net_liquidity(get("WALCL"), get("WTREGEN"), get("RRPONTSYD"), asof))
+
     fx = get("DEXKOUS")
     # 금리차 시계열을 만들어 상관을 잰다(관측이 둘 다 있는 날만).
     dff_map, kr_map = T.to_map(dff), T.to_map(kr_policy)

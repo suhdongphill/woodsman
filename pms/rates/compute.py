@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime, timedelta
 from typing import Any, Mapping, Sequence
 
 import yaml
@@ -452,3 +452,150 @@ def easing_pressure_index(
         inputs={**inputs, "weights_used": live, "missing_layers": missing},
         note="부분 산출 — " + ", ".join(missing) if partial else None,
     )
+
+
+# ── 4-8. 국채 만기별 — 커브의 「모양」 ───────────────────────────
+#
+# ⚠ 수준만 흩어 놓으면 모양이 안 보인다. 어느 만기가 움직였는지가 원인을 가른다 —
+#   짧은 쪽이 오르면 연준 이야기, 긴 쪽이 오르면 재정·기간프리미엄 이야기다.
+#   그래서 값과 **직전 관측일 대비 bp 변화**를 함께 싣는다(사용자 요청 2026-09-07 §1).
+
+CURVE_TENORS: tuple[tuple[str, str], ...] = (
+    ("ust_3m", "DGS3MO"),
+    ("ust_2y", "DGS2"),
+    ("ust_10y", "DGS10"),
+    ("ust_30y", "DGS30"),
+)
+
+
+def _change_bp(points: Sequence[Point], day: str) -> tuple[tuple[str, float] | None, float | None]:
+    """(기준 관측, 직전 관측 대비 bp). ⚠ 「전일」이 아니라 **직전 관측일**이다 —
+    휴장일이 있으므로 달력 하루 전을 빼면 조용히 None이 된다."""
+    seen = [p for p in T.observed(points) if p[0] <= day]
+    if not seen:
+        return None, None
+    if len(seen) < 2:
+        return seen[-1], None
+    return seen[-1], round((seen[-1][1] - seen[-2][1]) * 100, 1)
+
+
+def curve_levels(series: Mapping[str, Sequence[Point]], day: str) -> list[Metric]:
+    """만기별 수준 + bp 변화. 값이 없는 만기는 ``None``으로 남는다."""
+    out: list[Metric] = []
+    for key, sid in CURVE_TENORS:
+        point, change = _change_bp(series.get(sid) or [], day)
+        out.append(
+            Metric(
+                key,
+                None if point is None else point[1],
+                "percent",
+                inputs={**_input(sid, point), "change_bp": change},
+            )
+        )
+    return out
+
+
+def curve_spread_30y_10y(dgs30: Sequence[Point], dgs10: Sequence[Point], day: str) -> Metric:
+    """30년−10년. ⚠ 커브의 **긴 쪽 기울기**다. 10년−2년(연준 기대)과 다른 것을 본다."""
+    long_p, ten_p = T.as_of(dgs30, day), T.as_of(dgs10, day)
+    value = None if not (long_p and ten_p) else long_p[1] - ten_p[1]
+    return Metric(
+        "spread_30y_10y", value, "percent",
+        inputs={**_input("DGS30", long_p), **_input("DGS10", ten_p)},
+        note="재정·기간프리미엄이 드러나는 구간",
+    )
+
+
+# ── 4-9. 물가 — 헤드라인과 절사평균의 거리 ──────────────────────
+#
+# ⚠ 이 격차 자체가 **「높은 물가의 얼마가 공급 요인인가」의 증거**다. 절사평균만 보면
+#   물가는 거의 잡혔고, 헤드라인만 보면 아직 멀었다. 둘 다 맞는 말이라 나란히 둔다.
+
+
+def headline_trimmed_gap(
+    pcepi: Sequence[Point], trimmed: Sequence[Point], core: Sequence[Point], month: str
+) -> Metric:
+    """헤드라인 PCE 전년비 − 절사평균 PCE. ⚠ 양수 = 공급 요인 우세로 읽는다."""
+    day = f"{month}-01"
+    headline = T.yoy(T.to_map(pcepi), day)
+    trim = T.value_at(T.to_map(trimmed), day)
+    core_yoy = T.yoy(T.to_map(core), day)
+    gap = None if headline is None or trim is None else headline - trim
+    return Metric(
+        "headline_trimmed_gap", gap, "percent",
+        inputs={
+            "headline_yoy": headline,
+            "trimmed": trim,
+            "core_yoy": core_yoy,
+            "as_of": day,
+        },
+        note="양수가 클수록 공급 요인 우세 — 좁아지면 기저 물가 문제",
+    )
+
+
+# ── 4-10. 순유동성과 그 방향 ────────────────────────────────────
+#
+# ⚠ 수준만으로는 「민간 자금이 연준을 상쇄하는가」에 답할 수 없다. **방향**이 답이다.
+#   그리고 구성 항목을 다 보여야 독자가 계산을 되짚을 수 있다(사용자 요청 §8).
+
+NET_LIQUIDITY_WEEKS: tuple[int, ...] = (4, 13)
+
+
+def net_liquidity(
+    walcl: Sequence[Point], tga: Sequence[Point], rrp: Sequence[Point], day: str
+) -> list[Metric]:
+    """순유동성 = 연준 총자산 − TGA − 역레포. 단위는 **조 달러**로 맞춘다.
+
+    ⚠ 세 계열의 원 단위가 다르다(WALCL·TGA는 백만 달러, RRP는 십억 달러).
+      여기서 한 번만 맞추고, 화면은 맞춰진 값만 본다.
+    """
+    w = T.as_of(walcl, day)
+    t = T.as_of(tga, day)
+    r = T.as_of(rrp, day)
+    if not (w and t and r):
+        return [
+            Metric("net_liquidity", None, "trillions_usd",
+                   inputs={**_input("WALCL", w), **_input("WTREGEN", t), **_input("RRPONTSYD", r)},
+                   note="구성 계열 중 하나가 아직 없습니다"),
+        ]
+
+    def at(points: Sequence[Point], d: str) -> float | None:
+        p = T.as_of(points, d)
+        return None if p is None else p[1]
+
+    def level(d: str) -> float | None:
+        wv, tv, rv = at(walcl, d), at(tga, d), at(rrp, d)
+        if wv is None or tv is None or rv is None:
+            return None
+        # 백만 → 조, 십억 → 조.
+        return wv / 1_000_000 - tv / 1_000_000 - rv / 1_000
+
+    now = level(day)
+    out = [
+        Metric(
+            "net_liquidity", now, "trillions_usd",
+            inputs={
+                **_input("WALCL", w), **_input("WTREGEN", t), **_input("RRPONTSYD", r),
+                "walcl_tn": w[1] / 1_000_000, "tga_tn": t[1] / 1_000_000, "rrp_tn": r[1] / 1_000,
+            },
+            note="연준 총자산 − 재무부 일반계정 − 역레포",
+        )
+    ]
+
+    for weeks in NET_LIQUIDITY_WEEKS:
+        past_day = (
+            datetime.strptime(day, "%Y-%m-%d").date() - timedelta(weeks=weeks)
+        ).isoformat()
+        then = level(past_day)
+        change = None if now is None or then is None else now - then
+        out.append(
+            Metric(
+                f"net_liquidity_change_{weeks}w", change, "trillions_usd",
+                inputs={"from": past_day, "from_value": then, "to": day, "to_value": now},
+                band=None if change is None else (
+                    "rising" if change > 0.05 else "falling" if change < -0.05 else "flat"
+                ),
+                note="⚠ 방향이 답이다 — 수준만으로는 상쇄 여부를 말할 수 없다",
+            )
+        )
+    return out

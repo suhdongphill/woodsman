@@ -300,3 +300,72 @@ def test_default_history_window_is_seven_years():
     from pms.rates.pipeline import DEFAULT_HISTORY_MONTHS
 
     assert DEFAULT_HISTORY_MONTHS == 84
+
+
+# ── 커브 · 물가 격차 · 순유동성 (사용자 요청 2026-09-07) ────────
+#
+# ⚠ 이 셋의 공통점은 **수준이 아니라 관계를 본다**는 것이다. 관계를 만드는 계산은
+#   조용히 틀리기 쉽다 — 부호가 뒤집히거나, 단위가 다른 계열을 그냥 빼거나.
+
+
+def test_curve_change_uses_the_previous_observation_not_yesterday():
+    """⚠ 「전일 대비」를 달력으로 재면 휴장일에 조용히 None이 된다."""
+    from pms.rates.compute import curve_levels
+
+    points = [("2026-09-01", 4.00), ("2026-09-02", None), ("2026-09-03", 4.10)]
+    out = {m.key: m for m in curve_levels({"DGS2": points}, "2026-09-03")}
+    two = out["ust_2y"]
+    assert two.value == 4.10
+    # 9/2가 비어 있어도 직전 관측(9/1)과 견준다 — 10bp.
+    assert round(two.inputs["change_bp"], 1) == 10.0
+
+
+def test_curve_change_is_none_with_a_single_observation():
+    from pms.rates.compute import curve_levels
+
+    out = {m.key: m for m in curve_levels({"DGS2": [("2026-09-03", 4.10)]}, "2026-09-03")}
+    assert out["ust_2y"].inputs["change_bp"] is None
+
+
+def test_headline_trimmed_gap_is_headline_minus_trimmed():
+    """⚠ 부호가 뒤집히면 「공급 요인 우세」가 정반대로 읽힌다."""
+    from pms.rates.compute import headline_trimmed_gap
+
+    # 헤드라인 지수: 1년 새 +4%. 절사평균은 이미 % 값이다.
+    pcepi = [("2025-07-01", 100.0), ("2026-07-01", 104.0)]
+    trimmed = [("2026-07-01", 2.5)]
+    core = [("2025-07-01", 100.0), ("2026-07-01", 103.0)]
+    m = headline_trimmed_gap(pcepi, trimmed, core, "2026-07")
+    assert round(m.inputs["headline_yoy"], 2) == 4.0
+    assert round(m.value, 2) == 1.5  # 4.0 − 2.5
+
+
+def test_net_liquidity_matches_units_before_subtracting():
+    """⚠ WALCL·TGA는 백만 달러, RRP는 십억 달러다. 그냥 빼면 값이 무의미해진다."""
+    from pms.rates.compute import net_liquidity
+
+    walcl = [("2026-09-02", 6_740_000.0)]   # 6.74조
+    tga = [("2026-09-02", 970_000.0)]       # 0.97조
+    rrp = [("2026-09-02", 300.0)]           # 0.30조
+    out = {m.key: m for m in net_liquidity(walcl, tga, rrp, "2026-09-02")}
+    assert round(out["net_liquidity"].value, 2) == 5.47
+
+
+def test_net_liquidity_direction_says_which_way():
+    from pms.rates.compute import net_liquidity
+
+    walcl = [("2026-08-05", 6_740_000.0), ("2026-09-02", 6_640_000.0)]
+    tga = [("2026-08-05", 970_000.0), ("2026-09-02", 970_000.0)]
+    rrp = [("2026-08-05", 300.0), ("2026-09-02", 300.0)]
+    out = {m.key: m for m in net_liquidity(walcl, tga, rrp, "2026-09-02")}
+    four = out["net_liquidity_change_4w"]
+    assert four.value is not None and four.value < 0
+    assert four.band == "falling"
+
+
+def test_net_liquidity_refuses_to_guess_when_a_part_is_missing():
+    """⚠ 구성 셋 중 하나가 없으면 0으로 채우지 않는다 — 빈 칸을 0으로 만들지 않는다."""
+    from pms.rates.compute import net_liquidity
+
+    out = {m.key: m for m in net_liquidity([("2026-09-02", 6_740_000.0)], [], [], "2026-09-02")}
+    assert out["net_liquidity"].value is None

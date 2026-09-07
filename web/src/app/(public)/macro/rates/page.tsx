@@ -148,6 +148,15 @@ export default async function RatesPage() {
   const adjUnrate = metric("participation_adjusted_unrate");
   const gap = metric("participation_gap");
   const cooling = metric("labor_cooling");
+  const priceGap = metric("headline_trimmed_gap");
+  const netLiq = metric("net_liquidity");
+  const spread30 = metric("spread_30y_10y");
+  const tenors = [
+    { key: "ust_3m", label: "3개월", id: "dgs3mo" },
+    { key: "ust_2y", label: "2년", id: "dgs2" },
+    { key: "ust_10y", label: "10년", id: "dgs10" },
+    { key: "ust_30y", label: "30년", id: "dgs30" },
+  ].map((t) => ({ ...t, m: metric(t.key) }));
   const policyGap = metric("kr_us_policy_gap");
   const tenGap = metric("kr_us_10y_gap");
   const corr = metric("kr_us_gap_fx_corr");
@@ -182,8 +191,168 @@ export default async function RatesPage() {
 
       <Gauge data={data} />
 
-      {/* 2. 실질 정책금리 */}
-      <Card className="mb-6">
+      {/* 2. 국채 만기별 — 커브의 모양 */}
+      <Card id="curve" className="mb-6">
+        <CardTitle>국채 만기별</CardTitle>
+        <p className="mb-3 text-[12px] text-muted">
+          ⚠ <strong>어느 만기가 움직였는지</strong>가 원인을 가릅니다. 짧은 쪽이 오르면 연준
+          이야기고, 긴 쪽이 오르면 재정·기간프리미엄 이야기입니다.
+        </p>
+
+        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {tenors.map((t) => {
+            const change = (t.m?.inputs as { change_bp?: number | null })?.change_bp ?? null;
+            return (
+              <li
+                key={t.key}
+                id={t.id}
+                className="rounded-xl border border-border px-3 py-2.5"
+              >
+                <p className="text-[11px] text-muted">{t.label}</p>
+                <p className="mt-0.5 text-[17px] font-semibold tabular-nums text-ink">
+                  {formatMetric(t.m?.value, "percent")}
+                </p>
+                {/* ⚠ 「전일」이 아니라 직전 관측일 대비다 — 휴장일이 있다. */}
+                <p className="text-[11px] tabular-nums text-ink-3">
+                  {change === null ? "—" : `${change > 0 ? "+" : ""}${change.toFixed(1)}bp`}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
+          <span className="text-muted">
+            30년−10년{" "}
+            <strong className="tabular-nums text-ink">
+              {formatMetric(spread30?.value, "percent")}
+            </strong>
+            p
+          </span>
+          <span className="text-muted">
+            10년−2년{" "}
+            <strong className="tabular-nums text-ink">
+              {formatMetric(latestObservation(series("T10Y2Y"))?.[1] ?? null, "percent")}
+            </strong>
+            p
+          </span>
+        </div>
+
+        <ReadingNote
+          how="같은 10년 금리라도 짧은 쪽이 함께 올랐으면 정책 기대가, 긴 쪽만 올랐으면 재정·수급이 움직인 것입니다. 30년−10년은 커브의 긴 쪽 기울기입니다."
+          cannot="bp 변화는 직전 관측일 대비라 휴장이 끼면 하루가 아닙니다. 그리고 무엇이 원인인지는 이 표가 아니라 그날의 사건이 말합니다."
+        />
+      </Card>
+
+      {/* 3. 물가 — 세 값의 거리 */}
+      <Card id="inflation-gap" className="mb-6">
+        <CardTitle>물가 — 헤드라인과 절사평균의 거리</CardTitle>
+        <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
+          <span className="text-ink">
+            헤드라인 PCE{" "}
+            <strong className="tabular-nums">
+              {formatMetric(
+                (priceGap?.inputs as { headline_yoy?: number })?.headline_yoy ?? null,
+                "percent",
+              )}
+            </strong>
+          </span>
+          <span className="text-muted">
+            근원{" "}
+            <strong className="tabular-nums">
+              {formatMetric((priceGap?.inputs as { core_yoy?: number })?.core_yoy ?? null, "percent")}
+            </strong>
+          </span>
+          <span className="text-muted">
+            절사평균{" "}
+            <strong className="tabular-nums">
+              {formatMetric((priceGap?.inputs as { trimmed?: number })?.trimmed ?? null, "percent")}
+            </strong>
+          </span>
+        </div>
+
+        {/* ⚠ 이 카드의 주인공은 세 값이 아니라 그 사이 거리다 — 격차 자체가 증거다. */}
+        <div className="rounded-xl border border-gold-600/30 px-3 py-2.5">
+          <p className="text-[12px] text-muted">헤드라인 − 절사평균</p>
+          <p className="mt-0.5 text-2xl font-bold tabular-nums text-ink">
+            {formatMetric(priceGap?.value, "percent")}
+            <span className="ml-1 text-sm font-normal text-gray-500">p</span>
+          </p>
+          <p className="mt-1 text-[11.5px] leading-relaxed text-gold-500">
+            {priceGap?.value === null || priceGap?.value === undefined
+              ? "아직 산출되지 않았습니다"
+              : priceGap.value >= 1
+                ? "격차가 큽니다 — 높은 물가의 상당 부분이 공급 요인 쪽입니다"
+                : priceGap.value <= 0.3
+                  ? "격차가 좁습니다 — 기저 물가 자체의 문제로 읽습니다"
+                  : "격차가 중간입니다 — 공급과 기저가 섞여 있습니다"}
+          </p>
+        </div>
+
+        <ReadingNote
+          how="절사평균만 보면 물가는 거의 잡혔고, 헤드라인만 보면 아직 멉니다. 둘 다 맞는 말이라 나란히 놓습니다 — 그 사이 거리가 공급 요인의 크기입니다."
+          cannot="어떤 공급 요인인지(에너지·식품·관세)는 이 격차가 구분하지 못합니다. 절사평균은 양 끝을 잘라낸 값이라, 그 끝에 무엇이 있었는지도 말하지 않습니다."
+        />
+      </Card>
+
+      {/* 4. 순유동성 — 수준이 아니라 방향 */}
+      <Card id="net-liquidity" className="mb-6">
+        <CardTitle>순유동성</CardTitle>
+        <div className="mb-3 flex flex-wrap items-end gap-x-6 gap-y-1">
+          <span className="text-2xl font-bold tabular-nums text-ink">
+            {formatMetric(netLiq?.value, "trillions_usd")}
+          </span>
+          {/* ⚠ 수준만으로는 「민간이 연준을 상쇄하는가」에 답할 수 없다. 방향이 답이다. */}
+          {[4, 13].map((weeks) => {
+            const change = metric(`net_liquidity_change_${weeks}w`);
+            const v = change?.value;
+            return (
+              <span key={weeks} className="text-[13px] text-muted">
+                {weeks}주{" "}
+                <strong className="tabular-nums text-ink">
+                  {v === null || v === undefined
+                    ? "—"
+                    : `${v > 0 ? "▲ +" : v < 0 ? "▼ " : ""}${v.toFixed(2)}조`}
+                </strong>
+                {change?.band && (
+                  <span className="ml-1 text-[11px] text-ink-3">
+                    {BAND_LABEL[change.band] ?? change.band}
+                  </span>
+                )}
+              </span>
+            );
+          })}
+        </div>
+
+        {/* ⚠ 구성 항목을 다 보인다 — 독자가 계산을 되짚을 수 있어야 한다. */}
+        <ul className="grid grid-cols-3 gap-2 text-center">
+          {[
+            { label: "연준 총자산", key: "walcl_tn", sign: "" },
+            { label: "재무부 일반계정", key: "tga_tn", sign: "−" },
+            { label: "역레포", key: "rrp_tn", sign: "−" },
+          ].map((part) => (
+            <li key={part.key} className="rounded-xl border border-border px-2.5 py-2">
+              <p className="text-[10.5px] text-muted">
+                {part.sign} {part.label}
+              </p>
+              <p className="mt-0.5 text-[15px] font-semibold tabular-nums text-ink">
+                {formatMetric(
+                  (netLiq?.inputs as Record<string, number | undefined>)?.[part.key] ?? null,
+                  "trillions_usd",
+                )}
+              </p>
+            </li>
+          ))}
+        </ul>
+
+        <ReadingNote
+          how="연준 총자산에서 재무부 계정과 역레포를 뺀 값이 시장에 실제로 남아 있는 돈입니다. 늘고 있으면 민간 자금이 긴축을 상쇄하는 쪽이고, 줄고 있으면 상쇄하지 못하는 쪽입니다."
+          cannot="이 돈이 어디로 갔는지는 말하지 않습니다. 그리고 주간 계열이라 4주 변화도 관측 네 점의 차이일 뿐입니다."
+        />
+      </Card>
+
+      {/* 5. 실질 정책금리 */}
+      <Card id="real-policy-rate" className="mb-6">
         <CardTitle>실질 정책금리</CardTitle>
         <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
           <span className="text-ink">
@@ -219,8 +388,8 @@ export default async function RatesPage() {
         />
       </Card>
 
-      {/* 3. 두 속도 경제 */}
-      <Card className="mb-6">
+      {/* 6. 두 속도 경제 */}
+      <Card id="two-speed" className="mb-6">
         <CardTitle>두 속도 경제</CardTitle>
         <p className="mb-3 text-[12px] text-muted">
           합성 스프레드 <strong className="tabular-nums text-ink">{formatMetric(spread?.value, "percent")}</strong>
@@ -262,8 +431,8 @@ export default async function RatesPage() {
         />
       </Card>
 
-      {/* 4. 노동시장 */}
-      <Card className="mb-6">
+      {/* 7. 노동시장 */}
+      <Card id="labor" className="mb-6">
         <CardTitle>노동시장</CardTitle>
         <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
           <span className="text-ink">
@@ -307,8 +476,8 @@ export default async function RatesPage() {
         />
       </Card>
 
-      {/* 5. 한·미 */}
-      <Card className="mb-6">
+      {/* 8. 한·미 */}
+      <Card id="kr-us" className="mb-6">
         <CardTitle>한·미</CardTitle>
         <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
           <span className="text-ink">
@@ -343,8 +512,8 @@ export default async function RatesPage() {
         />
       </Card>
 
-      {/* 6. 원계열 */}
-      <Card padding="p-0">
+      {/* 9. 원계열 */}
+      <Card id="series" padding="p-0">
         <div className="px-5 pt-5">
           <CardTitle>원계열 ({Object.keys(data.series).length}개)</CardTitle>
         </div>

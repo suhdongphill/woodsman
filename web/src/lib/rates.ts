@@ -68,6 +68,8 @@ export function formatMetric(value: number | null | undefined, unit: string): st
   if (unit === "index" || unit === "percentile") return value.toFixed(1);
   if (unit === "correlation") return value.toFixed(2);
   if (unit === "count") return String(Math.round(value));
+  // 조 달러. ⚠ 소수 둘째 자리까지 — 4주 변화가 0.07조라 첫째 자리로는 움직임이 사라진다.
+  if (unit === "trillions_usd") return `${value.toFixed(2)}조`;
   return value.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
 }
 
@@ -82,6 +84,9 @@ export const LAYER_LABEL: Record<string, string> = {
 };
 
 export const BAND_LABEL: Record<string, string> = {
+  rising: "늘고 있음",
+  falling: "줄고 있음",
+  flat: "보합",
   easing: "인하 쪽",
   neutral: "중립",
   tightening: "긴축 쪽",

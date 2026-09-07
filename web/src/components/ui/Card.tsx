@@ -6,17 +6,27 @@ export function Card({
   className,
   hover = false,
   padding = "p-5",
+  id,
 }: {
   children: ReactNode;
   className?: string;
   hover?: boolean;
   padding?: string;
+  /**
+   * 앵커. ⚠ **글이 지표를 문장 단위로 가리킬 수 있게 하는 자리**다 —
+   * `/macro/rates#dgs30`처럼 링크하면 독자가 스크롤로 카드를 찾지 않아도 된다.
+   * 앵커로 도착하면 `scroll-mt`가 헤더에 가리는 것을 막고, `target:`이 잠깐 강조한다.
+   */
+  id?: string;
 }) {
   return (
     <div
+      id={id}
       className={cx(
         "bg-card border border-border rounded-2xl",
         hover && "card-hover hover:bg-cardHover hover:border-gold-600/40",
+        // ⚠ 앵커가 있을 때만 붙인다 — 없는 카드에 스크롤 여백을 주면 간격이 어긋난다.
+        id && "scroll-mt-24 target:border-gold-500 target:ring-2 target:ring-gold-500/30",
         padding,
         className,
       )}
