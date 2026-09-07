@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS rates_series (
     name_en       TEXT,
     unit          TEXT NOT NULL,
     frequency     TEXT NOT NULL,          -- 'D' | 'W' | 'M' | 'Q'
-    seasonal_adj  TEXT,                   -- 'SA' | 'NSA'
+    seasonal_adj  TEXT,                   -- 'SA' | 'SAAR' | 'NSA' (FRED 표기 그대로)
     definition_ko TEXT NOT NULL,
     source_url    TEXT NOT NULL,
     layer         TEXT,                   -- policy | inflation | labor | credit | two_speed | liquidity | krus

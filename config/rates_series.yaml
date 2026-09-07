@@ -204,7 +204,7 @@ fred:
     name_ko: 개인저축률
     unit: percent
     frequency: M
-    seasonal_adj: SA
+    seasonal_adj: SAAR
     layer: credit
     definition_ko: 가처분소득 중 쓰지 않고 남긴 비율이다. 낮아질수록 소비가 저축을 헐어 유지되고 있다는 뜻이다.
   - id: RSAFS
@@ -242,14 +242,14 @@ fred:
     name_ko: 주택착공
     unit: thousands
     frequency: M
-    seasonal_adj: SA
+    seasonal_adj: SAAR
     layer: two_speed
     definition_ko: 착공한 신규 주택의 연율 환산 호수(천 호)다. 금리에 가장 먼저 반응하는 실물 지표다.
   - id: EXHOSLUSM495S
     name_ko: 기존주택 판매
     unit: units
     frequency: M
-    seasonal_adj: SA
+    seasonal_adj: SAAR
     layer: two_speed
     definition_ko: 기존 주택의 월 거래 건수(연율)다. 모기지 금리에 직접 눌린다.
   - id: BUSLOANS
@@ -263,7 +263,7 @@ fred:
     name_ko: 민간 비주거 고정투자
     unit: billions_usd
     frequency: Q
-    seasonal_adj: SA
+    seasonal_adj: SAAR
     layer: two_speed
     definition_ko: 기업이 건물·설비·지식재산에 쓴 투자액(연율, 십억 달러)이다.
 
