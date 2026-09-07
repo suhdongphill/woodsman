@@ -15,7 +15,14 @@ from typing import Any
 from . import compute, layers
 from . import transforms as T
 from .catalog import load_catalog
-from .db import list_series, load_observations, load_releases, upsert_snapshot
+from .db import (
+    init_vintages,
+    list_series,
+    load_observations,
+    load_releases,
+    load_vintages,
+    upsert_snapshot,
+)
 
 Point = tuple[str, float | None]
 
@@ -76,6 +83,11 @@ def compute_all(conn: sqlite3.Connection, asof: str) -> list[compute.Metric]:
     metrics.extend(compute.net_liquidity(get("WALCL"), get("WTREGEN"), get("RRPONTSYD"), asof))
     metrics.append(compute.wage_growth(get("CES0500000003"), labor_month))
     metrics.append(compute.payems_change_3m(payems, labor_month))
+
+    # ⚠ 발표본이 없으면 값이 None으로 남는다 — 없는 것을 지어내지 않는다.
+    #    `pms rates vintages`를 한 번 돌리면 채워진다.
+    init_vintages(conn)
+    metrics.append(compute.payroll_revisions(load_vintages(conn, "PAYEMS"), labor_month))
 
     fx = get("DEXKOUS")
     # 금리차 시계열을 만들어 상관을 잰다(관측이 둘 다 있는 날만).

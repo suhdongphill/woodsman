@@ -79,6 +79,56 @@ def init_rates(conn: sqlite3.Connection) -> None:
 # ── 계열 정의 ────────────────────────────────────────────────────
 
 
+RATES_VINTAGE_SCHEMA = """
+CREATE TABLE IF NOT EXISTS rates_vintage (
+    series_id     TEXT NOT NULL,
+    obs_date      TEXT NOT NULL,        -- 관측월 'YYYY-MM-DD'
+    vintage_date  TEXT NOT NULL,        -- 그 값이 살아 있던 발표일
+    value         REAL,                 -- ⚠ 아직 발표 전이면 NULL이다. 0이 아니다
+    PRIMARY KEY (series_id, obs_date, vintage_date)
+);
+CREATE INDEX IF NOT EXISTS idx_rates_vintage_series ON rates_vintage(series_id, obs_date);
+"""
+
+
+def init_vintages(conn: sqlite3.Connection) -> None:
+    """발표본 테이블. ⚠ `init_rates`와 나눠 둔다 — 이건 선택 기능이고, 없어도 나머지가 돈다."""
+    conn.executescript(RATES_VINTAGE_SCHEMA)
+
+
+def upsert_vintages(
+    conn: sqlite3.Connection, series_id: str, rows: Iterable[tuple[str, str, float | None]]
+) -> int:
+    """``(관측월, 발표일, 값)``을 넣는다. 같은 자리는 덮어쓴다."""
+    payload = [
+        {"series_id": series_id, "obs_date": o, "vintage_date": v, "value": val}
+        for o, v, val in rows
+    ]
+    if not payload:
+        return 0
+    conn.executemany(
+        """
+        INSERT INTO rates_vintage (series_id, obs_date, vintage_date, value)
+        VALUES (:series_id, :obs_date, :vintage_date, :value)
+        ON CONFLICT(series_id, obs_date, vintage_date) DO UPDATE SET value = excluded.value
+        """,
+        payload,
+    )
+    return len(payload)
+
+
+def load_vintages(conn: sqlite3.Connection, series_id: str) -> list[tuple[str, str, float | None]]:
+    """``[(관측월, 발표일, 값)]`` — 관측월·발표일 오름차순."""
+    rows = conn.execute(
+        """
+        SELECT obs_date, vintage_date, value FROM rates_vintage
+        WHERE series_id = ? ORDER BY obs_date, vintage_date
+        """,
+        (series_id,),
+    ).fetchall()
+    return [(r[0], r[1], r[2]) for r in rows]
+
+
 def upsert_series(conn: sqlite3.Connection, rows: Iterable[Mapping[str, Any]]) -> int:
     """계열 정의를 넣거나 갱신한다.
 

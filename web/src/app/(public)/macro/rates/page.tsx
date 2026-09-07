@@ -28,6 +28,21 @@ export const dynamic = "force-dynamic";
 
 const pct = (v: number) => `${v.toFixed(1)}%`;
 
+/** 고용 발표본 한 달치. ⚠ `revised`가 false면 「수정 0」이 아니라 **아직 기회가 없었던 것**이다. */
+type RevisionMonth = {
+  month: string;
+  first_vintage: string;
+  first_change: number | null;
+  latest_vintage: string;
+  latest_change: number | null;
+  revision: number | null;
+  revised: boolean;
+};
+
+/** 천 명 단위 증감. 부호를 반드시 붙인다 — 「+21」과 「21」은 다른 말이다. */
+const thousands = (v: number | null | undefined) =>
+  v === null || v === undefined ? "—" : `${v > 0 ? "+" : ""}${Math.round(v).toLocaleString("ko-KR")}천`;
+
 /** 카드마다 붙는 두 줄. ⚠ 문구는 `docs/금리섹션_지표해설.md`에서 가져온다(명세 §6·§9). */
 function ReadingNote({ how, cannot }: { how: string; cannot: string }) {
   return (
@@ -150,6 +165,9 @@ export default async function RatesPage() {
   const cooling = metric("labor_cooling");
   const wage = metric("wage_yoy");
   const payems3m = metric("payems_change_3m_avg");
+  const revisions = metric("payems_revisions");
+  const revisionMonths =
+    ((revisions?.inputs as { months?: RevisionMonth[] })?.months ?? []).filter((m) => m.revised);
   const priceGap = metric("headline_trimmed_gap");
   const netLiq = metric("net_liquidity");
   const spread30 = metric("spread_30y_10y");
@@ -487,6 +505,38 @@ export default async function RatesPage() {
           ariaLabel="실업률과 경제활동참가율 추이"
         />
 
+        {/*
+          ⚠ **이 사이트가 계속 하는 말이 「숫자는 개정된다」인데, 화면은 개정된 뒤의 값만
+             보여 주고 있었다.** 발표 당시와 지금을 나란히 놓는 것이 그 말의 증거다.
+          ⚠ 개정된 값이 「틀린 값」이 아니다 — 둘 다 그때의 최선이었다. 문구를 그렇게 쓴다.
+          ⚠ 아직 한 번만 발표된 달은 **싣지 않는다.** 「수정 0」으로 보이면 개정될 기회가
+             없었던 것과 개정이 없었던 것이 같아 보인다.
+        */}
+        {revisionMonths.length > 0 && (
+          <div className="mt-3 rounded-xl border border-border px-3 py-2.5">
+            <p className="text-[12px] font-medium text-ink">발표 당시와 지금</p>
+            <ul className="mt-1.5 space-y-1">
+              {revisionMonths.map((m) => (
+                <li key={m.month} className="flex flex-wrap items-baseline gap-x-2 text-[12px]">
+                  <span className="font-mono tabular-nums text-ink-3">{m.month.slice(0, 7)}</span>
+                  <span className="tabular-nums text-muted">{thousands(m.first_change)}</span>
+                  <span aria-hidden className="text-ink-3">→</span>
+                  <span className="tabular-nums font-semibold text-ink">
+                    {thousands(m.latest_change)}
+                  </span>
+                  <span className="tabular-nums text-gold-500">
+                    (수정 {thousands(m.revision)})
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-ink-3">
+              ⚠ 개정된 값이 틀린 값이 아닙니다 — 둘 다 그때의 최선입니다. 첫 발표는 표본이
+              덜 걷힌 상태에서 나옵니다.
+            </p>
+          </div>
+        )}
+
         <p className="mt-2 text-[11.5px] text-ink-3">
           ⚠ 참가율 조정 실업률은{" "}
           <strong>{String((adjUnrate?.inputs as { base_month?: string })?.base_month ?? "?")}</strong>{" "}
@@ -495,7 +545,7 @@ export default async function RatesPage() {
 
         <ReadingNote
           how="해고가 없어도 채용이 멈추면 노동시장은 식습니다. 「저채용·저해고」가 그 상태입니다. 임금 전년비를 물가와 견주면 실질 임금이 오르는지 내리는지가 보입니다."
-          cannot="참가율이 왜 떨어졌는지(은퇴·이민·돌봄)는 이 숫자가 구분하지 못합니다. ⚠ 그리고 고용 값은 **나중에 수정됩니다** — 여기 3개월 평균도 이미 수정된 값으로 계산한 것이라, 발표 당시 무엇이었는지는 말하지 않습니다."
+          cannot="참가율이 왜 떨어졌는지(은퇴·이민·돌봄)는 이 숫자가 구분하지 못합니다. ⚠ 위의 3개월 평균은 **이미 수정된 값**으로 계산한 것입니다 — 발표 당시가 궁금하면 「발표 당시와 지금」을 보세요."
         />
       </Card>
 

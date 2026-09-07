@@ -16,15 +16,17 @@ from datetime import date, datetime, timedelta
 import click
 
 from ..db import connect, default_db_path
-from . import sources
+from . import compute, sources
 from .catalog import default_config_path, load_catalog, pending_series
 from .db import (
     init_rates,
+    init_vintages,
     last_obs_date,
     list_series,
     load_observations,
     upsert_observations,
     upsert_series,
+    upsert_vintages,
 )
 from .pipeline import (
     DEFAULT_HISTORY_MONTHS,
@@ -319,6 +321,49 @@ def export_cmd(ctx: click.Context, out_path: str | None, history_months: int, as
         click.echo("⚠ 1MB를 넘었습니다 — --history-months를 줄이세요(명세 §5).")
     if payload["meta"]["missing_series"]:
         click.echo("⚠ 값이 하나도 없는 계열: " + ", ".join(payload["meta"]["missing_series"]))
+
+
+@rates.command("vintages")
+@click.option("--series", "series_ids", multiple=True, help="계열 ID. 없으면 기본 목록.")
+@click.option("--since", default="2024-01-01", show_default=True, help="이 발표일 이후만.")
+@click.option("--observation-start", default="2023-01-01", show_default=True)
+@click.pass_context
+def vintages_cmd(
+    ctx: click.Context, series_ids: tuple[str, ...], since: str, observation_start: str
+) -> None:
+    """ALFRED에서 **발표 당시의 값**을 받아 쌓는다.
+
+    ⚠ 통상 수집(`fetch`)이 가져오는 것은 **지금의 값**이다. 통계는 사후 개정되므로
+      「그때 무엇이라고 발표했나」는 그 값으로 답할 수 없다 — 이 명령이 그걸 답한다.
+    ⚠ 같은 FRED 키를 쓴다. 별도 키가 필요하지 않다.
+    """
+    key = sources.fred_key()
+    if not key:
+        raise SystemExit("FRED_API_KEY가 없습니다 — .env에 넣고 다시 돌리세요")
+
+    targets = list(series_ids) or list(compute.VINTAGE_SERIES)
+
+    with _conn(ctx) as conn:
+        init_vintages(conn)
+        for series_id in targets:
+            try:
+                dates = sources.fred_vintage_dates(series_id, key, since=since)
+            except sources.SourceError as exc:
+                click.echo(f"FAIL {series_id:16} 발표일 목록 실패 — {exc}")
+                continue
+            if not dates:
+                click.echo(f"—    {series_id:16} 이 기간에 발표본이 없습니다")
+                continue
+            try:
+                rows = sources.fred_vintages(series_id, key, dates, observation_start)
+            except sources.SourceError as exc:
+                click.echo(f"FAIL {series_id:16} 발표본 조회 실패 — {exc}")
+                continue
+            saved = upsert_vintages(conn, series_id, rows)
+            observed = len({o for o, _, v in rows if v is not None})
+            click.echo(
+                f"OK   {series_id:16} 발표본 {len(dates)}회 · 행 {saved} · 값이 있는 관측월 {observed}"
+            )
 
 
 @rates.command("calendar")

@@ -21,7 +21,7 @@ import os
 import time
 import urllib.parse
 import urllib.request
-from typing import Any
+from typing import Any, Sequence
 
 USER_AGENT = "Mozilla/5.0 (compatible; WoodsmanRatesBot/1.0)"
 TIMEOUT_SEC = 30
@@ -115,6 +115,65 @@ def fred_search(text: str, api_key: str, limit: int = 10) -> list[dict[str, Any]
     }
     raw = _get(f"{FRED_API}/series/search?{urllib.parse.urlencode(params)}")
     return (json.loads(raw.decode("utf-8")).get("seriess") or [])[:limit]
+
+
+# ── ALFRED — **발표 당시의 값** ─────────────────────────────────
+#
+# ⚠ FRED가 주는 것은 **지금의 값**이다. 통계는 사후 개정되므로, 「그때 무엇이라고
+#   발표했나」는 그 값으로 답할 수 없다. ALFRED(같은 API의 realtime 축)가 그걸 답한다.
+#   ⚠ 같은 API 키를 쓴다 — 별도 키가 필요하지 않다(2026-09-07 확인).
+
+
+def fred_vintage_dates(series_id: str, api_key: str, since: str | None = None) -> list[str]:
+    """이 계열이 **개정된 날짜**들. 사실상 발표일 목록이다."""
+    params: dict[str, Any] = {"series_id": series_id, "api_key": api_key, "file_type": "json"}
+    if since:
+        params["realtime_start"] = since
+    raw = _get(f"{FRED_API}/series/vintagedates?{urllib.parse.urlencode(params)}")
+    return list(json.loads(raw.decode("utf-8")).get("vintage_dates") or [])
+
+
+def fred_vintages(
+    series_id: str, api_key: str, vintage_dates: Sequence[str], observation_start: str
+) -> list[tuple[str, str, float | None]]:
+    """``[(관측월, 발표일, 그때의 값)]``.
+
+    ⚠ 한 관측월이 여러 발표일에 **서로 다른 값**으로 나온다 — 그게 이 함수의 존재 이유다.
+      값이 없던 시점(아직 발표 전)은 ``None``으로 남긴다. 0으로 채우면 「그때 0이었다」가 된다.
+    """
+    if not vintage_dates:
+        return []
+    params = {
+        "series_id": series_id,
+        "api_key": api_key,
+        "file_type": "json",
+        "output_type": 2,  # 발표본마다 한 열
+        "observation_start": observation_start,
+        "vintage_dates": ",".join(vintage_dates),
+    }
+    raw = _get(f"{FRED_API}/series/observations?{urllib.parse.urlencode(params)}")
+    rows = json.loads(raw.decode("utf-8")).get("observations") or []
+
+    out: list[tuple[str, str, float | None]] = []
+    for row in rows:
+        obs_date = row.get("date")
+        if not obs_date:
+            continue
+        for column, raw_value in row.items():
+            if not column.startswith(f"{series_id}_"):
+                continue
+            stamp = column.rsplit("_", 1)[-1]
+            if len(stamp) != 8 or not stamp.isdigit():
+                continue
+            vintage = f"{stamp[:4]}-{stamp[4:6]}-{stamp[6:]}"
+            if raw_value in (".", "", None):
+                out.append((obs_date, vintage, None))
+                continue
+            try:
+                out.append((obs_date, vintage, float(raw_value)))
+            except (TypeError, ValueError):
+                out.append((obs_date, vintage, None))
+    return out
 
 
 # ── ECOS ────────────────────────────────────────────────────────

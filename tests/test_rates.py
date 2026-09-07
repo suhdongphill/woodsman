@@ -398,3 +398,47 @@ def test_wage_growth_is_year_over_year_not_the_level():
     m = wage_growth(ces, "2026-08")
     assert round(m.value, 2) == 3.0
     assert m.inputs["level"] == 37.08
+
+
+# ── 개정 — 「발표 당시」와 「지금」 ──────────────────────────────
+
+
+def _vintage_rows():
+    """7월이 −23천에서 +21천으로 뒤집힌 실제 모양(2026-08-07 발표 → 2026-09-04 개정)."""
+    return [
+        ("2026-06-01", "2026-08-07", 158_881.0),
+        ("2026-07-01", "2026-08-07", 158_858.0),   # 첫 발표: −23천
+        ("2026-06-01", "2026-09-04", 158_892.0),
+        ("2026-07-01", "2026-09-04", 158_913.0),   # 개정 뒤: +21천
+    ]
+
+
+def test_revision_compares_within_the_same_vintage():
+    """⚠ 「그때 값 − 지금의 전월값」으로 재면 세상에 발표된 적 없는 숫자가 나온다."""
+    from pms.rates.compute import payroll_revisions
+
+    m = payroll_revisions(_vintage_rows(), "2026-07", count=1)
+    july = m.inputs["months"][0]
+    assert round(july["first_change"]) == -23
+    assert round(july["latest_change"]) == 21
+    assert round(july["revision"]) == 44
+    assert july["revised"] is True
+    assert m.band == "up"
+
+
+def test_first_print_only_month_is_not_called_revised():
+    """⚠ 「수정 0」과 「아직 개정될 기회가 없었다」는 다른 말이다."""
+    from pms.rates.compute import payroll_revisions
+
+    rows = [("2026-07-01", "2026-08-07", 158_858.0), ("2026-06-01", "2026-08-07", 158_881.0)]
+    m = payroll_revisions(rows, "2026-07", count=1)
+    assert m.inputs["months"][0]["revised"] is False
+    # 대표값은 실제로 개정된 달만 본다 — 없으면 0이 아니라 None이다.
+    assert m.value is None
+
+
+def test_revision_headline_picks_the_most_recent_revised_month():
+    from pms.rates.compute import payroll_revisions
+
+    m = payroll_revisions(_vintage_rows(), "2026-07", count=3)
+    assert round(m.value) == 44

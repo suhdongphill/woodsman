@@ -635,3 +635,79 @@ def payems_change_3m(payems: Sequence[Point], month: str) -> Metric:
         inputs={"from": T.shift_months(day, -3), "to": day, "from_value": then, "to_value": now},
         note="한 달 값은 노이즈이고, 게다가 나중에 수정된다",
     )
+
+
+# ── 4-12. 개정 — 「발표 당시」와 「지금」 ────────────────────────
+#
+# ⚠ 이 사이트가 계속 하는 말이 **「숫자는 개정된다」**인데, 정작 화면은 개정된 뒤의 값만
+#   보여 주고 있었다. 발표 당시 값을 나란히 놓는 것이 그 말의 증거가 된다.
+#   ⚠ 개정된 값이 「틀린 값」이 아니다. 둘 다 그때의 최선이었다 — 그렇게 읽게 문구를 쓴다.
+
+VINTAGE_SERIES: tuple[str, ...] = ("PAYEMS",)
+
+
+def _vintage_change(
+    by_vintage: Mapping[str, Mapping[str, float | None]], vintage: str, day: str
+) -> float | None:
+    """같은 발표본 **안에서** 전월 대비 증감.
+
+    ⚠ 「그때 값 − 지금의 전월값」으로 재면 두 발표본을 섞게 되고, 그 수치는 세상 어디에도
+      발표된 적이 없는 숫자가 된다.
+    """
+    row = by_vintage.get(vintage) or {}
+    now, prev = row.get(day), row.get(T.shift_months(day, -1))
+    return None if now is None or prev is None else now - prev
+
+
+def payroll_revisions(
+    vintages: Sequence[tuple[str, str, float | None]], latest_month: str, count: int = 3
+) -> Metric:
+    """최근 ``count``개월의 **발표 당시 증감 → 현재 증감**과 그 차이.
+
+    ⚠ 이 사이트가 계속 하는 말이 「숫자는 개정된다」인데, 화면은 개정된 뒤의 값만 보여
+      주고 있었다. 둘을 나란히 놓는 것이 그 말의 증거다.
+    ⚠ **개정된 값이 「틀린 값」이 아니다.** 둘 다 그때의 최선이었다 — 문구를 그렇게 쓴다.
+    """
+    day0 = latest_month if len(latest_month) == 10 else f"{latest_month}-01"
+
+    by_vintage: dict[str, dict[str, float | None]] = {}
+    for obs_date, vintage, value in vintages:
+        by_vintage.setdefault(vintage, {})[obs_date] = value
+
+    months: list[dict[str, Any]] = []
+    for back in range(count):
+        day = T.shift_months(day0, -back)
+        printed = sorted(v for v, row in by_vintage.items() if row.get(day) is not None)
+        if not printed:
+            continue
+        first, latest = printed[0], printed[-1]
+        first_change = _vintage_change(by_vintage, first, day)
+        latest_change = _vintage_change(by_vintage, latest, day)
+        revision = (
+            None
+            if first_change is None or latest_change is None
+            else latest_change - first_change
+        )
+        months.append(
+            {
+                "month": day,
+                "first_vintage": first,
+                "first_change": first_change,
+                "latest_vintage": latest,
+                "latest_change": latest_change,
+                "revision": revision,
+                # 발표본이 하나뿐이면 아직 개정될 기회가 없었던 것이다 — 「수정 0」과 다르다.
+                "revised": len(printed) > 1,
+            }
+        )
+
+    # 대표값: **실제로 개정된** 달 중 가장 최근 것. 없으면 None(0이 아니다).
+    headline = next(
+        (m["revision"] for m in months if m["revised"] and m["revision"] is not None), None
+    )
+    return Metric(
+        "payems_revisions", headline, "thousands",
+        inputs={"months": months, "count": len(months)},
+        band=None if headline is None else ("up" if headline > 0 else "down" if headline < 0 else "same"),
+        note="발표 당시와 지금 — 어느 쪽도 틀린 값이 아니다",
+    )
