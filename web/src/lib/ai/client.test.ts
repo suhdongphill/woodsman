@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  DEFAULT_MAX_TOKENS,
   buildProviderRequest,
   estimateTokens,
+  ANTHROPIC_MIN_MAX_TOKENS,
   readResponseText,
   readResponseUsage,
 } from "./client";
@@ -37,7 +37,8 @@ describe("제공자별 요청 조립", () => {
     const body = JSON.parse(String(init.body));
     expect(body.system).toBe("규범");
     expect(body.messages).toEqual([{ role: "user", content: "질문" }]);
-    expect(body.max_tokens).toBe(DEFAULT_MAX_TOKENS);
+    // ⚠ Anthropic만 상한이 다르다 — 아래 「출력 상한을 하한까지」 테스트가 이유를 적는다.
+    expect(body.max_tokens).toBe(ANTHROPIC_MIN_MAX_TOKENS);
   });
 
   it("OpenAI 호환은 Bearer 토큰과 /chat/completions로 부른다", () => {
@@ -57,6 +58,19 @@ describe("제공자별 요청 조립", () => {
    * ⚠ 키는 헤더에만 있어야 한다. 본문이나 URL에 섞이면 로그·리퍼러·에러 보고로 새고,
    *    이 저장소는 공개다(CLAUDE.md 6장).
    */
+  /**
+   * ⚠ 사고가 켜진 모델은 출력 상한을 **생각과 답이 나눠 쓴다.** 4,000으로는 생각에
+   *    다 쓰고 본문이 안 나오는 일이 실제로 있었다(2026-09-07 일정 초안).
+   */
+  it("⚠ Anthropic은 출력 상한을 하한까지 끌어올리고 사고 깊이를 정한다", () => {
+    const { init } = buildProviderRequest(candidate("ANTHROPIC"), KEY, call);
+    const body = JSON.parse(String(init.body));
+    expect(body.max_tokens).toBeGreaterThanOrEqual(12_000);
+    expect(body.output_config).toEqual({ effort: "medium" });
+    // ⚠ temperature는 보내지 않는다 — 최신 모델에서 거부된다.
+    expect(body.temperature).toBeUndefined();
+  });
+
   it("⚠ 키가 본문이나 URL에 실리지 않는다", () => {
     for (const kind of ["ANTHROPIC", "OPENAI_COMPAT"] as const) {
       const { url, init } = buildProviderRequest(candidate(kind), KEY, call);
@@ -82,6 +96,42 @@ describe("응답 읽기", () => {
   it("⚠ 형식이 다르면 빈 문자열이 아니라 예외다", () => {
     expect(() => readResponseText("ANTHROPIC", { content: [] })).toThrow();
     expect(() => readResponseText("OPENAI_COMPAT", {})).toThrow();
+  });
+
+  // ── 본문이 없을 때, 왜 없는지 (2026-09-07) ──────────────────
+  //
+  // ⚠ 「응답에 텍스트 블록이 없습니다」는 모델이 침묵한 것처럼 들리지만, 실제 원인은
+  //    상한이거나 거절이었다. 사람을 엉뚱한 곳으로 보내는 실패가 조용한 실패보다 나쁘다.
+
+  it("⚠ 생각하다 상한에 걸린 것을 「말이 없다」로 말하지 않는다", () => {
+    expect(() =>
+      readResponseText("ANTHROPIC", {
+        content: [{ type: "thinking", thinking: "" }],
+        stop_reason: "max_tokens",
+      }),
+    ).toThrow(/출력 상한/);
+  });
+
+  it("거절은 거절이라고 말하고, 분류가 있으면 함께 적는다", () => {
+    expect(() =>
+      readResponseText("ANTHROPIC", {
+        content: [],
+        stop_reason: "refusal",
+        stop_details: { category: "cyber" },
+      }),
+    ).toThrow(/거절.*cyber/);
+  });
+
+  it("사고 블록만 온 경우도 그렇게 말한다", () => {
+    expect(() =>
+      readResponseText("ANTHROPIC", { content: [{ type: "thinking", thinking: "" }] }),
+    ).toThrow(/사고 블록만/);
+  });
+
+  it("이유를 모를 때는 stop_reason을 그대로 싣는다", () => {
+    expect(() =>
+      readResponseText("ANTHROPIC", { content: [], stop_reason: "pause_turn" }),
+    ).toThrow(/pause_turn/);
   });
 
   it("사용량이 오면 그대로 센다", () => {

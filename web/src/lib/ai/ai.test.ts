@@ -48,7 +48,9 @@ describe("카탈로그", () => {
     const opus = findModel("anthropic", "claude-opus-5")!;
     expect(opus.price).toEqual({ inputPerMTok: 5, outputPerMTok: 25 });
     const sonnet = findModel("anthropic", "claude-sonnet-5")!;
-    expect(sonnet.price).toEqual({ inputPerMTok: 3, outputPerMTok: 15 });
+    // ⚠ 2026-09-07 정정: $3/$15는 **이전 세대(Sonnet 4.6)** 값이었다.
+    //    상한 계산이 비싸게 잡혀 있었다 — 틀린 값은 안전한 쪽으로 틀려도 틀린 값이다.
+    expect(sonnet.price).toEqual({ inputPerMTok: 2, outputPerMTok: 10 });
     const haiku = findModel("anthropic", "claude-haiku-4-5")!;
     expect(haiku.price).toEqual({ inputPerMTok: 1, outputPerMTok: 5 });
   });

@@ -84,8 +84,13 @@ export const AI_PROVIDERS: readonly Provider[] = [
     note: "가입 시 무료 크레딧. 차트 요약·정형 출력에 충분하다.",
     models: [
       {
-        id: "meta/llama-3.3-70b-instruct",
-        label: "Llama 3.3 70B",
+        /**
+         * ⚠ 2026-09-07 교체. 이전의 `meta/llama-3.3-70b-instruct`가 **410(Gone)**을 냈다 —
+         * NVIDIA가 계열에서 내렸고, 목록(`/v1/models`)에도 없다. 같은 급의 후속으로 옮겼다.
+         * 다른 후보: `nvidia/nemotron-3-super-120b-a12b`(더 큼) · `openai/gpt-oss-20b`(더 작음).
+         */
+        id: "nvidia/llama-3.1-nemotron-70b-instruct",
+        label: "Nemotron 70B",
         price: null,
         context: 128_000,
         strength: "balanced",
@@ -205,7 +210,8 @@ export const AI_PROVIDERS: readonly Provider[] = [
       {
         id: "claude-sonnet-5",
         label: "Claude Sonnet 5",
-        price: { inputPerMTok: 3, outputPerMTok: 15 },
+        // ⚠ $3/$15는 이전 세대(Sonnet 4.6) 값이다. 상한 계산이 비싸게 잡히고 있었다.
+        price: { inputPerMTok: 2, outputPerMTok: 10 },
         context: 1_000_000,
         strength: "balanced",
       },

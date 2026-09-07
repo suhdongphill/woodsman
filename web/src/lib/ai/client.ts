@@ -31,6 +31,15 @@ const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 /** 기본 출력 상한. 정형 JSON 출력에 넉넉하면서, 사고로 길게 뽑아도 감당되는 크기다. */
 export const DEFAULT_MAX_TOKENS = 4_000;
 
+/**
+ * Anthropic 전용 하한. ⚠ **생각과 답이 같은 상한을 나눠 쓴다.**
+ * 4,000으로는 생각에 다 쓰고 본문이 한 글자도 안 나오는 일이 실제로 있었다(2026-09-07).
+ */
+export const ANTHROPIC_MIN_MAX_TOKENS = 12_000;
+
+/** 사고 깊이. `low`~`max`. ⚠ 생략하면 `high`이고, 정리 작업에는 그게 과하다. */
+export const ANTHROPIC_EFFORT = "medium";
+
 export type AiCall = {
   system: string;
   user: string;
@@ -80,7 +89,18 @@ export function buildProviderRequest(
         },
         body: JSON.stringify({
           model: candidate.model.id,
-          max_tokens: maxTokens,
+          /**
+           * ⚠ **사고가 켜진 모델은 이 상한을 생각과 답이 나눠 쓴다.**
+           * 2026-09-07에 일정 초안이 「응답에 텍스트 블록이 없습니다」로 죽었다.
+           * 모델이 침묵한 게 아니라 4,000토큰을 생각에 다 쓰고 상한에 걸린 것이었다.
+           */
+          max_tokens: Math.max(maxTokens, ANTHROPIC_MIN_MAX_TOKENS),
+          /**
+           * 사고 깊이. ⚠ 이 사이트가 시키는 일은 창작이 아니라 **정리**다 —
+           * 아래 `temperature: 0.2`와 같은 판단이다. 품질을 사는 자리는
+           * **모드가 고르는 모델**이지 생각의 길이가 아니다.
+           */
+          output_config: { effort: ANTHROPIC_EFFORT },
           system: call.system,
           messages: [{ role: "user", content: call.user }],
         }),
@@ -117,14 +137,39 @@ export function readResponseText(kind: RouteCandidate["kind"], json: unknown): s
 
   if (kind === "ANTHROPIC") {
     const blocks = Array.isArray(root.content) ? root.content : [];
-    const text = blocks
-      .map((b) => b as { type?: string; text?: string })
+    const typed = blocks.map((b) => b as { type?: string; text?: string });
+    const text = typed
       .filter((b) => b.type === "text" && typeof b.text === "string")
       .map((b) => b.text as string)
       .join("\n")
       .trim();
-    if (!text) throw new Error("응답에 텍스트 블록이 없습니다");
-    return text;
+    if (text) return text;
+
+    /**
+     * ⚠ **왜 본문이 없는지를 말한다.** 「텍스트 블록이 없습니다」는 모델이 침묵한 것처럼
+     * 들리지만 실제 원인은 대개 **상한**이거나 **거절**이다. 사람을 엉뚱한 곳으로 보내는
+     * 실패가 조용한 실패보다 나쁘다(2026-09-05 「키를 아홉 개 등록했는데」와 같은 종류다).
+     */
+    const stopReason = typeof root.stop_reason === "string" ? root.stop_reason : "";
+    if (stopReason === "max_tokens") {
+      throw new Error(
+        "출력 상한에 걸려 본문이 나오지 않았습니다 — 모델이 생각에 상한을 다 썼습니다",
+      );
+    }
+    if (stopReason === "refusal") {
+      const details = (root.stop_details ?? {}) as { category?: string };
+      throw new Error(
+        `모델이 요청을 거절했습니다${details.category ? ` (${details.category})` : ""}`,
+      );
+    }
+    if (typed.length > 0 && typed.every((b) => b.type === "thinking")) {
+      throw new Error("사고 블록만 왔고 본문이 없습니다 — 출력 상한을 올려 보세요");
+    }
+    throw new Error(
+      stopReason
+        ? `응답에 텍스트 블록이 없습니다 (stop_reason: ${stopReason})`
+        : "응답에 텍스트 블록이 없습니다",
+    );
   }
 
   const choices = Array.isArray(root.choices) ? root.choices : [];
