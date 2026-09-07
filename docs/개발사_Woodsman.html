@@ -410,7 +410,7 @@
   <section class="part">
     <div class="part-head">
       <span class="part-no">연표</span>
-      <h2>네 국면</h2>
+      <h2>다섯 국면</h2>
       <p class="part-lede">
         착수는 6월이지만 실제 개발은 8월 2일 하룻밤에 몰려 있다.
         그 뒤로는 <b>만드는 일보다 고치는 일</b>이 많아졌다 — 그게 이 기록의 대부분이다.
@@ -459,6 +459,18 @@
             옵시디언 볼트에서 앞서 만든 거시 대시보드를 사이트로 옮겼다(신선도·인과 레이어·순유동성).
             마지막 주에는 <b>운영본을 직접 열어 보는 습관</b>이 결함 세 건을 잡았고,
             자동배포가 두 달 내내 고장 나 있었다는 것도 이때 드러났다. 테스트 843개.
+          </span>
+        </div>
+      </div>
+      <div class="era">
+        <div class="era-when">08-30<br>→ 09-07</div>
+        <div class="era-what">
+          <span class="era-title">화면을 다시 짜고, 사람 손에 걸려 있던 것을 기계로 넘겼다</span>
+          <span class="era-note">
+            홈을 콘텐츠 중심으로 재편하고 시각 언어를 토큰 하나로 모았다.
+            그리고 이 국면의 주제는 하나였다 — <b>사람의 기억에 걸어 둔 것은 결국 안 들어온다.</b>
+            수집·일정·인증키가 차례로 자동으로 넘어갔고, 값이 한 점도 없던 수기 지표 일곱 개가
+            그 사이 <b>미수집 0</b>이 됐다. 테스트 843개 → <b>1,076개</b>.
           </span>
         </div>
       </div>
@@ -852,6 +864,151 @@
           </div>
         </div>
       </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-30</span>
+          <h3>순서를 지킨다던 테스트가 아무것도 지키지 않았다</h3>
+          <span class="tag crit">거짓 초록</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>
+                홈의 블록 순서를 바꿔 배포했는데 <b>화면이 그대로였다.</b>
+                테스트는 통과했고, 배포도 성공했다.
+              </p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>
+                순서를 <b>두 곳이 따로 알고 있었다.</b> 배열은 “보일지 말지”만 정했고,
+                실제 순서는 화면 파일이 JSX로 나열한 순서였다.
+              </p>
+              <p>
+                더 나쁜 것은 <b>테스트가 초록이었다는 것</b>이다. “콘텐츠가 거시보다 앞인가”를
+                검사했지만 그 배열이 화면 순서와 무관했으므로,
+                <b>테스트는 자기 자신을 검사하고 있었다.</b>
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">어긋날 수 없게</div>
+            <div class="beat-body">
+              <p>
+                화면이 블록을 나열하지 않고 <b>배열을 그대로 그린다.</b>
+                이제 순서를 바꾸려면 배열 하나만 고치면 되고, 둘이 다를 방법이 없다.
+              </p>
+              <p>
+                “같은 판단을 두 곳에 두지 않는다”는 이미 아는 규칙이었다.
+                이번에 배운 것은 <b>“순서”도 판단이라는 것</b>이다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-31</span>
+          <h3>화면이 1,350원이라고 말하고 있었다</h3>
+          <span class="tag crit">사실을 만드는 값</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>
+                사용자 지적. <i>“오늘이 8월 말인데 21일 값이 있는 것은 신뢰의 문제입니다.”</i>
+                열어 보니 <b>두 가지가 겹쳐 있었고 둘 다 화면에 드러나지 않았다.</b>
+                화면이 쓰던 값은 <b>1,350원</b>(사람이 언젠가 적어 둔 수기값),
+                수집된 값은 <b>1,385.01 / 8월 21일</b>, 실제는 <b>1,368.5</b>였다.
+              </p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>
+                수집기는 멀쩡했다. 연준 H.10은 일별 값을 <b>월요일에 직전 금요일치까지 몰아서</b>
+                낸다. 그 계열을 “구조적 함정”으로 적어 두고 기한 예외(14일)까지 달아 놨는데,
+                <b>그 예외가 문제를 가려 주고 있었다.</b>
+              </p>
+              <p>
+                그리고 더 큰 쪽 — <b>화면은 수집값을 아예 안 보고 있었다.</b>
+                환율은 문구 하나가 아니라 <b>사실을 만드는 값</b>이다.
+                달러 종목을 환산해 버킷 비중과 평가액을 만든다.
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">결정</div>
+            <div class="beat-body">
+              <p>
+                출처를 바꾸고 예외를 <b>뺐다.</b> 예외를 남기면 진짜로 끊겼을 때 또 일주일을
+                못 알아챈다. 그리고 <b>낡았어도 수집값을 쓴다</b> —
+                수기값의 진짜 문제는 틀린 것이 아니라 <b>언제 기준인지 모른다</b>는 것이다.
+                낡은 값은 “며칠 밀렸다”고 말할 수 있지만, 날짜 없는 값은 그러지도 못한다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-09-05</span>
+          <h3>손으로 넣기로 한 지표 일곱 개에, 값이 한 점도 없었다</h3>
+          <span class="tag crit">두 번째로 배운 것</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>
+                “수기로 되어 있는 것을 자동으로 받게 해 달라”는 요청에서 시작해,
+                먼저 <b>얼마나 안 들어오고 있었는지를 셌다.</b>
+                59개 계열 중 52개는 쌓이고 있었고, 수동 일곱 개는 <b>행이 아예 없었다.</b>
+                한 번도 들어온 적이 없다는 뜻이다.
+              </p>
+              <p>
+                그래서 이 사이트에서는 <b>한미 금리차를 한 번도 볼 수 없었다</b> —
+                홈이 “흐름을 먼저 읽는다”고 말하는 사이트에서.
+              </p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>
+                <b>이미 한 번 적었던 문장이었다.</b> 8월 22일에 달러지수를 수동에서 자동으로
+                옮기며 “손으로 넣기로 한 지표는 결국 안 들어간다”고 써 놓고,
+                나머지 일곱 개에는 그 결론을 적용하지 않았다.
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">결정</div>
+            <div class="beat-body">
+              <p>
+                받을 수 있는 것은 자동으로 옮기고(한국 기준금리는 한국은행 ECOS로),
+                <b>무료로는 못 받는 것은 못 받는다고 표에 적었다.</b>
+                다음에 또 같은 것을 찾지 않게, 시도한 경로와 막힌 이유까지 남겼다.
+              </p>
+              <p>
+                ⚠ <b>그 값들을 AI에게 물어 채우지 않았다.</b> 지표값은 캘린더 날짜보다 위험하다 —
+                침체 판정에 그대로 들어가고, <b>틀려도 화면은 멀쩡해 보인다.</b>
+                대신 “아직 안 붙였다”와 “무료로는 못 받는다”를 구분해 두었다.
+                길이 열렸을 때 다시 볼 수 있어야 하기 때문이다 —
+                실제로 둘은 <b>막혔다고 믿었을 뿐 열려 있었다.</b>
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
     </div>
   </section>
 
@@ -1151,6 +1308,177 @@ to access this service [code: 7403]</pre>
           </div>
         </div>
       </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-08-30</span>
+          <h3>빌드 워커 둘이 같은 데이터베이스를 열었다</h3>
+          <span class="tag ops">경합</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>
+                배포 첫 실행이 <code>database is locked</code>로 죽었다.
+                로컬 검사는 빌드까지 포함해 통과했는데 러너에서만 죽었다.
+              </p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>
+                빌드가 페이지 데이터를 모을 때 <b>워커를 여럿 띄우는데</b>, 각 워커가 같은
+                로컬 SQLite를 동시에 열었다. 그날 관리자 화면을 셋 늘린 것이 방아쇠였다.
+                <b>재시도하니 같은 커밋이 그대로 통과했다</b> — 경합이지 코드 결함이 아니다.
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">결정 — 우회 설정을 넣지 않았다</div>
+            <div class="beat-body">
+              <p>
+                병렬도를 1로 고정하면 확실히 막힌다. 넣지 않았다 —
+                <b>“문제를 우회하는 설정이 쌓이면 나중에 왜 있는지 아무도 모른다”</b>로
+                한 번 정리한 적이 있는 저장소다. 다시 나면 그때 넣고, 이 항목을 근거로 남긴다.
+              </p>
+              <p>
+                ⚠ 대신 <b>재시도로 넘어간 실패를 “없던 일”로 적지 않았다.</b>
+                다음에 같은 로그를 보는 사람이 “처음 보는 오류”라고 생각하면 또 처음부터 판다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-09-01 → 09-05</span>
+          <h3>커밋은 배포가 아니다 — 두 번째</h3>
+          <span class="tag crit">같은 규칙, 두 번</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>
+                자동 수집을 만들어 매일 새벽에 돌게 해 놓았는데,
+                <b>나흘 동안 매일 아무 일도 일어나지 않았다.</b>
+              </p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>
+                <b>커밋 다섯 개가 로컬에만 있었다.</b> 밀어 올리지 않았으니 운영본에는
+                스케줄러가 아예 없었다. 8월 25일에 <b>똑같은 이유로</b> 나흘을 잃고
+                “커밋은 배포가 아니다”를 규칙으로 적었는데, 그 규칙이 이번에는
+                <b>사람이 아니라 스케줄러의 부재</b>로 나타나 알아보기 어려웠다.
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">두 번째로 배운 것</div>
+            <div class="beat-body">
+              <p>
+                이걸 알아낸 방법이 <b>화면이 아니라 명령줄 조회</b>였다는 것이 두 번째 사고다.
+                “매일 도는 것”은 <b>돌지 않아도 화면이 조용하다.</b> 자동화한 일일수록
+                <b>돌았다는 사실 자체를 화면이 말하게</b> 해야 한다 —
+                그래서 관리자 화면에 「자동」 배지를 붙였다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-09-05</span>
+          <h3>키를 아홉 개 등록했는데 화면은 “키를 등록하세요”라고 했다</h3>
+          <span class="tag crit">엉뚱한 곳</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>
+                사용자: <i>“등록되어 있는데, 이와 같이 에러가 납니다”</i> —
+                보관함에는 키가 <b>아홉 개 다</b> 들어 있었다.
+              </p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">원인</div>
+            <div class="beat-body">
+              <p>
+                제공자가 전부 <b>꺼져 있었다.</b> 시드가 그렇게 넣어 뒀고, 라우팅은 꺼진
+                제공자를 가장 먼저 걸러낸다. <b>키와는 아무 상관이 없었다.</b>
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">진짜 결함은 메시지였다</div>
+            <div class="beat-body">
+              <p>
+                세 가지 다른 원인(키 없음 · 꺼짐 · 상한 초과)을 한 문장으로 뭉뚱그려서,
+                <b>화면이 사람을 엉뚱한 곳으로 보냈다.</b>
+              </p>
+              <p>
+                <b>조용한 실패는 아무 말도 안 하는 것이고, 이건 틀린 말을 하는 것이다.
+                후자가 더 나쁘다</b> — 없는 문제를 찾느라 시간을 쓰게 만든다.
+                이제 제공자마다 왜 빠졌는지를 따로 말한다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-head">
+          <span class="case-date">2026-09-07</span>
+          <h3>1MB가 문제인 줄 알았는데, 재 보니 198KB였다</h3>
+          <span class="tag dev">재기 전에 줄이지 않는다</span>
+        </div>
+        <div class="beats">
+          <div class="beat">
+            <div class="beat-label">증상</div>
+            <div class="beat-body">
+              <p>
+                한국 계열이 들어오면서 금리 화면이 읽는 파일이 <b>778KB → 977KB</b>가 됐다.
+                스스로 정해 둔 1MB 한계까지 <b>22KB</b>가 남았고, 매일 수집이 도니 곧 넘는다.
+                차트 기간을 줄이는 것이 정해진 수순처럼 보였다.
+              </p>
+            </div>
+          </div>
+          <div class="beat">
+            <div class="beat-label">재 봤더니</div>
+            <div class="beat-body">
+              <p>
+                원본 977KB는 <b>압축하면 198KB</b>였다. 방문자가 실제로 받는 무게는
+                <b>처음부터 문제가 아니었다.</b> 한계선은 원본 크기를 재고 있었고,
+                사람이 받는 것은 압축본이다.
+              </p>
+            </div>
+          </div>
+          <div class="beat prevent">
+            <div class="beat-label">그래서 다른 결정을 했다</div>
+            <div class="beat-body">
+              <p>
+                줄이긴 줄였다 — 다만 <b>이유가 바뀌었다.</b> 용량을 아끼는 결정이 아니라
+                <b>“어디까지가 우리가 그릴 일인가”</b>의 결정이 됐다.
+                화면은 7년을 그리고, 그보다 긴 역사는 <b>원출처로 넘긴다.</b>
+                긴 역사는 원출처가 우리보다 잘 보여준다.
+              </p>
+              <p>
+                같은 날 하나 더 — 중립금리를 찾다가 검색 요약은 “3.0%”라고 했는데
+                <b>연준 원문은 3.1%</b>였다. 인용을 원문과 대조하는 절차가 그날 값을 했다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
     </div>
   </section>
 
@@ -1238,6 +1566,34 @@ to access this service [code: 7403]</pre>
           </div>
           <div class="rule-from">2026-08-22 →<br>계속 진행 중</div>
         </div>
+        <div class="rule-row">
+          <div class="rule-text">
+            <b>엉뚱한 곳을 가리키는 실패가 조용한 실패보다 나쁘다</b>
+            <span>아무 말도 안 하는 것보다 <b>틀린 말을 하는 것</b>이 비싸다. 원인이 셋이면 셋을 따로 말한다 — 없는 문제를 찾는 데 쓴 시간은 돌아오지 않는다.</span>
+          </div>
+          <div class="rule-from">2026-09-05<br>키 아홉 개</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-text">
+            <b>손으로 넣기로 한 것은 결국 안 들어간다</b>
+            <span>사람의 기억에 걸어 둔 값은 한 번도 안 들어온 채로 남는다. 자동으로 못 받으면 <b>못 받는다고 적는다</b> — “아직 안 붙였다”와 “받을 길이 없다”는 다른 말이다.</span>
+          </div>
+          <div class="rule-from">2026-08-22 → 09-05<br>수기 지표 일곱</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-text">
+            <b>자동으로 도는 일은 돌았다는 사실을 화면이 말하게 한다</b>
+            <span>매일 도는 것은 <b>돌지 않아도 조용하다.</b> 사람이 하던 일은 잊히면 티가 나지만, 기계가 하던 일은 멈춰도 아무도 모른다.</span>
+          </div>
+          <div class="rule-from">2026-09-01 → 09-05<br>안 돈 나흘</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-text">
+            <b>줄이기 전에 잰다</b>
+            <span>한계선이 재는 것과 사람이 받는 것이 다를 수 있다. 재 보면 결정이 사라지거나, <b>같은 결정이 다른 이유로 남는다</b> — 그 이유가 다음 사람에게 필요한 것이다.</span>
+          </div>
+          <div class="rule-from">2026-09-07<br>977KB와 198KB</div>
+        </div>
       </div>
     </div>
   </section>
@@ -1270,11 +1626,17 @@ to access this service [code: 7403]</pre>
         대개 <b>아직 원인을 모르는 것</b>이다 — 그럴 때는 모른다고 적는다.
       </p>
       <div class="callout">
-        <b>다음 장에 들어갈 것</b>은 이미 정해져 있다. 다섯 세션째 비어 있는 화면에
-        <b>첫 실데이터가 들어가는 순간</b>이다. 자동배포는 오늘 풀렸지만 그것도 결국
-        사람이 토큰을 다시 만들어야 끝났고, 남은 병목도 같은 종류다 —
-        <b>코드가 아니라 사람이 풀어야 하는 것.</b>
+        <b>다음 장에 들어갈 것</b>으로 적어 뒀던 것 — “다섯 세션째 비어 있는 화면에
+        첫 실데이터가 들어가는 순간” — 은 <b>9월 5일에서 7일 사이에 일어났다.</b>
+        미수집 지표가 0이 됐고, 한 번도 볼 수 없던 한미 금리차가 화면에 그려졌다.
+        <b>그리고 병목은 옮겨 갔을 뿐 사라지지 않았다.</b>
       </div>
+      <p>
+        지금 비어 있는 것은 데이터가 아니라 <b>글</b>이다. 발행한 글은 아직 세 편이고,
+        캘린더는 비어 있다. 도구는 이제 다 있다 — 일정 초안도, 지표도, 화면도.
+        <b>다섯 국면을 지나 배운 것이 하나라면</b>, 코드를 더 쌓아도 그 자리는 채워지지 않는다는
+        것이다. 이 문장은 2026년 8월 22일에 처음 적혔고, <b>지금도 유효하다.</b>
+      </p>
     </div>
   </section>
 
@@ -1284,7 +1646,7 @@ to access this service [code: 7403]</pre>
       출처: <span class="mono">web/CHANGELOG.md</span> · <span class="mono">docs/계획_*.md</span> ·
       <span class="mono">git log</span> · GitHub Actions 실행 기록.
     </div>
-    <div class="mono">기록 시점 2026-08-29 · 커밋 54 · 테스트 843 · 운영 portfolio-solutions.net</div>
+    <div class="mono">기록 시점 2026-09-07 · 커밋 103 · 테스트 1,076 · 운영 portfolio-solutions.net</div>
   </footer>
 
 </div>
