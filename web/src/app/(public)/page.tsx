@@ -11,6 +11,7 @@ import { MacroStrip } from "@/features/home/ui/MacroStrip";
 import { PrinciplesGrid } from "@/features/home/ui/PrinciplesGrid";
 import { LatestInsights } from "@/features/home/ui/LatestInsights";
 import { JournalAndReports } from "@/features/home/ui/JournalAndReports";
+import { UpcomingCalendar } from "@/features/home/ui/UpcomingCalendar";
 import { visibleHomeBlocks, type HomeBlock } from "@/lib/home-layout";
 import { macroLede } from "@/lib/home-lede";
 import { MACRO_INDICATORS } from "@/lib/macro/catalog";
@@ -22,6 +23,9 @@ import { loadBuckets } from "@/features/portfolio/buckets-repo";
 import { loadMacroOverview } from "@/features/macro/service";
 import { loadPublishedSummaries } from "@/features/reports/repository";
 import { loadPublishedPosts, loadSectionPosts } from "@/features/posts/repository";
+import { loadEvents } from "@/features/calendar/repository";
+import { upcoming } from "@/lib/macro-calendar";
+import { seoulDay } from "@/lib/kst";
 import { websiteJsonLd } from "@/lib/seo";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site-identity";
 
@@ -65,6 +69,7 @@ export default async function HomePage() {
     homePosts,
     featuredReports,
     buckets,
+    events,
   ] = await Promise.all([
     loadSnapshots(),
     loadPublishedJournal(),
@@ -75,10 +80,29 @@ export default async function HomePage() {
     loadSectionPosts("HOME", 4),
     loadPublishedSummaries(4),
     loadBuckets(),
+    loadEvents(200),
   ]);
 
   const perf = summarizePerformance(snapshots);
-  const blocks = visibleHomeBlocks({ homePostCount: homePosts.length });
+
+  /**
+   * 홈에 올릴 일정 — **2주 · 중요도 2 이상 · 최대 4건**.
+   * ⚠ 이 규칙은 `lib/macro-calendar.upcoming()`이 쥐고 있다. 여기서 다시 거르지 않는다 —
+   *   홈이 자기만의 기준을 갖기 시작하면 `/macro/calendar`와 말이 갈린다.
+   * ⚠ 「평가가 밀린 일정」은 홈에 오지 않는다(관리자 화면의 것이다).
+   */
+  const today = seoulDay(new Date().toISOString());
+  const homeEvents = upcoming(events, today, { days: 14, minImportance: 2, limit: 4 });
+  const upcomingTotal = upcoming(events, today, {
+    days: 14,
+    minImportance: 2,
+    limit: Number.MAX_SAFE_INTEGER,
+  }).length;
+
+  const blocks = visibleHomeBlocks({
+    homePostCount: homePosts.length,
+    upcomingEventCount: homeEvents.length,
+  });
 
   /**
    * ⚠ **순서는 `HOME_BLOCKS` 배열이 정한다. 여기서 나열하지 않는다.**
@@ -115,6 +139,9 @@ export default async function HomePage() {
       </div>
     ),
     macro: <MacroSection macro={macro} />,
+    upcomingCalendar: (
+      <UpcomingCalendar events={homeEvents} today={today} total={upcomingTotal} />
+    ),
     /* ⚠ 계좌는 콘텐츠를 읽은 **뒤에** 온다 — 입구가 아니라 증거다(2026-08-30, Step 2). */
     accountStrip: <AccountStrip perf={perf} buckets={buckets} dataMode={basics.dataMode} />,
     journalAndReports: (

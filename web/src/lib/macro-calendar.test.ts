@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  ddayLabel,
+  daysUntil,
   eventStatus,
   eventTime,
   groupByDay,
@@ -89,6 +91,41 @@ describe("목록 만들기", () => {
     expect(upcoming(events, TODAY, 3).map((e) => e.id)).toEqual(["today", "soon", "later"]);
   });
 
+  // ── 홈이 쓰는 자리 (docs/설계_홈_캘린더_노출.md) ──
+  //
+  // ⚠ 홈은 「이번 주에 무엇을 볼 것인가」만 싣는다. 기간·중요도·건수를 홈 컴포넌트가
+  //    스스로 정하면 /macro/calendar와 규칙이 갈리므로, 그 판단이 여기 있는지를 지킨다.
+
+  it("기간을 주면 그 밖의 일정은 빠진다 — 홈은 2주만 본다", () => {
+    const ids = upcoming(events, TODAY, { days: 14, limit: 4 }).map((e) => e.id);
+    expect(ids).toEqual(["today", "soon"]);
+    expect(ids).not.toContain("later"); // 9/20은 2주 밖이다
+  });
+
+  it("⚠ 중요도가 낮은 것(참고)은 홈에 올리지 않는다", () => {
+    const mixed = [
+      ev("참고", "2026-09-01T12:00:00.000Z", { importance: 1 }),
+      ev("주목", "2026-09-02T12:00:00.000Z", { importance: 2 }),
+      ev("중요", "2026-09-03T12:00:00.000Z", { importance: 3 }),
+    ];
+    expect(upcoming(mixed, TODAY, { days: 14, minImportance: 2 }).map((e) => e.id)).toEqual([
+      "주목",
+      "중요",
+    ]);
+  });
+
+  it("기간 경계는 그날까지 포함한다", () => {
+    const edge = [
+      ev("마지막날", "2026-09-13T12:00:00.000Z"),
+      ev("하루넘김", "2026-09-14T12:00:00.000Z"),
+    ];
+    expect(upcoming(edge, TODAY, { days: 14 }).map((e) => e.id)).toEqual(["마지막날"]);
+  });
+
+  it("숫자를 그대로 주던 기존 호출은 그대로 돈다", () => {
+    expect(upcoming(events, TODAY, 2).map((e) => e.id)).toEqual(["today", "soon"]);
+  });
+
   it("⚠ 평가가 밀린 것은 최근 것부터 — 쓸 순서가 그 순서다", () => {
     expect(needsReview(events, TODAY).map((e) => e.id)).toEqual(["past-3", "past-1"]);
   });
@@ -136,5 +173,25 @@ describe("구글 캘린더 구독(.ics)", () => {
 
   it("망가진 시각에도 죽지 않는다", () => {
     expect(toIcsTime("(없음)")).toBe("");
+  });
+});
+
+describe("D-day", () => {
+  it("오늘 일정은 「오늘」이다 — D-0이라고 적지 않는다", () => {
+    expect(ddayLabel({ at: "2026-08-30T12:00:00.000Z" }, TODAY)).toBe("오늘");
+    expect(daysUntil({ at: "2026-08-30T12:00:00.000Z" }, TODAY)).toBe(0);
+  });
+
+  it("남은 날은 KST 날짜끼리 센다", () => {
+    expect(ddayLabel({ at: "2026-09-02T12:00:00.000Z" }, TODAY)).toBe("D-3");
+  });
+
+  // ⚠ UTC 늦은 시각은 KST로 다음 날이다. 2026-08-31T20:00Z = KST 9/1 05:00.
+  it("⚠ UTC 밤 시각은 KST 기준으로 하루 뒤로 센다", () => {
+    expect(ddayLabel({ at: "2026-08-31T20:00:00.000Z" }, TODAY)).toBe("D-2");
+  });
+
+  it("월을 넘겨도 날짜 셈이 틀리지 않는다", () => {
+    expect(ddayLabel({ at: "2026-09-05T12:00:00.000Z" }, "2026-08-31")).toBe("D-5");
   });
 });

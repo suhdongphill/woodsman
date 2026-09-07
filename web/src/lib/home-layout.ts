@@ -40,6 +40,13 @@ export const HOME_BLOCKS = [
    */
   "macro",
   /**
+   * 다가오는 일정 — 「그 흐름이 언제 갱신되는가」.
+   * ⚠ **거시 요약 바로 아래다.** 요약이 지금 흐름을 말하고 캘린더가 그 갱신 시점을 말한다.
+   *    맨 위로 올리지 않는다 — 홈의 첫 화면은 **답**이지 일정표가 아니다
+   *    (`docs/설계_홈_캘린더_노출.md` §3).
+   */
+  "upcomingCalendar",
+  /**
    * 계좌 띠 — "이 흐름 속에서 나는 이렇게 하고 있다".
    * ⚠ 콘텐츠를 읽은 **뒤에** 온다. 계좌는 입구가 아니라 증거다(2026-08-30, Step 2).
    */
@@ -60,6 +67,8 @@ export type HomeBlock = (typeof HOME_BLOCKS)[number];
 export type HomeContent = {
   /** 홈 섹션으로 발행한 글 수 */
   homePostCount: number;
+  /** 홈에 올릴 수 있는 다가오는 일정 수(2주 · 중요도 2 이상) */
+  upcomingEventCount: number;
 };
 
 /**
@@ -75,6 +84,15 @@ export function visibleHomeBlocks(content: HomeContent): HomeBlock[] {
       /** 홈에 쌓인 글이 없으면 빈 프레임만 남는다. */
       case "homePosts":
         return content.homePostCount > 0;
+      /**
+       * ⚠ **다가오는 일정이 없으면 카드를 아예 그리지 않는다.**
+       *    「다가올 일정이 없습니다」를 홈에 띄우면 빈 사이트로 보인다. 관리자 화면에서는
+       *    반대다 — 거기서는 빈 칸이 곧 할 일이다(`docs/설계_홈_캘린더_노출.md` §4).
+       *    ⚠ 위의 accountStrip과 규칙이 다른 이유: 계좌는 **있는데 값이 아직 없는 것**이고,
+       *    일정은 **아직 없는 것**이다. 전자는 적고, 후자는 비운다.
+       */
+      case "upcomingCalendar":
+        return content.upcomingEventCount > 0;
       /**
        * ⚠ 계좌 띠는 **스냅숏이 없어도 그린다.** 값이 없으면 띠를 빼는 게 아니라
        *    "아직 없다"고 적는다 — 빈 칸을 0원으로 만들지 않는다(2026-08-30, Step 2).

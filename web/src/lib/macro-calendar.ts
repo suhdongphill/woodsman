@@ -114,15 +114,68 @@ export function eventStatus(event: CalendarEvent, today: string): EventStatus {
   return { kind: "unreviewed", label: "아직 평가 없음" };
 }
 
+export type UpcomingOptions = {
+  /** 몇 건까지 */
+  limit?: number;
+  /** 오늘부터 며칠 안까지. 안 주면 기간 제한이 없다(캘린더 화면이 그렇게 쓴다) */
+  days?: number;
+  /** 이 값 미만의 중요도는 뺀다. 1 참고 · 2 주목 · 3 중요 */
+  minImportance?: number;
+};
+
 /**
  * 다가오는 일정 N건 — 오늘 것을 **포함**한다.
  * ⚠ 목록은 날짜 오름차순이어야 한다. 저장소가 어떤 순서로 주든 여기서 다시 세운다.
+ *
+ * ⚠ **홈과 캘린더 화면이 같은 함수를 쓴다.** 홈이 「무엇이 다가온 일정인가」를 스스로
+ * 정하기 시작하면 두 화면의 규칙이 조용히 갈린다 — 그래서 기간·중요도까지 여기서 받는다
+ * (`docs/설계_홈_캘린더_노출.md` §5).
  */
-export function upcoming(events: CalendarEvent[], today: string, limit = 3): CalendarEvent[] {
+export function upcoming(
+  events: CalendarEvent[],
+  today: string,
+  options: number | UpcomingOptions = 3,
+): CalendarEvent[] {
+  const { limit = 3, days, minImportance } =
+    typeof options === "number" ? { limit: options } : options;
+
+  // ⚠ 날짜만 더한다(UTC 자정 기준). 시각을 섞으면 KST 경계에서 하루가 흔들린다.
+  const until = days === undefined ? null : addDays(today, days);
+
   return events
-    .filter((e) => seoulDay(e.at) >= today)
+    .filter((e) => {
+      const day = seoulDay(e.at);
+      if (day < today) return false;
+      if (until !== null && day > until) return false;
+      if (minImportance !== undefined && e.importance < minImportance) return false;
+      return true;
+    })
     .sort((a, b) => a.at.localeCompare(b.at))
     .slice(0, limit);
+}
+
+/** `YYYY-MM-DD`에 날짜를 더한다. ⚠ 문자열로 셈하지 않는다 — 월말이 틀린다. */
+function addDays(day: string, days: number): string {
+  const date = new Date(`${day}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * 오늘까지 며칠 남았나. ⚠ **KST 날짜끼리** 센다 — 시각을 섞으면 D-1과 D-0이 흔들린다.
+ * 오늘이면 0이다.
+ */
+export function daysUntil(event: { at: string }, today: string): number {
+  const from = Date.parse(`${today}T00:00:00Z`);
+  const to = Date.parse(`${seoulDay(event.at)}T00:00:00Z`);
+  return Math.round((to - from) / 86_400_000);
+}
+
+/** 「D-3」·「오늘」. ⚠ 지난 일정에는 쓰지 않는다(홈에는 지난 것을 올리지 않는다). */
+export function ddayLabel(event: { at: string }, today: string): string {
+  const left = daysUntil(event, today);
+  if (left <= 0) return "오늘";
+  return `D-${left}`;
 }
 
 /** 지났는데 평가 글이 없는 것 — **다음에 쓸 목록**이다. 최근 것부터. */
