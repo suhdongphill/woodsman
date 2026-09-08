@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CLOUDFLARE_LIMITS,
   CLOUDFLARE_LINKS,
+  D1_MAX_COMPOUND_SELECT,
   D1_SIZE_LIMIT,
   LIMITS_CHECKED_AT,
   classifyQuotaError,
@@ -105,5 +106,40 @@ describe("비용·한도 에러 분류", () => {
 
   it("원문을 지우지 않는다 — 분류가 틀렸을 때 사람이 원문을 봐야 한다", () => {
     expect(classifyQuotaError(new Error("database is full")).detail).toContain("database is full");
+  });
+});
+
+describe("⚠ 한도처럼 들리지만 코드 문제인 것", () => {
+  /**
+   * 2026-09-08 사고. `/admin/diagnostics`의 사용량 카드가 표 9개를 `UNION ALL`로 세다가
+   * D1의 5항 한도에 걸렸는데, 에러 문구의 "too many"가 일반 그물에 잡혀
+   * 화면이 **「한도 문제일 수 있습니다 → 대시보드에서 확인하세요」**라고 말했다.
+   * ⚠ 요금제를 올려도 안 풀리는 것을 한도라고 부르면 계기가 아니라 소음이 된다.
+   */
+  const REAL = "Error: D1_ERROR: too many terms in compound SELECT: SQLITE_ERROR";
+
+  it("복합 SELECT 항 초과는 한도 문제가 **아니라고** 말한다", () => {
+    const v = classifyQuotaError(new Error(REAL));
+    expect(v.kind).toBe("no");
+    expect(v.resource).toBeUndefined();
+  });
+
+  it("요금제를 올려도 안 풀린다는 것을 말한다", () => {
+    const v = classifyQuotaError(REAL);
+    expect(v.detail).toContain("요금제를 올려도 풀리지 않습니다");
+    expect(v.detail).toContain(String(D1_MAX_COMPOUND_SELECT));
+    // ⚠ 대시보드로 보내면 안 된다 — 거기엔 아무것도 없다.
+    expect(v.action).not.toContain("대시보드");
+  });
+
+  it("⚠ 진짜 한도 에러는 여전히 한도라고 말한다", () => {
+    expect(classifyQuotaError("Too many SQL statements in one invocation").kind).toBe("yes");
+    expect(classifyQuotaError("D1_ERROR: database or disk is full").kind).toBe("yes");
+  });
+});
+
+describe("D1 복합 SELECT 상한", () => {
+  it("⚠ SQLite 기본값(500)이 아니라 실측한 5다", () => {
+    expect(D1_MAX_COMPOUND_SELECT).toBe(5);
   });
 });

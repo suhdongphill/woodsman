@@ -76,6 +76,19 @@ export const CLOUDFLARE_LIMITS: LimitRow[] = [
   },
 ];
 
+/**
+ * ⚠ D1이 받는 **복합 SELECT(`UNION`/`UNION ALL`)의 항 수 상한.**
+ *
+ * SQLite 기본값은 500인데 **D1은 5다.** 2026-09-08에 운영 DB에서 직접 재서 확인했다
+ * (항 5까지 통과, 6부터 `too many terms in compound SELECT`).
+ * ⚠ 이건 요금제와 무관한 **엔진의 한도**다 — 유료로 올려도 풀리지 않는다.
+ *
+ * ⚠ 이 숫자에 기대어 「5개씩 끊어 보내는」 코드를 쓰지 않는다. 항이 6개가 되는 날
+ * 조용히 깨진다. 여러 값을 한 번에 세야 하면 **스칼라 서브쿼리**를 쓴다
+ * (`features/diagnostics/usage.ts`의 `buildRowCountSql`).
+ */
+export const D1_MAX_COMPOUND_SELECT = 5;
+
 /** D1 한 데이터베이스의 크기 한도(바이트). */
 export const D1_SIZE_LIMIT: Record<Plan, number> = {
   free: 500 * 1024 * 1024,
@@ -210,6 +223,26 @@ export function classifyQuotaError(error: unknown): QuotaVerdict {
       title: "Worker CPU 시간 한도를 넘었습니다",
       detail: `무료 등급은 호출당 10 ms입니다. 무거운 화면만 간헐적으로 죽어 재현이 어렵습니다. (원문: ${raw})`,
       action: `${upgrade} 유료는 30초까지 설정할 수 있습니다.`,
+    };
+  }
+
+  /**
+   * ⚠ **한도처럼 들리지만 코드 문제인 것부터 걸러 낸다** (2026-09-08 추가).
+   *
+   * `too many terms in compound SELECT`에는 "too many"가 들어 있어서 아래 그물에 걸렸고,
+   * 화면이 **「한도 문제일 수 있습니다 → 대시보드에서 확인하세요」**라고 말했다.
+   * 진단 화면 자체가 SQL을 잘못 쓴 것인데 **요금제를 보라고 안내한 셈**이다.
+   * ⚠ 요금제를 올려도 안 풀리는 것을 한도라고 부르면, 그 화면은 계기가 아니라 소음이다.
+   */
+  if (/too many terms in compound select/.test(text)) {
+    return {
+      kind: "no",
+      title: "한도가 아니라 SQL 모양 문제입니다",
+      detail:
+        `D1은 \`UNION\`/\`UNION ALL\`의 항을 ${D1_MAX_COMPOUND_SELECT}개까지만 받습니다` +
+        `(SQLite 기본값 500과 다릅니다). ⚠ 요금제를 올려도 풀리지 않습니다. (원문: ${raw})`,
+      action:
+        "항을 끊어 여러 번 보내지 말고 스칼라 서브쿼리로 바꾸세요 — 끊어 보내면 항이 더 늘어나는 날 또 걸립니다.",
     };
   }
 
