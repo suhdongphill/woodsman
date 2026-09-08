@@ -236,9 +236,22 @@ Stop-Process -Force -Id <pid>                              # 끈다
 - ⚠ 시크릿 `CRON_SECRET`(32자 이상)이 **필요하다**. 없으면 스케줄이 돌아도 아무것도 하지
   않고 로그에만 남는다 — 설정 누락이 "누구나 통과"가 되면 안 되기 때문이다.
 
+⚠ **`secret put`을 쓰지 않는다** (2026-09-08에 바뀐 지침). 대화형 프롬프트도, stdin 파이프도
+값을 못 받은 채 **에러 없이 끝날 수 있다.** 실제로 9/5에 그렇게 들어가 `CRON_SECRET`이
+**이름만 등록되고 값이 비었고**, 사흘간 스케줄이 한 번도 돌지 않았다.
+⚠ 더 나쁜 것은 **`wrangler secret list`도 `versions view`도 이름만 보여 주므로 둘 다
+「있다」고 답한다는 것**이다. 그 사고는 이름을 보는 도구로는 잡히지 않는다.
+
 ```bash
-npx wrangler secret put CRON_SECRET   # 배포본에 넣는다(로컬에는 없어도 된다)
+# 값을 JSON 파일에 담아 넣는다 — stdin을 쓰지 않고, 성공을 말로 한다.
+node -e "const fs=require('fs'),c=require('crypto');fs.writeFileSync('s.json',JSON.stringify({CRON_SECRET:c.randomBytes(32).toString('hex')}))"
+cd web && npx wrangler secret bulk ../s.json --name woodsman
+#   → "✨ 1 secrets successfully created" 가 떠야 들어간 것이다
+rm s.json
 ```
+
+⚠ **넣었으면 화면으로 확인한다.** `/admin/macro`의 「자동 수집」이 `시크릿: 등록됨`으로
+바뀌어야 한다. 여기가 **값을 실제로 읽어 보는 유일한 자리**다(`cronSecretState`).
 
 ### ⚠ 무료 한도 — 요청당 subrequest 50개 (2026-09-01)
 
