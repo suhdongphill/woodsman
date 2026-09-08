@@ -131,6 +131,90 @@ export function buildProviderRequest(
   };
 }
 
+/**
+ * 실패한 응답에서 **사람에게 보여도 되는 이유**를 뽑는다 — 순수 함수.
+ *
+ * ## 왜 만들었나 (2026-09-08)
+ * 전에는 `응답 404`만 던졌다. 본문을 통째로 버린 이유는 타당했다 —
+ * ⚠ **제공자가 요청 본문을 되비추는 경우가 있어** 그대로 실으면 시스템 프롬프트나
+ * 키가 화면·로그로 새어 나간다.
+ *
+ * 그런데 그 결과 화면이 숫자만 말하게 됐고, NVIDIA가 사흘째 404를 내는데도
+ * **왜인지 알 길이 없었다.** 「모르는 모델」인지 「계정에 없는 모델」인지 「경로가 틀렸는지」가
+ * 전부 같은 404로 보인다. 어제 「응답에 텍스트 블록이 없습니다」가 사실은 상한이었던 것과
+ * 같은 자리다 — **엉뚱한 곳을 가리키는 실패**.
+ *
+ * ## 그래서 버리는 대신 **골라 담는다**
+ * ⚠ 통째로 싣지 않는다. 제공자들이 쓰는 **에러 필드만** 본다
+ * (`detail`·`title`·`message`·`error.message`·`error.code`). 그 밖의 키는 쳐다보지 않으므로
+ * 되비친 요청은 애초에 후보에 오르지 않는다.
+ *
+ * ⚠ 그래도 세 겹을 더 건다.
+ * 1. **키가 들어 있으면 통째로 버린다**(되비침의 가장 위험한 형태다).
+ * 2. 키처럼 생긴 토큰은 지운다 — 우리 키가 아니어도 남의 키를 옮겨 적지 않는다.
+ * 3. 요청을 되비춘 흔적(`"messages"`·`"role":`·`system`)이 보이면 버린다.
+ * 4. 길이를 자른다. 실패 이유는 한 줄이면 된다.
+ */
+export const PROVIDER_ERROR_MAX = 160;
+
+/** 에러 본문에서 이유를 담고 있는 필드. ⚠ 이 목록 밖은 보지 않는다. */
+const ERROR_FIELDS = ["detail", "title", "message", "error_message", "code"] as const;
+
+/** 키처럼 생긴 토큰 — 접두사가 알려진 것들과, 길고 이어진 토큰. */
+const KEY_LIKE = /\b(?:sk|nvapi|gsk|xai|api|key)[-_][A-Za-z0-9_-]{8,}\b/gi;
+
+/** 요청을 되비췄다는 신호. 하나라도 보이면 그 문장은 쓰지 않는다. */
+const ECHO_MARKS = /"messages"|"role"\s*:|"system"\s*:|"temperature"\s*:/;
+
+function pickErrorStrings(value: unknown, depth = 0): string[] {
+  if (depth > 3) return [];
+  if (typeof value === "string") return [value];
+  if (!value || typeof value !== "object") return [];
+
+  const obj = value as Record<string, unknown>;
+  const out: string[] = [];
+  for (const field of ERROR_FIELDS) {
+    const v = obj[field];
+    if (typeof v === "string" && v.trim()) out.push(v.trim());
+  }
+  // `error`는 문자열일 수도, 한 겹 더 들어간 객체일 수도 있다.
+  if ("error" in obj) out.push(...pickErrorStrings(obj.error, depth + 1));
+  return out;
+}
+
+/**
+ * @param body 응답 본문(그대로). JSON이면 에러 필드만, 아니면 짧은 평문만 쓴다.
+ * @param apiKey 되비침 검사에 쓴다. ⚠ 값 자체는 **결과에 절대 담기지 않는다.**
+ * @returns 보여도 되는 한 줄. 쓸 것이 없으면 빈 문자열.
+ */
+export function describeProviderError(body: string, apiKey?: string): string {
+  const raw = (body ?? "").slice(0, 2_000).trim();
+  if (!raw) return "";
+
+  let picked = "";
+  try {
+    picked = pickErrorStrings(JSON.parse(raw)).join(" · ");
+  } catch {
+    /**
+     * JSON이 아니면 **짧은 평문일 때만** 쓴다.
+     * NVIDIA의 `404 page not found`처럼 라우터가 내는 한 줄이 여기 해당한다.
+     * ⚠ 긴 평문은 HTML 오류 페이지이거나 되비침이라 버린다.
+     */
+    picked = raw.length <= 200 && !raw.includes("<") ? raw : "";
+  }
+
+  if (!picked) return "";
+  // ⚠ 키가 통째로 들어 있으면 그 문장은 신뢰할 수 없다. 지우지 말고 **버린다.**
+  if (apiKey && apiKey.length >= 8 && picked.includes(apiKey)) return "";
+  if (ECHO_MARKS.test(picked)) return "";
+
+  const cleaned = picked.replace(KEY_LIKE, "[키]").replace(/\s+/g, " ").trim();
+  if (!cleaned) return "";
+  return cleaned.length > PROVIDER_ERROR_MAX
+    ? `${cleaned.slice(0, PROVIDER_ERROR_MAX - 1)}…`
+    : cleaned;
+}
+
 /** 응답에서 본문 텍스트를 꺼낸다. 형식이 다르면 빈 문자열이 아니라 예외다. */
 export function readResponseText(kind: RouteCandidate["kind"], json: unknown): string {
   const root = (json ?? {}) as Record<string, unknown>;
@@ -239,8 +323,13 @@ export async function callCandidate(
   }
 
   if (!response.ok) {
-    // ⚠ 응답 본문을 그대로 싣지 않는다. 제공자가 요청 본문을 되비추는 경우가 있다.
-    throw new Error(`응답 ${response.status}`);
+    /**
+     * ⚠ 본문을 **그대로** 싣지 않는다(제공자가 요청을 되비추는 경우가 있다).
+     *    다만 버리지도 않는다 — 숫자만 남으면 「모르는 모델」과 「계정에 없는 모델」이
+     *    같은 404로 보인다. `describeProviderError`가 에러 필드만 골라 낸다.
+     */
+    const reason = describeProviderError(await response.text().catch(() => ""), apiKey);
+    throw new Error(reason ? `응답 ${response.status} — ${reason}` : `응답 ${response.status}`);
   }
 
   const json = await response.json();
