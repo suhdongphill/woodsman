@@ -67,8 +67,18 @@ export type { MacroDerived } from "./derived";
  *              (연준 총자산 WALCL 등)을 조 달러로 읽기 위한 것이다. 같은 유동성 블록에서
  *              어떤 계열은 십억, 어떤 계열은 백만으로 오기 때문에 **단위를 맞추지 않으면
  *              합계·비교가 조용히 1000배 틀린다.**
+ * - `price100` 100에서 뺀다 — ⚠ **금리 선물**의 관례다. 30일 연방기금 선물은 가격 96.14로
+ *              거래되고 그 뜻은 「그 달 평균 실효금리 3.86%」다. 원값(가격)을 저장하고
+ *              여기서 금리로 바꾼다(`lib/macro/fedfutures.ts`가 같은 식을 쓴다).
  */
-export type MacroTransform = "level" | "yoy" | "mom" | "momdiff" | "levelK" | "levelM";
+export type MacroTransform =
+  | "level"
+  | "yoy"
+  | "mom"
+  | "momdiff"
+  | "levelK"
+  | "levelM"
+  | "price100";
 
 /** 침체 시그널 판정 규칙. `op`는 "위험한 방향". */
 export type MacroSignalRule = {
@@ -134,6 +144,15 @@ export type MacroIndicator = {
   read: string;
   /** 침체 시그널이면 판정 규칙 */
   signal?: MacroSignalRule;
+  /**
+   * **근월물 선물**인가. 참이면 수집기가 값만 받지 않고 Yahoo의 이름표로 **계약월을 확인**한다.
+   *
+   * ⚠ 선물의 「근월물」은 달이 바뀌면 **다른 계약**이 된다. 어느 달 계약인지 모르는 가격은
+   *   어느 회의의 기대인지도 모르는 값이다 — 그런 값으로 확률을 내면 그럴듯하게 틀린다.
+   *   그래서 수집 시점에 **「시세일의 다음 달 계약」임을 확인하고, 아니면 저장하지 않는다**
+   *   (`features/macro/ingest.ts`). 읽는 쪽은 그 불변식을 전제로 계약월을 안다.
+   */
+  frontContract?: boolean;
   /** 홈 요약에 올리는 대표 지표 */
   headline?: boolean;
   order: number;

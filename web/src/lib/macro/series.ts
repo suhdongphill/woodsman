@@ -31,6 +31,8 @@ export function applyTransform(points: SeriesPoint[], tf: MacroTransform): Serie
   if (tf === "level") return points;
   if (tf === "levelK") return points.map((p) => ({ date: p.date, value: p.value / 1000 }));
   if (tf === "levelM") return points.map((p) => ({ date: p.date, value: p.value / 1_000_000 }));
+  // 금리 선물: 가격 96.14 → 금리 3.86%. ⚠ 부호가 뒤집히므로 "오르면 좋다"를 그대로 쓰면 안 된다.
+  if (tf === "price100") return points.map((p) => ({ date: p.date, value: 100 - p.value }));
 
   if (tf === "yoy") {
     const byDate = new Map(points.map((p) => [p.date, p.value]));

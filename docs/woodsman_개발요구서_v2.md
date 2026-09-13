@@ -81,7 +81,7 @@ web/
 `analytics` `engagement` `comments` `admin-log` `home-layout`
 
 도메인 묶음
-`macro/{registry,catalog,series,signal,parse,freshness,layers,derived,overlay,groups,fedhike}`
+`macro/{registry,catalog,series,signal,parse,freshness,layers,derived,overlay,groups,fedhike,fedfutures}`
 `bubble/{catalog,score}` `canslim/{catalog,score}` `quote/{lookup,parse,envelope,kpi}`
 `report/{catalog,context,link,rules,tistory}` `ai/{catalog,persona,context,routing,retrieval,labels}`
 
@@ -276,6 +276,31 @@ rm s.json
   남은 여섯(ISM 둘·컨퍼런스보드 CCI·NAHB·선행 PER 둘)은 **무료 경로가 실제로 막혀 있음**을
   확인한 것들이다(`web/CHANGELOG.md` 2026-09-05 (3)에 시도한 경로와 결과를 표로 남겼다).
   ⚠ 이 숫자들을 **AI로 채우지 않는다** — 침체 시그널 판정에 그대로 들어간다.
+
+### 정책금리 — 처방과 시장 기대를 **따로** 낸다 (2026-09-13)
+
+같은 질문("금리가 어디로 가나")에 답이 둘이고, 둘은 다른 숫자다. 한 카드에 뭉개지 않는다.
+
+| 무엇 | 모듈 | 답하는 것 |
+|---|---|---|
+| `fedhike` | Taylor(1993) + CGG(2000) | **모형이 처방하는 것** |
+| `fedfutures` | 연방기금 선물 `ZQ=F` | **사람들이 돈으로 거는 것** |
+
+- ⚠ **CME 페드워치를 가져오지 않는다.** CmeWS는 403이고 응답이 "scraping은 이용약관 위반"
+  이라고 직접 말한다(2026-09-13 재확인). 원재료(Yahoo `ZQ=F`)에서 **우리가 계산**하고,
+  화면에 「우리 계산」이라 적는다. 페드워치와 소수점이 다를 수 있다.
+- ⚠ **근월물 선물은 계약월을 확인하지 않으면 쓸 수 없다.** 달이 바뀌면 다른 계약이고,
+  Yahoo는 이름을 31자에서 잘라 계약월을 **두 글자**만 준다(`…Futures,Oc`). 두 글자로 가릴 수
+  있는 것은 「근월물은 이번 달이나 다음 달」이라는 제약 덕분이고, 겹치는 달은 **6월뿐**이다.
+- ⚠ **계약월을 DB에 적지 않는다. 대신 수집이 불변식을 지킨다** — 「시세일의 다음 달 계약」이
+  아니면 저장하지 않는다(`MacroPoint`에 적을 자리가 없어 컬럼을 늘리는 대신 택한 길이다).
+  Yahoo가 롤 시점을 바꾸면 지표가 **멈추고 `MacroIngest.detail`이 이유를 문장으로 남긴다.**
+- ⚠ **가정의 크기를 화면에 적는다.** 계약 하나로는 회의 전·후 금리를 함께 풀 수 없어
+  계약월 안의 회의는 「변화 없음」으로 둔다. 그 가정이 걸린 날수 비중을 같이 보여준다.
+- ⚠ **변환은 한 곳에만 둔다.** 가격→금리(100 − 가격)는 표시 변환 `price100`이 하고,
+  `fedfutures`는 이미 변환된 금리를 받는다.
+- 회의일은 **캘린더(`MacroEvent`)**에서 온다. 제목에 「FOMC」가 없으면 못 찾고, 그때는
+  **계산하지 않는다**(카드가 안 나온다). 자동 출처가 아닌 자리라 캘린더가 곧 입력이다.
 
 ### 캘린더 AI 초안 — 제안은 AI, 채택은 Woodsman (2026-09-05)
 

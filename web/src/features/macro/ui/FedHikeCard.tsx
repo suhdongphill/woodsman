@@ -141,7 +141,7 @@ export function FedHikeCard({ result, asOf }: { result: FedHikeResult; asOf?: st
       <p className="mt-4 text-[11.5px] leading-relaxed text-gray-600">
         ※ 테일러(1993) 준칙에 오쿤 근사 산출갭을 넣고, 기대인플레·비용압력·성장·심리로 보정한 뒤
         확률로 편 값입니다. <strong>계수는 문헌 표준값으로 보정한 것이지 회귀로 적합한 것이
-        아니며, 연방기금 선물에서 뽑는 시장 내재확률(CME FedWatch)과는 다른 숫자입니다.</strong>{" "}
+        아니며, 아래 「시장이 거는 것」 카드(연방기금 선물 내재)와는 다른 숫자입니다.</strong>{" "}
         방향과 상대 비교로만 읽어 주세요. 여기서 내는 것은 상태 표시까지입니다.{" "}
         <Link href="/disclaimer" className="underline hover:text-gold-400">
           투자 판단 책임 고지

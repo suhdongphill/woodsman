@@ -46,6 +46,25 @@ export async function loadEvents(limit = 200): Promise<CalendarEvent[]> {
   return rows.map(toEvent);
 }
 
+/**
+ * FOMC **결정일** 목록 — 선물 내재 정책금리 계산의 입력이다(`lib/macro/fedfutures.ts`).
+ *
+ * ⚠ 제목으로 고른다. 이 캘린더는 사람(과 AI 초안)이 채우므로 「FOMC」라는 글자가 없으면
+ *   못 찾는다. 그때는 화면이 **계산을 하지 않고 그 이유를 말한다** — 회의 일정을 모르는 채
+ *   계산하면 어느 회의의 기대인지 모르는 확률이 나온다.
+ * ⚠ 저장된 `at`은 시각을 모르면 정오(UTC)다. 날짜만 떼어 쓰는 이유이고, 이 날짜는
+ *   **미국 결정일**이다(KST로 옮기면 하루 밀린다).
+ */
+export async function loadFomcDecisionDates(fromDate: string): Promise<string[]> {
+  const rows = await queryAll<{ at: string }>(
+    `SELECT at FROM MacroEvent
+      WHERE kind = 'CENTRAL_BANK' AND title LIKE '%FOMC%' AND at >= ?
+      ORDER BY at ASC LIMIT 24`,
+    [`${fromDate}T00:00:00.000Z`],
+  );
+  return rows.map((r) => r.at.slice(0, 10));
+}
+
 export async function createEvent(input: {
   at: string;
   title: string;

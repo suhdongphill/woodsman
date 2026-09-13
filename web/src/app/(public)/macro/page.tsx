@@ -6,6 +6,7 @@ import { ChevronRightIcon } from "@/components/icons";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { RecessionBoard } from "@/features/macro/ui/RecessionBoard";
+import { FedFuturesCard } from "@/features/macro/ui/FedFuturesCard";
 import { FedHikeCard } from "@/features/macro/ui/FedHikeCard";
 import { GroupCard } from "@/features/macro/ui/GroupCard";
 import { HealthNotice } from "@/features/macro/ui/Freshness";
@@ -96,6 +97,19 @@ export default async function MacroHubPage() {
               연준 정책금리 방향
             </h2>
             <FedHikeCard result={overview.fedHike} asOf={overview.fedHikeAsOf} />
+          </section>
+        )}
+
+        {/*
+          ①-3 같은 질문에 **다른 방법으로** 답한 값. 준칙 바로 아래 두는 것이 요점이다 —
+          모형이 처방하는 것과 시장이 거는 것이 벌어질 때가 볼 만한 때다.
+        */}
+        {overview.fedFutures && (
+          <section aria-labelledby="fedfutures-heading">
+            <h2 id="fedfutures-heading" className="sr-only">
+              선물 내재 정책금리 (시장 기대)
+            </h2>
+            <FedFuturesCard result={overview.fedFutures} asOf={overview.fedFuturesAsOf} />
           </section>
         )}
 

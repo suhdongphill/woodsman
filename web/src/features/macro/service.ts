@@ -25,6 +25,12 @@ import {
 } from "@/lib/macro/series";
 import { judgeSignal, summarizeRecession, type RecessionSummary, type SignalStatus } from "@/lib/macro/signal";
 import { estimateFedHike, type FedHikeResult } from "@/lib/macro/fedhike";
+import {
+  impliedFromFutures,
+  nextMonthOf,
+  type FedFuturesResult,
+} from "@/lib/macro/fedfutures";
+import { loadFomcDecisionDates } from "@/features/calendar/repository";
 import { buildOverlay, type OverlayMode, type OverlayResult } from "@/lib/macro/overlay";
 import {
   healthNotice,
@@ -145,6 +151,13 @@ export type MacroOverview = {
   fedHike?: FedHikeResult;
   /** 인상확률 계산에 쓴 값들의 기준일 중 가장 오래된 것 — "얼마나 묵은 판단인가" */
   fedHikeAsOf?: string;
+  /**
+   * 선물 내재 정책금리 — **시장이 거는 것**. `fedHike`(모형이 처방하는 것)와 짝이다.
+   * ⚠ 선물 시세·현재 금리·FOMC 일정 중 하나라도 없으면 undefined다. 지어내지 않는다.
+   */
+  fedFutures?: FedFuturesResult;
+  /** 선물 시세일 — 이 계산이 언제 값인지 */
+  fedFuturesAsOf?: string;
 };
 
 /**
@@ -169,8 +182,13 @@ const FED_HIKE_KEYS = {
  *    빈 화면은 고장과 구분되지 않는다.
  */
 export async function loadMacroOverview(): Promise<MacroOverview> {
-  const [recent, meta] = await Promise.all([loadRecentPoints(), loadSeriesMeta()]);
   const now = new Date();
+  // FOMC 일정은 선물 내재금리의 입력이다. 같은 왕복에서 받아 온다.
+  const [recent, meta, fomc] = await Promise.all([
+    loadRecentPoints(),
+    loadSeriesMeta(),
+    loadFomcDecisionDates(now.toISOString().slice(0, 10)),
+  ]);
 
   const views = new Map<string, IndicatorView>();
   for (const indicator of MACRO_INDICATORS) {
@@ -204,6 +222,26 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
     .filter((d): d is string => !!d);
   const fedHikeAsOf = fedHikeDates.length ? fedHikeDates.slice().sort()[0] : undefined;
 
+  /**
+   * 선물 내재 정책금리.
+   *
+   * ⚠ 계약월을 저장하지 않는 대신 **수집 시점의 불변식**을 되짚는다 —
+   *   `ingest.ts`의 `fetchFrontContract`는 「시세일의 다음 달 계약」만 저장한다.
+   *   그 불변식이 깨지면 값이 저장되지 않으므로, 여기서 계약월을 계산해도 안전하다.
+   * ⚠ 회의 일정은 캘린더에서 온다. 비어 있으면 계산하지 않는다(`impliedFromFutures`).
+   */
+  const zq = views.get("zq_front");
+  const fedFutures =
+    zq?.value !== undefined && zq.asOf
+      ? impliedFromFutures({
+          impliedAvg: zq.value,
+          contractMonth: nextMonthOf(zq.asOf),
+          currentRate: views.get(FED_HIKE_KEYS.fedFunds)?.value,
+          meetings: fomc,
+          quoteDate: zq.asOf,
+        })
+      : undefined;
+
   return {
     summary,
     signals,
@@ -214,6 +252,8 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
     health: summarizeHealth([...views.values()].map((v) => v.freshness)),
     fedHike,
     fedHikeAsOf: fedHike ? fedHikeAsOf : undefined,
+    fedFutures,
+    fedFuturesAsOf: fedFutures ? zq?.asOf : undefined,
   };
 }
 

@@ -37,12 +37,26 @@ export function parseFredCsv(text: string): SeriesPoint[] {
 type YahooChart = {
   chart?: {
     result?: {
+      /** ⚠ 잘려 온다 — `parseYahooShortName` 머리말 참고. */
+      meta?: { shortName?: string };
       timestamp?: number[];
       indicators?: { quote?: { close?: (number | null)[] }[] };
     }[];
     error?: unknown;
   };
 };
+
+/**
+ * Yahoo가 그 심볼을 **무엇이라고 부르는지**. 값만 받고 이름을 안 보면 다른 상품을 넣는다 —
+ * `^MOVE`가 실은 TIPS 지수였던 일(2026-09-07)이 그래서 났다.
+ *
+ * ⚠ **31자에서 잘린다.** `30 Day Federal Funds Futures,Oc` — 선물 계약월이 두 글자만 남는다.
+ *   `lib/macro/fedfutures.ts`가 그 두 글자로 계약월을 가린다.
+ */
+export function parseYahooShortName(json: unknown): string {
+  const data = json as YahooChart;
+  return data?.chart?.result?.[0]?.meta?.shortName ?? "";
+}
 
 /**
  * Yahoo Finance 차트 응답.
