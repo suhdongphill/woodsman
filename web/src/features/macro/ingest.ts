@@ -30,6 +30,7 @@ import type { SeriesPoint } from "@/lib/macro/series";
 import {
   finishIngest,
   loadMaxDates,
+  recordObservations,
   startIngest,
   upsertPoints,
   type IngestDetail,
@@ -368,6 +369,17 @@ export async function ingestMacro(
       if (!item) continue;
       try {
         const { toWrite, added } = pointsToWrite(item.points, item.known);
+        /**
+         * ⚠ **L1 먼저, L2는 그다음.** L2(`MacroPoint`)는 덮어쓰므로, L1에 남기기 전에 덮으면 수정 전 값이 사라진다.
+         *   L1 저장이 실패하면 이 지표를 실패로 기록하고 L2도 건드리지 않는다 — 이력이 조용히 뒤처지지 않게.
+         */
+        const revised = await recordObservations(
+          item.indicator.key,
+          item.indicator.source,
+          toWrite,
+          todayKst,
+          "INGEST",
+        );
         await upsertPoints(item.indicator.key, item.indicator.source, toWrite);
         addedPoints += added;
         detail.push({
@@ -379,6 +391,7 @@ export async function ingestMacro(
           ...(item.dropped > 0
             ? { droppedFuture: item.dropped, firstFutureDate: item.firstDropped }
             : {}),
+          ...(revised > 0 ? { revised } : {}),
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

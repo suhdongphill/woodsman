@@ -7,11 +7,16 @@
  *
  * ⚠ 날짜는 **정오(UTC)**로 저장한다. 자정으로 넣으면 앞 10자를 자르는 화면에서 하루가 밀린다
  *    (features/journal·portfolio와 같은 규칙).
- * ⚠ 같은 날짜를 다시 받으면 **덮어쓴다.** 통계는 사후에 수정된다(고용·GDP는 두 번 고쳐진다).
- *    처음 받은 값을 고집하면 틀린 숫자가 영원히 남는다.
+ * ⚠ `MacroPoint`(L2)는 같은 날짜를 다시 받으면 **덮어쓴다.** 통계는 사후에 수정된다(고용·GDP는 두 번
+ *    고쳐진다). 처음 받은 값을 고집하면 틀린 숫자가 영원히 남는다.
+ * ⭐ **그 대신 덮어쓰기 전에 L1(`MacroObservation`)에 남긴다**(2026-09-13, Capital Regime Engine R1).
+ *    L1은 추가만 한다 — 수정 전 값이 사라지면 과거 시점의 판정을 다시 계산할 때 그때는 몰랐던
+ *    수정치가 섞인다(look-ahead bias). 규칙은 `lib/macro/vintage.ts`에 있다.
  */
 import { execute, getD1, queryAll, queryOne, type D1Statement } from "@/lib/d1";
 import type { SeriesPoint } from "@/lib/macro/series";
+import { diffObservations, type ObservationOrigin } from "@/lib/macro/vintage";
+import { seoulDay } from "@/lib/kst";
 
 function dayOf(value: string): string {
   return String(value).slice(0, 10);
@@ -227,15 +232,88 @@ export async function countPointsBySeries(): Promise<Map<string, number>> {
   return new Map(rows.map((r) => [r.seriesKey, r.n]));
 }
 
-/** 수동 지표 한 점. 관리자 입력 폼이 부른다. */
+/**
+ * L1(`MacroObservation`)에 남긴다 — **L2를 덮어쓰기 전에** 부른다.
+ *
+ * 받은 점들을 L1의 최신 빈티지와 대조해 **처음 보는 관측일**과 **값이 바뀐 관측일**만 새 행으로 쌓는다.
+ * 같은 값은 쌓지 않는다(매일 같은 값이 쌓이면 이력이 잡음이 된다).
+ *
+ * ⚠ **빈티지 단위는 날짜다.** 같은 날 두 번 받아 값이 또 바뀌면 그날 빈티지 행을 고친다 —
+ *    `INSERT OR IGNORE`로 두면 같은 날의 두 번째 수정이 **조용히 버려진다.**
+ *
+ * @returns 값이 바뀐 관측일 수(= 통계 수정). 수집 이력에 남긴다.
+ */
+export async function recordObservations(
+  seriesKey: string,
+  source: string,
+  points: SeriesPoint[],
+  vintageDate: string,
+  origin: ObservationOrigin,
+): Promise<number> {
+  if (points.length === 0) return 0;
+
+  const from = points.reduce((min, p) => (p.date < min ? p.date : min), points[0].date);
+  const rows = await queryAll<{ observationDate: string; vintageDate: string; value: number }>(
+    `SELECT observationDate, vintageDate, value FROM MacroObservation
+     WHERE seriesKey = ? AND observationDate >= ?`,
+    [seriesKey, toStoredDate(from)],
+  );
+  /** 관측일 → 가장 최근 빈티지의 값 */
+  const latest = new Map<string, { vintageDate: string; value: number }>();
+  for (const r of rows) {
+    const day = dayOf(r.observationDate);
+    const cur = latest.get(day);
+    if (!cur || r.vintageDate > cur.vintageDate) latest.set(day, { vintageDate: r.vintageDate, value: r.value });
+  }
+
+  const { firstSeen, revised } = diffObservations(
+    points,
+    new Map([...latest].map(([day, v]) => [day, v.value])),
+  );
+  const toAppend: SeriesPoint[] = [...firstSeen, ...revised.map((r) => ({ date: r.date, value: r.to }))];
+  if (toAppend.length === 0) return 0;
+
+  const db = await getD1();
+  const now = new Date().toISOString();
+  /** 한 문장에 12행 = 바인딩 84개. `upsertPoints`와 같은 이유로 여러 행을 한 INSERT에 담는다. */
+  const ROWS_PER_STATEMENT = 12;
+  const STATEMENTS_PER_BATCH = 10;
+  const statements: D1Statement[] = [];
+  for (let i = 0; i < toAppend.length; i += ROWS_PER_STATEMENT) {
+    const chunk = toAppend.slice(i, i + ROWS_PER_STATEMENT);
+    statements.push(
+      db
+        .prepare(
+          `INSERT INTO MacroObservation (seriesKey, observationDate, vintageDate, value, source, origin, retrievedAt)
+           VALUES ${chunk.map(() => "(?, ?, ?, ?, ?, ?, ?)").join(", ")}
+           ON CONFLICT(seriesKey, observationDate, vintageDate) DO UPDATE SET
+             value = excluded.value, source = excluded.source, origin = excluded.origin, retrievedAt = excluded.retrievedAt`,
+        )
+        .bind(
+          ...chunk.flatMap((p) => [seriesKey, toStoredDate(p.date), vintageDate, p.value, source, origin, now]),
+        ),
+    );
+  }
+  for (let i = 0; i < statements.length; i += STATEMENTS_PER_BATCH) {
+    await db.batch(statements.slice(i, i + STATEMENTS_PER_BATCH));
+  }
+  return revised.length;
+}
+
+/** 수동 지표 한 점. 관리자 입력 폼이 부른다. ⚠ 수동 값도 L1에 먼저 남긴다 — 고친 값도 이력이다. */
 export async function saveManualPoint(
   seriesKey: string,
   date: string,
   value: number,
 ): Promise<void> {
+  await recordObservations(seriesKey, "MANUAL", [{ date, value }], seoulDay(new Date().toISOString()), "MANUAL");
   await upsertPoints(seriesKey, "MANUAL", [{ date, value }]);
 }
 
+/**
+ * ⚠ L2에서만 지운다. L1(`MacroObservation`)은 추가만 하는 층이라 지우지 않는다 —
+ *    잘못 넣었다가 지운 값도 「그날 그렇게 적혀 있었다」는 이력이다.
+ */
 export async function deletePoint(seriesKey: string, date: string): Promise<void> {
   await execute(`DELETE FROM MacroPoint WHERE seriesKey = ? AND date = ?`, [
     seriesKey,
@@ -259,6 +337,10 @@ export type IngestDetail = {
   droppedFuture?: number;
   /** 버린 점 중 가장 이른 날짜 */
   firstFutureDate?: string;
+  /**
+   * 값이 바뀐 관측일 수(= 통계 수정). ⚠ 수정 전 값은 L1(`MacroObservation`)에 남아 있다.
+   */
+  revised?: number;
 };
 
 export type IngestRun = {

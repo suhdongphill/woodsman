@@ -258,6 +258,8 @@ export default async function AdminMacroPage() {
               const failed = run.detail.filter((d) => !d.ok);
               /** ⚠ 버린 미래 관측점도 보인다 — 조용히 사라진 점이 없게 */
               const futureDropped = run.detail.filter((d) => (d.droppedFuture ?? 0) > 0);
+              /** 통계 수정 — 수정 전 값은 L1(MacroObservation)에 남아 있다 */
+              const revisedRows = run.detail.filter((d) => (d.revised ?? 0) > 0);
               return (
                 <li key={run.id} className="border-t border-border px-5 py-3.5">
                   <div className="flex flex-wrap items-center gap-2 text-[12px]">
@@ -277,6 +279,15 @@ export default async function AdminMacroPage() {
                     </span>
                     {!run.finishedAt && <Badge tone="info">진행 중</Badge>}
                   </div>
+                  {revisedRows.length > 0 && (
+                    <ul className="mt-2 space-y-0.5">
+                      {revisedRows.map((f) => (
+                        <li key={f.key} className="text-[11.5px] text-sky-300/80">
+                          <code>{f.key}</code> · 통계 수정 {f.revised}건 — 수정 전 값은 원자료 이력에 남았습니다
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   {futureDropped.length > 0 && (
                     <ul className="mt-2 space-y-0.5">
                       {futureDropped.map((f) => (

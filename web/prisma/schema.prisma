@@ -532,6 +532,26 @@ model MacroPoint {
   @@index([seriesKey, date])
 }
 
+/// 원자료 L1 — **추가만 한다**(2026-09-13, Capital Regime Engine R1).
+/// 값이 처음 보였을 때와 달라졌을 때만 행이 생긴다. 화면이 읽는 최신 1벌은 MacroPoint(L2)다.
+/// ⚠ vintageDate의 뜻은 origin마다 다르다 — ALFRED=발표일 · INGEST=우리가 처음 본 날 · MANUAL=저장한 날 ·
+///   SEED_L2=R1 이전 L2의 갱신일(그 이전 이력은 모른다). `src/lib/macro/vintage.ts` 참고.
+model MacroObservation {
+  seriesKey       String
+  /// 관측 기준일(MacroPoint.date와 같은 형식 — 정오 UTC)
+  observationDate DateTime
+  /// YYYY-MM-DD. 이 값이 알려진 날
+  vintageDate     String
+  value           Float
+  source          String
+  /// ALFRED | INGEST | MANUAL | SEED_L2
+  origin          String
+  retrievedAt     DateTime @default(now())
+
+  @@id([seriesKey, observationDate, vintageDate])
+  @@index([seriesKey, observationDate])
+}
+
 /// 자료 가져오기 실행 기록.
 ///
 /// ⚠ 조용한 실패를 막으려고 둔다. 지표 하나가 계속 실패해도 화면은 옛 값을 그대로
