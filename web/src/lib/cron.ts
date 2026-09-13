@@ -53,6 +53,17 @@ export type CronPlanEntry = {
  */
 export const CRON_PLAN: readonly CronPlanEntry[] = [
   { expr: "0 21 * * *", jobs: ALL_CRON_JOBS, note: "매일 06:00(KST) 전체 수집" },
+  /**
+   * ⭐ 평일 22:00(KST) 거시 지표만 한 번 더(2026-09-14 운영자 요청 「가급적 자동화」).
+   * 미국 주요 지표는 **08:30 ET = 21:30 KST**(서머타임 기준, 해제 기간엔 22:30)에 나온다. 06:00 수집만 두면 발표가
+   * **다음 날 아침까지** 화면·점수에 안 들어온다 — 금리인상 확률처럼 발표 당일 움직이는 판정이 반나절 묵는다.
+   * ⚠ 종목 시세(quotes)는 넣지 않는다 — 한국 종목은 이 시각에 새 종가가 없고, 바깥 서버를 불필요하게 두드리지 않는다.
+   * ⚠ 점수는 수집 뒤 자동 계산이므로(`features/scores/compute.ts`) 이 수집도 점수를 갱신한다.
+   * ⚠ 요일은 **이름(MON-FRI)** 으로 적는다 — **Cloudflare는 1 = 일요일 ~ 7 = 토요일**이다(공식 문서 「Cron Triggers」,
+   *   2026-09-14 확인). 흔한 cron(0 = 일요일)처럼 「1-5」로 적었으면 **일~목**에 돌았다. 문서도 약어를 권한다.
+   *   UTC 13:00 월~금 = KST 22:00 월~금.
+   */
+  { expr: "0 13 * * MON-FRI", jobs: ["macro"], note: "평일 22:00(KST) 거시 지표 재수집 — 미국 08:30 ET 발표 반영" },
 ];
 
 /**
@@ -154,13 +165,14 @@ export const CRON_SECRET_LABEL: Record<CronSecretState, string> = {
 /**
  * 다음 실행 시각(UTC).
  *
- * ⚠ **`분 시 * * *` 꼴만** 계산한다. 그 밖의 표현식은 `null`이다 —
+ * ⚠ **`분 시 * * *` 꼴과 `분 시 * * MON-FRI` 꼴만** 계산한다(요일은 UTC 기준). 그 밖의 표현식은 `null`이다 —
  *    범용 cron 파서를 흉내 내다가 틀린 시각을 단언하느니, 모른다고 하는 편이 낫다
  *    (사이트맵 lastmod에서 이미 배운 규칙이다).
  */
 export function nextDailyRun(expr: string, from: Date): Date | null {
-  const match = /^(\d{1,2}) (\d{1,2}) \* \* \*$/.exec(expr.trim());
+  const match = /^(\d{1,2}) (\d{1,2}) \* \* (\*|MON-FRI)$/.exec(expr.trim());
   if (!match) return null;
+  const weekdaysOnly = match[3] === "MON-FRI";
 
   const minute = Number(match[1]);
   const hour = Number(match[2]);
@@ -170,5 +182,9 @@ export function nextDailyRun(expr: string, from: Date): Date | null {
     Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate(), hour, minute, 0, 0),
   );
   if (next.getTime() <= from.getTime()) next.setUTCDate(next.getUTCDate() + 1);
+  // 토(6)·일(0)이면 월요일까지 민다(UTC 요일).
+  while (weekdaysOnly && (next.getUTCDay() === 0 || next.getUTCDay() === 6)) {
+    next.setUTCDate(next.getUTCDate() + 1);
+  }
   return next;
 }

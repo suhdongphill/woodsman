@@ -53,8 +53,8 @@ export default async function AdminMacroPage() {
    *    그 사실을 화면 어디에서도 알 수 없었다. 이 카드가 그 자리다.
    */
   const secretState = cronSecretState(cronSecret);
-  const plan = CRON_PLAN[0];
-  const nextRun = plan ? nextDailyRun(plan.expr, new Date()) : null;
+  /** ⚠ 일정이 여럿이다(2026-09-14 평일 22:00 추가) — 첫 줄만 보여 주면 두 번째 일정이 도는지 화면에서 알 수 없다. */
+  const schedules = CRON_PLAN.map((p) => ({ plan: p, nextRun: nextDailyRun(p.expr, new Date()) }));
   const lastAuto = runs.find((r) => r.trigger === "CRON");
 
   const today = new Date().toISOString().slice(0, 10);
@@ -213,16 +213,23 @@ export default async function AdminMacroPage() {
       <Card className="mb-6">
         <CardTitle>자동 수집</CardTitle>
         <div className="space-y-1.5 text-[12.5px]">
-          <p className="text-muted">
-            일정: <span className="text-ink">{plan?.note ?? "설정 없음"}</span>
-            {nextRun && (
-              <>
-                {" · "}다음 실행{" "}
+          {schedules.length === 0 && <p className="text-muted">일정: <span className="text-ink">설정 없음</span></p>}
+          {schedules.map(({ plan, nextRun }) => (
+            <p key={plan.expr} className="text-muted">
+              일정: <span className="text-ink">{plan.note}</span>
+              {" · "}다음 실행{" "}
+              {nextRun ? (
                 <span className="text-ink">
                   {seoulDay(nextRun.toISOString())} {seoulTime(nextRun.toISOString())}
                 </span>
-              </>
-            )}
+              ) : (
+                // ⚠ 계산 못 하는 표현식에 시각을 지어내지 않는다
+                <span className="text-gold-500">계산할 수 없는 표현식({plan.expr})</span>
+              )}
+            </p>
+          ))}
+          <p className="text-muted">
+            수집이 끝나면 점수(유동성 · 경기 엔진 온도 등)도 자동으로 다시 계산됩니다 — 「자료 가져오기」를 눌러도 같습니다.
           </p>
           <p className="text-muted">
             시크릿:{" "}

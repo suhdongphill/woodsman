@@ -144,6 +144,20 @@ describe("화면이 보는 자동 수집 상태", () => {
     expect(next?.toISOString()).toBe("2026-09-06T21:00:00.000Z");
   });
 
+  it("⭐ 평일 표현식은 주말을 건너뛴다 — 금요일 13:00 UTC 뒤면 월요일", () => {
+    // 2026-09-11은 금요일
+    expect(nextDailyRun("0 13 * * MON-FRI", new Date("2026-09-11T14:00:00.000Z"))?.toISOString()).toBe(
+      "2026-09-14T13:00:00.000Z",
+    );
+    expect(nextDailyRun("0 13 * * MON-FRI", new Date("2026-09-10T12:00:00.000Z"))?.toISOString()).toBe(
+      "2026-09-10T13:00:00.000Z",
+    );
+  });
+
+  it("⚠ 요일을 숫자로 적지 않는다 — cron 구현마다 일요일이 0 또는 1이라 「1-5」가 일~목이 될 수 있다", () => {
+    for (const plan of CRON_PLAN) expect(plan.expr.split(" ")[4], plan.expr).toMatch(/^(\*|[A-Z]{3}(-[A-Z]{3})?)$/);
+  });
+
   /** ⚠ 모르는 표현식에 그럴듯한 시각을 지어내지 않는다. */
   it("⚠ 계산할 수 없는 표현식이면 null이다", () => {
     expect(nextDailyRun("*/5 * * * *", new Date())).toBeNull();
