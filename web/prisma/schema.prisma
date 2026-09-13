@@ -597,6 +597,28 @@ model ScoreValue {
   @@id([scoreKey, asOf, modelVersion])
 }
 
+/// 파도(오늘의 기사) — 금리 · 물가(CPI) · 연준(FOMC·발언) · 유가 · 지정학 · 환율.
+///
+/// ⚠ **본문을 저장하지 않는다**(저작권) — 제목 · 원문 링크 · 날짜 · 기관이 준 한 줄 설명 · 우리 요약만.
+/// ⚠ 자동 수집(연준 RSS · BLS CPI)은 `source = MANUAL` 행을 **덮지 않는다**.
+model MacroNews {
+  id          String   @id
+  /// FED_SPEECH | FED_MONETARY | FED_TESTIMONY | BLS_CPI | MANUAL
+  source      String
+  /// 연준 | 물가 | 금리 | 유가 | 지정학 | 환율
+  category    String
+  title       String
+  url         String   @unique
+  summary     String?
+  speaker     String?
+  publishedAt DateTime
+  hidden      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+
+  @@index([hidden, publishedAt])
+}
+
 // ────────────── AI·반도체 버블 모니터 ──────────────
 
 /// 지표 하나의 판정. ⚠ 레이어·가중치·임계값 정의는 `src/lib/bubble/catalog.ts`가 원본이다.

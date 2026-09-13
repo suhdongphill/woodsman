@@ -34,6 +34,7 @@ describe("홈 블록", () => {
     expect(blocks).toEqual([
       "hero",
       "macroStrip",
+      "waves",
       "tide",
       "latestInsights",
       "macro",
@@ -59,11 +60,14 @@ describe("홈 블록", () => {
     expect(blocks.indexOf("macroStrip")).toBeLessThan(blocks.indexOf("latestInsights"));
   });
 
-  it("⭐ 조류는 바람 바로 아래다 — 점수는 앞줄에(운영자 원칙 ④), 바람과 섞지 않는다(⑤)", () => {
+  it("⭐ 바람 → 파도 → 조류 — 가까운 시간부터 먼 시간으로(운영자 결정 2026-09-14 · 원칙 ⑤ 층을 섞지 않는다)", () => {
     const blocks = visibleHomeBlocks(content());
-    expect(blocks[blocks.indexOf("macroStrip") + 1]).toBe("tide");
-    // ⚠ 점수가 없어도 블록은 빠지지 않는다 — 없다고 적는다
-    expect(visibleHomeBlocks(content({ homePostCount: 0, upcomingEventCount: 0 }))).toContain("tide");
+    expect(blocks[blocks.indexOf("macroStrip") + 1]).toBe("waves");
+    expect(blocks[blocks.indexOf("waves") + 1]).toBe("tide");
+    // ⚠ 점수·기사가 없어도 블록은 빠지지 않는다 — 없다고 적는다
+    const empty = visibleHomeBlocks(content({ homePostCount: 0, upcomingEventCount: 0 }));
+    expect(empty).toContain("tide");
+    expect(empty).toContain("waves");
   });
 
   // ── 다가오는 일정 (docs/설계_홈_캘린더_노출.md) ──

@@ -19,6 +19,7 @@ import { autoIndicators, findIndicator, type MacroIndicator } from "@/lib/macro/
 import { nextMonthOf, resolveFrontContract } from "@/lib/macro/fedfutures";
 import { dropFuturePoints } from "@/lib/macro/observed";
 import { computeAndSaveScores, type ScoreComputeSummary } from "@/features/scores/compute";
+import { collectPublicNews, type NewsCollectSummary } from "@/features/news/collect";
 import {
   TREASURY_DIRECT_MAX_ROWS,
   mspdShares,
@@ -417,6 +418,8 @@ export type IngestResult = {
   detail: IngestDetail[];
   /** 수집 뒤 점수 계산 결과. ⚠ 실패하면 `error` — 수집 결과는 그대로 유효하다 */
   scores: ScoreComputeSummary | { error: string };
+  /** 파도 기사 수집 결과. ⚠ 실패해도 수집·점수 결과는 그대로 유효하다 */
+  news: NewsCollectSummary | { error: string };
 };
 
 /**
@@ -539,5 +542,16 @@ export async function ingestMacro(
     scores = { error: error instanceof Error ? error.message : String(error) };
   }
 
-  return { runId, okCount, failCount, addedPoints, detail, scores };
+  /**
+   * 파도(오늘의 기사) — 연준 RSS · BLS CPI(통합 계획 S3). ⚠ 거시 수집·점수와 따로 감싼다 — 기사 피드가 죽어도 지표는 산다.
+   */
+  let news: IngestResult["news"];
+  try {
+    news = await collectPublicNews();
+  } catch (error) {
+    console.error("[news] 수집 뒤 기사 받기 실패", error);
+    news = { error: error instanceof Error ? error.message : String(error) };
+  }
+
+  return { runId, okCount, failCount, addedPoints, detail, scores, news };
 }

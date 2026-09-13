@@ -13,6 +13,8 @@ import { LatestInsights } from "@/features/home/ui/LatestInsights";
 import { JournalAndReports } from "@/features/home/ui/JournalAndReports";
 import { UpcomingCalendar } from "@/features/home/ui/UpcomingCalendar";
 import { TideSection } from "@/features/home/ui/TideSection";
+import { WavesSection } from "@/features/home/ui/WavesSection";
+import { loadLatestNews } from "@/features/news/repository";
 import { loadStoredScores } from "@/features/scores/repository";
 import { loadReadings } from "@/features/bubble/repository";
 import { scoreBubble } from "@/lib/bubble/score";
@@ -84,6 +86,7 @@ export default async function HomePage() {
     events,
     storedScores,
     bubbleReadings,
+    latestNews,
   ] = await Promise.all([
     loadSnapshots(),
     loadPublishedJournal(),
@@ -102,6 +105,8 @@ export default async function HomePage() {
      */
     loadStoredScores(TIDE_KEYS, daysBefore(seoulDay(new Date().toISOString()), 130), MODEL_VERSION),
     loadReadings(),
+    // 파도 — 숨기지 않은 최신 기사 6건
+    loadLatestNews(6),
   ]);
 
   const perf = summarizePerformance(snapshots);
@@ -146,6 +151,7 @@ export default async function HomePage() {
       />
     ),
     macroStrip: <MacroStrip indicators={macro.headlines} />,
+    waves: <WavesSection news={latestNews} />,
     tide: (
       <TideSection
         tides={tides}
