@@ -5,7 +5,7 @@
  * 그래서 "제대로 계산한다"보다 "틀렸을 때 안 그린다"를 더 많이 잰다.
  */
 import { describe, expect, it } from "vitest";
-import { composeDerived, derivedMeta, valueAsOf, type MacroDerived } from "./derived";
+import { composeDerived, derivedMeta, realizedVolBp, valueAsOf, type MacroDerived } from "./derived";
 import {
   MACRO_INDICATORS,
   autoIndicators,
@@ -154,5 +154,54 @@ describe("카탈로그의 파생 정의", () => {
     ]);
     // 파생이 없으면 그대로다.
     expect(withDerivedComponents(["ust10y"])).toEqual(["ust10y"]);
+  });
+});
+
+describe("실현변동성(bp) — MOVE 대신 쓰는 지나간 국채 변동성 (R2b-3)", () => {
+  const days = (n: number, start = "2026-01-05") =>
+    Array.from({ length: n }, (_, i) => new Date(Date.parse(`${start}T00:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10));
+
+  it("일간 변화의 표본표준편차 × √252 × 100", () => {
+    // 변화가 +0.05, −0.05 번갈아 → 표준편차(표본, n=4) = 0.05·√(4/3)
+    const values = [4, 4.05, 4, 4.05, 4];
+    const out = realizedVolBp(days(5).map((d, i) => pt(d, values[i])), 4, 5);
+    expect(out).toHaveLength(1);
+    expect(out[0].value).toBeCloseTo(0.05 * Math.sqrt(4 / 3) * Math.sqrt(252) * 100, 6);
+  });
+
+  it("⚠ 창이 차기 전에는 내지 않는다 — 짧은 창의 표준편차는 과장되거나 0이다", () => {
+    expect(realizedVolBp(days(4).map((d, i) => pt(d, 4 + i * 0.01)), 4, 5)).toHaveLength(0);
+  });
+
+  it("⚠ 긴 공백 뒤의 변화를 하루치로 넣지 않는다 — 창을 다시 채운다", () => {
+    const a = days(5).map((d, i) => pt(d, 4 + (i % 2) * 0.05));
+    const b = days(3, "2026-03-01").map((d, i) => pt(d, 5 + (i % 2) * 0.05));
+    // 공백 뒤 3점 = 변화 2개 → 창 4를 못 채워 추가 점이 없다
+    expect(realizedVolBp([...a, ...b], 4, 5)).toHaveLength(1);
+  });
+
+  it("⚠ 선형 계산이 매번 새로 센 값과 같다", () => {
+    const pts = days(80).map((d, i) => pt(d, 4 + Math.sin(i / 3) * 0.1 + (i % 7) * 0.01));
+    const fast = realizedVolBp(pts, 20, 5);
+    const naive = pts.slice(20).map((p, k) => {
+      const i = k + 20;
+      const diffs = Array.from({ length: 20 }, (_, j) => pts[i - 19 + j].value - pts[i - 20 + j].value);
+      const m = diffs.reduce((s, x) => s + x, 0) / 20;
+      const sd = Math.sqrt(diffs.reduce((s, x) => s + (x - m) ** 2, 0) / 19);
+      return pt(p.date, sd * Math.sqrt(252) * 100);
+    });
+    expect(fast.length).toBe(naive.length);
+    fast.forEach((f, i) => expect(f.value).toBeCloseTo(naive[i].value, 8));
+  });
+
+  it("⚠ 카탈로그 — 성분 하나짜리 파생은 실현변동성뿐이고, 이름에 MOVE를 쓰지 않는다", () => {
+    const rvol = findIndicator("ust10y_rvol")!;
+    expect(rvol.derived).toMatchObject({ op: "realizedVolBp", from: ["ust10y"], window: 20 });
+    expect(rvol.name).not.toMatch(/MOVE/);
+    expect(rvol.sourceLabel).toMatch(/MOVE 아님/);
+    expect(validateSectors()).toEqual([]);
+    for (const i of derivedIndicators()) {
+      if (i.derived!.from.length < 2) expect(i.derived!.op).toBe("realizedVolBp");
+    }
   });
 });

@@ -25,8 +25,15 @@
  */
 import type { SeriesPoint } from "./series";
 
-/** 합성 방법. 지금은 "첫 성분에서 나머지를 뺀다" 하나뿐이다. */
-export type DerivedOp = "subtract";
+/**
+ * 합성 방법.
+ * - `subtract` — 첫 성분에서 나머지를 뺀다(성분 2개 이상).
+ * - `realizedVolBp` — **성분 하나**(퍼센트 단위 금리)의 일간 변화로 **연율 실현변동성(bp)**을 만든다
+ *   = 최근 `window`개 변화의 표본표준편차 × √252 × 100 (2026-09-14, R2b-3).
+ *   ⚠ MOVE(옵션에 담긴 **예상** 변동성, ICE 라이선스)가 **아니다** — 이미 지나간 변동이다. 이름에 MOVE를 쓰지 않는다.
+ *   ⚠ 성분 하나짜리지만 별칭이 아니다 — 값이 다른 계열을 만든다(`validateSectors`가 op마다 성분 수를 따로 본다).
+ */
+export type DerivedOp = "subtract" | "realizedVolBp";
 
 export type MacroDerived = {
   op: DerivedOp;
@@ -39,7 +46,48 @@ export type MacroDerived = {
    *   일간 역레포). 다만 한도가 없으면 낡은 값이 무한히 따라온다. 한도를 넘으면 **그 점을 버린다.**
    */
   carryDays: number;
+  /** `realizedVolBp` 전용 — 변동성을 재는 일간 변화 개수(20 ≈ 한 달 영업일) */
+  window?: number;
 };
+
+/**
+ * 일간 변화의 이동 실현변동성(bp, 연율). 입력은 날짜 오름차순 · 퍼센트 단위.
+ *
+ * ⚠ 이웃 관측이 `carryDays`보다 멀면(긴 휴장·결측) **창을 처음부터 다시 채운다** — 한 달 비운 뒤의 변화를
+ *   하루치 변화처럼 넣으면 변동성이 지어진다.
+ * ⚠ 창이 다 차기 전의 날은 **내지 않는다**(짧은 창의 표준편차는 과장되거나 0이 된다).
+ * 선형 시간 — 창의 합·제곱합을 굴린다.
+ */
+export function realizedVolBp(points: SeriesPoint[], window: number, carryDays: number): SeriesPoint[] {
+  const out: SeriesPoint[] = [];
+  if (window < 2) return out;
+  const diffs: number[] = [];
+  let sum = 0;
+  let sumSq = 0;
+  for (let i = 1; i < points.length; i++) {
+    const gap = dayIndex(points[i].date) - dayIndex(points[i - 1].date);
+    if (gap > carryDays) {
+      diffs.length = 0;
+      sum = 0;
+      sumSq = 0;
+      continue;
+    }
+    const d = points[i].value - points[i - 1].value;
+    diffs.push(d);
+    sum += d;
+    sumSq += d * d;
+    if (diffs.length > window) {
+      const old = diffs.shift()!;
+      sum -= old;
+      sumSq -= old * old;
+    }
+    if (diffs.length === window) {
+      const variance = Math.max(0, (sumSq - (sum * sum) / window) / (window - 1));
+      out.push({ date: points[i].date, value: Math.sqrt(variance) * Math.sqrt(252) * 100 });
+    }
+  }
+  return out;
+}
 
 function dayIndex(date: string): number {
   return Math.floor(Date.parse(`${date}T00:00:00Z`) / 86_400_000);
@@ -78,6 +126,9 @@ export function composeDerived(
   if (parts.length !== spec.from.length) return [];
   // ⚠ 1. 성분이 하나라도 비면 파생 자체가 없다. 둘만으로 그린 선에 세 계열의 이름을 붙이지 않는다.
   if (parts.some((p) => !p || p.length === 0)) return [];
+  if (spec.op === "realizedVolBp") {
+    return realizedVolBp(parts[0] as SeriesPoint[], spec.window ?? 0, spec.carryDays);
+  }
 
   const [base, ...others] = parts as SeriesPoint[][];
   const out: SeriesPoint[] = [];

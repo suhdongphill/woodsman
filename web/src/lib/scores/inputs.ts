@@ -105,7 +105,7 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
   },
 
   rate_liquidity: {
-    inverted_move: { status: "planned", slice: "R2b", reason: "MOVE는 ICE 라이선스 — 국채 실현변동성(ZN=F)으로 대체 예정(MOVE라 부르지 않는다)" },
+    inverted_move: { status: "available", indicators: ["ust10y_rvol"], substitute: "MOVE(ICE 옵션 내재 변동성)는 라이선스라 받을 수 없다 — 10년물 금리 일간 변화의 20일 실현변동성(bp)으로 대체. ⚠ 예상이 아니라 지나간 변동이다(MOVE라 부르지 않는다)" },
     treasury_market_depth: NO_FREE("국채 호가 깊이"),
     real_yield_condition: { status: "available", indicators: ["real10"] },
     term_premium_condition: { status: "available", indicators: ["term_premium"] },
@@ -167,7 +167,7 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
     productivity_real_yield: { status: "computed", from: "lib/macro/capital.ts · PRYS" },
     growth_funding_spread: { status: "computed", from: "lib/macro/capital.ts · 성장–조달 격차" },
     inverted_term_premium_stress: { status: "available", indicators: ["term_premium"] },
-    inverted_move: { status: "planned", slice: "R2b", reason: "국채 실현변동성(MOVE 아님)" },
+    inverted_move: { status: "available", indicators: ["ust10y_rvol"], substitute: "MOVE(ICE 옵션 내재 변동성)는 라이선스라 받을 수 없다 — 10년물 금리 일간 변화의 20일 실현변동성(bp)으로 대체. ⚠ 예상이 아니라 지나간 변동이다(MOVE라 부르지 않는다)" },
     corporate_funding_spread: { status: "available", indicators: ["baa_spread"] },
     mortgage_stress: { status: "available", indicators: ["mortgage30"] },
   },
@@ -202,7 +202,7 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
 
   market_stress: {
     vix_stress: { status: "available", indicators: ["vix", "vvix"] },
-    move_stress: { status: "planned", slice: "R2b", reason: "국채 실현변동성(MOVE 아님)" },
+    move_stress: { status: "available", indicators: ["ust10y_rvol"], substitute: "MOVE(ICE 옵션 내재 변동성)는 라이선스라 받을 수 없다 — 10년물 금리 일간 변화의 20일 실현변동성(bp)으로 대체. ⚠ 예상이 아니라 지나간 변동이다(MOVE라 부르지 않는다)" },
     credit_stress: { status: "available", indicators: ["hy_spread", "baa_spread"] },
     funding_stress: { status: "available", indicators: ["sofr_iorb"] },
     tail_risk: { status: "available", indicators: ["skew"] },

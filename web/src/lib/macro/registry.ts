@@ -99,7 +99,11 @@ export function validateSectors(sectors: MacroSector[] = MACRO_SECTORS): string[
         if (i.sourceId) problems.push(`${i.key}: 파생 지표에 소스 ID가 있다`);
         if (!i.derived) problems.push(`${i.key}: 파생인데 합성 규칙(derived)이 없다`);
         // 성분이 하나면 파생이 아니라 별칭이다. 이름만 다른 같은 계열을 만들지 않는다.
-        if (i.derived && i.derived.from.length < 2) {
+        // ⚠ 예외는 값을 바꾸는 합성뿐이다 — 실현변동성은 성분이 **정확히 하나**이고 창이 있어야 한다.
+        if (i.derived?.op === "realizedVolBp") {
+          if (i.derived.from.length !== 1) problems.push(`${i.key}: 실현변동성의 성분은 하나여야 한다`);
+          if (!i.derived.window || i.derived.window < 2) problems.push(`${i.key}: 실현변동성에 창(window)이 없다`);
+        } else if (i.derived && i.derived.from.length < 2) {
           problems.push(`${i.key}: 파생인데 성분이 ${i.derived.from.length}개다`);
         }
         if (i.derived && i.derived.carryDays <= 0) {

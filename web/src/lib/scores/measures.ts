@@ -73,6 +73,8 @@ export const SCORE_MEASURES: Partial<Record<ScoreKey, Record<string, IndicatorMe
   },
 
   rate_liquidity: {
+    // 국채 금리가 크게 출렁일수록 금리시장이 긴장돼 있다. ⚠ MOVE가 아니라 지나간 20일 실현변동성(bp)이다.
+    inverted_move: [{ indicator: "ust10y_rvol", measure: "level", direction: "HIGH_IS_NEGATIVE", kind: "stress" }],
     // ⚠ 명세 §17 — 금리 수준을 그대로 나쁘다고 치지 않는다. **빠르게 오르는 것**을 스트레스로 본다.
     real_yield_condition: [{ indicator: "real10", measure: "change91d", direction: "HIGH_IS_NEGATIVE", kind: "general" }],
     term_premium_condition: [{ indicator: "term_premium", measure: "level", direction: "HIGH_IS_NEGATIVE", kind: "general" }],
