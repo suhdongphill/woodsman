@@ -17,6 +17,8 @@ import { countPostsByStatus, loadLatestPostTitle } from "@/features/posts/reposi
 import { loadViewStatsSafe } from "@/features/analytics/service";
 import { ViewStatsCard } from "@/features/analytics/ui/ViewStats";
 import { countMembers } from "@/features/users/repository";
+import { loadModelFreshness } from "@/features/diagnostics/model-freshness";
+import { ModelFreshnessCard } from "@/features/diagnostics/ui/ModelFreshnessCard";
 
 const QUICK = [
   { href: "/admin/posts/new", label: "새 글 작성", desc: "인사이트·분석·공지" },
@@ -30,7 +32,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
   // ⚠ 개수를 세려고 목록을 통째로 읽지 않는다 — 글은 본문까지, 사용자는 댓글 수까지 딸려 온다.
-  const [postCounts, latestTitle, views, memberCount, commentCounts, pending, aiUsage, aiConfig] =
+  const [postCounts, latestTitle, views, memberCount, commentCounts, pending, aiUsage, aiConfig, freshness] =
     await Promise.all([
     countPostsByStatus(),
     loadLatestPostTitle(),
@@ -40,6 +42,7 @@ export default async function AdminDashboardPage() {
     loadCommentsNeedingAttention(),
     loadProviderUsage(),
     loadAiConfig(),
+    loadModelFreshness(),
   ]);
   // ⚠ 전에는 목업(206K/1000K·전부 "연결됨")이라 키가 없어도 초록 점이 켜져 있었다.
   //    /admin/ai는 실제 env를 보고 "0/7 연결"이라 말해 같은 사실이 두 화면에서 달랐다.
@@ -64,6 +67,12 @@ export default async function AdminDashboardPage() {
         title="대시보드"
         description="사이트 활동 요약입니다. 조회·댓글·티스토리 유입·AI 사용량 모두 실제 집계입니다."
       />
+
+      {/*
+        ⭐ 모델 최신성 — 운영자 요청(2026-09-14) 「자동이 돌지 않았으면 수동을 돌 수 있게, 시간이 지났다는 것을 알도록」.
+        ⚠ 티스토리 유입보다 위에 둔 이유: 홈 앞줄 판정이 묵으면 그 숫자를 보고 넘어간 클릭 자체가 틀린 정보 위에 선다.
+      */}
+      <ModelFreshnessCard rows={freshness} now={new Date()} />
 
       {/* 1순위 지표를 맨 위에 둔다 — 이 사이트의 목적이 블로그 트래픽 유도다. */}
       <div className="mb-7">

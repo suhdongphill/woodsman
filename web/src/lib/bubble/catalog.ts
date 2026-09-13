@@ -88,11 +88,16 @@ export const BUBBLE_LAYERS: BubbleLayer[] = [
         source: "매크로 대시보드(Naver/IR)",
       },
       {
+        /**
+         * ⚠ 2026-09-14 운영자 결정: 바구니를 **고정**했다 — NVDA·AVGO·AMD·MU·INTC·QCOM·TXN·AMAT.
+         *   그 전까지 「8사」의 종목 목록이 어디에도 적혀 있지 않아, 채점마다 같은 바구니였는지 확인할 수 없었다.
+         *   ⚠ 이 목록을 바꾸면 과거 값과 비교가 끊긴다 — 바꾸면 채점 근거에 적는다.
+         */
         key: "semi_ps",
         label: "미 반도체 8사 합산 P/S",
         rule: "<8배 · 8~14배 · >14배",
         scale: { op: "gt", t1: 8, t2: 14 },
-        source: "EDGAR+Yahoo · SOX 선행PER 대용(임계값은 과거 레인지 기반 자체 보정)",
+        source: "EDGAR+Yahoo · 8사 고정(NVDA·AVGO·AMD·MU·INTC·QCOM·TXN·AMAT) · SOX 선행PER 대용(임계값은 과거 레인지 기반 자체 보정)",
       },
       {
         key: "nvda_ev_sales",
@@ -184,11 +189,18 @@ export const BUBBLE_LAYERS: BubbleLayer[] = [
         source: "FRED VIXCLS",
       },
       {
+        /**
+         * ⚠ 2026-09-14 운영자 결정: 원천을 **Yahoo `^MOVE` → 국채 실현변동성**으로 바꿨다. Yahoo `^MOVE`는 ICE MOVE가 아니다
+         *   (설계서 자본레짐 §0 · 9/13 확인). 거시 카탈로그 `ust10y_rvol`(10년물 일간 변화 20일 실현변동성, bp)을 쓴다.
+         * ⚠ 키(`move`)는 유지한다 — 운영 DB의 판정 행이 이 키로 쌓여 있다. 이름과 원천 문장만 바꾼다.
+         * ⚠ 문턱 100/140은 MOVE의 것을 **자체 보정 없이** 옮겼다 — 운영 대조(2020-03 222 · 2022-10 159 · 2023-03 144 · 2021-06 48)상
+         *   국면은 겹치지만, 실현값은 충격 초기에 MOVE보다 늦다. 교정 전까지 「자체 보정」 표시.
+         */
         key: "move",
-        label: "MOVE",
-        rule: "<100 · 100~140 · >140",
+        label: "국채 변동성 (실현, MOVE 대용)",
+        rule: "<100bp · 100~140bp · >140bp",
         scale: { op: "gt", t1: 100, t2: 140 },
-        source: "Yahoo ^MOVE",
+        source: "거시 카탈로그 ust10y_rvol — FRED DGS10 일간 변화 20일 실현변동성(bp) · ⚠ MOVE 아님 · 임계값은 MOVE 문턱 이식(자체 보정 전)",
       },
       {
         key: "tga_4w",
