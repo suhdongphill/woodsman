@@ -13,6 +13,8 @@ import type { MacroDerived } from "./derived";
 export type MacroGroupKey =
   | "rates"
   | "liquidity"
+  /** 신용·자금 — 연준 밖에서 만들어지는 민간 신용과 자금 조달 비용(2026-09-14, R2a) */
+  | "credit"
   | "fx"
   | "commodity"
   | "inflation"

@@ -20,6 +20,7 @@ import type { MacroGroup, MacroGroupKey, MacroIndicator, MacroSector } from "./t
 
 import { sector as rates } from "./sectors/rates";
 import { sector as liquidity } from "./sectors/liquidity";
+import { sector as credit } from "./sectors/credit";
 import { sector as inflation } from "./sectors/inflation";
 import { sector as jobs } from "./sectors/jobs";
 import { sector as fx } from "./sectors/fx";
@@ -35,6 +36,7 @@ import { sector as leaders } from "./sectors/leaders";
 export const MACRO_SECTORS: MacroSector[] = [
   rates,
   liquidity,
+  credit,
   inflation,
   jobs,
   fx,

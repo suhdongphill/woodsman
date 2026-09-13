@@ -22,6 +22,19 @@ function walk(dir: string): string[] {
 }
 
 /**
+ * 소스 트리를 **한 번만** 읽어 나눠 쓴다(경로 → 본문).
+ *
+ * ⚠ 2026-09-14: 소스 전체를 읽는 검사 셋이 **각자** 트리를 걷고 452개 파일을 다시 읽었다. 전체 스위트가 병렬로 돌면
+ *    「자기소개 문장」 검사가 5초 제한을 넘겨 **배포 게이트가 막혔다**(규칙은 깨지지 않았다 — 단독으로는 1.2초).
+ *    8/30에는 한도를 20초로 늘려 풀었는데, 트리가 커질 때마다 같은 일이 난다. 이번에는 **반복을 없앴다.**
+ */
+let sourceCache: Map<string, string> | undefined;
+function sources(): Map<string, string> {
+  sourceCache ??= new Map(walk(SRC).map((f) => [f, readFileSync(f, "utf8")]));
+  return sourceCache;
+}
+
+/**
  * ⚠ 2026-08-30 개편: 이 테스트는 전에 **옛 다크 토큰의 hex를 그대로 고정**하고 있었다.
  *    디자인이 몰래 바뀌는 것을 막던 좋은 장치였지만, 값을 박아 두면 **의도한 개편까지 막는다.**
  *    그래서 값이 아니라 **정책**을 지키도록 다시 썼다 — 색은 바뀔 수 있고, 규칙은 안 바뀐다.
@@ -90,9 +103,8 @@ describe("보안 정책", () => {
   it(
     "소스 어디에도 실제 API 키 리터럴이 없다",
     () => {
-      const files = walk(SRC).filter((f) => /\.(ts|tsx|css)$/.test(f));
-      for (const f of files) {
-        const body = readFileSync(f, "utf8");
+      for (const [f, body] of sources()) {
+        if (!/\.(ts|tsx|css)$/.test(f)) continue;
         expect(body, f).not.toMatch(/sk-ant-api\d/);
         expect(body, f).not.toMatch(/["']gsk_[A-Za-z0-9]{10,}["']/);
       }
@@ -147,12 +159,13 @@ describe("홈과 포트폴리오의 자리 나눔 (Step 4)", () => {
 describe("설명글의 강조 표시", () => {
   it("⚠ 화면이 what·why·read를 날것으로 그리지 않는다 — Emphasis를 거친다", () => {
     const offenders: string[] = [];
-    for (const f of walk(SRC).filter((f) => f.endsWith(".tsx") && !f.endsWith(".test.tsx"))) {
+    for (const [f, body] of sources()) {
+      if (!f.endsWith(".tsx") || f.endsWith(".test.tsx")) continue;
       // JSX 자식으로 그대로 꽂은 자리만 잡는다: {…indicator.read}
       // ⚠ `text={indicator.what}`(올바른 용법)이 아니라 **JSX 자식**으로 꽂은 자리만 잡는다.
       //    `=` 뒤는 속성값, `$` 뒤는 템플릿 문자열이다 — 둘 다 그리는 자리가 아니다.
       const raw = /(?<![=$\w])[{]\s*[\w.]*(indicator|group)[.](what|why|read|intro)\s*[}]/;
-      if (raw.test(readFileSync(f, "utf8"))) {
+      if (raw.test(body)) {
         offenders.push(f.replace(SRC, ""));
       }
     }
@@ -172,12 +185,12 @@ describe("사이트 자기소개 문장 (Step 5)", () => {
 
   it("⚠ 한 곳에서만 정한다 — 메타·llms.txt·JSON-LD가 같은 상수를 읽는다", () => {
     const owners: string[] = [];
-    for (const f of walk(SRC)) {
+    for (const [f, text] of sources()) {
       if (!/\.tsx?$/.test(f) || /\.test\.tsx?$/.test(f)) continue;
+      // ⚠ 먼저 싸게 거른다 — 주석 걷어내기는 문장을 **없앨 수만** 있고 만들 수는 없으므로, 원문에 없으면 볼 필요가 없다.
+      if (!text.includes(TAGLINE)) continue;
       // 주석에 적힌 것은 설명이다. 실제로 쓰는 문자열 리터럴만 센다.
-      const body = readFileSync(f, "utf8")
-        .replace(/\/\*[\s\S]*?\*\//g, "")
-        .replace(/^\s*\/\/.*$/gm, "");
+      const body = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
       if (body.includes(TAGLINE)) owners.push(f);
     }
     expect(owners).toHaveLength(1);

@@ -1,0 +1,151 @@
+/**
+ * 신용·자금 섹터 — **돈이 실제로 기업·가계로 흘러가고 있나**. Capital Regime Engine R2a (2026-09-14).
+ *
+ * ## 왜 따로 세웠나
+ * 유동성 묶음은 **연준·재무부 쪽 잔액**(준비금·TGA·역레포)을 본다. 그런데 연준 대차대조표가 곧 경제 전체의
+ * 유동성은 아니다(설계서 PART XXI 「Fed Balance Sheet ≠ Total Liquidity」). 은행이 실제로 빌려주고 있는지,
+ * 기업이 어떤 값에 돈을 빌리는지는 **민간 신용창출** 쪽에서만 보인다. 그래서 묶음을 가른다.
+ *
+ * ## ⚠ 이 묶음이 말하지 않는 것
+ * - ⚠ **private credit · 레버리지론은 없다** — 공개 API가 없다(설계서 4장 XXI). 「못 받는다」로 남긴다.
+ * - ⚠ **펀드 유출입은 신용 스트레스가 아니다**(설계서 10-1 원칙 3) — 넣지 않는다.
+ * - 원 발표 기관은 FRED가 아니다: 은행 대출·신용·예금은 연준 **H.8**, 대출태도는 연준 **SLOOS**, Baa 금리는 **무디스**.
+ */
+import { FRED_URL as FRED, type MacroSector } from "../types";
+
+export const sector: MacroSector = {
+  group: {
+    key: "credit",
+    name: "신용·자금",
+    emoji: "🏦",
+    question: "돈이 실제로 기업·가계로 흘러가고 있나?",
+    intro:
+      "연준이 돈을 풀거나 조여도, 그 돈이 **은행을 거쳐 기업과 가계로 가야** 실물이 움직입니다. 이 묶음은 그 통로를 봅니다 — 은행이 대출을 늘리는지, 대출 기준을 조이는지, 기업이 얼마에 돈을 빌리는지. ⚠ 연준 대차대조표(유동성 묶음)가 늘어도 이쪽이 막혀 있으면 돈은 금융시장 안에서만 돕니다. 반대로 연준이 조여도 은행 신용이 늘고 있으면 경제는 생각보다 덜 식습니다.",
+    order: 3,
+  },
+  indicators: [
+    {
+      key: "ci_loans_yoy",
+      name: "기업 대출 C&I (전년비)",
+      group: "credit",
+      source: "FRED",
+      // 십억 달러 수준 계열(월간). 전년비는 읽을 때 계산한다.
+      sourceId: "BUSLOANS",
+      transform: "yoy",
+      layer: "L3",
+      type: "change",
+      freq: "m",
+      unit: "%",
+      decimals: 1,
+      url: FRED("BUSLOANS"),
+      sourceLabel: "FRED · BUSLOANS (원 발표: 연준 H.8)",
+      what: "미국 상업은행이 기업에 빌려준 상업·산업 대출(C&I) 잔액이 1년 전보다 얼마나 늘었는지입니다.",
+      why: "기업이 **실제로 돈을 빌려 쓰고 있는지**를 봅니다. 설비투자·재고·운전자금이 여기서 나옵니다. 금리가 높아도 이 값이 늘면 기업은 그 금리를 감당하며 투자하고 있다는 뜻입니다.",
+      read: "⚠ 경기 초입의 대출 급증은 수요가 늘어서일 수도, 회사채 시장이 막혀 은행으로 몰려서일 수도 있습니다 — **회사채 스프레드와 함께** 보세요. 마이너스로 내려가면 신용이 줄어드는 국면입니다.",
+      order: 1,
+    },
+    {
+      key: "bank_credit_yoy",
+      name: "은행 총신용 (전년비)",
+      group: "credit",
+      source: "FRED",
+      // 십억 달러 수준 계열(주간, 수요일 기준).
+      sourceId: "TOTBKCR",
+      transform: "yoy",
+      layer: "L3",
+      type: "change",
+      freq: "w",
+      unit: "%",
+      decimals: 1,
+      url: FRED("TOTBKCR"),
+      sourceLabel: "FRED · TOTBKCR (원 발표: 연준 H.8)",
+      what: "미국 상업은행이 들고 있는 대출과 증권(국채 등)을 모두 합친 신용이 1년 전보다 얼마나 늘었는지입니다.",
+      why: "은행 시스템이 **돈을 새로 만들어 내고 있는지**의 가장 넓은 눈금입니다. 은행이 대출을 하거나 증권을 사면 그만큼 예금이 생깁니다 — 연준 밖에서 만들어지는 유동성입니다.",
+      read: "기업 대출(C&I)과 나란히 보세요. 총신용은 늘었는데 기업 대출이 줄면, 은행이 대출 대신 **국채를 사고 있다**는 뜻일 수 있습니다.",
+      order: 2,
+    },
+    {
+      key: "deposits_yoy",
+      name: "은행 예금 (전년비)",
+      group: "credit",
+      source: "FRED",
+      // 십억 달러 수준 계열(주간·계절조정).
+      sourceId: "DPSACBW027SBOG",
+      transform: "yoy",
+      layer: "L1",
+      type: "change",
+      freq: "w",
+      unit: "%",
+      decimals: 1,
+      url: FRED("DPSACBW027SBOG"),
+      sourceLabel: "FRED · DPSACBW027SBOG (원 발표: 연준 H.8)",
+      what: "미국 상업은행에 맡겨진 예금 총액이 1년 전보다 얼마나 늘었는지입니다.",
+      why: "예금은 은행이 **다시 빌려줄 수 있는 바탕**입니다. 재정지출이 가계·기업 계좌로 들어가면 예금이 늘고, 예금이 머니마켓펀드나 국채로 빠져나가면 줄어듭니다.",
+      read: "⚠ 예금이 줄어드는 국면이 길어지면 은행의 대출 여력이 좁아집니다. 다만 금리가 높을 때는 예금이 **더 높은 이자를 찾아 이동**한 결과이기도 해서, 그것만으로 신용경색이라 단정하지 않습니다.",
+      order: 3,
+    },
+    {
+      key: "sloos_ci",
+      name: "은행 대출태도 (C&I 기준 강화 비율)",
+      group: "credit",
+      source: "FRED",
+      sourceId: "DRTSCILM",
+      transform: "level",
+      // ⚠ 설문(은행 대출 담당자에게 묻는다) — 사람이 보고한 상태라 L6이다. 선행지표라는 뜻이 아니다(layers.ts).
+      layer: "L6",
+      type: "level",
+      freq: "q",
+      unit: "%",
+      decimals: 1,
+      url: FRED("DRTSCILM"),
+      sourceLabel: "FRED · DRTSCILM (원 발표: 연준 SLOOS 설문)",
+      what: "대기업·중견기업 대출 기준을 **조였다고 답한 은행 비율에서 풀었다고 답한 비율을 뺀 값**입니다. 연준이 분기마다 은행 대출 담당자에게 묻습니다.",
+      why: "대출이 실제로 줄기 **전에** 은행의 태도가 먼저 바뀝니다. 금리 인상이 은행 창구에서 어떻게 받아들여지고 있는지를 가장 직접 보여 줍니다.",
+      read: "0보다 크면 조이는 은행이 더 많고, 작으면 푸는 은행이 더 많습니다. ⚠ 설문이라 분기에 한 번만 나오고, 답한 은행 수가 많지 않습니다 — 한 분기의 숫자보다 **방향이 몇 분기 이어지는지**를 보세요.",
+      order: 4,
+    },
+    {
+      key: "baa_yield",
+      name: "Baa 회사채 금리",
+      group: "credit",
+      source: "FRED",
+      sourceId: "DBAA",
+      transform: "level",
+      layer: "L2",
+      type: "level",
+      freq: "d",
+      unit: "%",
+      decimals: 2,
+      url: FRED("DBAA"),
+      sourceLabel: "FRED · DBAA (원 발표: 무디스)",
+      what: "신용등급이 투자적격 가운데 가장 낮은 Baa인 기업들이 돈을 빌릴 때 내는 금리입니다.",
+      why: "기업이 실제로 치르는 **자금 조달 비용**입니다. 투자로 벌어들이는 수익률이 이 값을 넘어야 빌려서 투자할 이유가 생깁니다(설계서 V-4 「자본수익률 − 조달비용」의 오른쪽 항).",
+      read: "국채 금리와 함께 오르면 금리 전체가 오른 것이고, 국채는 그대로인데 이 값만 오르면 **기업 신용에 대한 걱정**이 커진 것입니다 — 아래 스프레드가 그 차이를 보여 줍니다. ⭐ 1986년부터 값이 있어 과거 금리 국면과 비교할 수 있습니다.",
+      order: 5,
+    },
+    {
+      key: "baa_spread",
+      name: "Baa 회사채 − 10년 국채 금리차",
+      group: "credit",
+      source: "DERIVED",
+      derived: {
+        op: "subtract",
+        // ⚠ 첫 번째가 기준 계열이다. 둘 다 일간이라 휴장일 어긋남만 메운다.
+        from: ["baa_yield", "ust10y"],
+        carryDays: 5,
+      },
+      transform: "level",
+      layer: "L2",
+      type: "level",
+      freq: "d",
+      unit: "%p",
+      decimals: 2,
+      url: FRED("DBAA"),
+      sourceLabel: "FRED 합성 · DBAA − DGS10",
+      what: "Baa 회사채 금리에서 같은 날 10년 국채 금리를 뺀 값입니다. 기업이 국가보다 **얼마나 더 내고** 빌리는지입니다.",
+      why: "⭐ **긴 역사가 있는 신용 스프레드**입니다. 하이일드·투자적격 스프레드(ICE BofA)는 FRED에서 2023년 9월 이후 값만 받을 수 있어, 1994·2013·2018년 같은 과거 금리 국면과 비교할 때는 이 값을 씁니다(설계서 PART VIII).",
+      read: "벌어지면 시장이 기업 부도 위험을 더 비싸게 매기는 것이고, 좁혀지면 반대입니다. ⚠ 국채 금리가 급히 떨어지는 날에도 기계적으로 벌어질 수 있습니다 — **어느 쪽 끝이 움직였는지**를 함께 보세요.",
+      order: 6,
+    },
+  ],
+};

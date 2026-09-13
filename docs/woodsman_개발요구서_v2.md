@@ -412,7 +412,11 @@ rm s.json
   ⚠ `vintageDate`는 origin마다 뜻이 다르다(ALFRED=발표일 · INGEST=우리가 처음 본 날 · MANUAL=저장일 · SEED_L2=그 이전 이력 모름).
   ⭐ `lib/macro/vintage.ts`의 `valuesAsOf`가 **그날 알려져 있던 값**으로 시계열을 되살린다 — 과거 판정 재계산은 이 함수를 거친다.
   ALFRED 백필은 로컬 스크립트(`scripts/alfred-backfill.mjs`, FRED 키는 이 PC `.env`에만) — 수정이 잦은 20계열 약 18만 행.
-- 상태: **R1 배포 중 → 다음 R2(신용·자금시장 원자료 + 재무부 API).**
+- ⭐ **R2a — 신용·자금 원자료**(2026-09-14): 묶음 `credit` 「신용·자금」(C&I 대출·은행신용·예금·SLOOS·Baa·Baa−10Y) +
+  유동성에 준비금·**해외 공적 역레포(따로)**·SOFR·IORB·**SOFR−IORB** + 금리에 VVIX·SKEW.
+  ⚠ **국내 ON RRP(`rrp`)와 해외 공적 RRP(`rrp_foreign`)는 섞지 않는다** — 순유동성은 국내만(테스트가 강제).
+  ⚠ **긴 역사가 필요한 신용 스프레드는 Baa−10Y**(ICE OAS는 2023-09~뿐). ⚠ IORB는 다음 날 값이 미리 실려 매번 1점이 미래로 버려진다(정상).
+- 상태: **R2a 배포 → 다음 R2b**(재무부 Fiscal Data 어댑터 — MSPD·입찰 · 국채 실현변동성). ⏳ 잘린 원문 뒷부분 대기.
 
 ### 캘린더 AI 초안 — 제안은 AI, 채택은 Woodsman (2026-09-05)
 

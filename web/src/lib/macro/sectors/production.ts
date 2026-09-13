@@ -15,7 +15,7 @@ export const sector: MacroSector = {
       question: "공장이 돌아가고 있나?",
       intro:
         "제조업은 경기 순환의 앞단입니다. 구매관리자지수(PMI)는 기업 구매 담당자에게 직접 물어 만든 지표라 통계보다 빠르고, 50을 넘으면 확장·밑돌면 위축으로 읽습니다.",
-      order: 8,
+      order: 9,
     },
   indicators: [
     {
