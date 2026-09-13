@@ -15,7 +15,7 @@ export const sector: MacroSector = {
       question: "금리가 실물에 얼마나 닿았나?",
       intro:
         "주택은 금리에 가장 민감한 실물 자산입니다. 금리가 오르면 착공과 건설업체 체감경기가 먼저 식고, 그 다음에 고용과 소비로 번집니다. 그래서 부동산 지표는 '긴축이 실제로 아프기 시작했는지'를 보는 창입니다.",
-      order: 11,
+      order: 12,
     },
   indicators: [
     {
@@ -78,6 +78,25 @@ export const sector: MacroSector = {
       why: "실제 착공보다 먼저 움직입니다. 짓는 사람들이 먼저 몸을 사립니다.",
       read: "50 아래가 길게 이어지면 앞으로의 착공과 건설 고용이 줄어든다는 예고입니다.",
       order: 3,
+    },
+    {
+      key: "mortgage30",
+      name: "30년 고정 모기지 금리",
+      group: "housing",
+      source: "FRED",
+      sourceId: "MORTGAGE30US",
+      transform: "level",
+      layer: "L2",
+      type: "level",
+      freq: "w",
+      unit: "%",
+      decimals: 2,
+      url: FRED("MORTGAGE30US"),
+      sourceLabel: "FRED · MORTGAGE30US (원 발표: 프레디맥 PMMS)",
+      what: "미국에서 30년 고정금리로 집을 살 때 내는 평균 대출 금리입니다. 매주 목요일 발표됩니다.",
+      why: "장기금리가 가계에 닿는 가장 큰 통로입니다. 10년 국채가 오르면 이 금리가 따라 오르고, 집을 사거나 갈아타려는 수요가 먼저 식습니다. 명세 Long-Rate Discipline의 「Mortgage Stress」 자리입니다.",
+      read: "10년 국채 금리와의 차이를 함께 보세요. 차이가 평소보다 넓으면 국채보다 **주택금융 쪽 위험**을 더 비싸게 매기고 있다는 뜻입니다. ⚠ 이미 낮은 금리로 대출받은 가계가 많으면 금리가 올라도 소비가 바로 줄지는 않습니다(고정금리의 시차).",
+      order: 4,
     },
   ],
 };

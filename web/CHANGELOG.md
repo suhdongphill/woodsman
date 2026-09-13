@@ -10,6 +10,42 @@
 
 ---
 
+## 2026-09-14 (7) — 점수 입력 계열 10개 · 「투자·자본형성」 묶음 (Capital Regime Engine R2b-1)
+
+R2b를 셋으로 나눴다 — **R2b-1은 이미 쓰는 출처(FRED)로 받는 것만**, 새 출처(재무부 어댑터)는 R2b-2, 새 계산(국채 실현변동성)은 R2b-3.
+
+### 무엇을 채웠나 — 점수 매핑의 `planned`가 `available`로
+
+| 계열 | 묶음 | 채운 점수 구성요소 |
+|---|---|---|
+| 평균 시간당 임금 `wages_yoy` | 고용 | Engine Heat · Wage Pressure |
+| 30년 모기지 `mortgage30` | 부동산 | Long-Rate Discipline · Mortgage Stress |
+| ⚠ 기업이익(실현) `corp_profits_yoy` | 생산·제조 | Rate Absorption · EPS Growth — **대체 입력** |
+| 전력 생산 `power_ip_yoy` | 생산·제조 | AI Demand · Power/Grid Demand |
+| 반도체 PPI `semi_ppi_yoy` | 반도체 | AI Demand · Equipment Price Pressure |
+| 근로자당 산출 `output_per_worker_yoy` | 생산성·공급 | AI Productivity · Real Output per Worker |
+| 총부채 `total_debt_yoy` | 신용·자금 | (Debt Productivity 분모) |
+| 비주거 고정투자 · 장비 · 지식재산 | ⭐ **투자·자본형성(신설)** | Productive Capital Formation |
+
+- ⚠ **기업이익은 선행 EPS가 아니다.** 무료 출처가 없어 NIPA 세후 법인이익 전년비를 쓰고, **이름에 「실현」을 넣었다**(설계서 결정 ② · 테스트가 강제).
+- ⚠ **반도체 PPI는 원래 내려가는 지수다**(품질 조정 — 1998=100이 지금 약 28.5). 마이너스가 이상이 아니라 **하락 폭이 줄 때**가 신호라고 적었다.
+- ⚠ **전력 생산은 AI 전용 수요가 아니다** — 날씨로도 움직인다고 적었다.
+- ⚠ **근로자당 산출(PRS85006163)은 시간당 산출(OPHNFB)과 다른 계열이다** — 명세 §7 중복과 헷갈리지 않게 테스트로 박았다.
+- ⭐ **새 묶음 「투자·자본형성」**(`/macro/capex`) — 「AI CAPEX가 실제로 일어나고 있나」는 공장 가동이나 생산성과 **다른 질문**이다. ⚠ 명목이고,
+  ⚠ **총액(PNFI) 안에 장비·지식재산이 들어 있다** — 명세 §9가 셋을 따로 가중해 같은 돈이 겹친다(설계서 11-4에 추가).
+- 모든 계열을 **FRED 메타데이터(단위·주기)**와 **수집기의 키 없는 CSV 경로** 둘 다로 확인했다.
+
+### ⭐ 커버리지가 이렇게 바뀌었다 — 프로그램 계산
+
+⭐ **읽는 법 (R2b-1 기준, 프로그램 계산)**: 명세 §53 v1.0 필수 가운데 **발행 가능 2개**(engine_heat 90% · long_rate_discipline 90%),
+**LOW CONFIDENCE로 발행 3개**(ai_productivity 60% · rate_absorption 60% · market_risk_geopolitical 70%). AI Inflation Gap은 AI Demand(25%)가 발행 기준 아래라 **계산 불가**.
+GLS 50% — 재무부 어댑터(R2b-2)가 채운다. 끝까지 남는 빈칸은 **무료 출처가 없는 것**(선행 EPS·통화 스왑 베이시스·사모대출·
+AI 자금조달·국채 호가 깊이)과 **명세에 정의가 없는 것**이다. ⚠ 이 둘을 추정으로 채우지 않는다.
+
+⚠ 설계서 11-5 표도 **다시 계산해 넣었다**(손으로 고치지 않았다). ⚠ 새 계열 값은 **다음 수집(06:00 KST) 뒤에** 생긴다.
+
+---
+
 ## 2026-09-14 (6) — 점수 계산 엔진 코어 · 점수 계산 명세 v1.0 수용 (Capital Regime Engine)
 
 운영자가 **Score Calculation Specification v1.0**을 줬다. 원문은 `docs/설계_점수계산명세_v1.md`에 **고치지 않고 보존**했고,

@@ -150,7 +150,7 @@ export const sector: MacroSector = {
     question: "지금 돈은 어느 섹터로 흐르고 있나?",
     intro:
       "바람과 조류를 읽었다면, 파도가 어디서 일고 있는지도 보입니다. 섹터 ETF의 **52주 신고가 대비 위치**와 **시장 대비 상대강도**로 어느 쪽이 앞서고 있는지 봅니다. ⚠ 이것은 자금 유입 통계가 아니라 **가격이 만든 결과**입니다 — 설정주식수·AUM 자료가 아니므로 그렇게 부르지 않습니다.",
-    order: 13,
+    order: 14,
   },
   indicators: ETFS.map((etf, i) => ({
     key: etf.key,

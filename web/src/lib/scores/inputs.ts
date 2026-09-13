@@ -10,7 +10,7 @@
  * - ⚠ **대체 입력은 대체라고 적는다**(`substitute`) — 설계서 결정 ②(이름을 바꿔 대체).
  * - ⚠ 명세가 **같은 계열을 두 번** 세는 자리는 한 번만 채우고 나머지는 이유를 적는다(이중 계산 금지).
  * - `status: "planned"`는 **다음 조각에서 붙일 것**이다. 지금은 결측으로 센다 — 계획을 데이터로 치지 않는다.
- * - 이 파일은 **지금(2026-09-14, R2a 기준)** 의 사실이다. 계열을 붙이면 여기를 고치고, 커버리지 보고가 따라 바뀐다.
+ * - 이 파일은 **지금(2026-09-14, R2b-1 기준)** 의 사실이다. 계열을 붙이면 여기를 고치고, 커버리지 보고가 따라 바뀐다.
  */
 import { SCORE_DEFINITIONS, type ScoreKey } from "./config";
 import { COVERAGE_PUBLISH, COVERAGE_RENORMALIZE, publishState, type PublishState } from "./composite";
@@ -42,7 +42,7 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
     core_cpi: { status: "available", indicators: ["core_cpi_yoy"] },
     core_pce: { status: "available", indicators: ["core_pce_yoy"] },
     ppi: { status: "available", indicators: ["ppi_yoy"] },
-    wage_pressure: { status: "planned", slice: "R2b", reason: "평균 시간당 임금(FRED CES0500000003)을 아직 붙이지 않았다" },
+    wage_pressure: { status: "available", indicators: ["wages_yoy"] },
     ulc: { status: "available", indicators: ["ulc_yoy"] },
     energy: { status: "available", indicators: ["brent", "wti", "natgas"] },
     ai_resource_heat: UNDEFINED_IN_SPEC("AI Resource Heat(전력·장비·반도체 가격 중 무엇인가)"),
@@ -118,7 +118,7 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
       status: "unavailable",
       reason: "⚠ 명세 중복 — 비농업 노동생산성이 곧 시간당 산출(BLS OPHNFB)이다. 한 계열을 25%+15%로 두 번 세지 않는다",
     },
-    real_output_per_worker: { status: "planned", slice: "R2b", reason: "BLS 근로자당 산출 계열을 확인하지 않았다" },
+    real_output_per_worker: { status: "available", indicators: ["output_per_worker_yoy"] },
     ai_adoption: { status: "planned", slice: "R9", reason: "인구조사국 BTOS(AI 사용 기업 비율) 어댑터" },
     tfp_proxy: { status: "unavailable", reason: "총요소생산성은 연간·2023년까지(RTFPNAUSA632NRUG) — 분기 점수에 쓰면 늘 낡은 값" },
     bottleneck_relief: UNDEFINED_IN_SPEC("병목 완화(무엇으로 재나)"),
@@ -128,9 +128,9 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
     hyperscaler_capex: { status: "planned", slice: "R9", reason: "SEC EDGAR XBRL(설비투자) 어댑터" },
     data_center_construction: { status: "planned", slice: "R9", reason: "인구조사국 건설지출 「Data center」 — 확인 필요" },
     semiconductor_capex: { status: "planned", slice: "R9", reason: "EDGAR — 미국 상장사만 가능" },
-    power_grid_demand: { status: "planned", slice: "R2b", reason: "전력 생산지수(IPG2211S)를 아직 붙이지 않았다" },
+    power_grid_demand: { status: "available", indicators: ["power_ip_yoy"], note: "⚠ AI 전용이 아니라 전체 전력 수요 — 날씨로도 움직인다" },
     ai_corporate_financing: NO_FREE("AI 기업 자금조달 집계"),
-    ai_equipment_price_pressure: { status: "planned", slice: "R2b", reason: "반도체·장비 PPI(PCU334413334413)를 아직 붙이지 않았다" },
+    ai_equipment_price_pressure: { status: "available", indicators: ["semi_ppi_yoy"], note: "⚠ 품질 조정으로 원래 내려가는 지수 — 하락 폭 축소가 신호다" },
     ai_labor_demand: NO_FREE("AI 인력 수요"),
   },
 
@@ -138,7 +138,11 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
     earnings_yield_spread: NO_FREE("S&P 500 선행 EPS"),
     productivity_real_yield: { status: "computed", from: "lib/macro/capital.ts · PRYS", note: "BIPOLAR — 원값을 함께 낸다" },
     nominal_growth_10y: { status: "computed", from: "lib/macro/capital.ts · 성장–조달 격차", note: "BIPOLAR — 원값을 함께 낸다" },
-    eps_growth: { status: "planned", slice: "R2b", reason: "선행 EPS 없음 → 법인이익(NIPA CP) 전년비로 대체 예정 — 「기업이익(실현)」이라 부른다" },
+    eps_growth: {
+      status: "available",
+      indicators: ["corp_profits_yoy"],
+      substitute: "선행 EPS 성장 대신 실현 법인이익(NIPA·세후) 전년비 — 「기업이익(실현)」이라 부른다",
+    },
     roic_funding_spread: { status: "planned", slice: "R3", reason: "자본수익률 근사 계열 확인 필요 · 조달비용은 baa_yield로 가능" },
     credit_stability: { status: "available", indicators: ["baa_spread", "hy_spread"] },
     breadth_recovery: { status: "planned", slice: "R3", reason: "섹터 ETF 13개 중 200일선 위 비율(섹터 폭) — 파생 미구현" },
@@ -151,7 +155,7 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
     inverted_term_premium_stress: { status: "available", indicators: ["term_premium"] },
     inverted_move: { status: "planned", slice: "R2b", reason: "국채 실현변동성(MOVE 아님)" },
     corporate_funding_spread: { status: "available", indicators: ["baa_spread"] },
-    mortgage_stress: { status: "planned", slice: "R2b", reason: "30년 모기지 금리(MORTGAGE30US)를 아직 붙이지 않았다" },
+    mortgage_stress: { status: "available", indicators: ["mortgage30"] },
   },
 
   capital_competition: {
@@ -162,6 +166,24 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
     real_yield: { status: "available", indicators: ["real10"] },
     term_premium: { status: "available", indicators: ["term_premium"] },
     auction_stress: { status: "planned", slice: "R2b", reason: "재무부 입찰 API" },
+  },
+
+  capital_formation: {
+    business_fixed_investment: { status: "available", indicators: ["pnfi_yoy"], note: "명목" },
+    equipment_investment: {
+      status: "available",
+      indicators: ["equipment_inv_yoy"],
+      note: "⚠ 명세 구성상 겹친다 — 비주거 고정투자(PNFI) 총액 안에 장비가 들어 있다(설계서 11-4)",
+    },
+    ip_investment: {
+      status: "available",
+      indicators: ["ip_inv_yoy"],
+      note: "⚠ 명세 구성상 겹친다 — PNFI 총액 안에 지식재산이 들어 있다(설계서 11-4)",
+    },
+    data_center_investment: { status: "planned", slice: "R9", reason: "인구조사국 건설지출 「Data center」 — 확인 필요" },
+    semiconductor_fab_investment: { status: "planned", slice: "R9", reason: "민간 제조업 건설(PRMFGCONS)에 fab이 크게 찍히지만 fab만은 아니다 — 대리로 쓸지 결정 필요" },
+    power_infrastructure_investment: NO_FREE("전력 인프라 투자 집계"),
+    r_and_d: { status: "planned", slice: "R3", reason: "BEA 연구개발 투자 계열을 확인하지 않았다(지식재산 투자에 일부 포함)" },
   },
 
   market_stress: {

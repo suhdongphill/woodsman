@@ -23,6 +23,8 @@ export type MacroGroupKey =
   | "production"
   /** 생산성·공급 — 수요 축소가 아니라 공급 확대로 물가를 흡수할 수 있는가(2026-09-14) */
   | "supply"
+  /** 투자·자본형성 — 기업이 미래 생산능력에 쓰는 돈(2026-09-14, R2b-1) */
+  | "capex"
   | "housing"
   | "semi"
   /** ⚠ 시장 가격 계열(섹터 ETF)이다. 침체 신호 판정에 쓰지 않는다 — sectors/leaders.ts 참고 */
