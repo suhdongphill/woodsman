@@ -1,7 +1,10 @@
 import Link from "next/link";
 import type { BubbleScore } from "@/lib/bubble/score";
+import type { FedFuturesResult } from "@/lib/macro/fedfutures";
+import { formatProbability, type FedHikeResult } from "@/lib/macro/fedhike";
 import {
   BUBBLE_GUIDE,
+  RATE_GUIDE,
   LIQUIDITY_PARTS,
   TIDE_GUIDES,
   levelWord,
@@ -68,7 +71,7 @@ function ScoreCard({
 
   return (
     <article className="flex flex-col rounded-2xl border border-border bg-card p-5">
-      <div className="flex items-baseline justify-between gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
         <h3 className="text-[13px] font-semibold text-ink">{guide.title}</h3>
         {latest && (
           <span className="text-[10.5px] text-ink-3">
@@ -129,7 +132,7 @@ function ScoreCard({
 function BubbleCard({ score }: { score: BubbleScore }) {
   return (
     <article className="flex flex-col rounded-2xl border border-border bg-card p-5">
-      <div className="flex items-baseline justify-between gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
         <h3 className="text-[13px] font-semibold text-ink">{BUBBLE_GUIDE.title}</h3>
         <span className="text-[10.5px] text-ink-3">
           {score.asOf.oldest ? `${score.asOf.oldest}~${score.asOf.newest} 채점` : "채점 기준일 없음"} · {score.coverage.scored}/
@@ -158,7 +161,76 @@ function BubbleCard({ score }: { score: BubbleScore }) {
   );
 }
 
-export function TideSection({ tides, bubble }: { tides: Map<string, TideReading>; bubble: BubbleScore }) {
+/** 선물 내재 · 준칙 — `loadMacroOverview`가 **한 번만** 계산한 결과를 그대로 받는다(홈에서 다시 계산하지 않는다). */
+export type RateDirection = {
+  futures?: FedFuturesResult;
+  futuresAsOf?: string;
+  hike?: FedHikeResult;
+  hikeAsOf?: string;
+};
+
+function RateCard({ rates }: { rates: RateDirection }) {
+  const f = rates.futures;
+  const h = rates.hike;
+  const dir = f && f.impliedChange >= 0 ? "인상" : "인하";
+  /** ⚠ 1을 넘을 수 있다(인상 두 번이면 200%) — 자르지 않는다 */
+  const share = f ? Math.abs(f.hikeShare) : 0;
+  return (
+    <article className="flex flex-col rounded-2xl border border-border bg-card p-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+        <h3 className="text-[13px] font-semibold text-ink">{RATE_GUIDE.title}</h3>
+        <span className="text-[10.5px] text-ink-3">
+          {f ? `${rates.futuresAsOf ?? "?"} 선물 · ${f.contractMonth} 계약` : "시장 내재 값 수집 전"}
+        </span>
+      </div>
+
+      {f ? (
+        <>
+          <p className="mt-2 flex items-baseline gap-2">
+            <span className="text-3xl font-bold tabular-nums text-ink">{(share * 100).toFixed(0)}%</span>
+            <span className="text-[12px] text-muted">
+              {f.singleMeeting ? `${f.reflected[0]} 회의 · 25bp ${dir} 한 번 대비` : `${dir} 쪽 누적 · 25bp 한 번 대비`}
+            </span>
+          </p>
+          <p className="mt-1 text-[12px] text-ink">
+            시장이 거는 것: 현재 {f.currentRate.toFixed(2)}% → 계약월 평균 {f.impliedAvg.toFixed(2)}%
+          </p>
+          {f.assumedFlat.length > 0 && (
+            <p className="mt-1 text-[10.5px] text-ink-3">
+              ⚠ 계약월 안의 회의({f.assumedFlat.join(", ")})는 「변화 없음」으로 가정 — 날수의 {(f.assumedWeight * 100).toFixed(0)}%
+            </p>
+          )}
+        </>
+      ) : (
+        <p className="mt-3 text-[13px] text-muted">선물 시세·일간 실효금리가 다음 수집 뒤에 들어오면 계산됩니다.</p>
+      )}
+
+      {h ? (
+        <p className="mt-2 border-t border-border/60 pt-2 text-[12px] text-ink">
+          준칙이 처방하는 것: 인상 {formatProbability(h.hike)} · 동결 {formatProbability(h.hold)} · 인하 {formatProbability(h.cut)}
+          <span className="text-ink-3"> ({h.biasLabel}{rates.hikeAsOf ? ` · 가장 오래된 입력 ${rates.hikeAsOf}` : ""})</span>
+        </p>
+      ) : (
+        <p className="mt-2 border-t border-border/60 pt-2 text-[12px] text-muted">준칙 계산에 필요한 지표(근원 PCE·기준금리·실업률)가 아직 없습니다.</p>
+      )}
+
+      <Guide how={RATE_GUIDE.how} judge={RATE_GUIDE.judge} />
+      <Link href="/macro" className="mt-3 text-[12px] text-gold-500 hover:text-gold-400">
+        계산식과 가정 보기 →
+      </Link>
+    </article>
+  );
+}
+
+export function TideSection({
+  tides,
+  bubble,
+  rates,
+}: {
+  tides: Map<string, TideReading>;
+  bubble: BubbleScore;
+  rates: RateDirection;
+}) {
   const empty = (key: string): TideReading => tides.get(key) ?? { scoreKey: key, dir4: "unknown", dir13: "unknown", pastRecomputed: false, stale: false };
   return (
     <section aria-labelledby="tide-heading" className="mx-auto max-w-6xl px-4 pb-12 sm:px-6">
@@ -170,13 +242,15 @@ export function TideSection({ tides, bubble }: { tides: Map<string, TideReading>
           몇 달 단위의 흐름입니다. 이번 주의 움직임은 위 「지금 부는 바람」에서 봅니다. 점수는 프로그램이 규칙대로 계산하며 예측이 아닙니다.
         </p>
       </div>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <ScoreCard
           reading={empty("global_liquidity")}
           guide={TIDE_GUIDES.global_liquidity!}
           parts={LIQUIDITY_PARTS.map((p) => ({ label: p.label, reading: empty(p.key) }))}
           href="/macro/liquidity"
         />
+        {/* ⭐ 원칙 ⑥ — 대표 지표(금리인상 확률)를 앞줄로. 자리는 홈 섹션 계획표 §2-1 */}
+        <RateCard rates={rates} />
         <BubbleCard score={bubble} />
         <ScoreCard reading={empty("engine_heat")} guide={TIDE_GUIDES.engine_heat!} href="/macro/inflation" />
       </div>

@@ -253,7 +253,11 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
       ? impliedFromFutures({
           impliedAvg: zq.value,
           contractMonth: nextMonthOf(zq.asOf),
-          currentRate: views.get(FED_HIKE_KEYS.fedFunds)?.value,
+          /**
+           * ⚠ 현재 금리는 **일간 실효금리(DFF)** 다(2026-09-14). 월간 FEDFUNDS는 FOMC 직후 최대 한 달 묵어, 이미 반영된
+           *   인상을 또 인상으로 센다. ⚠ DFF가 없으면 월간 값으로 **조용히 대신하지 않는다** — 계산하지 않는다(카드가 「수집 전」).
+           */
+          currentRate: views.get("dff")?.value,
           meetings: fomc,
           quoteDate: zq.asOf,
         })

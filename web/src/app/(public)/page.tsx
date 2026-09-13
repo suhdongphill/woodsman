@@ -146,7 +146,19 @@ export default async function HomePage() {
       />
     ),
     macroStrip: <MacroStrip indicators={macro.headlines} />,
-    tide: <TideSection tides={tides} bubble={scoreBubble(bubbleReadings)} />,
+    tide: (
+      <TideSection
+        tides={tides}
+        bubble={scoreBubble(bubbleReadings)}
+        // ⚠ 금리 방향은 거시 개요가 한 번만 계산한 값을 그대로 넘긴다(/macro와 같은 숫자)
+        rates={{
+          futures: macro.fedFutures,
+          futuresAsOf: macro.fedFuturesAsOf,
+          hike: macro.fedHike,
+          hikeAsOf: macro.fedHikeAsOf,
+        }}
+      />
+    ),
     latestInsights: (
       <LatestInsights
         posts={latestPosts.filter((p) => p.type !== "NOTICE")}

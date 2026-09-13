@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BUBBLE_GUIDE, DIRECTION_THRESHOLD, LIQUIDITY_PARTS, TIDE_GUIDES, buildTide, levelWord, tideDirection } from "./tide";
+import { BUBBLE_GUIDE, DIRECTION_THRESHOLD, LIQUIDITY_PARTS, RATE_GUIDE, TIDE_GUIDES, buildTide, levelWord, tideDirection } from "./tide";
 import { SCORE_DEFINITIONS } from "./config";
 import { SCORE_BANDS } from "../bubble/catalog";
 
@@ -53,7 +53,13 @@ describe("저장된 점수 → 조류", () => {
 });
 
 describe("읽는 법 · 판단법", () => {
-  const texts = [...Object.values(TIDE_GUIDES).flatMap((g) => [g!.how, g!.judge]), BUBBLE_GUIDE.how, BUBBLE_GUIDE.judge];
+  const texts = [
+    ...Object.values(TIDE_GUIDES).flatMap((g) => [g!.how, g!.judge]),
+    BUBBLE_GUIDE.how,
+    BUBBLE_GUIDE.judge,
+    RATE_GUIDE.how,
+    RATE_GUIDE.judge,
+  ];
 
   it("⚠ 매수·매도 권유 문장을 쓰지 않는다 — 판단은 조건형(운영자 원칙 ④)", () => {
     for (const t of texts) expect(t).not.toMatch(/매수|매도|사세요|파세요|비중 확대|비중 축소|현금 확대|리스크오프/);
