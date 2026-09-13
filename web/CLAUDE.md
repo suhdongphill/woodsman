@@ -86,6 +86,10 @@ Worker 런타임은 `wrangler.jsonc`를 읽을 수 없어, 상한 같은 값을 
 - SQL에 값을 직접 끼워 넣지 않는다. `?` 바인딩만 쓴다.
 - 스키마를 바꾸면 `npm run db:migrate` → 마이그레이션 파일을 **커밋**한다.
   배포 시 GitHub Actions가 D1에 자동 적용한다.
+- ⚠ **운영 D1에 `wrangler d1 execute --remote --file`을 쓰지 않는다**(2026-09-13 사고). `--file`은 가져오기(import)
+  경로라 **그동안 DB가 쿼리를 받지 못한다** — 사이트가 읽는 DB를 잠근다. 운영에 많은 행을 넣을 때는 보통 쿼리 경로
+  (`--command`)로 작은 묶음씩 보낸다(`scripts/alfred-backfill.mjs`). ⚠ **dry-run은 쓰기 경로를 시험하지 않는다** —
+  운영에 쓰는 명령은 그 명령 자체의 경고를 먼저 읽는다.
 
 ## 5. 사이트의 목적을 기준으로 판단한다
 
