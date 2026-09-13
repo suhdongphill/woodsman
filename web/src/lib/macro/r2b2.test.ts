@@ -27,11 +27,22 @@ describe("R2b-2 — 재무부 Fiscal Data", () => {
     for (const i of treasury) expect(known.has(i.sourceId ?? ""), `${i.key} → ${i.sourceId}`).toBe(true);
   });
 
-  it("재무부 지표는 유동성 묶음에 있고, 링크는 Fiscal Data 페이지다", () => {
-    for (const key of ["tsy_bill_share", "tsy_coupon_share", "auction10y_btc", "auction10y_yield"]) {
+  /**
+   * ⚠ 2026-09-14 바뀐 결정: 운영 워커에서 Fiscal Data가 525(TLS 핸드셰이크 실패)로 막혀 **입찰 두 계열은 TreasuryDirect**로 받는다.
+   *   링크는 **실제로 받는 곳**을 가리켜야 한다 — 받는 곳과 다른 페이지를 출처로 걸면 독자가 되짚을 수 없다.
+   *   MSPD 비중 둘은 대체 경로가 없어 Fiscal Data에 남았다.
+   */
+  it("재무부 지표는 유동성 묶음에 있고, 링크는 실제로 받는 재무부 페이지다", () => {
+    const expected: Record<string, RegExp> = {
+      tsy_bill_share: /^https:\/\/fiscaldata\.treasury\.gov\//,
+      tsy_coupon_share: /^https:\/\/fiscaldata\.treasury\.gov\//,
+      auction10y_btc: /^https:\/\/www\.treasurydirect\.gov\//,
+      auction10y_yield: /^https:\/\/www\.treasurydirect\.gov\//,
+    };
+    for (const [key, url] of Object.entries(expected)) {
       const i = findIndicator(key);
       expect(i?.group, key).toBe("liquidity");
-      expect(i?.url, key).toMatch(/^https:\/\/fiscaldata\.treasury\.gov\//);
+      expect(i?.url, key).toMatch(url);
     }
   });
 

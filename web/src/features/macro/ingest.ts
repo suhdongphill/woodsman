@@ -20,11 +20,12 @@ import { nextMonthOf, resolveFrontContract } from "@/lib/macro/fedfutures";
 import { dropFuturePoints } from "@/lib/macro/observed";
 import { computeAndSaveScores, type ScoreComputeSummary } from "@/features/scores/compute";
 import {
-  NOMINAL_TEN_YEAR_TERMS,
+  TREASURY_DIRECT_MAX_ROWS,
   mspdShares,
   nominalTenYearAuctions,
-  type AuctionRow,
+  treasuryDirectToAuctionRow,
   type MspdRow,
+  type TreasuryDirectSecurity,
 } from "@/lib/macro/treasury";
 import {
   dedupeByDate,
@@ -314,11 +315,33 @@ async function fetchTreasury(sourceId: string, from: string): Promise<SeriesPoin
     return series;
   }
   if (dataset === "auction10y") {
-    const rows = await fetchFiscalAll<AuctionRow>("v1/accounting/od/auctions_query", {
-      filter: `security_type:eq:Note,security_term:in:(${NOMINAL_TEN_YEAR_TERMS.join(",")}),auction_date:gte:${from}`,
-      fields: "auction_date,security_type,security_term,original_security_term,inflation_index_security,floating_rate,bid_to_cover_ratio,high_yield",
-      sort: "auction_date",
-    });
+    /**
+     * ⚠ 2026-09-14: 워커에서 Fiscal Data 입찰 경로가 **525·시간 초과**로 막혔다(로컬은 성공) → **TreasuryDirect `TA_WS`** 로 받는다.
+     *   `securities/search`의 기간 조건은 믿지 않는다(빈 결과·부분 결과) — `auctioned?days=N`만 쓴다. ⚠ 최대 250행.
+     *   판정은 Fiscal Data와 **같은 함수**(`nominalTenYearAuctions`)다 — 행 모양만 옮긴다(`treasuryDirectToAuctionRow`).
+     */
+    const days = Math.min(4500, Math.max(30, Math.ceil((Date.now() - Date.parse(`${from}T00:00:00Z`)) / 86_400_000) + 7));
+    const url = `https://www.treasurydirect.gov/TA_WS/securities/auctioned?format=json&type=Note&days=${days}`;
+    let res: Response | undefined;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        res = await fetchWithTimeout(url);
+        if (res.ok || res.status < 500) break;
+        console.error(`[macro] TreasuryDirect 입찰 응답 ${res.status} (${attempt}회)`);
+      } catch (error) {
+        console.error(`[macro] TreasuryDirect 입찰 받기 실패 (${attempt}회)`, error);
+        if (attempt === 2) throw error;
+      }
+      if (attempt === 1) await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+    if (!res || !res.ok) throw new Error(`TreasuryDirect 입찰 응답 ${res?.status ?? "없음"}`);
+    const json = (await res.json()) as unknown;
+    if (!Array.isArray(json)) throw new Error("TreasuryDirect 입찰 응답이 배열이 아닙니다");
+    if (json.length >= TREASURY_DIRECT_MAX_ROWS) {
+      // ⚠ 조용히 잘리지 않게 남긴다 — 처음 받을 때(4,500일)는 2021년 무렵에서 잘리는 것이 정상이다.
+      console.warn(`[macro] TreasuryDirect 입찰이 ${json.length}행에서 잘렸습니다(요청 ${days}일) — 더 오래된 입찰은 받지 못했습니다`);
+    }
+    const rows = (json as TreasuryDirectSecurity[]).map(treasuryDirectToAuctionRow);
     const auctions = nominalTenYearAuctions(rows);
     const series = field === "bid_to_cover" ? auctions.bidToCover : field === "high_yield" ? auctions.highYield : undefined;
     if (!series) throw new Error(`재무부 입찰 필드를 모릅니다: ${sourceId}`);

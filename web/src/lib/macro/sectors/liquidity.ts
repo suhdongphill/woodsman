@@ -418,8 +418,9 @@ export const sector: MacroSector = {
       freq: "m",
       unit: "배",
       decimals: 2,
-      url: "https://fiscaldata.treasury.gov/datasets/treasury-securities-auctions-data/treasury-securities-auctions-data",
-      sourceLabel: "미 재무부 Fiscal Data · 국채 입찰 결과(명목 10년물 · TIPS 제외)",
+      // ⚠ 2026-09-14: 워커에서 Fiscal Data가 525로 막혀 TreasuryDirect(TA_WS)로 받는다 — 같은 재무부 입찰 결과다.
+      url: "https://www.treasurydirect.gov/auctions/auction-query/",
+      sourceLabel: "미 재무부 TreasuryDirect · 국채 입찰 결과(명목 10년물 · TIPS 제외)",
       what: "재무부가 10년 국채를 팔 때 **팔려는 물량 대비 사겠다고 들어온 주문이 몇 배였는지**입니다. 신규 발행과 두 차례 재발행을 모두 셉니다.",
       why: "⭐ 국채를 **누가 얼마나 사 주는가**를 가장 직접 보여 줍니다. 응찰률이 떨어지면 같은 물량을 팔려고 더 높은 금리를 줘야 합니다 — 명세 Auction Quality · Auction Stress 자리입니다.",
       read: "평소 2.3~2.6배 안팎에서 움직입니다. 한 번 낮은 것보다 **몇 차례 연속 낮아지는지**를 보세요. ⚠ 응찰률만으로 수요를 단정하지 않습니다 — 해외 기관 비중이나 발행 금리가 시장 금리보다 높게 나왔는지(꼬리)도 함께 봐야 하는데, 꼬리는 무료 자료에 발표 직전 금리가 없어 아직 계산하지 못합니다.",
@@ -438,8 +439,9 @@ export const sector: MacroSector = {
       freq: "m",
       unit: "%",
       decimals: 3,
-      url: "https://fiscaldata.treasury.gov/datasets/treasury-securities-auctions-data/treasury-securities-auctions-data",
-      sourceLabel: "미 재무부 Fiscal Data · 국채 입찰 결과(명목 10년물 · TIPS 제외)",
+      // ⚠ 2026-09-14: 워커에서 Fiscal Data가 525로 막혀 TreasuryDirect(TA_WS)로 받는다 — 같은 재무부 입찰 결과다.
+      url: "https://www.treasurydirect.gov/auctions/auction-query/",
+      sourceLabel: "미 재무부 TreasuryDirect · 국채 입찰 결과(명목 10년물 · TIPS 제외)",
       what: "10년 국채 입찰에서 **가장 높게 낙찰된 금리**(모든 낙찰자가 받는 금리)입니다.",
       why: "시장에서 매일 거래되는 10년 금리와 달리, 재무부가 **실제로 돈을 빌린 값**입니다. 입찰 응찰률과 짝으로 봅니다.",
       read: "같은 날 시장 10년 금리(미 국채 10년)와 견줘 보세요. 입찰 금리가 시장보다 눈에 띄게 높으면 그만큼 웃돈을 줘야 팔렸다는 뜻입니다. ⚠ 입찰 시각의 시장 금리는 무료 자료로 받을 수 없어 일별 종가와 비교합니다 — 정확한 「꼬리」가 아닙니다.",

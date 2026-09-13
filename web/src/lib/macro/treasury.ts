@@ -147,3 +147,42 @@ export function mspdShares(rows: MspdRow[]): MspdShares {
   }
   return { billShare, couponShare, totalMarketable };
 }
+
+/**
+ * ## 5. ⚠ 워커에서 Fiscal Data가 막혔다 → 입찰은 TreasuryDirect로 받는다 (2026-09-14, 통합 계획 S2-b)
+ * 운영 수집(9/13 22:43 KST)에서 워커 → `api.fiscaldata.treasury.gov`가 **525(TLS 핸드셰이크 실패)·시간 초과**로 네 계열 모두 실패했다.
+ * 같은 요청이 로컬에서는 성공한다 — 「로컬은 되는데 배포만 죽는」 유형이다. 입찰 결과는 **TreasuryDirect `TA_WS`** 에도 있다.
+ * - 경로: `securities/auctioned?format=json&type=Note&days=N` — ⚠ **최대 250행**에서 잘린다(4,500일 요청이 2021-05에서 멈췄다).
+ *   ⚠ `securities/search`의 `startDate/endDate`는 **믿지 않는다** — 2025-09~2026-09가 0건, 2008~2012가 2008년 27건만 왔다.
+ * - TreasuryDirect는 TIPS를 `type=TIPS`로 따로 분류한다 — 그래도 판정은 `tips` 필드로 **한 번 더** 막는다(함정 1).
+ * - 필드 이름만 다르고 뜻은 같다 → Fiscal Data 행 모양(`AuctionRow`)으로 옮겨 **같은 판정 함수**(`nominalTenYearAuctions`)에 넣는다.
+ */
+export type TreasuryDirectSecurity = {
+  /** `2026-09-09T00:00:00` */
+  auctionDate: string;
+  securityType: string;
+  securityTerm: string;
+  originalSecurityTerm?: string;
+  /** `"Yes"` | `"No"` */
+  tips?: string;
+  floatingRate?: string;
+  bidToCoverRatio?: string;
+  highYield?: string;
+};
+
+/** TreasuryDirect 한 행 → Fiscal Data 행 모양. ⚠ 값은 문자열 그대로 옮긴다 — `"null"`·빈 값 판정은 `fiscalNumber`가 한다. */
+export function treasuryDirectToAuctionRow(s: TreasuryDirectSecurity): AuctionRow {
+  return {
+    auction_date: String(s.auctionDate).slice(0, 10),
+    security_type: s.securityType,
+    security_term: s.securityTerm,
+    original_security_term: s.originalSecurityTerm,
+    inflation_index_security: s.tips,
+    floating_rate: s.floatingRate,
+    bid_to_cover_ratio: s.bidToCoverRatio,
+    high_yield: s.highYield,
+  };
+}
+
+/** `auctioned` 경로가 한 번에 주는 최대 행 수 — 이만큼 왔으면 더 오래된 입찰이 잘렸다 */
+export const TREASURY_DIRECT_MAX_ROWS = 250;
