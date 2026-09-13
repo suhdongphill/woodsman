@@ -256,6 +256,8 @@ export default async function AdminMacroPage() {
           <ul>
             {runs.map((run) => {
               const failed = run.detail.filter((d) => !d.ok);
+              /** ⚠ 버린 미래 관측점도 보인다 — 조용히 사라진 점이 없게 */
+              const futureDropped = run.detail.filter((d) => (d.droppedFuture ?? 0) > 0);
               return (
                 <li key={run.id} className="border-t border-border px-5 py-3.5">
                   <div className="flex flex-wrap items-center gap-2 text-[12px]">
@@ -275,6 +277,16 @@ export default async function AdminMacroPage() {
                     </span>
                     {!run.finishedAt && <Badge tone="info">진행 중</Badge>}
                   </div>
+                  {futureDropped.length > 0 && (
+                    <ul className="mt-2 space-y-0.5">
+                      {futureDropped.map((f) => (
+                        <li key={f.key} className="text-[11.5px] text-gray-500">
+                          <code>{f.key}</code> · 관측일이 미래인 점 {f.droppedFuture}개를 버렸습니다
+                          ({f.firstFutureDate}부터 — 추계·전망 값은 관측이 아닙니다)
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   {failed.length > 0 && (
                     <ul className="mt-2 space-y-0.5">
                       {failed.map((f) => (

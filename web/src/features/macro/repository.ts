@@ -252,6 +252,13 @@ export type IngestDetail = {
   total?: number;
   latest?: string;
   error?: string;
+  /**
+   * 관측일이 미래라 버린 점의 수(추계 계열). ⚠ 조용히 버리지 않으려고 남긴다.
+   * 관리자 수집 이력이 이 값을 보여 준다.
+   */
+  droppedFuture?: number;
+  /** 버린 점 중 가장 이른 날짜 */
+  firstFutureDate?: string;
 };
 
 export type IngestRun = {

@@ -17,6 +17,7 @@
 import { resolveApiEnv } from "@/features/ai/credentials";
 import { autoIndicators, findIndicator, type MacroIndicator } from "@/lib/macro/catalog";
 import { nextMonthOf, resolveFrontContract } from "@/lib/macro/fedfutures";
+import { dropFuturePoints } from "@/lib/macro/observed";
 import {
   dedupeByDate,
   parseEcosJson,
@@ -327,6 +328,8 @@ export async function ingestMacro(
   const ecosKey = targets.some((t) => t.source === "ECOS") ? await readEcosKey() : "";
   const detail: IngestDetail[] = [];
   let addedPoints = 0;
+  /** KST 기준 오늘. 네이버 관측일 판단과 같은 기준이다. */
+  const todayKst = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10);
 
   /**
    * ⚠ **네트워크는 병렬, DB 쓰기는 순차.**
@@ -345,7 +348,12 @@ export async function ingestMacro(
         try {
           const known = maxDates.get(indicator.key);
           const raw = await fetchIndicator(indicator, !!known, ecosKey);
-          return { indicator, points: dedupeByDate(raw), known };
+          /**
+           * ⚠ 관측일이 미래인 점은 관측이 아니다(추계 계열 — `GDPPOT`은 2036년까지 있다).
+           *   계열별 예외가 아니라 입구의 일반 규칙이다. 버린 수는 이력에 남긴다.
+           */
+          const { kept, dropped, firstDropped } = dropFuturePoints(dedupeByDate(raw), todayKst);
+          return { indicator, points: kept, known, dropped, firstDropped };
         } catch (error) {
           // ⚠ 실패를 삼키지 않는다. 로그와 이력 양쪽에 남긴다.
           const message = error instanceof Error ? error.message : String(error);
@@ -368,6 +376,9 @@ export async function ingestMacro(
           added,
           total: item.points.length,
           latest: item.points[item.points.length - 1]?.date,
+          ...(item.dropped > 0
+            ? { droppedFuture: item.dropped, firstFutureDate: item.firstDropped }
+            : {}),
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

@@ -26,6 +26,7 @@ import { sector as fx } from "./sectors/fx";
 import { sector as commodity } from "./sectors/commodity";
 import { sector as consumer } from "./sectors/consumer";
 import { sector as production } from "./sectors/production";
+import { sector as supply } from "./sectors/supply";
 import { sector as housing } from "./sectors/housing";
 import { sector as semi } from "./sectors/semi";
 import { sector as leaders } from "./sectors/leaders";
@@ -40,6 +41,7 @@ export const MACRO_SECTORS: MacroSector[] = [
   commodity,
   consumer,
   production,
+  supply,
   housing,
   semi,
   leaders,
