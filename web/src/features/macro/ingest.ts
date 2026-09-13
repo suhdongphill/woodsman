@@ -19,6 +19,13 @@ import { autoIndicators, findIndicator, type MacroIndicator } from "@/lib/macro/
 import { nextMonthOf, resolveFrontContract } from "@/lib/macro/fedfutures";
 import { dropFuturePoints } from "@/lib/macro/observed";
 import {
+  NOMINAL_TEN_YEAR_TERMS,
+  mspdShares,
+  nominalTenYearAuctions,
+  type AuctionRow,
+  type MspdRow,
+} from "@/lib/macro/treasury";
+import {
   dedupeByDate,
   parseEcosJson,
   parseFredCsv,
@@ -235,6 +242,91 @@ async function fetchNaver(sourceId: string): Promise<SeriesPoint[]> {
   return parseNaverTotalInfo(await res.json(), key, today);
 }
 
+/** 미 재무부 Fiscal Data API. 무료·키 없음. */
+const FISCAL_BASE = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service";
+
+/** `fetchTreasury`가 아는 소스 ID. ⚠ 카탈로그의 TREASURY 지표는 이 중 하나여야 한다(테스트가 대조한다). */
+export const TREASURY_SOURCE_IDS = [
+  "mspd:bill_share",
+  "mspd:coupon_share",
+  "auction10y:bid_to_cover",
+  "auction10y:high_yield",
+] as const;
+
+/**
+ * Fiscal Data 한 데이터셋을 페이지 끝까지 받는다.
+ * ⚠ 필터 문법(`field:op:value`)은 URLSearchParams로 인코딩해도 받아 준다(2026-09-14 확인).
+ * ⚠ 페이지가 50을 넘으면 멈춘다 — 필터가 풀려 전 기간을 긁는 것을 조용히 넘기지 않는다.
+ *
+ * ## ⚠ Fiscal Data는 **간헐적으로** 멈춘다 (2026-09-14 측정)
+ * 같은 요청이 한 번은 **241초 뒤 504**, 몇 분 뒤에는 **2초 만에 200**이었다. MSPD도 한 번 504가 났다. 모양이 아니라 **간헐적 장애**다.
+ * 그래서 둘을 한다 — ① **서버에서 먼저 거른다**(입찰은 명목 10년물 만기 셋만: 2,010행·3쪽 → 389행·1쪽 / MSPD는 시장성·합계 행만:
+ * 4,659행 → 2,019행) — 요청 수가 줄면 걸릴 확률도 준다. ② **5xx·시간 초과는 3초 뒤 한 번만** 다시 받는다. 그래도 안 되면 던진다.
+ * ⚠ 서버 필터는 **줄이는 용도**다 — TIPS·재발행 판정의 권위는 여전히 테스트된 `lib/macro/treasury.ts`다.
+ * ⚠ URLSearchParams는 공백을 `+`로 인코딩한다. Fiscal Data가 `9-Year+11-Month`·`Total+Marketable`를 제대로 읽는 것을 확인했다.
+ */
+async function fetchFiscalAll<T>(path: string, params: Record<string, string>): Promise<T[]> {
+  const out: T[] = [];
+  for (let page = 1; ; page++) {
+    if (page > 50) throw new Error(`재무부 ${path} 페이지가 50을 넘었습니다 — 필터를 확인하세요`);
+    const qs = new URLSearchParams({ ...params, "page[size]": "1000", "page[number]": String(page) });
+    const url = `${FISCAL_BASE}/${path}?${qs}`;
+    let res: Response | undefined;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        res = await fetchWithTimeout(url);
+        // 4xx는 다시 보내도 같다 — 재시도는 5xx(서버 쪽 장애)만
+        if (res.ok || res.status < 500) break;
+        console.error(`[macro] 재무부 ${path} 응답 ${res.status} (${attempt}회)`);
+      } catch (error) {
+        console.error(`[macro] 재무부 ${path} 받기 실패 (${attempt}회)`, error);
+        if (attempt === 2) throw error;
+      }
+      if (attempt === 1) await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+    if (!res || !res.ok) throw new Error(`재무부 ${path} 응답 ${res?.status ?? "없음"}`);
+    const json = (await res.json()) as { data?: T[]; meta?: { "total-pages"?: number } };
+    if (!Array.isArray(json.data)) throw new Error(`재무부 ${path} 응답에 data가 없습니다`);
+    out.push(...json.data);
+    const pages = json.meta?.["total-pages"] ?? 1;
+    if (page >= pages || json.data.length === 0) break;
+  }
+  return out;
+}
+
+/**
+ * 재무부 계열. 해석은 **테스트된 순수 함수**(`lib/macro/treasury.ts`)가 한다 — 여기서는 받기만 한다.
+ * ⚠ 결과가 비면 성공으로 넘기지 않는다(조용한 실패 금지).
+ */
+async function fetchTreasury(sourceId: string, from: string): Promise<SeriesPoint[]> {
+  const [dataset, field] = sourceId.split(":");
+  if (dataset === "mspd") {
+    const rows = await fetchFiscalAll<MspdRow>("v1/debt/mspd/mspd_table_1", {
+      filter: `security_type_desc:in:(Marketable,Total Marketable),record_date:gte:${from}`,
+      fields: "record_date,security_type_desc,security_class_desc,total_mil_amt",
+      sort: "record_date",
+    });
+    const shares = mspdShares(rows);
+    const series = field === "bill_share" ? shares.billShare : field === "coupon_share" ? shares.couponShare : undefined;
+    if (!series) throw new Error(`재무부 MSPD 필드를 모릅니다: ${sourceId}`);
+    if (series.length === 0) throw new Error(`재무부 MSPD ${field}: 「Total Marketable」 행이 있는 달이 없습니다`);
+    return series;
+  }
+  if (dataset === "auction10y") {
+    const rows = await fetchFiscalAll<AuctionRow>("v1/accounting/od/auctions_query", {
+      filter: `security_type:eq:Note,security_term:in:(${NOMINAL_TEN_YEAR_TERMS.join(",")}),auction_date:gte:${from}`,
+      fields: "auction_date,security_type,security_term,original_security_term,inflation_index_security,floating_rate,bid_to_cover_ratio,high_yield",
+      sort: "auction_date",
+    });
+    const auctions = nominalTenYearAuctions(rows);
+    const series = field === "bid_to_cover" ? auctions.bidToCover : field === "high_yield" ? auctions.highYield : undefined;
+    if (!series) throw new Error(`재무부 입찰 필드를 모릅니다: ${sourceId}`);
+    if (series.length === 0) throw new Error(`재무부 명목 10년물 입찰 ${field}: 결과가 있는 입찰이 없습니다(제외 ${auctions.excluded} · 대기 ${auctions.pending})`);
+    return series;
+  }
+  throw new Error(`재무부 소스 ID를 모릅니다: ${sourceId}`);
+}
+
 async function fetchIndicator(
   indicator: MacroIndicator,
   hasHistory: boolean,
@@ -259,6 +351,9 @@ async function fetchIndicator(
       ecosKey,
       hasHistory ? daysAgo(REFRESH_DAYS) : HISTORY_START,
     );
+  }
+  if (indicator.source === "TREASURY") {
+    return fetchTreasury(indicator.sourceId, hasHistory ? daysAgo(REFRESH_DAYS) : HISTORY_START);
   }
   throw new Error(`알 수 없는 출처: ${indicator.source}`);
 }

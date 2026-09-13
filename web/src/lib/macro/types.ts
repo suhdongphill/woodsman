@@ -56,7 +56,11 @@ export type MacroGroup = {
  * ⚠ `ECOS`는 한국은행 오픈API다. **인증키(`ECOS_API_KEY`)가 필요**하고, 키가 없으면
  *   그 지표만 실패로 남는다(조용히 건너뛰지 않는다).
  */
-export type MacroSource = "FRED" | "YAHOO" | "ECOS" | "NAVER" | "MANUAL" | "DERIVED";
+/**
+ * ⚠ `TREASURY`(2026-09-14, R2b-2) — 미 재무부 Fiscal Data API(무료·키 없음). `sourceId`는 `데이터셋:필드` 꼴이고,
+ *   해석 규칙(TIPS 제외 · 재발행 포함 · "null"은 결측)은 `lib/macro/treasury.ts`에 있다. 알 수 없는 `sourceId`는 수집기가 **던진다**.
+ */
+export type MacroSource = "FRED" | "YAHOO" | "ECOS" | "NAVER" | "TREASURY" | "MANUAL" | "DERIVED";
 
 export type { MacroLayer, MacroIndicatorType } from "./layers";
 export type { ReleaseFreq } from "./freshness";

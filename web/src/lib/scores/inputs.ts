@@ -10,7 +10,7 @@
  * - ⚠ **대체 입력은 대체라고 적는다**(`substitute`) — 설계서 결정 ②(이름을 바꿔 대체).
  * - ⚠ 명세가 **같은 계열을 두 번** 세는 자리는 한 번만 채우고 나머지는 이유를 적는다(이중 계산 금지).
  * - `status: "planned"`는 **다음 조각에서 붙일 것**이다. 지금은 결측으로 센다 — 계획을 데이터로 치지 않는다.
- * - 이 파일은 **지금(2026-09-14, R2b-1 기준)** 의 사실이다. 계열을 붙이면 여기를 고치고, 커버리지 보고가 따라 바뀐다.
+ * - 이 파일은 **지금(2026-09-14, R2b-2 기준)** 의 사실이다. 계열을 붙이면 여기를 고치고, 커버리지 보고가 따라 바뀐다.
  */
 import { SCORE_DEFINITIONS, type ScoreKey } from "./config";
 import { COVERAGE_PUBLISH, COVERAGE_RENORMALIZE, publishState, type PublishState } from "./composite";
@@ -70,10 +70,10 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
 
   treasury_liquidity: {
     inverted_tga_change: { status: "available", indicators: ["tga"], note: "수요일 잔액(WDTGAL) — 주간 평균(WTREGEN)이 아니다" },
-    bill_coupon_mix: { status: "planned", slice: "R2b", reason: "재무부 MSPD 어댑터" },
-    net_issuance_pressure: { status: "planned", slice: "R2b", reason: "재무부 MSPD 어댑터" },
+    bill_coupon_mix: { status: "available", indicators: ["tsy_bill_share", "tsy_coupon_share"], note: "⚠ 방향 미정 — 재무부 쪽 순효과 부호가 정해지지 않았다(볼트 8/25)" },
+    net_issuance_pressure: { status: "planned", slice: "R3", reason: "시장성 국채 총액 변화 파생을 아직 만들지 않았다(MSPD 합계는 받는다)" },
     buyback_market_support: { status: "planned", slice: "R2b", reason: "재무부 바이백 결과(Fiscal Data)" },
-    auction_quality: { status: "planned", slice: "R2b", reason: "재무부 입찰 API" },
+    auction_quality: { status: "available", indicators: ["auction10y_btc"], note: "명목 10년물만(TIPS 제외)" },
     treasury_market_functioning: UNDEFINED_IN_SPEC("국채시장 기능(무엇으로 재나)"),
   },
 
@@ -98,7 +98,7 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
     treasury_market_depth: NO_FREE("국채 호가 깊이"),
     real_yield_condition: { status: "available", indicators: ["real10"] },
     term_premium_condition: { status: "available", indicators: ["term_premium"] },
-    auction_quality: { status: "planned", slice: "R2b", reason: "재무부 입찰 API" },
+    auction_quality: { status: "available", indicators: ["auction10y_btc"], note: "명목 10년물만(TIPS 제외)" },
     curve_functioning: { status: "available", indicators: ["t10y2y", "t30y2y"] },
   },
 
@@ -159,13 +159,13 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
   },
 
   capital_competition: {
-    treasury_net_issuance_pressure: { status: "planned", slice: "R2b", reason: "재무부 MSPD 어댑터" },
-    coupon_supply: { status: "planned", slice: "R2b", reason: "재무부 MSPD 어댑터" },
+    treasury_net_issuance_pressure: { status: "planned", slice: "R3", reason: "시장성 국채 총액 변화 파생을 아직 만들지 않았다(MSPD 합계는 받는다)" },
+    coupon_supply: { status: "available", indicators: ["tsy_coupon_share"] },
     corporate_bond_supply: { status: "planned", slice: "R2b", reason: "연준 Z.1 확인 필요" },
     ai_corporate_financing: NO_FREE("AI 기업 자금조달 집계"),
     real_yield: { status: "available", indicators: ["real10"] },
     term_premium: { status: "available", indicators: ["term_premium"] },
-    auction_stress: { status: "planned", slice: "R2b", reason: "재무부 입찰 API" },
+    auction_stress: { status: "available", indicators: ["auction10y_btc"], note: "명목 10년물 응찰률 — 꼬리(발표 직전 금리 대비)는 무료 자료가 없어 아직 못 잰다" },
   },
 
   capital_formation: {
