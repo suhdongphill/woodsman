@@ -10,7 +10,8 @@
  * - ⚠ **대체 입력은 대체라고 적는다**(`substitute`) — 설계서 결정 ②(이름을 바꿔 대체).
  * - ⚠ 명세가 **같은 계열을 두 번** 세는 자리는 한 번만 채우고 나머지는 이유를 적는다(이중 계산 금지).
  * - `status: "planned"`는 **다음 조각에서 붙일 것**이다. 지금은 결측으로 센다 — 계획을 데이터로 치지 않는다.
- * - 이 파일은 **지금(2026-09-14, R2b-2 기준)** 의 사실이다. 계열을 붙이면 여기를 고치고, 커버리지 보고가 따라 바뀐다.
+ * - 이 파일은 **지금(2026-09-14, 점수 엔진 기준)** 의 사실이다. 계열을 붙이면 여기를 고치고, 커버리지 보고가 따라 바뀐다.
+ * - ⚠ **실제로 어떤 숫자로 재나**는 `measures.ts`, 계산은 `engine.ts`다. 여기서 `available`이어도 역사가 5년이 안 되면 엔진이 결측으로 센다.
  */
 import { SCORE_DEFINITIONS, type ScoreKey } from "./config";
 import { COVERAGE_PUBLISH, COVERAGE_RENORMALIZE, publishState, type PublishState } from "./composite";
@@ -70,7 +71,10 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
 
   treasury_liquidity: {
     inverted_tga_change: { status: "available", indicators: ["tga"], note: "수요일 잔액(WDTGAL) — 주간 평균(WTREGEN)이 아니다" },
-    bill_coupon_mix: { status: "available", indicators: ["tsy_bill_share", "tsy_coupon_share"], note: "⚠ 방향 미정 — 재무부 쪽 순효과 부호가 정해지지 않았다(볼트 8/25)" },
+    bill_coupon_mix: {
+      status: "unavailable",
+      reason: "⚠ 방향 미정 — 표시만 하고 점수에 넣지 않는다(운영자 결정 2026-09-14 · 볼트 8/25 검증: 재무부 쪽 순효과 부호 미정)",
+    },
     net_issuance_pressure: { status: "planned", slice: "R3", reason: "시장성 국채 총액 변화 파생을 아직 만들지 않았다(MSPD 합계는 받는다)" },
     buyback_market_support: { status: "planned", slice: "R2b", reason: "재무부 바이백 결과(Fiscal Data)" },
     auction_quality: { status: "available", indicators: ["auction10y_btc"], note: "명목 10년물만(TIPS 제외)" },
@@ -86,8 +90,15 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
   },
 
   credit_liquidity: {
-    inverted_hy_oas: { status: "available", indicators: ["hy_spread"], note: "⚠ FRED ICE BofA — 2023-09 이후만(10년 창 부족)" },
-    inverted_ig_oas: { status: "available", indicators: ["ig_spread"], note: "⚠ 2023-09 이후만" },
+    inverted_hy_oas: {
+      status: "available",
+      indicators: ["baa_spread"],
+      substitute: "HY OAS(ICE BofA)는 FRED에 2023-09 이후만 있어 명세 §1 최소 창(5년)을 못 채운다 — Baa−10년 국채 금리차(1986~)로 대체",
+    },
+    inverted_ig_oas: {
+      status: "unavailable",
+      reason: "IG OAS는 FRED에 2023-09 이후만 있어 최소 창(5년) 미달 — 대체 후보 Baa−10Y는 HY 자리에 이미 썼다(한 점수 안에서 같은 계열을 두 번 세지 않는다)",
+    },
     corporate_issuance: { status: "planned", slice: "R2b", reason: "연준 Z.1 회사채 순발행 계열을 확인하지 않았다" },
     bank_credit_growth: { status: "available", indicators: ["bank_credit_yoy"] },
     credit_availability: { status: "available", indicators: ["sloos_ci"] },
@@ -98,7 +109,10 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
     treasury_market_depth: NO_FREE("국채 호가 깊이"),
     real_yield_condition: { status: "available", indicators: ["real10"] },
     term_premium_condition: { status: "available", indicators: ["term_premium"] },
-    auction_quality: { status: "available", indicators: ["auction10y_btc"], note: "명목 10년물만(TIPS 제외)" },
+    auction_quality: {
+      status: "unavailable",
+      reason: "⚠ 명세 중복 — 같은 입찰 응찰률을 §14 Treasury Liquidity에서 이미 센다(GLS 안에서 두 번 세지 않는다)",
+    },
     curve_functioning: { status: "available", indicators: ["t10y2y", "t30y2y"] },
   },
 

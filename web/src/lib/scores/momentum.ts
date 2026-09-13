@@ -10,6 +10,10 @@
  * 5D/20D/60D는 일간 계열의 말이다. 월간 CPI에 「5일 변화」는 없다. 그래서 **달력 길이**로 옮긴다:
  * 5D ≈ 1주 · 20D ≈ 1개월 · 60D ≈ 3개월. 계열 주기보다 짧은 창은 **계산하지 않고 결측으로 센다**
  * (월간 계열의 1주 변화를 지어내지 않는다) — 남은 창으로 재정규화하고, 무엇이 빠졌는지 돌려준다.
+ *
+ * ## ⚠ 계산량 — 선형이어야 워커에서 돈다 (2026-09-14)
+ * 처음 판은 점마다 앞의 점을 처음부터 다시 훑었다(제곱 시간). 1990년부터 일간 9,000점짜리 계열이면 창 하나에 수천만 번이다 —
+ * 수집 뒤 워커에서 점수 여러 개를 세 시점씩 계산하면 버티지 못한다. **두 포인터로 한 번만 훑는다**(결과는 같다 — 테스트가 같은 값을 확인한다).
  */
 import type { SeriesPoint } from "../macro/series";
 import { robustZ, zToScore, applyDirection } from "./normalize";
@@ -21,7 +25,7 @@ export const MOMENTUM_WEIGHTS = { d5: 0.2, d20: 0.35, d60: 0.3, acceleration: 0.
 /** 창의 달력 길이(일). 5D≈7일 · 20D≈30일 · 60D≈91일(영업일 → 달력). */
 const WINDOW_DAYS = { d5: 7, d20: 30, d60: 91 } as const;
 /** 계열 주기 한 칸의 대략 길이(일) — 이보다 짧은 창은 만들 수 없다. */
-const FREQ_DAYS: Record<ReleaseFreq, number> = { d: 1, w: 7, m: 30, q: 91 } as Record<ReleaseFreq, number>;
+const FREQ_DAYS: Record<ReleaseFreq, number> = { d: 1, w: 7, m: 30, q: 91 };
 
 type WindowKey = keyof typeof WINDOW_DAYS;
 
@@ -29,23 +33,18 @@ function dayNum(d: string): number {
   return Math.floor(Date.parse(`${d}T00:00:00Z`) / 86_400_000);
 }
 
-/** 기준일에서 `days` 전 이하의 가장 최근 값. 없으면 undefined. */
-function valueDaysBefore(sorted: SeriesPoint[], day: string, days: number): number | undefined {
-  const target = dayNum(day) - days;
-  let found: number | undefined;
-  for (const p of sorted) {
-    if (dayNum(p.date) <= target) found = p.value;
-    else break;
-  }
-  return found;
-}
-
-/** 각 관측일마다의 `days` 변화 시계열(과거 분포용). */
-function changeSeries(sorted: SeriesPoint[], days: number): SeriesPoint[] {
+/**
+ * 각 관측일마다의 `days` 변화 시계열(과거 분포용). **오름차순 입력 · 선형 시간.**
+ * 각 점에서 「`days`일 이전(그날 포함) 중 가장 늦은 점」과의 차이다. 그런 점이 없으면 그 날짜는 건너뛴다.
+ */
+export function changeSeries(sorted: SeriesPoint[], days: number): SeriesPoint[] {
   const out: SeriesPoint[] = [];
-  for (const p of sorted) {
-    const prev = valueDaysBefore(sorted, p.date, days);
-    if (prev !== undefined) out.push({ date: p.date, value: p.value - prev });
+  const nums = sorted.map((p) => dayNum(p.date));
+  let j = -1;
+  for (let i = 0; i < sorted.length; i++) {
+    const target = nums[i] - days;
+    while (j + 1 < sorted.length && nums[j + 1] <= target) j++;
+    if (j >= 0) out.push({ date: sorted[i].date, value: sorted[i].value - sorted[j].value });
   }
   return out;
 }
@@ -74,8 +73,7 @@ export function momentumScore(
   const last = sorted.at(-1);
   if (!last) return { score: undefined, used, skipped: [{ window: "all", reason: "NO_DATA" }] };
 
-  const scoreOfChange = (days: number): number | undefined => {
-    const series = changeSeries(sorted, days);
+  const scoreOfChange = (series: SeriesPoint[]): number | undefined => {
     const current = series.at(-1);
     if (!current || current.date !== last.date) return undefined;
     const rz = robustZ(current.value, series.map((s) => s.value));
@@ -87,7 +85,7 @@ export function momentumScore(
       skipped.push({ window: key, reason: `계열 주기(${freq})보다 짧은 창` });
       continue;
     }
-    const s = scoreOfChange(WINDOW_DAYS[key]);
+    const s = scoreOfChange(changeSeries(sorted, WINDOW_DAYS[key]));
     if (s === undefined) skipped.push({ window: key, reason: "변화 분포를 만들 수 없음" });
     else {
       parts.push({ weight: MOMENTUM_WEIGHTS[key], score: s });
@@ -97,15 +95,11 @@ export function momentumScore(
 
   // 가속도 = 지금의 20D(또는 가능한 가장 짧은) 변화 − 한 창 전의 같은 변화
   const accelDays = WINDOW_DAYS.d20 >= FREQ_DAYS[freq] ? WINDOW_DAYS.d20 : WINDOW_DAYS.d60;
-  const changes = changeSeries(sorted, accelDays);
-  const accel = changeSeries(changes, accelDays);
-  const cur = accel.at(-1);
-  if (cur && cur.date === last.date) {
-    const rz = robustZ(cur.value, accel.map((a) => a.value));
-    if (rz.ok) {
-      parts.push({ weight: MOMENTUM_WEIGHTS.acceleration, score: applyDirection(zToScore(rz.z), direction) });
-      used.push("acceleration");
-    } else skipped.push({ window: "acceleration", reason: rz.reason });
+  const accel = changeSeries(changeSeries(sorted, accelDays), accelDays);
+  const accelScore = scoreOfChange(accel);
+  if (accelScore !== undefined) {
+    parts.push({ weight: MOMENTUM_WEIGHTS.acceleration, score: accelScore });
+    used.push("acceleration");
   } else skipped.push({ window: "acceleration", reason: "가속도 분포를 만들 수 없음" });
 
   const w = parts.reduce((s, p) => s + p.weight, 0);

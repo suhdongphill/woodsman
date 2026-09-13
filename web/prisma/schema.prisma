@@ -575,6 +575,28 @@ model MacroIngest {
   @@index([startedAt])
 }
 
+/// 점수 계산 결과 (Capital Regime Engine · 점수 계산 명세 v1.0).
+///
+/// ⚠ 수집이 끝난 뒤 프로그램이 계산해 쌓는다. 식은 `src/lib/scores/config.ts`, 측정은 `measures.ts`가 원본이다.
+/// ⚠ `value`가 null이면 **발행하지 않은 점수**다(커버리지 60% 미만) — 0점이 아니다.
+model ScoreValue {
+  scoreKey     String
+  /// YYYY-MM-DD 평가일
+  asOf         String
+  modelVersion String
+  /// LIVE(그날 알려진 값으로 계산) | RECOMPUTED(나중에 지금의 값으로 과거 평가일을 계산)
+  basis        String
+  value        Float?
+  coverage     Float
+  /// OK | LOW_CONFIDENCE | DO_NOT_PUBLISH
+  state        String
+  /// 구성요소 · 기여도 · 결측 이유 JSON
+  detail       String
+  computedAt   DateTime @default(now())
+
+  @@id([scoreKey, asOf, modelVersion])
+}
+
 // ────────────── AI·반도체 버블 모니터 ──────────────
 
 /// 지표 하나의 판정. ⚠ 레이어·가중치·임계값 정의는 `src/lib/bubble/catalog.ts`가 원본이다.

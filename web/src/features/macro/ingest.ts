@@ -18,6 +18,7 @@ import { resolveApiEnv } from "@/features/ai/credentials";
 import { autoIndicators, findIndicator, type MacroIndicator } from "@/lib/macro/catalog";
 import { nextMonthOf, resolveFrontContract } from "@/lib/macro/fedfutures";
 import { dropFuturePoints } from "@/lib/macro/observed";
+import { computeAndSaveScores, type ScoreComputeSummary } from "@/features/scores/compute";
 import {
   NOMINAL_TEN_YEAR_TERMS,
   mspdShares,
@@ -391,6 +392,8 @@ export type IngestResult = {
   failCount: number;
   addedPoints: number;
   detail: IngestDetail[];
+  /** 수집 뒤 점수 계산 결과. ⚠ 실패하면 `error` — 수집 결과는 그대로 유효하다 */
+  scores: ScoreComputeSummary | { error: string };
 };
 
 /**
@@ -500,5 +503,18 @@ export async function ingestMacro(
   const failCount = detail.length - okCount;
   await finishIngest(runId, { okCount, failCount, addedPoints, detail });
 
-  return { runId, okCount, failCount, addedPoints, detail };
+  /**
+   * ⭐ **점수는 수집 뒤에 계산한다** — 관리자 「산출」 버튼이 따로 없다(`features/scores/compute.ts`).
+   * ⚠ 수집 기록을 먼저 닫는다. 점수 계산이 실패해도 받은 값은 이미 저장됐고, 그 사실이 이력에서 흐려지면 안 된다.
+   * ⚠ 실패는 삼키지 않는다 — 로그와 반환값 양쪽에 남긴다.
+   */
+  let scores: IngestResult["scores"];
+  try {
+    scores = await computeAndSaveScores(todayKst);
+  } catch (error) {
+    console.error("[scores] 수집 뒤 점수 계산 실패", error);
+    scores = { error: error instanceof Error ? error.message : String(error) };
+  }
+
+  return { runId, okCount, failCount, addedPoints, detail, scores };
 }
