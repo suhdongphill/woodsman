@@ -39,6 +39,7 @@ export const PUBLIC_STATIC_PATHS = [
   "/macro/bubble",
   "/macro/calendar",
   "/macro/compare",
+  "/macro/glossary",
   "/macro/rates",
   "/portfolio",
   "/privacy",

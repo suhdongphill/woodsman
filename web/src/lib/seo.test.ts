@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { breadcrumbJsonLd, datasetJsonLd, faqJsonLd, websiteJsonLd } from "./seo";
+import {
+  breadcrumbJsonLd,
+  datasetJsonLd,
+  definedTermSetJsonLd,
+  faqJsonLd,
+  websiteJsonLd,
+} from "./seo";
 
 describe("구조화 데이터", () => {
   it("빵부스러기는 순서를 1부터 매기고 절대 URL을 쓴다", () => {
@@ -47,6 +53,30 @@ describe("구조화 데이터", () => {
     const jsonLd = faqJsonLd([{ question: "금리가 뭔가요?", answer: "돈의 값입니다." }]);
     expect(jsonLd.mainEntity[0].name).toBe("금리가 뭔가요?");
     expect(jsonLd.mainEntity[0].acceptedAnswer.text).toBe("돈의 값입니다.");
+  });
+});
+
+describe("용어 사전(DefinedTermSet)", () => {
+  const jsonLd = definedTermSetJsonLd({
+    name: "거시 용어 사전",
+    description: "뜻과 1차 출처",
+    path: "/macro/glossary",
+    terms: [
+      { name: "단위노동비용", description: "하나 만드는 인건비", anchor: "unit-labor-cost", alternateName: ["ULC"] },
+      { name: "성장–조달 격차", description: "우리 정의", anchor: "growth-funding-spread", alternateName: [] },
+    ],
+  });
+
+  it("용어마다 **그 용어 자리**의 절대 주소를 준다 — 인용이 페이지 맨 위가 아니라 그 줄에 닿게", () => {
+    expect(jsonLd["@type"]).toBe("DefinedTermSet");
+    expect(jsonLd.url).toMatch(/^https?:\/\/.+\/macro\/glossary$/);
+    expect(jsonLd.hasDefinedTerm[0].url).toBe(`${jsonLd.url}#unit-labor-cost`);
+    expect(jsonLd.hasDefinedTerm[0].inDefinedTermSet).toBe(jsonLd.url);
+  });
+
+  it("별칭이 없으면 빈 배열을 만들지 않는다", () => {
+    expect(jsonLd.hasDefinedTerm[0].alternateName).toEqual(["ULC"]);
+    expect("alternateName" in jsonLd.hasDefinedTerm[1]).toBe(false);
   });
 });
 

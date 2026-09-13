@@ -148,7 +148,11 @@ export default async function MacroHubPage() {
             </ol>
             <p className="mt-3 text-[12px] leading-relaxed text-gray-500">
               나머지 묶음(환율·원자재·소비·생산·부동산·반도체)은 위 셋이 실제로 어디에 닿고
-              있는지를 보여줍니다. 용어는 각 지표 카드 안에서 풀어서 설명합니다.
+              있는지를 보여줍니다. 용어는 각 지표 카드 안에서 풀어서 설명하고, 자주 쓰는 말은{" "}
+              <Link href="/macro/glossary" className="text-gold-400 underline hover:text-gold-300">
+                용어 사전
+              </Link>
+              에 원 발표 기관 링크와 함께 모았습니다.
             </p>
           </Card>
         </section>

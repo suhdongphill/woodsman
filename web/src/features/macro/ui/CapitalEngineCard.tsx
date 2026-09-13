@@ -24,7 +24,9 @@ import {
   type SpreadPart,
 } from "@/lib/macro/capital";
 import { findClaim } from "@/lib/macro/claims";
-import { findTerm, sourceNote } from "@/lib/macro/glossary";
+import { GLOSSARY_PATH, findTerm, sourceNote } from "@/lib/macro/glossary";
+import { Emphasis } from "@/components/ui/Emphasis";
+import { Term } from "./Term";
 
 /** ⚠ 마이너스는 하이픈이 아니라 −(U+2212)다. 작은 글씨에서 하이픈은 옆 숫자에 붙는다. */
 function signed(n: number, digits = 2): string {
@@ -103,7 +105,10 @@ function SpreadBlock({
 
       {term && (
         <p className="mt-2 text-[10.5px] leading-relaxed text-ink-3">
-          <strong className="text-muted">{term.term}</strong> — {term.short} {sourceNote(term)}
+          <strong className="text-muted">
+            <Term term={term.term} />
+          </strong>{" "}
+          — <Emphasis text={term.short} /> {sourceNote(term)}
         </p>
       )}
     </div>
@@ -150,7 +155,7 @@ export function CapitalEngineCard({ capital }: { capital: CapitalSpreads }) {
 
       <p className="mt-3 text-[13px] leading-relaxed text-gray-400">
         물가를 잡는 길은 둘입니다. 금리를 올려 <strong className="text-ink">수요를 줄이는</strong> 길과,
-        생산성을 올려 <strong className="text-ink">공급을 늘리는</strong> 길입니다. 아래 두 숫자는 지금
+        <Term term="노동생산성">생산성</Term>을 올려 <strong className="text-ink">공급을 늘리는</strong> 길입니다. 아래 두 숫자는 지금
         어느 쪽 힘이 더 센지를 재려고 우리가 계산한 것입니다.
       </p>
 
@@ -161,7 +166,8 @@ export function CapitalEngineCard({ capital }: { capital: CapitalSpreads }) {
             question="빌려서 투자할 값이 남아 있는가 (민간 CAPEX)"
           >
             <p className="mt-1.5 rounded-lg bg-surface-2 px-2.5 py-1.5 font-mono text-[11px] text-muted">
-              추세 생산성 증가율 − 실질 10년 금리 = {prys.trend.toFixed(2)} −{" "}
+              추세 <Term term="노동생산성">생산성</Term> 증가율 −{" "}
+              <Term term="실질금리">실질 10년 금리</Term> = {prys.trend.toFixed(2)} −{" "}
               {prys.parts[1].value.toFixed(2)} = {signed(prys.byTrend)}%p
             </p>
             <TwoReadings prys={prys} />
@@ -171,7 +177,7 @@ export function CapitalEngineCard({ capital }: { capital: CapitalSpreads }) {
         {gf && (
           <SpreadBlock spread={gf} question="경제가 이자보다 빨리 자라는가 (부채 지속가능성)">
             <p className="mt-1.5 rounded-lg bg-surface-2 px-2.5 py-1.5 font-mono text-[11px] text-muted">
-              명목 GDP 증가율 − 10년 국채 금리 = {gf.parts[0].value.toFixed(2)} −{" "}
+              <Term term="명목 GDP" /> 증가율 − 10년 국채 금리 = {gf.parts[0].value.toFixed(2)} −{" "}
               {gf.parts[1].value.toFixed(2)} = {signed(gf.value)}%p
             </p>
           </SpreadBlock>
@@ -209,7 +215,11 @@ export function CapitalEngineCard({ capital }: { capital: CapitalSpreads }) {
         ※ <strong>두 격차는 우리가 계산해 붙인 이름이며 표준 지표가 아닙니다.</strong> 뺄셈 하나라서
         위의 투입값으로 직접 검산하실 수 있고, 각 투입값은 원 발표 기관(노동통계국·경제분석국·재무부)으로
         링크해 두었습니다. ⚠ 생산성은 분기 발표라 금리보다 기준일이 늦습니다 — 그래서 이 카드의 기준일은
-        <strong> 더 오래된 쪽</strong>으로 적습니다. 여기서 내는 것은 상태 표시까지입니다.{" "}
+        <strong> 더 오래된 쪽</strong>으로 적습니다. 여기서 내는 것은 상태 표시까지입니다. 밑줄 친 말을 누르면 뜻과 1차 출처를 모은{" "}
+        <Link href={GLOSSARY_PATH} className="underline hover:text-gold-400">
+          용어 사전
+        </Link>
+        으로 갑니다.{" "}
         <Link href="/disclaimer" className="underline hover:text-gold-400">
           투자 판단 책임 고지
         </Link>

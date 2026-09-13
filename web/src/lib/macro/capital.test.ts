@@ -8,7 +8,7 @@ import {
   computePrys,
 } from "./capital";
 import { CLAIMS, factsMissingSource, findClaim } from "./claims";
-import { GLOSSARY, findTerm, orderedGlossary, sourceNote } from "./glossary";
+import { GLOSSARY, checkNote, findTerm, glossaryHref, orderedGlossary, sourceNote } from "./glossary";
 
 /**
  * ⚠ **2026-09-13에 직접 받아 계산한 실측값이다.**
@@ -172,6 +172,30 @@ describe("용어 사전 — 독자가 확인할 수 있어야 한다", () => {
 
   it("한 줄 뜻은 한 줄이다", () => {
     for (const e of GLOSSARY) expect(e.short.length, e.term).toBeLessThan(120);
+  });
+
+  /**
+   * ⚠ 앵커는 **글이 링크하는 주소**다. 두 용어가 같은 앵커를 가지면 뒤엣것이 조용히 가려지고,
+   *    주소에 못 쓰는 문자가 섞이면 링크가 빗나간다.
+   */
+  it("⚠ 앵커는 겹치지 않고 주소에 쓸 수 있는 모양이다", () => {
+    const slugs = GLOSSARY.map((e) => e.slug);
+    expect(new Set(slugs).size).toBe(slugs.length);
+    for (const s of slugs) expect(s).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+    expect(glossaryHref(findTerm("PRYS")!)).toBe("/macro/glossary#prys");
+  });
+
+  /** ⚠ 자본 엔진 카드가 `<Term term="…">`으로 거는 말. 사전에서 빠지면 링크가 사라진다. */
+  it("⚠ 카드 본문이 링크하는 용어는 사전에 있다", () => {
+    for (const t of ["노동생산성", "실질금리", "명목 GDP", "생산성–실질금리 격차", "성장–조달 격차"]) {
+      expect(findTerm(t), t).toBeDefined();
+    }
+  });
+
+  it("⚠ 우리 정의에는 「링크를 확인했다」는 문구를 붙이지 않는다", () => {
+    expect(checkNote(findTerm("PRYS")!)).toBeUndefined();
+    expect(checkNote(findTerm("노동생산성")!)).toBe("링크 2026-09-13 본문 확인");
+    expect(checkNote(findTerm("EFFR")!)).toBe("링크 2026-09-13 응답 확인");
   });
 
   it("목록은 사전 순이다", () => {

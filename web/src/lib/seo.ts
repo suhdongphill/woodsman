@@ -57,6 +57,41 @@ export function datasetJsonLd(input: {
   };
 }
 
+/**
+ * 용어 사전 = DefinedTermSet (2026-09-14).
+ *
+ * 용어마다 **앵커 주소**를 준다(`/macro/glossary#prys`). AI 검색이 뜻을 인용할 때
+ * 페이지 맨 위가 아니라 **그 용어 자리**를 가리키게 하려는 것이다.
+ *
+ * ⚠ 뜻 문장은 화면에 있는 것 그대로다. 강조 표시(`**`)는 부르는 쪽이 걷어서 넘긴다(`stripEmphasis`).
+ * ⚠ 별칭이 없으면 `alternateName`을 아예 넣지 않는다 — 빈 배열을 만들지 않는다.
+ */
+export function definedTermSetJsonLd(input: {
+  name: string;
+  description: string;
+  path: string;
+  terms: { name: string; description: string; anchor: string; alternateName?: string[] }[];
+}) {
+  const setUrl = absoluteUrl(input.path);
+  return {
+    "@context": "https://schema.org",
+    "@type": "DefinedTermSet",
+    name: input.name,
+    description: input.description,
+    url: setUrl,
+    inLanguage: "ko-KR",
+    hasDefinedTerm: input.terms.map((t) => ({
+      "@type": "DefinedTerm",
+      name: t.name,
+      description: t.description,
+      url: `${setUrl}#${t.anchor}`,
+      termCode: t.anchor,
+      inDefinedTermSet: setUrl,
+      ...(t.alternateName?.length ? { alternateName: t.alternateName } : {}),
+    })),
+  };
+}
+
 /** 자주 묻는 형태의 설명 — 그룹 상세의 "이게 뭔가요"를 그대로 태운다. */
 export function faqJsonLd(items: { question: string; answer: string }[]) {
   return {

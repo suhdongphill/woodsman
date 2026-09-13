@@ -31,6 +31,11 @@ export type CheckMethod =
 export type GlossaryEntry = {
   /** 화면에 쓰는 말. ⚠ 본문에서 이 문자열로 찾아 링크를 건다 */
   term: string;
+  /**
+   * 사전 페이지의 앵커(`/macro/glossary#<slug>`). 영문 소문자·숫자·하이픈.
+   * ⚠ **한번 정하면 바꾸지 않는다.** 글이 이 주소로 링크한다 — 바꾸면 발행한 글의 링크가 조용히 빗나간다.
+   */
+  slug: string;
   /** 같은 것을 가리키는 다른 표기(영문·약어). 본문 매칭에 쓴다 */
   aka?: string[];
   /** 한 줄 뜻. ⚠ 두 줄이 되면 아무도 안 읽는다 */
@@ -56,6 +61,7 @@ export type GlossaryEntry = {
 export const GLOSSARY: GlossaryEntry[] = [
   {
     term: "노동생산성",
+    slug: "labor-productivity",
     aka: ["시간당 산출", "output per hour", "labor productivity"],
     short: "한 시간 일해서 얼마를 만들어 내는가. 미국 비농업 부문 기준입니다.",
     role: "공급 쪽 힘의 핵심 지표입니다. 이것이 오르면 같은 노동으로 더 많이 만들 수 있어, 수요를 줄이지 않고도 물가 압력이 낮아질 수 있습니다.",
@@ -66,6 +72,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     term: "단위노동비용",
+    slug: "unit-labor-cost",
     aka: ["ULC", "unit labor cost"],
     short: "물건 하나를 만드는 데 드는 인건비입니다. 임금이 올라도 생산성이 더 오르면 내려갑니다.",
     role: "임금 상승이 물가로 번지는지를 가르는 자리입니다. 임금이 올라도 이 값이 얌전하면, 그 임금은 생산성이 내고 있는 것입니다.",
@@ -76,6 +83,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     term: "실질금리",
+    slug: "real-yield",
     aka: ["실질 수익률", "TIPS 금리", "real yield"],
     short: "물가 상승분을 뺀 금리입니다. 물가연동국채(TIPS)가 시장에서 그 값을 매깁니다.",
     role: "투자가 넘어야 하는 문턱입니다. 사업이 벌어들이는 실질 수익이 이 값보다 낮으면, 빌려서 투자할 이유가 없어집니다.",
@@ -86,6 +94,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     term: "명목 GDP",
+    slug: "nominal-gdp",
     aka: ["nominal GDP", "경상 GDP"],
     short: "물가 상승분을 빼지 않은, 지금 돈 단위로 센 경제 규모입니다.",
     role: "부채를 갚는 힘은 실질이 아니라 **명목**으로 자랍니다. 세금도 이자도 명목으로 내기 때문에, 부채 지속가능성을 볼 때는 이쪽을 씁니다.",
@@ -96,6 +105,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     term: "실효 연방기금금리",
+    slug: "effr",
     aka: ["EFFR", "실효금리"],
     short: "은행끼리 하루짜리 돈을 빌릴 때 **실제로 거래된** 금리입니다.",
     role: "연준이 발표하는 것은 목표 「범위」이고, 이것은 그 안에서 시장이 만든 결과입니다. 선물이 거래하는 대상도 이 값입니다.",
@@ -106,6 +116,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     term: "기간 프리미엄",
+    slug: "term-premium",
     aka: ["term premium", "텀 프리미엄"],
     short: "돈을 오래 빌려주는 위험을 감수하는 값으로 요구하는 추가 금리입니다.",
     role: "장기금리가 오를 때 그것이 「경기가 좋아서」인지 「위험이 커져서」인지를 가릅니다. 여기가 벌어지면 자본 조달 비용이 이유 없이 비싸집니다.",
@@ -116,6 +127,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     term: "연준의 세 가지 책무",
+    slug: "fed-mandate",
     aka: ["dual mandate", "연준 책무", "제2A조"],
     short:
       "법은 **최대 고용 · 물가 안정 · 적정한 장기금리** 셋을 적었습니다. 흔히 「두 가지 책무」라 부르는 것은 관행적 축약어입니다.",
@@ -128,6 +140,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   {
     /** ⭐ 우리가 붙인 이름이다. 표준 지표가 아니다. */
     term: "생산성–실질금리 격차",
+    slug: "prys",
     aka: ["PRYS"],
     short:
       "생산성이 벌어 주는 실질 수익률에서 돈을 빌리는 실질 비용을 뺀 값입니다. 0보다 크면 빌려서 투자할 값이 있습니다.",
@@ -138,6 +151,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   {
     /** ⭐ 같은 이유로 우리 것이다. */
     term: "성장–조달 격차",
+    slug: "growth-funding-spread",
     aka: ["Growth-Funding Spread"],
     short: "명목 경제성장률에서 10년 국채 금리를 뺀 값입니다. 0보다 크면 경제가 이자보다 빨리 자랍니다.",
     role: "정부 부채가 굴러가는지를 봅니다. ⚠ 민간 투자 여력과는 **다른 질문**입니다 — 이 값이 플러스인데도 생산성–실질금리 격차는 마이너스일 수 있습니다.",
@@ -160,8 +174,24 @@ export function findTerm(term: string): GlossaryEntry | undefined {
 /** 화면에 쓸 출처 문구. ⚠ 우리 정의는 「우리 것」이라고 먼저 말한다. */
 export function sourceNote(entry: GlossaryEntry): string {
   if (entry.own) return `${entry.sourceLabel} — 우리가 계산해 붙인 이름입니다.`;
+  return `${entry.sourceLabel} · ${checkNote(entry)}`;
+}
+
+/**
+ * 링크를 언제·어떻게 확인했나. 사전 페이지는 출처 이름을 링크로 따로 내고 이 문구만 붙인다.
+ * ⚠ 우리 정의는 확인할 외부 링크가 없어 `undefined`다 — 「확인했다」를 지어내지 않는다.
+ */
+export function checkNote(entry: GlossaryEntry): string | undefined {
+  if (entry.own) return undefined;
   const how = entry.checkMethod === "content" ? "본문 확인" : "응답 확인";
-  return `${entry.sourceLabel} · 링크 ${entry.checked} ${how}`;
+  return `링크 ${entry.checked} ${how}`;
+}
+
+/** 사전 페이지에서 이 용어가 있는 자리. 본문 링크(`Term`)와 글이 쓴다. */
+export const GLOSSARY_PATH = "/macro/glossary";
+
+export function glossaryHref(entry: GlossaryEntry): string {
+  return `${GLOSSARY_PATH}#${entry.slug}`;
 }
 
 /** 사전 순. 화면의 용어 목록이 쓴다. */

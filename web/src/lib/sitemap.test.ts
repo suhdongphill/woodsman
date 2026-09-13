@@ -24,7 +24,7 @@ const find = (entries: ReturnType<typeof sitemapEntries>, path: string) =>
 describe("sitemapEntries", () => {
   it("⚠ 언제 바뀌었는지 모르는 페이지에는 lastmod를 넣지 않는다", () => {
     const entries = sitemapEntries(input);
-    for (const path of ["/portfolio", "/journal", "/about", "/privacy", "/disclaimer"]) {
+    for (const path of ["/portfolio", "/journal", "/about", "/privacy", "/disclaimer", "/macro/glossary"]) {
       expect(find(entries, path).lastModified, path).toBeUndefined();
     }
   });
