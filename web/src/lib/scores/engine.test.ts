@@ -122,10 +122,15 @@ describe("점수 엔진 — GLS", () => {
     expect(fed.score!).toBeCloseTo(sum, 1);
   });
 
-  it("⚠ 합성 계열 11년치로 GLS 전체를 계산해도 빠르다 — 워커에서 돌아야 한다", () => {
+  /**
+   * ⚠ 이 테스트가 잡으려는 것은 **제곱 시간으로의 회귀**다(수천만 번 → 수십 초). 벽시계 문턱을 빡빡하게 두면
+   *   전체 스위트의 병렬 부하에서 흔들린다 — 혼자 1.2초, 전체 스위트 중 3.5초로 3초 문턱을 넘었다(2026-09-14).
+   *   그래서 문턱은 회귀를 가르는 선(10초)에 둔다. 실제 워커 계산 시간은 수집 결과의 `scores.elapsedMs`로 잰다.
+   */
+  it("⚠ 합성 계열 11년치로 GLS 전체를 평가일 셋 계산해도 제곱 시간이 아니다 — 워커에서 돌아야 한다", () => {
     const started = Date.now();
     for (const asOf of [ASOF, "2026-08-13", "2026-06-11"]) computeScore("global_liquidity", glsSeries(), asOf);
-    expect(Date.now() - started).toBeLessThan(3000);
+    expect(Date.now() - started).toBeLessThan(10_000);
   });
 });
 

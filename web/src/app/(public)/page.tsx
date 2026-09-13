@@ -12,6 +12,12 @@ import { PrinciplesGrid } from "@/features/home/ui/PrinciplesGrid";
 import { LatestInsights } from "@/features/home/ui/LatestInsights";
 import { JournalAndReports } from "@/features/home/ui/JournalAndReports";
 import { UpcomingCalendar } from "@/features/home/ui/UpcomingCalendar";
+import { TideSection } from "@/features/home/ui/TideSection";
+import { loadStoredScores } from "@/features/scores/repository";
+import { loadReadings } from "@/features/bubble/repository";
+import { scoreBubble } from "@/lib/bubble/score";
+import { MODEL_VERSION } from "@/lib/scores/config";
+import { LIQUIDITY_PARTS, buildTide } from "@/lib/scores/tide";
 import { visibleHomeBlocks, type HomeBlock } from "@/lib/home-layout";
 import { macroLede } from "@/lib/home-lede";
 import { summarizePerformance } from "@/lib/performance";
@@ -57,6 +63,13 @@ export const metadata: Metadata = {
 /** ⚠ 정적 생성 금지 — 기록을 올려도 홈이 안 바뀐다. */
 export const dynamic = "force-dynamic";
 
+/** 홈 「조류」가 읽는 점수 — GLS · 그 하위 계기 · 경기 엔진 온도 */
+const TIDE_KEYS = ["global_liquidity", ...LIQUIDITY_PARTS.map((p) => p.key), "engine_heat"];
+
+function daysBefore(day: string, days: number): string {
+  return new Date(Date.parse(`${day}T00:00:00Z`) - days * 86_400_000).toISOString().slice(0, 10);
+}
+
 export default async function HomePage() {
   const [
     snapshots,
@@ -69,6 +82,8 @@ export default async function HomePage() {
     featuredReports,
     buckets,
     events,
+    storedScores,
+    bubbleReadings,
   ] = await Promise.all([
     loadSnapshots(),
     loadPublishedJournal(),
@@ -80,9 +95,17 @@ export default async function HomePage() {
     loadPublishedSummaries(4),
     loadBuckets(),
     loadEvents(200),
+    /**
+     * 조류: 13주 전 비교에 필요한 만큼만 읽는다.
+     * ⚠ 기준은 **오늘**이지만 비교는 **최신 평가일**에서 91일 전이다. 계산이 며칠 멈추면 110일로는 13주 전 행이 창 밖으로 빠졌다
+     *   (2026-09-14 로컬 눈 확인에서 잡힘). 91 + 여유 7 + 멈춤 허용 한 달 = 130일.
+     */
+    loadStoredScores(TIDE_KEYS, daysBefore(seoulDay(new Date().toISOString()), 130), MODEL_VERSION),
+    loadReadings(),
   ]);
 
   const perf = summarizePerformance(snapshots);
+  const tides = new Map(TIDE_KEYS.map((key) => [key, buildTide(storedScores, key, seoulDay(new Date().toISOString()))]));
 
   /**
    * 홈에 올릴 일정 — **2주 · 중요도 2 이상 · 최대 4건**.
@@ -123,6 +146,7 @@ export default async function HomePage() {
       />
     ),
     macroStrip: <MacroStrip indicators={macro.headlines} />,
+    tide: <TideSection tides={tides} bubble={scoreBubble(bubbleReadings)} />,
     latestInsights: (
       <LatestInsights
         posts={latestPosts.filter((p) => p.type !== "NOTICE")}

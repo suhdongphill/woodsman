@@ -29,6 +29,33 @@ export async function loadScoreRaw(seriesKeys: string[], since: string): Promise
   return out;
 }
 
+export type StoredScore = {
+  scoreKey: string;
+  asOf: string;
+  basis: string;
+  /** ⚠ null = 발행하지 않은 점수 */
+  value: number | null;
+  coverage: number;
+  state: string;
+  detail: string;
+  computedAt: string;
+};
+
+/**
+ * `since`(YYYY-MM-DD) 이후의 저장된 점수. 평가일 오름차순.
+ * ⚠ 모델판을 섞지 않는다 — 식이 바뀐 점수끼리 방향을 재면 식의 변화가 조류로 보인다.
+ */
+export async function loadStoredScores(scoreKeys: string[], since: string, modelVersion: string): Promise<StoredScore[]> {
+  if (scoreKeys.length === 0) return [];
+  const placeholders = scoreKeys.map(() => "?").join(", ");
+  return queryAll<StoredScore>(
+    `SELECT scoreKey, asOf, basis, value, coverage, state, detail, computedAt FROM ScoreValue
+      WHERE scoreKey IN (${placeholders}) AND asOf >= ? AND modelVersion = ?
+      ORDER BY asOf ASC`,
+    [...scoreKeys, since, modelVersion],
+  );
+}
+
 /**
  * 계산 결과를 쌓는다(같은 점수·평가일·모델판이면 갱신).
  * ⚠ **LIVE 행은 RECOMPUTED가 덮지 않는다** — 그날 알려진 값으로 낸 점수가, 나중의 수정치로 조용히 바뀌면 안 된다.
