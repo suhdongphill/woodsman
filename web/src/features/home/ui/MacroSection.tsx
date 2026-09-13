@@ -17,7 +17,7 @@ export function MacroSection({ macro }: { macro: MacroOverview }) {
     <section className="mx-auto max-w-6xl px-4 sm:px-6 pb-14">
       <SectionHeader
         title="지금 경제는 어떤 상태인가"
-        subtitle="침체 신호 다섯 가지를 종합하고, 지표마다 읽는 법을 붙였습니다."
+        subtitle={`침체 신호 다섯 가지를 종합하고, ${macro.groups.length}개 묶음 ${macro.indicatorCount}개 지표마다 읽는 법을 붙였습니다.`}
         action={
           <Link
             href="/macro"

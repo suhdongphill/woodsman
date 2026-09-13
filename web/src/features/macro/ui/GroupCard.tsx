@@ -14,7 +14,17 @@ import type { MacroGroup } from "@/lib/macro/groups";
 import type { IndicatorView } from "../service";
 import { IndicatorRow } from "./IndicatorCard";
 
-export function GroupCard({ group, items }: { group: MacroGroup; items: IndicatorView[] }) {
+export function GroupCard({
+  group,
+  items,
+  total,
+}: {
+  group: MacroGroup;
+  /** 카드에 싣는 대표 지표(최대 3개) */
+  items: IndicatorView[];
+  /** ⚠ 묶음의 지표 **전체** 수. `items.length`로 대신하면 모든 카드가 「3개」가 된다 */
+  total: number;
+}) {
   return (
     <Link
       href={`/macro/${group.key}`}
@@ -30,6 +40,9 @@ export function GroupCard({ group, items }: { group: MacroGroup; items: Indicato
             {group.name}
           </h3>
           <p className="mt-1 text-[12.5px] text-muted">{group.question}</p>
+          <p className="mt-0.5 text-[11px] text-gray-600">
+            지표 {total}개{total > items.length && ` · 대표 ${items.length}개만 표시`}
+          </p>
         </div>
         <ChevronRightIcon
           size={16}

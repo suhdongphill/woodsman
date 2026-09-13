@@ -233,6 +233,16 @@ describe("지표 카탈로그 무결성", () => {
     expect(new Set(groups).size).toBe(groups.length);
   });
 
+  /**
+   * ⚠ 2026-09-14. 화면에 「N개 묶음 · 지표 M개」를 적기로 하면서, 처음에 **카드에 싣는 대표 3개**를
+   *    세어 33개(11×3)라고 적을 뻔했다(실제 72개). 묶음별 전체 수의 합이 카탈로그 전체와 같아야
+   *    「지표 M개」가 참이다 — 어느 묶음에도 속하지 않는 지표가 생기면 여기서 깨진다.
+   */
+  it("⚠ 묶음별 지표 수의 합은 카탈로그 전체 수와 같다", () => {
+    const sum = MACRO_GROUPS.reduce((n, g) => n + indicatorsByGroup(g.key).length, 0);
+    expect(sum).toBe(MACRO_INDICATORS.length);
+  });
+
   it("그룹마다 지표가 하나 이상 있다 — 빈 그룹 카드를 만들지 않는다", () => {
     for (const g of MACRO_GROUPS) {
       expect(indicatorsByGroup(g.key).length, `${g.key}가 비었다`).toBeGreaterThan(0);

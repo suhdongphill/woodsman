@@ -28,7 +28,8 @@ export const metadata: Metadata = {
     type: "website",
     title: "거시 지표 — 지금 경제는 어떤 상태인가",
     description:
-      "침체 신호 5가지와 9개 묶음 40여 지표를, 초보자도 읽을 수 있게 설명과 함께 공개합니다.",
+      // ⚠ 정적 메타라 개수를 셀 수 없다. 손으로 적은 「9개 묶음 40여 지표」가 11개 묶음 72개가 된 뒤에도 남아 있었다 — 숫자를 적지 않는다.
+      "침체 신호 5가지와 묶음별 거시 지표를, 초보자도 읽을 수 있게 설명과 함께 공개합니다.",
     url: "/macro",
   },
 };
@@ -73,7 +74,7 @@ export default async function MacroHubPage() {
       <PageHeader
         eyebrow="MACRO DASHBOARD"
         title="지금 경제는 어떤 상태인가"
-        description="숫자를 늘어놓지 않고, 무엇부터 봐야 하는지부터 알려드립니다. 침체 신호를 먼저 종합하고, 아홉 개 묶음으로 나눠 지표마다 읽는 법을 붙였습니다."
+        description={`숫자를 늘어놓지 않고, 무엇부터 봐야 하는지부터 알려드립니다. 침체 신호를 먼저 종합하고, ${overview.groups.length}개 묶음 ${overview.indicatorCount}개 지표로 나눠 지표마다 읽는 법을 붙였습니다.`}
       />
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-10 sm:px-6">
@@ -157,11 +158,11 @@ export default async function MacroHubPage() {
           </Card>
         </section>
 
-        {/* ③ 아홉 개 묶음 */}
+        {/* ③ 묶음 목록 — ⚠ 개수는 세어서 적는다(「아홉 개」가 11개가 된 뒤에도 남아 있었다) */}
         <section aria-labelledby="groups-heading">
           <SectionHeader
             title={<span id="groups-heading">무엇이 궁금하세요?</span>}
-            subtitle="묶음을 누르면 지표별 값·흐름·읽는 법이 나옵니다."
+            subtitle={`${overview.groups.length}개 묶음 · 지표 ${overview.indicatorCount}개로 봅니다. 묶음을 누르면 지표별 값·흐름·읽는 법이 나옵니다.`}
           />
 
           {overview.empty && (
@@ -174,8 +175,8 @@ export default async function MacroHubPage() {
           )}
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {overview.groups.map(({ group, items }) => (
-              <GroupCard key={group.key} group={group} items={items} />
+            {overview.groups.map(({ group, items, total }) => (
+              <GroupCard key={group.key} group={group} items={items} total={total} />
             ))}
           </div>
         </section>

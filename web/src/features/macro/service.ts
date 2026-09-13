@@ -138,7 +138,17 @@ export type MacroOverview = {
   signals: IndicatorView[];
   headlines: IndicatorView[];
   /** 그룹별 미리보기(대표 지표 3개까지) */
-  groups: { group: MacroGroup; items: IndicatorView[] }[];
+  /**
+   * `items`는 카드에 싣는 **대표 3개**이고, `total`은 그 묶음의 **지표 전체 수**다.
+   * ⚠ 둘을 섞지 않는다 — 처음에 `items.length`로 셌다가 모든 카드가 「지표 3개」,
+   *   전체가 33개(11×3)로 나왔다. 실제는 72개다(2026-09-14, 배포 전 로컬 확인에서 잡았다).
+   */
+  groups: { group: MacroGroup; items: IndicatorView[]; total: number }[];
+  /**
+   * 카탈로그의 지표 전체 수. ⚠ **화면이 세어서 적는다** — 「아홉 개 묶음」이라고 손으로
+   * 적어 둔 문구가 묶음이 11개가 된 뒤에도 남아 있었다(2026-09-14).
+   */
+  indicatorCount: number;
   /** 전체에서 가장 최근 기준일 — "언제 기준 화면인가" */
   asOf?: string;
   /** 값이 하나도 없으면 true — 화면이 "아직 안 가져왔다"고 말한다 */
@@ -211,6 +221,7 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
     items: indicatorsByGroup(group.key)
       .map((i) => views.get(i.key)!)
       .slice(0, 3),
+    total: indicatorsByGroup(group.key).length,
   }));
 
   const dates = [...views.values()].map((v) => v.asOf).filter((d): d is string => !!d);
@@ -270,6 +281,7 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
     signals,
     headlines,
     groups,
+    indicatorCount: MACRO_INDICATORS.length,
     asOf,
     empty: dates.length === 0,
     capital,

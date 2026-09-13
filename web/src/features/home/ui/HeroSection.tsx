@@ -32,7 +32,6 @@ export function HeroSection({
   perf,
   rebalances,
   journalCount,
-  indicatorCount,
 }: {
   heroTitle: string;
   heroSubtitle: string;
@@ -41,16 +40,17 @@ export function HeroSection({
   perf: PerformanceSummary | null;
   rebalances: Rebalance[];
   journalCount: number;
-  /** 값이 실제로 쌓인 거시 지표 수 */
-  indicatorCount: number;
 }) {
   /**
-   * ⚠ **기록 셋이 모두 0이면 다른 것을 보여 준다**(2026-08-30 독자 관점 점검).
+   * ⚠ **기록 셋이 모두 0이면 숫자 줄을 그리지 않는다**(2026-09-14 사용자 결정).
    *
    * 처음 온 사람에게 「기록 개월 0 · 투자일지 0건 · 리밸런싱 0회」는
-   * **"아무것도 없는 사이트"** 로 읽힌다. 0을 감추자는 게 아니라,
-   * **실제로 있는 것**(추적 중인 거시 지표)을 대신 말하자는 것이다 —
-   * 계좌 기록이 시작되면 원래 셋으로 돌아온다.
+   * **"아무것도 없는 사이트"** 로 읽힌다. 8/30에는 그 자리를 「추적 중인 지표 72개 · 계좌 기록
+   * 준비 중 · 공개 방식 모의 투자」로 채웠는데, 첫 화면에서 숫자 하나로 떨어진 「72개」는
+   * 무엇을 추적하는지 말해 주지 못했다. 지표 수는 **묶음과 함께** 말할 때 뜻이 생긴다 —
+   * 그래서 거시 지표 묶음 자리(`/macro`·홈 `MacroSection`)로 옮겼다.
+   * ⚠ 「모의 투자」 표시는 계좌 숫자가 나오는 자리(`AccountStrip`)가 계속 맡는다.
+   * 계좌 기록이 시작되면 기록 셋이 다시 뜬다.
    */
   const hasRecord = (perf?.months ?? 0) > 0 || journalCount > 0 || rebalances.length > 0;
   const stats = hasRecord
@@ -59,11 +59,7 @@ export function HeroSection({
         { label: "투자일지", value: `${journalCount}건` },
         { label: "리밸런싱", value: `${rebalances.length}회` },
       ]
-    : [
-        { label: "추적 중인 지표", value: `${indicatorCount}개` },
-        { label: "계좌 기록", value: "준비 중" },
-        { label: "공개 방식", value: "모의 투자" },
-      ];
+    : [];
   return (
     <section className="relative overflow-hidden border-b border-border">
       <div
@@ -102,14 +98,16 @@ export function HeroSection({
               <ExternalIcon size={14} />
             </LinkButton>
           </div>
-          <dl className="mt-9 grid grid-cols-3 gap-4 max-w-md">
-            {stats.map((s) => (
-              <div key={s.label}>
-                <dt className="text-[11px] text-gray-500">{s.label}</dt>
-                <dd className="text-xl font-bold text-ink tabular-nums mt-0.5">{s.value}</dd>
-              </div>
-            ))}
-          </dl>
+          {stats.length > 0 && (
+            <dl className="mt-9 grid grid-cols-3 gap-4 max-w-md">
+              {stats.map((s) => (
+                <div key={s.label}>
+                  <dt className="text-[11px] text-gray-500">{s.label}</dt>
+                  <dd className="text-xl font-bold text-ink tabular-nums mt-0.5">{s.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
       </div>
     </section>
