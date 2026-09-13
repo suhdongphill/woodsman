@@ -1,5 +1,8 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { BubbleScore } from "@/lib/bubble/score";
+import type { LiquidityCardView } from "@/lib/scores/summary";
+import { LiquidityDialog, type LiquidityAnalysis } from "./LiquidityDialog";
 import type { FedFuturesResult } from "@/lib/macro/fedfutures";
 import { formatProbability, type FedHikeResult } from "@/lib/macro/fedhike";
 import {
@@ -58,12 +61,15 @@ function ScoreCard({
   guide,
   parts,
   href,
+  extra,
 }: {
   reading: TideReading;
   guide: TideGuide;
   /** 판정 보류일 때 보여 줄 하위 계기 */
   parts?: { label: string; reading: TideReading }[];
   href: string;
+  /** 카드 아래 한 줄 요약 · 해석 팝업(유동성 카드만) */
+  extra?: ReactNode;
 }) {
   const latest = reading.latest;
   const published = latest && latest.value !== null && latest.state !== "DO_NOT_PUBLISH";
@@ -121,6 +127,7 @@ function ScoreCard({
         <p className="mt-1 text-[10.5px] text-ink-3">과거 점수는 지금의 (수정된) 자료로 다시 계산한 값입니다.</p>
       )}
 
+      {extra}
       <Guide how={guide.how} judge={guide.judge} />
       <Link href={href} className="mt-3 text-[12px] text-gold-500 hover:text-gold-400">
         근거 자세히 보기 →
@@ -226,10 +233,16 @@ export function TideSection({
   tides,
   bubble,
   rates,
+  liquidity,
+  analysis,
 }: {
   tides: Map<string, TideReading>;
   bubble: BubbleScore;
   rates: RateDirection;
+  /** 최신 GLS 저장 행에서 만든 한 줄 요약 · 계기 표(없으면 한 줄·팝업을 빼고 지어내지 않는다) */
+  liquidity?: LiquidityCardView;
+  /** 가장 최근 「그날의 분석」 */
+  analysis?: LiquidityAnalysis | null;
 }) {
   const empty = (key: string): TideReading => tides.get(key) ?? { scoreKey: key, dir4: "unknown", dir13: "unknown", pastRecomputed: false, stale: false };
   return (
@@ -248,6 +261,15 @@ export function TideSection({
           guide={TIDE_GUIDES.global_liquidity!}
           parts={LIQUIDITY_PARTS.map((p) => ({ label: p.label, reading: empty(p.key) }))}
           href="/macro/liquidity"
+          extra={
+            liquidity ? (
+              <div className="mt-3 border-t border-border/60 pt-2">
+                {/* ⭐ 운영자 요청: 유동성 카드 하단 한 줄 요약 — 프로그램이 저장된 구성으로 쓴다(LLM 없음) */}
+                <p className="text-[12px] leading-relaxed text-ink">{liquidity.oneLine}</p>
+                <LiquidityDialog view={liquidity} analysis={analysis} />
+              </div>
+            ) : undefined
+          }
         />
         {/* ⭐ 원칙 ⑥ — 대표 지표(금리인상 확률)를 앞줄로. 자리는 홈 섹션 계획표 §2-1 */}
         <RateCard rates={rates} />

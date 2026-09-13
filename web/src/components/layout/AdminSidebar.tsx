@@ -35,6 +35,8 @@ const MENU = [
   { href: "/admin/bubble", label: "버블 모니터", icon: BotIcon },
   // 홈 「파도」 — 연준·CPI는 자동, 유가·지정학은 여기서 올린다(2026-09-14).
   { href: "/admin/news", label: "파도 기사", icon: RssIcon },
+  // 홈 유동성 카드 해석 팝업의 2부 — 점수는 사이트가, 사실·해석은 운영자가(2026-09-14).
+  { href: "/admin/analysis", label: "그날의 분석", icon: FileTextIcon },
   { href: "/admin/stocks", label: "종목 보고서", icon: TrendingUpIcon },
   { href: "/admin/posts", label: "콘텐츠", icon: FileTextIcon },
   { href: "/admin/comments", label: "댓글 · 정책", icon: MessageIcon },

@@ -15,6 +15,8 @@ import { UpcomingCalendar } from "@/features/home/ui/UpcomingCalendar";
 import { TideSection } from "@/features/home/ui/TideSection";
 import { WavesSection } from "@/features/home/ui/WavesSection";
 import { loadLatestNews } from "@/features/news/repository";
+import { loadLatestAnalysis } from "@/features/analysis/repository";
+import { liquidityCardView } from "@/lib/scores/summary";
 import { loadStoredScores } from "@/features/scores/repository";
 import { loadReadings } from "@/features/bubble/repository";
 import { scoreBubble } from "@/lib/bubble/score";
@@ -87,6 +89,7 @@ export default async function HomePage() {
     storedScores,
     bubbleReadings,
     latestNews,
+    latestAnalysis,
   ] = await Promise.all([
     loadSnapshots(),
     loadPublishedJournal(),
@@ -107,6 +110,8 @@ export default async function HomePage() {
     loadReadings(),
     // 파도 — 숨기지 않은 최신 기사 6건
     loadLatestNews(6),
+    // 유동성 카드 해석 팝업의 2부 — 가장 최근 「그날의 분석」
+    loadLatestAnalysis(),
   ]);
 
   const perf = summarizePerformance(snapshots);
@@ -163,6 +168,12 @@ export default async function HomePage() {
           hike: macro.fedHike,
           hikeAsOf: macro.fedHikeAsOf,
         }}
+        // ⚠ 저장 행 → 한 줄 요약 · 계기 표는 lib/scores/summary.ts가 만든다(라우트는 조립만)
+        liquidity={liquidityCardView(
+          storedScores.filter((r) => r.scoreKey === "global_liquidity").at(-1),
+          tides.get("global_liquidity")?.past4?.value,
+        )}
+        analysis={latestAnalysis}
       />
     ),
     latestInsights: (

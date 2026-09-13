@@ -619,6 +619,23 @@ model MacroNews {
   @@index([hidden, publishedAt])
 }
 
+/// 그날의 분석 — 유동성 카드 해석 팝업의 2부(통합 계획 S4).
+///
+/// ⚠ 운영자 결정(2026-09-14): 점수는 **우리 계산**으로 낸다. 붙여넣은 외부 보고서에서는 출처 있는 사실과 해석만 싣고,
+///    산식 없는 점수 · Confidence %는 뺀다(저장 화면이 `lib/analysis/guard.ts`로 경고 · 자동으로 지우지 않음).
+/// ⚠ 본문 저장 경로는 글과 같다: body → markdown → sanitize → bodyHtml. bodyHtml에 직접 쓰지 않는다.
+model DailyAnalysis {
+  /// YYYY-MM-DD — 날짜 하나에 분석 하나
+  date        String   @id
+  /// 한 줄 결론 — 관리자가 따로 적는다(본문에서 자동으로 뽑지 않는다)
+  oneLine     String
+  body        String
+  bodyHtml    String
+  sourceLabel String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+}
+
 // ────────────── AI·반도체 버블 모니터 ──────────────
 
 /// 지표 하나의 판정. ⚠ 레이어·가중치·임계값 정의는 `src/lib/bubble/catalog.ts`가 원본이다.
