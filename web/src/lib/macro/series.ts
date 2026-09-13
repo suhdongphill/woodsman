@@ -15,6 +15,31 @@ export type SeriesPoint = {
   value: number;
 };
 
+/** 전년비에서 「1년 전」 짝으로 인정하는 날짜 차이(일). 주간 계열의 요일 밀림(1년에 1~2일)을 흡수한다. */
+export const YOY_TOLERANCE_DAYS = 3;
+
+function dayNumber(date: string): number {
+  return Math.floor(Date.parse(`${date}T00:00:00Z`) / 86_400_000);
+}
+
+/** 오름차순 `days`에서 `target`에 가장 가까운(±`tol`일 안) 위치. 없으면 −1. 이진 탐색. */
+function nearestWithin(days: number[], target: number, tol: number): number {
+  let lo = 0;
+  let hi = days.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (days[mid] < target) lo = mid + 1;
+    else hi = mid - 1;
+  }
+  let best = -1;
+  for (const i of [lo - 1, lo]) {
+    if (i < 0 || i >= days.length) continue;
+    const d = Math.abs(days[i] - target);
+    if (d <= tol && (best < 0 || d < Math.abs(days[best] - target))) best = i;
+  }
+  return best;
+}
+
 /** 1년 전 같은 날짜 문자열. 월간 시리즈(매월 1일)에서 정확히 맞아떨어진다. */
 function yearBefore(date: string): string {
   const year = Number(date.slice(0, 4));
@@ -36,9 +61,20 @@ export function applyTransform(points: SeriesPoint[], tf: MacroTransform): Serie
 
   if (tf === "yoy") {
     const byDate = new Map(points.map((p) => [p.date, p.value]));
+    const days = points.map((p) => dayNumber(p.date));
     const out: SeriesPoint[] = [];
     for (const p of points) {
-      const before = byDate.get(yearBefore(p.date));
+      let before = byDate.get(yearBefore(p.date));
+      /**
+       * ⚠ 2026-09-14 버그: **주간 계열(수요일 기준)은 1년 전 같은 날짜가 수요일이 아니라** 짝이 없었다 — 은행 신용·예금 전년비가
+       *   통째로 비어, 신용 유동성 점수가 결측(→ GLS 판정 보류)이 됐다. 정확히 같은 날짜가 없으면 **1년 전 ±3일 안의 가장 가까운 점**을 쓴다.
+       *   ⚠ 3일을 넘게 벌어진 점과는 비교하지 않는다 — 한 주 전 값을 1년 전이라 부르지 않는다. 월간(1일)은 여전히 정확히 맞는다.
+       */
+      if (before === undefined) {
+        const target = dayNumber(yearBefore(p.date));
+        const near = nearestWithin(days, target, YOY_TOLERANCE_DAYS);
+        if (near >= 0) before = points[near].value;
+      }
       if (before === undefined || before === 0) continue;
       out.push({ date: p.date, value: ((p.value - before) / Math.abs(before)) * 100 });
     }
