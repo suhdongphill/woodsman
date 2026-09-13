@@ -83,10 +83,17 @@ export const SCORE_INPUTS: Partial<Record<ScoreKey, Record<string, ComponentSour
 
   funding: {
     inverted_sofr_iorb: { status: "available", indicators: ["sofr_iorb"] },
-    repo_stability: UNDEFINED_IN_SPEC("레포 안정성(SOFR 분산인가, 거래량인가)"),
+    repo_stability: {
+      status: "available",
+      indicators: ["sofr_dispersion"],
+      note: "⚠ 명세에 산식이 없다 — Woodsman v0 정의: SOFR 99번째 − 1번째 백분위(같은 날 거래 금리의 폭, 2026-09-14)",
+    },
     cross_currency_basis: NO_FREE("통화 스왑 베이시스"),
-    srf_utilization_condition: { status: "planned", slice: "R2b", reason: "상설 레포(SRF) 이용 계열을 확인하지 않았다" },
-    funding_volatility: { status: "planned", slice: "R3", reason: "SOFR에서 계산할 수 있으나 파생을 아직 만들지 않았다" },
+    srf_utilization_condition: {
+      status: "unavailable",
+      reason: "SRF 이용량(FRED RPONTSYD)은 거의 매일 0이라 10년 창의 흩어짐(MAD)이 0 — 정규화할 수 없다(명세 §1). 0을 50점으로 메우지 않는다",
+    },
+    funding_volatility: { status: "available", indicators: ["sofr_rvol"], note: "SOFR 일간 변화 20일 실현변동성(bp) · ⚠ 정책금리 변경 직후 20일은 기계적으로 크다" },
   },
 
   credit_liquidity: {

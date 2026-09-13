@@ -64,6 +64,9 @@ export const SCORE_MEASURES: Partial<Record<ScoreKey, Record<string, IndicatorMe
 
   funding: {
     inverted_sofr_iorb: [{ indicator: "sofr_iorb", measure: "level", direction: "HIGH_IS_NEGATIVE", kind: "stress" }],
+    // ⚠ Woodsman v0(2026-09-14): 거래 금리의 폭이 넓을수록 자금시장이 한 가격으로 돌지 못한다.
+    repo_stability: [{ indicator: "sofr_dispersion", measure: "level", direction: "HIGH_IS_NEGATIVE", kind: "stress" }],
+    funding_volatility: [{ indicator: "sofr_rvol", measure: "level", direction: "HIGH_IS_NEGATIVE", kind: "stress" }],
   },
 
   credit_liquidity: {

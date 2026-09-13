@@ -278,6 +278,93 @@ export const sector: MacroSector = {
       order: 10,
     },
     {
+      // ⚠ 2026-09-14 통합 계획 S2 — 명세 §15 「레포 안정성」의 입력(명세에 정의가 없어 Woodsman v0: SOFR 분포의 폭).
+      key: "sofr99",
+      name: "SOFR 99번째 백분위",
+      group: "liquidity",
+      source: "FRED",
+      sourceId: "SOFR99",
+      transform: "level",
+      layer: "L2",
+      type: "level",
+      freq: "d",
+      unit: "%",
+      decimals: 2,
+      url: FRED("SOFR99"),
+      sourceLabel: "FRED · SOFR99 (원 발표: 뉴욕 연준)",
+      what: "하루 동안 거래된 담보부 익일물 금리 가운데 **가장 비싸게 빌린 1%** 쪽의 금리입니다.",
+      why: "평균(SOFR)이 조용해도, 급하게 돈을 구한 누군가는 훨씬 비싸게 빌렸을 수 있습니다. 그 **꼬리**를 봅니다.",
+      read: "혼자 보기보다 아래 「SOFR 분포 폭」으로 보세요. ⚠ 분기말·월말에는 꼬리가 튀는 게 흔합니다.",
+      order: 15,
+    },
+    {
+      key: "sofr1",
+      name: "SOFR 1번째 백분위",
+      group: "liquidity",
+      source: "FRED",
+      sourceId: "SOFR1",
+      transform: "level",
+      layer: "L2",
+      type: "level",
+      freq: "d",
+      unit: "%",
+      decimals: 2,
+      url: FRED("SOFR1"),
+      sourceLabel: "FRED · SOFR1 (원 발표: 뉴욕 연준)",
+      what: "하루 동안 거래된 담보부 익일물 금리 가운데 **가장 싸게 빌린 1%** 쪽의 금리입니다.",
+      why: "분포의 아래쪽 끝입니다. 위쪽 끝(99번째)과의 거리가 자금시장이 한 가격으로 돌고 있는지를 말합니다.",
+      read: "혼자 보기보다 아래 「SOFR 분포 폭」으로 보세요.",
+      order: 16,
+    },
+    {
+      /**
+       * ⭐ 레포 안정성 — SOFR 99번째 − 1번째 백분위(2026-09-14, 통합 계획 S2).
+       * ⚠ 명세 §15는 「repo stability」의 산식을 정하지 않았다(설계서 11-4). **Woodsman v0 정의**: 같은 날 거래 금리의 폭.
+       *   폭이 넓으면 담보·차주에 따라 값이 크게 갈리는 것 — 한 가격으로 돌지 못하는 자금시장이다.
+       * ⚠ SRF 이용량(RPONTSYD)을 쓰지 않은 이유: 거의 매일 0이라 10년 창의 흩어짐(MAD)이 0 → 정규화할 수 없다.
+       */
+      key: "sofr_dispersion",
+      name: "SOFR 분포 폭 (99번째 − 1번째 백분위)",
+      group: "liquidity",
+      source: "DERIVED",
+      derived: { op: "subtract", from: ["sofr99", "sofr1"], carryDays: 3 },
+      transform: "level",
+      layer: "L2",
+      type: "level",
+      freq: "d",
+      unit: "%p",
+      decimals: 2,
+      url: FRED("SOFR99"),
+      sourceLabel: "FRED 합성 · SOFR99 − SOFR1 (Woodsman v0 레포 안정성)",
+      what: "같은 날 담보부 익일물 금리의 **가장 비싼 쪽과 가장 싼 쪽의 차이**입니다.",
+      why: "자금시장이 건강하면 누구나 비슷한 값에 빌립니다. 폭이 벌어지면 **누군가는 훨씬 비싸게 빌려야** 하는 상태 — 돈이 고르게 돌지 않는다는 신호입니다.",
+      read: "평소보다 넓게 벌어진 날이 **며칠 이어지는지**를 보세요. ⚠ 분기말·월말 하루짜리 확대는 흔합니다. 2019년 9월 레포 금리 급등 때 크게 벌어졌습니다.",
+      order: 17,
+    },
+    {
+      /**
+       * 자금 변동성 — SOFR 일간 변화의 20일 실현변동성(bp, 연율). 명세 §15 「funding volatility」.
+       * ⚠ 정책금리 변경일에는 SOFR가 계단처럼 움직여 변동성이 기계적으로 커진다 — 카드에 적는다.
+       */
+      key: "sofr_rvol",
+      name: "SOFR 변동성 (20일 실현, bp)",
+      group: "liquidity",
+      source: "DERIVED",
+      derived: { op: "realizedVolBp", from: ["sofr"], carryDays: 5, window: 20 },
+      transform: "level",
+      layer: "L2",
+      type: "level",
+      freq: "d",
+      unit: "bp",
+      decimals: 0,
+      url: FRED("SOFR"),
+      sourceLabel: "FRED 합성 · SOFR 일간 변화 20일 표준편차 × √252",
+      what: "담보부 익일물 금리(SOFR)가 최근 한 달 동안 **하루하루 얼마나 출렁였는지**를 1년 기준 bp로 바꾼 값입니다.",
+      why: "하룻밤 돈값이 들쭉날쭉하면 금융기관이 자금 계획을 세우기 어렵고, 그 불확실성이 위험자산의 레버리지를 줄입니다.",
+      read: "높을수록 자금시장이 불안합니다. ⚠ **연준이 금리를 바꾼 직후 20일**은 계단 한 번 때문에 값이 크게 나옵니다 — 그 기간은 회의 날짜와 함께 보세요.",
+      order: 18,
+    },
+    {
       // ⚠ 분모는 재무부가 낸 「Total Marketable」 행이다 — 구성요소를 더해 만들지 않는다(lib/macro/treasury.ts).
       key: "tsy_bill_share",
       name: "시장성 국채 중 단기물(Bills) 비중",
