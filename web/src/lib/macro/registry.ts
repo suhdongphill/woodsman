@@ -224,4 +224,19 @@ export function manualIndicators(): MacroIndicator[] {
   return MACRO_INDICATORS.filter((i) => i.source === "MANUAL");
 }
 
+/**
+ * **AI가 옮겨 적어도 되는** 지표 — 수동이면서 **침체 판정에 들어가지 않는 것**.
+ *
+ * ⚠ 개발요구서 v2가 「이 숫자들을 AI로 채우지 않는다 — 침체 시그널 판정에 그대로 들어간다」고
+ *   정해 두었는데, 화면은 수동 지표 **전부**를 고를 수 있게 하고 있었다(2026-09-13 발견).
+ *   `ism_mfg`는 「50 미만 위축 · 45 미만 침체」 규칙을 달고 있어서, 모델이 옮겨 적은 한 점이
+ *   그대로 침체 신호를 뒤집을 수 있었다. **규칙을 글이 아니라 코드가 지키게** 옮겼다.
+ *
+ * ⚠ 전사가 틀리는 방식이 문제다 — 인용문 대조를 통과해도 **엉뚱한 달·엉뚱한 표**의 숫자일
+ *   수 있다. 값이 그럴듯하면 사람도 못 잡는다. 판정에 들어가는 숫자는 그 위험을 지지 않는다.
+ */
+export function aiExtractIndicators(): MacroIndicator[] {
+  return MACRO_INDICATORS.filter((i) => i.source === "MANUAL" && !i.signal);
+}
+
 export { MACRO_LAYERS, MACRO_LAYER_LIST, layerDef } from "./layers";

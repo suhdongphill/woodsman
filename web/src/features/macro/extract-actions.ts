@@ -31,7 +31,7 @@ import {
   recordAiUsage,
 } from "@/features/ai/repository";
 import { recordAdminLog } from "@/features/admin-log/repository";
-import { findIndicator } from "@/lib/macro/catalog";
+import { findIndicator, type MacroIndicator } from "@/lib/macro/catalog";
 import { htmlToText } from "@/lib/html-text";
 import { buildExtractPrompt, parseExtract } from "@/lib/indicator-extract";
 import { upsertPoints } from "./repository";
@@ -39,6 +39,29 @@ import { emptyExtractState, type ExtractState } from "./extract-state";
 
 /** 한 페이지를 받아 오는 데 쓰는 제한 시간. 느린 곳 하나가 화면을 잡지 않게 한다. */
 const FETCH_TIMEOUT_MS = 20_000;
+
+/**
+ * 모델이 옮겨 적어도 되는 지표인가 — **아니면 이유를 문장으로 낸다.**
+ *
+ * ⚠ 화면이 목록을 좁혀 주지만(`aiExtractIndicators`), 여기서 다시 본다. 이 액션은 폼에서 온
+ *   키를 그대로 받는 문이고, **화면에서 온 값은 화면이 만든 값이 아닐 수 있다**(같은 파일의
+ *   `adoptExtractAction`과 같은 규칙).
+ */
+function refuseExtract(indicator: MacroIndicator): string | null {
+  // ⚠ 자동으로 들어오는 지표를 모델 값으로 덮지 않는다.
+  if (indicator.source !== "MANUAL") {
+    return `${indicator.name}은(는) ${indicator.source}에서 자동으로 들어옵니다. 모델로 덮지 않습니다.`;
+  }
+  /**
+   * ⚠ **침체 판정에 들어가는 숫자는 AI로 채우지 않는다**(개발요구서 v2). 인용문 대조를
+   *   통과해도 엉뚱한 달·엉뚱한 표의 숫자일 수 있고, 값이 그럴듯하면 사람도 못 잡는다.
+   *   `ism_mfg`는 「50 미만 위축」 규칙을 달고 있어 한 점이 신호를 뒤집는다.
+   */
+  if (indicator.signal) {
+    return `${indicator.name}은(는) 침체 시그널 판정에 그대로 들어갑니다. AI로 채우지 않고 손으로 넣습니다.`;
+  }
+  return null;
+}
 
 function text(formData: FormData, key: string): string {
   const v = formData.get(key);
@@ -72,12 +95,8 @@ export async function extractIndicatorAction(
   const indicator = findIndicator(key);
   if (!indicator) return { error: "알 수 없는 지표입니다." };
 
-  // ⚠ 자동으로 들어오는 지표를 모델 값으로 덮지 않는다.
-  if (indicator.source !== "MANUAL") {
-    return {
-      error: `${indicator.name}은(는) ${indicator.source}에서 자동으로 들어옵니다. 모델로 덮지 않습니다.`,
-    };
-  }
+  const refuse = refuseExtract(indicator);
+  if (refuse) return { error: refuse };
 
   let url: URL;
   try {
@@ -195,7 +214,10 @@ export async function adoptExtractAction(
 
   const key = text(formData, "indicatorKey");
   const indicator = findIndicator(key);
-  if (!indicator || indicator.source !== "MANUAL") return { error: "저장할 수 없는 지표입니다." };
+  if (!indicator) return { error: "저장할 수 없는 지표입니다." };
+  // ⚠ 채택도 같은 문을 지난다. 후보를 못 만드는 지표는 저장도 못 한다.
+  const refuse = refuseExtract(indicator);
+  if (refuse) return { error: refuse };
 
   const value = Number(text(formData, "value"));
   const date = text(formData, "date");

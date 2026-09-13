@@ -7,6 +7,7 @@ import {
   findIndicator,
   headlineIndicators,
   indicatorsByGroup,
+  aiExtractIndicators,
   manualIndicators,
   recessionSignalIndicators,
   validateSectors,
@@ -171,6 +172,25 @@ describe("지표 카탈로그 무결성", () => {
   it("⚠ 수동으로 남긴 지표는 출처 기관을 밝힌다 — 왜 자동이 아닌지 추적할 수 있게", () => {
     for (const i of manualIndicators()) {
       expect(i.sourceLabel.replace("수동 입력", "").trim().length, `${i.key}`).toBeGreaterThan(2);
+      expect(i.url, `${i.key}`).toMatch(/^https:\/\//);
+    }
+  });
+
+  /**
+   * ⚠ 2026-09-13. 개발요구서 v2는 「침체 판정에 들어가는 숫자를 AI로 채우지 않는다」고 정해
+   *    두었는데, 전사 화면은 **수동 지표 전부**를 고를 수 있었다. `ism_mfg`에 모델이 옮겨 적은
+   *    한 점이 침체 신호를 뒤집을 수 있었다는 뜻이다. 규칙을 글에서 코드로 옮기고 못을 박는다.
+   */
+  it("⚠ AI 전사 대상에는 침체 판정 지표가 없다", () => {
+    expect(aiExtractIndicators().filter((i) => i.signal).map((i) => i.key)).toEqual([]);
+    // 판정 지표가 목록에서 빠졌을 뿐 수동 입력 자체는 남아 있어야 한다.
+    const manualSignal = manualIndicators().filter((i) => i.signal);
+    expect(manualSignal.length, "판정을 단 수동 지표가 사라졌다면 이 테스트를 다시 본다").toBeGreaterThan(0);
+  });
+
+  /** AI가 옮겨 적을 지표는 **어느 페이지에서 찾을지**가 등록돼 있어야 한다(화면이 채워 준다). */
+  it("AI 전사 대상은 등록된 출처 주소를 갖는다", () => {
+    for (const i of aiExtractIndicators()) {
       expect(i.url, `${i.key}`).toMatch(/^https:\/\//);
     }
   });

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { StatTile } from "@/components/ui/StatBar";
 import { formatDate } from "@/lib/format";
 import { requireAdmin } from "@/lib/session";
-import { manualIndicators } from "@/lib/macro/catalog";
+import { aiExtractIndicators, manualIndicators } from "@/lib/macro/catalog";
 import { findMacroGroup } from "@/lib/macro/groups";
 import { loadMacroStatus } from "@/features/macro/service";
 import { loadIngestRuns, countPointsBySeries } from "@/features/macro/repository";
@@ -132,7 +132,7 @@ export default async function AdminMacroPage() {
           대조한 뒤, 저장은 사람이 누른다(features/macro/extract-actions.ts 머리말) */}
       <Card className="mb-6">
         <CardTitle>AI로 값 옮겨 적기 ({manualIndicators().length}개 대상)</CardTitle>
-        <ExtractPanel indicators={manualIndicators()} />
+        <ExtractPanel indicators={aiExtractIndicators()} />
       </Card>
 
       <CardTitle>수동 지표 입력 ({manualIndicators().length}개)</CardTitle>

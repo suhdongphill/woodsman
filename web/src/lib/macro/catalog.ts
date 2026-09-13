@@ -25,6 +25,7 @@ export {
   MACRO_INDICATORS,
   MACRO_SECTORS,
   RECESSION_SIGNAL_KEYS,
+  aiExtractIndicators,
   autoIndicators,
   derivedIndicators,
   findIndicator,

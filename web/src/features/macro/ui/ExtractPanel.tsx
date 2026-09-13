@@ -8,7 +8,7 @@
  * ⚠ 걸러졌으면 **이유를 그대로 보여준다.** "인용문이 원문에 없습니다"는 그 제공자를
  *    다시 쓸지 판단하는 근거다.
  */
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { MacroIndicator } from "@/lib/macro/catalog";
 import { adoptExtractAction, extractIndicatorAction } from "../extract-actions";
 import { emptyExtractState } from "../extract-state";
@@ -19,6 +19,7 @@ const TEXT = {
   indicator: "지표",
   url: "출처 주소",
   urlPlaceholder: "https://… (값이 적힌 보도자료·통계 페이지)",
+  urlRegistered: "지표에 등록된 출처가 들어갑니다. 다른 페이지를 쓰려면 고쳐 주세요.",
   run: "본문에서 찾기",
   running: "받아 와서 읽는 중…",
   adopt: "이 값으로 저장",
@@ -33,8 +34,18 @@ export function ExtractPanel({ indicators }: { indicators: MacroIndicator[] }) {
   const [state, runAction, running] = useActionState(extractIndicatorAction, emptyExtractState);
   const [saved, adoptAction, adopting] = useActionState(adoptExtractAction, emptyExtractState);
 
+  /**
+   * ⚠ 출처 주소를 **지표에 등록된 것으로 채워 둔다.** 빈 칸이면 그 주소를 매번 찾아
+   *   붙여야 하고, 손이 한 번 더 가는 일은 결국 안 하게 된다 — 수동 지표 일곱 개에 값이
+   *   한 점도 없던 이유가 그것이다(2026-09-05). NAHB는 월 1회 갱신되는 **원 발표 기관** 페이지라
+   *   이 칸이 채워져 있으면 그때마다 버튼 하나로 끝난다.
+   * ⚠ 고정하지 않고 **고칠 수 있게** 둔다. 값이 실린 보도자료가 따로 있는 달이 있다.
+   */
+  const [key, setKey] = useState(indicators[0]?.key ?? "");
+  const [url, setUrl] = useState(indicators[0]?.url ?? "");
+
   if (indicators.length === 0) {
-    return <p className="text-[13px] text-muted">수동으로 남은 지표가 없습니다.</p>;
+    return <p className="text-[13px] text-muted">AI가 옮겨 적을 수 있는 지표가 없습니다.</p>;
   }
 
   return (
@@ -45,7 +56,17 @@ export function ExtractPanel({ indicators }: { indicators: MacroIndicator[] }) {
         <div className="grid gap-3 sm:grid-cols-3">
           <label>
             <span className="mb-1 block text-[11px] text-muted">{TEXT.indicator}</span>
-            <select name="indicatorKey" defaultValue={indicators[0].key} className={field}>
+            <select
+              name="indicatorKey"
+              value={key}
+              onChange={(e) => {
+                setKey(e.target.value);
+                // 지표를 바꾸면 등록된 출처도 따라간다 — 앞 지표의 주소가 남아 있으면
+                // 엉뚱한 페이지에서 값을 찾는다.
+                setUrl(indicators.find((i) => i.key === e.target.value)?.url ?? "");
+              }}
+              className={field}
+            >
               {indicators.map((i) => (
                 <option key={i.key} value={i.key}>
                   {i.name}
@@ -55,7 +76,14 @@ export function ExtractPanel({ indicators }: { indicators: MacroIndicator[] }) {
           </label>
           <label className="sm:col-span-2">
             <span className="mb-1 block text-[11px] text-muted">{TEXT.url}</span>
-            <input name="url" placeholder={TEXT.urlPlaceholder} className={field} />
+            <input
+              name="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder={TEXT.urlPlaceholder}
+              className={field}
+            />
+            <span className="mt-1 block text-[10.5px] text-ink-3">{TEXT.urlRegistered}</span>
           </label>
         </div>
         <button
