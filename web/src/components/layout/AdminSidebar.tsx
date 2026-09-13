@@ -33,6 +33,8 @@ const MENU = [
   // 일정이 다음에 쓸 글을 알려 준다 — 콘텐츠 파이프라인이다.
   { href: "/admin/calendar", label: "경제 캘린더", icon: ClockIcon },
   { href: "/admin/bubble", label: "버블 모니터", icon: BotIcon },
+  // 홈 「파도」 — 연준·CPI는 자동, 유가·지정학은 여기서 올린다(2026-09-14).
+  { href: "/admin/news", label: "파도 기사", icon: RssIcon },
   { href: "/admin/stocks", label: "종목 보고서", icon: TrendingUpIcon },
   { href: "/admin/posts", label: "콘텐츠", icon: FileTextIcon },
   { href: "/admin/comments", label: "댓글 · 정책", icon: MessageIcon },

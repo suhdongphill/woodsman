@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { cleanText, mergeNews, parseBlsCpiAtom, parseFedRss } from "./feeds";
+import { cleanText, mergeNews, parseBlsCpiAtom, parseFedRss, speakerFrom } from "./feeds";
 
 const fixture = (name: string) => readFileSync(fileURLToPath(new URL(`./fixtures/${name}.xml`, import.meta.url)), "utf8");
 
@@ -32,6 +32,20 @@ describe("연준 RSS", () => {
     expect(monetary.items.map((i) => i.title)).toContain("Federal Reserve issues FOMC statement");
     const testimony = parseFedRss(fixture("fed_testimony"), "FED_TESTIMONY");
     expect(testimony.items[0].speaker).toBe("Warsh");
+  });
+
+  it("⚠ 연준의 빈 날짜 값(1899-12-30)은 날짜가 없는 것으로 보고 버린다 — 실제 증언 피드 3건", () => {
+    const r = parseFedRss(fixture("fed_testimony"), "FED_TESTIMONY");
+    expect(r.skipped).toBe(3);
+    expect(r.items).toHaveLength(12);
+    expect(r.items.every((i) => i.publishedAt >= "2000-01-01")).toBe(true);
+  });
+
+  it("⚠ 발언자는 원문 링크 파일명과 이름이 맞을 때만 — 「Regulation, …」(링크 gibson…)은 발언자가 아니다", () => {
+    expect(speakerFrom("Waller, The Economic Outlook", "https://www.federalreserve.gov/newsevents/speech/waller20260903a.htm")).toBe("Waller");
+    expect(speakerFrom("Regulation, Global Governance Bodies", "https://www.federalreserve.gov/newsevents/testimony/gibson20240321a.htm")).toBeUndefined();
+    const testimony = parseFedRss(fixture("fed_testimony"), "FED_TESTIMONY");
+    expect(testimony.items.some((i) => i.speaker === "Regulation")).toBe(false);
   });
 
   it("⚠ 엔티티를 푼다 — 제목에 &#39;가 그대로 보이지 않게", () => {

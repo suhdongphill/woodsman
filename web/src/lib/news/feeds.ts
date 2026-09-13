@@ -50,10 +50,31 @@ function tag(block: string, name: string): string | undefined {
   return m ? cleanText(m[1]) : undefined;
 }
 
+/**
+ * ⚠ 2026-09-14 로컬 눈 확인에서 잡힘: 연준 증언 피드는 날짜가 비면 **`Sat, 30 Dec 1899`**(빈 날짜 값)를 넣는다 — 3건.
+ *   그대로 받으면 「1899-12-30 기사」가 생긴다. 이보다 이른 날짜는 날짜가 없는 것으로 보고 버린다.
+ */
+export const MIN_PUBLISHED_AT = "2000-01-01T00:00:00.000Z";
+
 function toIso(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
   const t = Date.parse(raw);
-  return Number.isFinite(t) ? new Date(t).toISOString() : undefined;
+  if (!Number.isFinite(t)) return undefined;
+  const iso = new Date(t).toISOString();
+  return iso < MIN_PUBLISHED_AT ? undefined : iso;
+}
+
+/**
+ * 발언자 — 제목의 쉼표 앞 이름이 **원문 링크 파일명의 앞머리와 같을 때만**(예: `Waller, …` ↔ `waller20260903a.htm`).
+ * ⚠ 2026-09-14: 「Regulation, Global Governance Bodies」(링크 `gibson20240321a.htm`)에서 「Regulation」이 발언자로 뽑혔다.
+ *   이름 목록을 따로 두지 않고 기관이 준 링크로 확인한다 — 목록은 이사가 바뀌면 조용히 낡는다.
+ */
+export function speakerFrom(title: string, url: string): string | undefined {
+  const name = /^([A-Z][A-Za-z.'\- ]{1,40}),\s/.exec(title)?.[1];
+  if (!name) return undefined;
+  const file = url.split("/").pop()?.toLowerCase() ?? "";
+  const key = name.toLowerCase().replace(/[^a-z]/g, "");
+  return key && file.startsWith(key) ? name : undefined;
 }
 
 /** 연준 RSS 한 채널. `source`는 부르는 쪽이 피드 주소로 정한다. */
@@ -69,7 +90,7 @@ export function parseFedRss(xml: string, source: Exclude<NewsSource, "BLS_CPI" |
       continue;
     }
     const description = tag(m[1], "description");
-    const speaker = source === "FED_MONETARY" ? undefined : /^([A-Z][A-Za-z.'\- ]{1,40}),\s/.exec(title)?.[1];
+    const speaker = source === "FED_MONETARY" ? undefined : speakerFrom(title, url);
     items.push({
       source,
       category: "연준",
