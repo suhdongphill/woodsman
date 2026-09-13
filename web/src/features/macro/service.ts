@@ -31,6 +31,7 @@ import {
   type FedFuturesResult,
 } from "@/lib/macro/fedfutures";
 import { loadFomcDecisionDates } from "@/features/calendar/repository";
+import { computeCapitalSpreads, type CapitalSpreads } from "@/lib/macro/capital";
 import { buildOverlay, type OverlayMode, type OverlayResult } from "@/lib/macro/overlay";
 import {
   healthNotice,
@@ -158,6 +159,11 @@ export type MacroOverview = {
   fedFutures?: FedFuturesResult;
   /** 선물 시세일 — 이 계산이 언제 값인지 */
   fedFuturesAsOf?: string;
+  /**
+   * ⭐ 자본 엔진의 두 격차 — 「생산성이 버는 것 vs 돈값」과 「성장 vs 이자」.
+   * ⚠ 여기서 한 번만 계산한다. 화면마다 따로 계산하면 같은 질문에 다른 답이 나온다.
+   */
+  capital: CapitalSpreads;
 };
 
 /**
@@ -242,6 +248,23 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
         })
       : undefined;
 
+  /**
+   * ⭐ 자본 엔진의 두 격차.
+   *
+   * ⚠ 생산성은 **시계열로** 넘긴다 — 한 분기는 크게 튀어서, 최근 값 하나만 보면 그 분기의
+   *   잡음이 결론이 된다. 4분기 평균과 최근분기를 **함께** 내는 이유다.
+   * ⚠ 값이 없으면 `computeCapitalSpreads`가 아무것도 내지 않는다. 0으로 채우지 않는다.
+   */
+  const capital = computeCapitalSpreads({
+    productivityYoy: views.get("prod_yoy")?.points ?? [],
+    realYield: views.get("real10")?.value,
+    realYieldAsOf: views.get("real10")?.asOf,
+    nominalGrowth: views.get("ngdp_yoy")?.value,
+    nominalGrowthAsOf: views.get("ngdp_yoy")?.asOf,
+    nominalYield: views.get("ust10y")?.value,
+    nominalYieldAsOf: views.get("ust10y")?.asOf,
+  });
+
   return {
     summary,
     signals,
@@ -249,6 +272,7 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
     groups,
     asOf,
     empty: dates.length === 0,
+    capital,
     health: summarizeHealth([...views.values()].map((v) => v.freshness)),
     fedHike,
     fedHikeAsOf: fedHike ? fedHikeAsOf : undefined,

@@ -6,6 +6,7 @@ import { ChevronRightIcon } from "@/components/icons";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { RecessionBoard } from "@/features/macro/ui/RecessionBoard";
+import { CapitalEngineCard } from "@/features/macro/ui/CapitalEngineCard";
 import { FedFuturesCard } from "@/features/macro/ui/FedFuturesCard";
 import { FedHikeCard } from "@/features/macro/ui/FedHikeCard";
 import { GroupCard } from "@/features/macro/ui/GroupCard";
@@ -112,6 +113,18 @@ export default async function MacroHubPage() {
             <FedFuturesCard result={overview.fedFutures} asOf={overview.fedFuturesAsOf} />
           </section>
         )}
+
+        {/*
+          ①-4 ⭐ 두 카드가 「금리가 어디로 가나」에 답했다면, 이 카드는 **그 금리를 감당할 수
+          있는가**에 답한다. 순서가 중요하다 — 시장이 거는 인상(위)과 생산성이 버는 수익(아래)이
+          붙어 있어야 「수요 축소냐 공급 확대냐」가 한눈에 보인다.
+        */}
+        <section aria-labelledby="capital-heading">
+          <h2 id="capital-heading" className="sr-only">
+            미국 자본 엔진 — 수요 축소와 공급 확대
+          </h2>
+          <CapitalEngineCard capital={overview.capital} />
+        </section>
 
         {/* ② 처음 오신 분 — 읽는 순서를 알려준다 */}
         <section aria-labelledby="guide-heading">
