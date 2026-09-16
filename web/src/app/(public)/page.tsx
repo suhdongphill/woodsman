@@ -22,6 +22,8 @@ import { loadReadings } from "@/features/bubble/repository";
 import { scoreBubble } from "@/lib/bubble/score";
 import { MODEL_VERSION } from "@/lib/scores/config";
 import { LIQUIDITY_PARTS, buildTide } from "@/lib/scores/tide";
+import { REGIME_CHIP_KEYS, buildRegimeFrame } from "@/lib/scores/regime-summary";
+import { CapitalRegimeFrame } from "@/features/home/ui/CapitalRegimeFrame";
 import { visibleHomeBlocks, type HomeBlock } from "@/lib/home-layout";
 import { macroLede } from "@/lib/home-lede";
 import { summarizePerformance } from "@/lib/performance";
@@ -68,7 +70,20 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 /** 홈 「조류」가 읽는 점수 — GLS · 그 하위 계기 · 경기 엔진 온도 */
-const TIDE_KEYS = ["global_liquidity", ...LIQUIDITY_PARTS.map((p) => p.key), "engine_heat"];
+/**
+ * 홈이 한 번에 읽어 오는 점수 키.
+ * ⚠ 조류 카드와 Global Capital Regime 프레임이 **같은 행**을 나눠 쓴다(개발요구서 G1) —
+ *   따로 읽으면 한 화면의 두 자리가 다른 숫자를 말한다. 그래서 여기서 합쳐 한 번만 읽는다.
+ * ⚠ 아직 계산되지 않는 점수(`COMPUTED_SCORES`에 없는 것)도 넣는다 — 행이 없으면 「준비 중」으로 그려진다.
+ */
+const TIDE_KEYS = [
+  ...new Set([
+    "global_liquidity",
+    ...LIQUIDITY_PARTS.map((p) => p.key),
+    "engine_heat",
+    ...REGIME_CHIP_KEYS,
+  ]),
+];
 
 function daysBefore(day: string, days: number): string {
   return new Date(Date.parse(`${day}T00:00:00Z`) - days * 86_400_000).toISOString().slice(0, 10);
@@ -116,6 +131,8 @@ export default async function HomePage() {
 
   const perf = summarizePerformance(snapshots);
   const tides = new Map(TIDE_KEYS.map((key) => [key, buildTide(storedScores, key, seoulDay(new Date().toISOString()))]));
+  // Global Capital Regime 프레임 — 위 `tides`와 **같은 행**에서 만든다(다시 읽지 않는다).
+  const regimeFrame = buildRegimeFrame(tides);
 
   /**
    * 홈에 올릴 일정 — **2주 · 중요도 2 이상 · 최대 4건**.
@@ -155,7 +172,7 @@ export default async function HomePage() {
         journalCount={allJournal.length}
       />
     ),
-    macroStrip: <MacroStrip indicators={macro.headlines} />,
+    macroStrip: <MacroStrip indicators={macro.headlines} frame={<CapitalRegimeFrame frame={regimeFrame} />} />,
     waves: <WavesSection news={latestNews} />,
     tide: (
       <TideSection

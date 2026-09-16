@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { cx } from "@/lib/format";
 import { Emphasis } from "@/components/ui/Emphasis";
@@ -48,7 +48,11 @@ const STATUS_DOT: Record<SignalStatus, string> = {
   unknown: "bg-ink-3",
 };
 
-export function MacroStrip({ indicators }: { indicators: IndicatorView[] }) {
+/**
+ * @param frame 「지금 부는 바람」 타이틀 **바로 아래**에 들어가는 조각(Global Capital Regime · 개발요구서 G1).
+ *   ⚠ 이 컴포넌트는 그리기만 한다 — 무엇을 넣을지는 홈이 정한다(서버에서 만든 것을 그대로 받는다).
+ */
+export function MacroStrip({ indicators, frame }: { indicators: IndicatorView[]; frame?: ReactNode }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
   const open = indicators.find((i) => i.indicator.key === openKey) ?? null;
 
@@ -69,6 +73,9 @@ export function MacroStrip({ indicators }: { indicators: IndicatorView[] }) {
           {TEXT.more}
         </Link>
       </div>
+
+      {/* ⚠ 타이틀 **바로 아래** — 지표 띠보다 위다(운영자 결정 2026-09-16). */}
+      {frame}
 
       {/*
         ⚠ 가로 스크롤은 **이 띠 안에서만** 일어난다. 페이지 본문이 가로로 밀리면 안 된다.
