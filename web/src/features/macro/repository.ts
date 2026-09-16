@@ -14,6 +14,8 @@
  *    수정치가 섞인다(look-ahead bias). 규칙은 `lib/macro/vintage.ts`에 있다.
  */
 import { execute, getD1, queryAll, queryOne, type D1Statement } from "@/lib/d1";
+import { MACRO_INDICATORS } from "@/lib/macro/catalog";
+import { BASE_POINTS, pointsNeededBySeries } from "@/lib/macro/window";
 import type { SeriesPoint } from "@/lib/macro/series";
 import { diffObservations, type ObservationOrigin } from "@/lib/macro/vintage";
 import { seoulDay } from "@/lib/kst";
@@ -100,17 +102,47 @@ export async function loadSeriesMeta(): Promise<Map<string, SeriesMeta>> {
  * 모든 지표의 **최근 N개**만 한 번에.
  *
  * 홈·허브는 "지금 값"만 필요한데, 전년 대비(YoY)를 내려면 1년 전 점도 있어야 한다.
- * 그래서 전체 시계열이 아니라 **지표당 최근 14개**(월간 기준 1년 남짓)만 가져온다.
- * 40개 시계열을 통째로 읽으면 홈이 느려지고, 최신 한 점만 읽으면 YoY를 못 낸다.
+ * 전체 시계열을 통째로 읽으면 홈이 느려지고, 최신 한 점만 읽으면 YoY를 못 낸다.
+ *
+ * ⚠ **N은 계열마다 다르다.** 2026-09-16까지 14로 고정돼 있었는데, 주간 계열의 전년비(1년 전 짝이
+ *   14주 안에 없다)와 20일 실현변동성(창이 안 찬다)은 그 창으로는 **영원히 값이 안 나왔다** —
+ *   지표 넷이 원자료를 다 갖고도 화면에서 「미수집」이었다. 필요량은 `lib/macro/window.ts`가
+ *   카탈로그에서 계산한다(로더에 숫자를 적어 두지 않는다 — 지표를 붙이는 사람이 여기를 같이
+ *   고쳐야 한다는 걸 기억해야 하면, 같은 종류로 또 막힌다).
+ * ⚠ 필요량이 같은 계열끼리 묶어 `CASE`로 넣는다 — 계열마다 한 쌍씩 바인딩하면 D1의 파라미터
+ *   한도에 걸린다.
  */
-export async function loadRecentPoints(perSeries = 14): Promise<Map<string, SeriesPoint[]>> {
+export async function loadRecentPoints(
+  needBySeries: Map<string, number> = pointsNeededBySeries(MACRO_INDICATORS),
+): Promise<Map<string, SeriesPoint[]>> {
+  // 기본보다 더 필요한 계열만 모은다(대부분은 기본으로 충분하다).
+  const tiers = new Map<number, string[]>();
+  for (const [key, n] of needBySeries) {
+    if (n <= BASE_POINTS) continue;
+    const list = tiers.get(n) ?? [];
+    list.push(key);
+    tiers.set(n, list);
+  }
+
+  const params: (string | number)[] = [];
+  // 큰 요구부터 — 한 계열이 두 칸에 들어갈 일은 없지만, 순서가 결과를 바꾸지 않게 고정해 둔다.
+  const whens = [...tiers.entries()]
+    .sort((a, b) => b[0] - a[0])
+    .map(([n, keys]) => {
+      params.push(...keys, n);
+      return `WHEN seriesKey IN (${keys.map(() => "?").join(", ")}) THEN ?`;
+    });
+  params.push(BASE_POINTS);
+  // ⚠ 더 필요한 계열이 하나도 없으면 `CASE ELSE ?`가 되어 SQL이 깨진다 — 그때는 단순 비교로.
+  const limit = whens.length > 0 ? `CASE ${whens.join(" ")} ELSE ? END` : "?";
+
   const rows = await queryAll<{ seriesKey: string; date: string; value: number }>(
     `SELECT seriesKey, date, value FROM (
        SELECT seriesKey, date, value,
               ROW_NUMBER() OVER (PARTITION BY seriesKey ORDER BY date DESC) AS rn
          FROM MacroPoint
-     ) WHERE rn <= ? ORDER BY seriesKey ASC, date ASC`,
-    [perSeries],
+     ) WHERE rn <= ${limit} ORDER BY seriesKey ASC, date ASC`,
+    params,
   );
 
   const out = new Map<string, SeriesPoint[]>();
