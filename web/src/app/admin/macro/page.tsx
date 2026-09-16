@@ -36,6 +36,16 @@ function ageDays(asOf: string | undefined, today: string): number | undefined {
  * ⚠ 이 화면의 핵심은 "무엇이 안 들어왔나"다. 성공 목록은 훑고 지나가면 되지만,
  *    실패·오래된 지표는 눈에 띄어야 한다(정렬을 오래된 순으로 두는 이유).
  */
+/**
+ * 수집을 무엇이 돌렸나. ⚠ 모르는 값도 **그대로 보여준다** — 빈칸이면 새 경로가 생긴 것을 아무도 모른다.
+ */
+function triggerLabel(trigger: string): string {
+  if (trigger === "CRON") return "자동";
+  if (trigger === "MANUAL") return "수동";
+  if (trigger === "GITHUB_TREASURY") return "재무부(예약)";
+  return trigger;
+}
+
 export default async function AdminMacroPage() {
   await requireAdmin("/admin/macro");
 
@@ -275,8 +285,8 @@ export default async function AdminMacroPage() {
                     </span>
                     {/* ⚠ 자동인지 수동인지 구분해 보여준다. 구분이 없으면 "스케줄이 도는 줄
                         알았는데 사실 내가 누른 것뿐이었다"를 화면에서 알 수 없다. */}
-                    <Badge tone={run.trigger === "CRON" ? "info" : "neutral"}>
-                      {run.trigger === "CRON" ? "자동" : "수동"}
+                    <Badge tone={run.trigger === "MANUAL" ? "neutral" : "info"}>
+                      {triggerLabel(run.trigger)}
                     </Badge>
                     <Badge tone={run.failCount === 0 ? "emerald" : "warn"}>
                       성공 {run.okCount} · 실패 {run.failCount}

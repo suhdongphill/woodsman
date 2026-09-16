@@ -200,11 +200,19 @@ export function headlineIndicators(): MacroIndicator[] {
 }
 
 /**
- * 서버가 직접 가져올 수 있는 지표(FRED·Yahoo). MANUAL·DERIVED는 제외.
+ * 서버가 직접 가져올 수 있는 지표(FRED·Yahoo·ECOS·NAVER). MANUAL·DERIVED·TREASURY는 제외.
  * ⚠ 파생을 빼는 이유: 받아 올 시리즈가 애초에 없다. 넣으면 수집기가 매번 실패를 기록한다.
+ * ⚠ **TREASURY를 빼는 이유(2026-09-16, S2-c)**: 워커 → treasury.gov가 525·시간 초과로 막혀
+ *   2026-09-13부터 **매 수집마다 네 계열이 전부 실패**했다. 고칠 수 없는 실패를 매일 기록하면
+ *   실패 목록 자체가 잡음이 되어, 진짜 고장이 묻힌다. 이 넷은 GitHub Actions가 받아 D1에 넣는다
+ *   (`.github/workflows/scheduled-data.yml` · `scripts/treasury-daily.mjs`) — 결과는 `MacroIngest`에
+ *   `trigger = GITHUB_TREASURY`로 남아 관리자 화면에 그대로 보인다.
+ * ⚠ 워커에서 다시 열리면 이 줄만 되돌리면 된다 — 받는 코드(`lib/macro/treasury-fetch.ts`)는 그대로 있다.
  */
 export function autoIndicators(): MacroIndicator[] {
-  return MACRO_INDICATORS.filter((i) => i.source !== "MANUAL" && i.source !== "DERIVED");
+  return MACRO_INDICATORS.filter(
+    (i) => i.source !== "MANUAL" && i.source !== "DERIVED" && i.source !== "TREASURY",
+  );
 }
 
 /** 다른 지표를 합성해 만드는 지표. 값이 DB에 없고 읽을 때 계산된다. */

@@ -1,18 +1,15 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MACRO_INDICATORS, findIndicator } from "./catalog";
 import { validateSectors } from "./registry";
+import { TREASURY_SOURCE_IDS } from "./treasury-fetch";
 
 /**
- * ⚠ `TREASURY_SOURCE_IDS`는 수집기(`features/macro/ingest.ts`)에 있다. 그 파일은 D1·네트워크를 부르므로 테스트에서 import하지 않고
- *   **소스를 읽어** 목록을 꺼낸다 — 카탈로그에 수집기가 모르는 ID가 들어가면 매일 「실패」가 된다.
+ * ⭐ 2026-09-16(S2-c): `TREASURY_SOURCE_IDS`가 `lib/macro/treasury-fetch.ts`로 옮겨졌다. 그 파일은 **D1을 부르지 않으므로**
+ *   이제 소스를 텍스트로 읽지 않고 그대로 import한다 — 정규식으로 남의 파일을 긁던 자리가 없어졌다.
+ *   ⚠ 여전히 재는 것은 같다: 카탈로그에 수집기가 모르는 ID가 들어가면 매일 「실패」가 된다.
  */
 function treasuryIdsInCollector(): string[] {
-  const src = readFileSync(join(process.cwd(), "src", "features", "macro", "ingest.ts"), "utf8");
-  const block = src.match(/TREASURY_SOURCE_IDS = \[([\s\S]*?)\] as const/);
-  if (!block) throw new Error("ingest.ts에서 TREASURY_SOURCE_IDS를 찾지 못했다");
-  return [...block[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  return [...TREASURY_SOURCE_IDS];
 }
 
 describe("R2b-2 — 재무부 Fiscal Data", () => {
