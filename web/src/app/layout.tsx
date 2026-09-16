@@ -67,6 +67,14 @@ export const metadata: Metadata = {
       "naver-site-verification": "f60e0f2c9acbcf30a2c0c213fe9edc000297a740",
     },
   },
+  /**
+   * RSS 피드를 **찾을 수 있게** 한다 — `<link rel="alternate" type="application/rss+xml">`.
+   * ⚠ 주소를 아는 사람만 쓰는 피드는 없는 것과 비슷하다. 리더·검색엔진은 이 태그로 발견한다.
+   * ⚠ 여기도 `<head>`에 직접 박지 않는다(네이버 태그와 같은 이유).
+   */
+  alternates: {
+    types: { "application/rss+xml": "/rss.xml" },
+  },
 };
 
 export default function RootLayout({
