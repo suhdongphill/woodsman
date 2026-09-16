@@ -53,6 +53,20 @@ export const metadata: Metadata = {
    * ⚠ 모양을 바꾸면 `src/app/icon.svg`와 `public/woodsman-mark.svg`(애플 터치용)를 같이 고친다.
    */
   icons: { icon: "/icon.svg", apple: "/woodsman-mark.svg" },
+  /**
+   * 검색엔진 소유 확인 토큰 (2026-09-16 · 네이버 서치어드바이저).
+   *
+   * ⚠ **시크릿이 아니다.** 이 값은 HTML에 그대로 나가야 확인이 되고, 확인용이라 유출 위험이 없다 —
+   *    `.env`나 `ApiCredential`에 넣지 않는다(CLAUDE.md §6의 시크릿 규칙과 헷갈리지 말 것).
+   * ⚠ `<head>`에 태그를 직접 박지 않는다. Next가 `metadata`에서 만들게 두어야
+   *    같은 종류의 태그가 두 곳에서 따로 자라지 않는다.
+   * ⚠ 네이버 쪽에서 소유 확인을 마친 뒤에도 **지우지 않는다** — 재확인 때 다시 찾는다.
+   */
+  verification: {
+    other: {
+      "naver-site-verification": "f60e0f2c9acbcf30a2c0c213fe9edc000297a740",
+    },
+  },
 };
 
 export default function RootLayout({
