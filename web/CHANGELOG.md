@@ -10,6 +10,56 @@
 
 ---
 
+## 2026-09-16 (28) — 시장 스트레스 매핑: 새 외부 출처 없이 칩을 셋으로 (개발요구서 G3)
+
+`market_risk_geopolitical`을 발행시킨다. ⭐ **새 출처를 하나도 붙이지 않았다** — 이미 쌓고 있던 계열만 이었다.
+
+### 왜 이 경로인가
+
+요구서 G3는 `geopolitical_stress`(→ GPR)부터 잇자고 했는데, 그 점수는 **GPR 가중치가 0.35**라
+GPR 없이는 최대 50%다(발행선 60%). GPR은 이용 조건 확인(D7)이 남아 있다.
+그런데 `market_risk_geopolitical = market_stress 0.7 + geopolitical_stress 0.3`이고,
+**`market_stress`는 기존 계열만으로 85%**다. 부모는 0.7만으로 **70% 발행**된다 — 새 출처 없이 칩이 하나 는다.
+
+### `measures.ts` — `market_stress` 다섯 구성요소
+
+| 구성요소 | 가중치 | 계열 |
+|---|---|---|
+| vix_stress | 0.20 | `vix` · `vvix` 평균 |
+| move_stress | 0.20 | `ust10y_rvol` ⚠ **MOVE가 아니다**(유료 라이선스 대체 · 지나간 변동) |
+| credit_stress | 0.20 | `hy_spread` · `baa_spread` |
+| funding_stress | 0.15 | `sofr_iorb` |
+| tail_risk | 0.10 | `skew` |
+
+- 못 채운 둘(섹터 폭 0.10 · 통화 스왑 베이시스 0.05)은 **0으로 채우지 않고 분모에서 뺀다** — 이유는 화면이 말한다.
+- ⚠ **주석을 사실에 맞게 고쳤다**: 처음에 「두 스프레드를 평균해 짧은 역사에 끌려가지 않게 한다」고 적었는데,
+  운영 데이터로 재 보니 `hy_spread`는 **엔진이 아예 뺀다**(2023-09부터 → 명세 §1 최소 창 5년 미달).
+  지금 credit_stress는 `baa_spread` 하나로 돈다. ⭐ 2028-09 무렵 5년을 채우면 **코드를 고치지 않아도** 평균에 들어온다.
+
+### ⭐ 배포 전에 운영 데이터로 계산해 봤다 (읽기 전용)
+
+```
+market_stress            52.1 · 커버리지 85% · OK
+  vix_stress 53.8 · move_stress 46.6 · credit_stress 28.5 · funding_stress 82.8 · tail_risk 60.7
+geopolitical_stress      미발행 · 0% · DO_NOT_PUBLISH  (gpr·oil_shock·safe_haven 모두 결측)
+market_risk_geopolitical 52.1 · 커버리지 70% · LOW_CONFIDENCE
+```
+
+⚠ `geopolitical_stress`도 **계산 대상에 넣었다**(0%로 미발행). 행을 남겨야 부모가 왜 70%인지를 화면이 말할 수 있다.
+
+### `scripts/treasury-daily.mjs` — 호출 방식 교정
+
+- ⚠ `npx wrangler`를 **셸로** 부르고 있었다. 리눅스 러너에서는 통했지만(그래서 어제 성공했다),
+  **윈도우에서는 SQL의 공백·따옴표가 깨져 「Unknown arguments」로 죽는다** — 이 조각을 만들다 실제로 겪었다.
+  `alfred-backfill.mjs`와 같은 방식(**wrangler를 직접 실행**, 셸 없음)으로 바꿨다. dry-run 재확인 성공.
+
+### 가설(배포 전)
+
+- 다음 수집 뒤 홈 프레임의 **칩 줄이 펴진다**(발행 3 / 6 — 유동성 · 엔진 온도 · 시장위험·지정학).
+- 시장위험 칩은 **🟡 낮은 신뢰**를 달고 나온다(70%).
+- 유동성·엔진 온도 점수는 **변하지 않는다** — 새 점수를 더했을 뿐 기존 식은 건드리지 않았다.
+- ⚠ 점수는 **다음 수집 뒤**에 생긴다. 배포 직후에는 아직 2 / 6이다.
+
 ## 2026-09-16 (27) — 검증: S2-c 해결 · 프레임 가설 전부 맞음
 
 배포 `75a835d`(예약 수집) · `452f6a6`(프레임). 검증은 매번 따로 기록한다(운영자 지시).

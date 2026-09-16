@@ -179,4 +179,14 @@ export const COMPUTED_SCORES: ScoreKey[] = [
   "rate_liquidity",
   "global_liquidity",
   "engine_heat",
+  /**
+   * ⭐ 2026-09-16(개발요구서 G3) — 시장·지정학 위험. 새 외부 출처 **없이** 기존 계열만으로 붙였다.
+   * ⚠ `geopolitical_stress`는 GPR(가중치 0.35)이 없어 커버리지 40%라 **발행되지 않는다**(발행선 60%).
+   *   그래도 계산해 행을 남긴다 — 부모가 왜 70%인지를 화면이 말할 수 있어야 한다.
+   *   그 결과 `market_risk_geopolitical`은 `market_stress`(0.7)만으로 **70% · 🟡 낮은 신뢰**로 발행된다.
+   * ⚠ 하위 점수는 `computeScore`가 알아서 먼저 계산한다 — 여기 순서에 의존하지 않는다.
+   */
+  "market_stress",
+  "geopolitical_stress",
+  "market_risk_geopolitical",
 ];

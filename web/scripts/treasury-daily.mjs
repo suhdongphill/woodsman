@@ -24,6 +24,7 @@
  *   "도는 줄 알았는데 몇 달째 안 들어온" 상태를 아무도 모른다.
  */
 import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const { MACRO_INDICATORS } = await import("../src/lib/macro/catalog.ts");
 const { fetchTreasury } = await import("../src/lib/macro/treasury-fetch.ts");
@@ -42,11 +43,17 @@ const stored = (day) => `${day}T12:00:00.000Z`;
 const daysAgo = (n) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
 const sleepSync = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 
+/**
+ * ⚠ `npx wrangler`를 셸로 부르지 않는다(2026-09-16). 윈도우에서 셸을 끼면 SQL의 공백·따옴표가 깨져
+ *   「Unknown arguments」로 죽는다. `alfred-backfill.mjs`와 같은 방식으로 **wrangler를 직접 실행**한다 —
+ *   셸이 없으니 인자가 그대로 전달된다.
+ */
+const WRANGLER_JS = fileURLToPath(new URL("../node_modules/wrangler/bin/wrangler.js", import.meta.url));
 function wrangler(argv) {
-  const out = execFileSync("npx", ["wrangler", ...argv], {
+  const out = execFileSync(process.execPath, [WRANGLER_JS, ...argv], {
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
-    shell: process.platform === "win32",
+    stdio: ["ignore", "pipe", "pipe"],
   });
   const start = out.indexOf("[");
   if (start < 0) return [];

@@ -90,6 +90,39 @@ export const SCORE_MEASURES: Partial<Record<ScoreKey, Record<string, IndicatorMe
     global_dollar: [{ indicator: "dxy", measure: "change91d", direction: "HIGH_IS_NEGATIVE", kind: "general" }],
   },
 
+  /**
+   * 시장 스트레스(§31). ⚠ 전부 **「높을수록 스트레스가 크다」** 방향이다 — 점수 이름이 그렇게 읽힌다.
+   * ⚠ 다섯을 채우면 85%다. 못 채우는 둘은 섹터 폭(파생 미구현)과 통화 스왑 베이시스(무료 출처 없음)로,
+   *   `inputs.ts`에 이유가 적혀 있다 — **0점으로 채우지 않고 분모에서 뺀다.**
+   */
+  market_stress: {
+    // VIX와 VVIX를 **평균**한다. VIX만 보면 "변동성이 얼마나 흔들리는지"를 놓친다.
+    vix_stress: [
+      { indicator: "vix", measure: "level", direction: "HIGH_IS_POSITIVE", kind: "stress" },
+      { indicator: "vvix", measure: "level", direction: "HIGH_IS_POSITIVE", kind: "stress" },
+    ],
+    /**
+     * ⚠ **MOVE가 아니다.** ICE MOVE는 유료 라이선스라 받을 수 없어, 10년물 금리 일간 변화의
+     *   20일 실현변동성으로 대체한다. MOVE는 **앞으로의 예상**이고 이 값은 **지나간 변동**이라
+     *   충격 초기에 한 박자 늦다 — 화면에서도 「MOVE」라 부르지 않는다.
+     */
+    move_stress: [{ indicator: "ust10y_rvol", measure: "level", direction: "HIGH_IS_POSITIVE", kind: "stress" }],
+    /**
+     * ⚠ 둘을 적지만 **지금 쓰이는 것은 `baa_spread` 하나**다(2026-09-16 운영 데이터로 확인).
+     *   `hy_spread`는 2023-09부터라 명세 §1의 최소 창(5년)을 못 채워 엔진이 「역사가 5년이 안 된다」며 **뺀다** —
+     *   빼는 것이 맞다. 짧은 역사로 만든 백분위는 「평소」를 모른다.
+     *   ⭐ 2028-09 무렵 5년을 채우면 **자동으로 평균에 들어온다** — 그때 코드를 고칠 필요가 없다.
+     */
+    credit_stress: [
+      { indicator: "hy_spread", measure: "level", direction: "HIGH_IS_POSITIVE", kind: "stress" },
+      { indicator: "baa_spread", measure: "level", direction: "HIGH_IS_POSITIVE", kind: "stress" },
+    ],
+    // SOFR가 IORB 위로 올라갈수록 담보부 자금이 빡빡하다. ⚠ 평소에는 음수다 — 수준 그대로 잰다.
+    funding_stress: [{ indicator: "sofr_iorb", measure: "level", direction: "HIGH_IS_POSITIVE", kind: "stress" }],
+    // SKEW는 「큰 하락에 거는 값」이다. 높을수록 꼬리 위험을 비싸게 사고 있다.
+    tail_risk: [{ indicator: "skew", measure: "level", direction: "HIGH_IS_POSITIVE", kind: "stress" }],
+  },
+
   engine_heat: {
     core_cpi: [{ indicator: "core_cpi_yoy", measure: "level", direction: "HIGH_IS_POSITIVE", kind: "general" }],
     core_pce: [{ indicator: "core_pce_yoy", measure: "level", direction: "HIGH_IS_POSITIVE", kind: "general" }],
