@@ -13,10 +13,12 @@
  *   그쪽 호출만 되살리면 된다(운영지침 §1).
  */
 import {
+  NOMINAL_TEN_YEAR_TERMS,
   TREASURY_DIRECT_MAX_ROWS,
   mspdShares,
   nominalTenYearAuctions,
   treasuryDirectToAuctionRow,
+  type AuctionRow,
   type MspdRow,
   type TreasuryDirectSecurity,
 } from "./treasury";
@@ -108,8 +110,34 @@ export async function fetchTreasury(sourceId: string, from: string): Promise<Ser
   }
   if (dataset === "auction10y") {
     /**
-     * ⚠ `securities/search`의 기간 조건은 믿지 않는다(빈 결과·부분 결과) — `auctioned?days=N`만 쓴다. ⚠ 최대 250행.
-     *   판정은 Fiscal Data와 **같은 함수**(`nominalTenYearAuctions`)다 — 행 모양만 옮긴다.
+     * ⭐ **Fiscal Data를 먼저 쓴다**(2026-09-16 되살림). 서버에서 명목 10년물 만기로 거르고 **페이지네이션이 된다** —
+     *   TreasuryDirect의 **250행 상한**이 없다. 상한이 왜 문제였나: 10년물 입찰은 연 12회 남짓인데 `type=Note`가
+     *   2·3·5·7년물을 함께 주어, 250행이면 **4년치도 안 된다.** 명세 §1의 최소 창(5년)을 못 채워
+     *   **값이 들어와도 점수에 못 들어갔다**(2026-09-16 운영에서 확인 — `auction_quality` 결측).
+     * ⚠ S2-b에서 TreasuryDirect로 갈아탄 이유는 **워커**에서 Fiscal Data가 525였기 때문이다.
+     *   이 코드는 이제 워커 밖(GitHub Actions)에서 돌고, 같은 러너에서 MSPD가 Fiscal Data로 잘 받아진다.
+     * ⚠ 그래도 TreasuryDirect 경로는 **지우지 않고 대비로 남긴다** — 두 경로의 판정은 같은 함수다.
+     */
+    try {
+      const rows = await fetchFiscalAll<AuctionRow>("v1/accounting/od/auctions_query", {
+        filter: `security_type:eq:Note,security_term:in:(${NOMINAL_TEN_YEAR_TERMS.join(",")}),auction_date:gte:${from}`,
+        fields:
+          "auction_date,security_type,security_term,original_security_term,inflation_index_security,floating_rate,bid_to_cover_ratio,high_yield",
+        sort: "auction_date",
+      });
+      const auctions = nominalTenYearAuctions(rows);
+      const series =
+        field === "bid_to_cover" ? auctions.bidToCover : field === "high_yield" ? auctions.highYield : undefined;
+      if (!series) throw new Error(`재무부 입찰 필드를 모릅니다: ${sourceId}`);
+      if (series.length > 0) return series;
+      // ⚠ 빈 결과는 성공이 아니다 — 대비 경로로 넘어가 이유를 남긴다.
+      throw new Error(`Fiscal Data 입찰 결과가 비었다(제외 ${auctions.excluded} · 대기 ${auctions.pending})`);
+    } catch (error) {
+      console.error(`[treasury] Fiscal Data 입찰 실패 — TreasuryDirect로 넘어간다: ${String(error).slice(0, 160)}`);
+    }
+    /**
+     * 대비 경로. ⚠ `securities/search`의 기간 조건은 믿지 않는다(빈 결과·부분 결과) — `auctioned?days=N`만 쓴다.
+     *   ⚠ 최대 250행이라 **5년을 못 채울 수 있다.** 판정은 Fiscal Data와 같은 함수다 — 행 모양만 옮긴다.
      */
     const days = Math.min(
       4500,

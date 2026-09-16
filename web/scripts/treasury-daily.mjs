@@ -33,8 +33,21 @@ const { diffObservations } = await import("../src/lib/macro/vintage.ts");
 const args = new Set(process.argv.slice(2));
 const dryRun = !args.has("--remote");
 
-/** 이미 가진 값에서 며칠까지 되돌려 다시 받을 것인가. 수집기(`ingest.ts`)의 REFRESH_DAYS와 같은 뜻. */
+/** 이미 역사가 충분하면 최근 이만큼만 다시 받는다(통계 수정 반영). 수집기(`ingest.ts`)의 REFRESH_DAYS와 같은 뜻. */
 const REFRESH_DAYS = 500;
+/**
+ * 처음 받을 때의 시작일.
+ * ⚠ **5년으로는 모자란다.** 명세 §1이 정규화에 최소 5년을 요구하는데, 딱 5년만 있으면 창이 차자마자
+ *   가장 오래된 점이 빠지면서 판정이 흔들린다. 점수 엔진이 읽는 구간(12년)에 맞춘다.
+ */
+const HISTORY_START = `${new Date().getUTCFullYear() - 12}-01-01`;
+/**
+ * 이보다 역사가 짧으면 **전 기간을 다시 받는다.**
+ * ⚠ 2026-09-16에 실제로 겪은 일: 500일치(입찰 17건)만 받아 두었더니 값은 D1에 들어왔는데
+ *   **점수에는 못 들어갔다** — 엔진이 「역사가 5년이 안 된다」며 뺐다(`auction_quality` 결측).
+ *   받은 것과 쓰이는 것은 다르다. 「들어왔다」로 끝내지 않는다.
+ */
+const MIN_HISTORY_DAYS = 6 * 365;
 /** 한 `--command`에 담는 행 수. SQL 길이를 명령줄 한도(3.2만 자) 안쪽으로 둔다. */
 const ROWS_PER_COMMAND = 60;
 
@@ -160,10 +173,27 @@ let okCount = 0;
 let failCount = 0;
 let addedPoints = 0;
 
+/**
+ * 이 계열을 **언제부터** 받을 것인가. 이미 6년치가 있으면 최근 500일만, 아니면 전 기간.
+ * ⚠ dry-run은 D1을 읽지 않으므로 전 기간으로 본다 — 「받아지나」를 재는 것이 목적이다.
+ */
+function fetchFrom(seriesKey) {
+  if (dryRun) return HISTORY_START;
+  const rows = rowsOf(d1Query(`SELECT MIN(date) AS oldest FROM MacroPoint WHERE seriesKey = ${sqlStr(seriesKey)}`));
+  const oldest = rows[0]?.oldest;
+  if (!oldest) return HISTORY_START;
+  const days = (Date.now() - Date.parse(oldest)) / 86_400_000;
+  if (days < MIN_HISTORY_DAYS) {
+    console.log(`    · 역사가 ${Math.round(days / 365 * 10) / 10}년뿐이라 전 기간을 다시 받는다(${HISTORY_START}~)`);
+    return HISTORY_START;
+  }
+  return daysAgo(REFRESH_DAYS);
+}
+
 for (const indicator of indicators) {
   const label = `${indicator.key}(${indicator.sourceId})`;
   try {
-    const points = await fetchTreasury(indicator.sourceId, daysAgo(REFRESH_DAYS));
+    const points = await fetchTreasury(indicator.sourceId, fetchFrom(indicator.key));
     console.log(`  ✓ ${label} — ${points.length}점 (최신 ${points.at(-1)?.date})`);
     okCount += 1;
 
