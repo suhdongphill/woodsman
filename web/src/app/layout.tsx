@@ -67,14 +67,6 @@ export const metadata: Metadata = {
       "naver-site-verification": "f60e0f2c9acbcf30a2c0c213fe9edc000297a740",
     },
   },
-  /**
-   * RSS 피드를 **찾을 수 있게** 한다 — `<link rel="alternate" type="application/rss+xml">`.
-   * ⚠ 주소를 아는 사람만 쓰는 피드는 없는 것과 비슷하다. 리더·검색엔진은 이 태그로 발견한다.
-   * ⚠ 여기도 `<head>`에 직접 박지 않는다(네이버 태그와 같은 이유).
-   */
-  alternates: {
-    types: { "application/rss+xml": "/rss.xml" },
-  },
 };
 
 export default function RootLayout({
@@ -90,6 +82,18 @@ export default function RootLayout({
              흰 화면을 한 번 맞는다(FOUC). 판단은 lib/theme.ts에 있고 여기서는 실행만 한다.
         */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        {/*
+          RSS 피드를 **찾을 수 있게** 한다. 주소를 아는 사람만 쓰는 피드는 없는 것과 비슷하다 —
+          리더·검색엔진은 이 태그로 발견한다.
+
+          ⚠ **`metadata.alternates.types`로는 안 된다**(2026-09-16에 실제로 겪었다).
+             하위 페이지가 `alternates: { canonical: … }`를 설정하면 Next가 상위의 `alternates`를
+             **통째로 덮는다.** 홈을 포함해 거의 모든 페이지가 canonical을 설정하므로
+             피드 태그가 **전부 사라졌다** — 배포 뒤 운영 HTML을 긁어 보고 알았다.
+          ⚠ 그래서 여기서는 `<head>`에 직접 쓴다. 파비콘 때와 달리 **경쟁하는 다른 경로가 없다** —
+             `metadata` 쪽에는 남겨 두지 않았으므로 두 곳에서 따로 자랄 일이 없다.
+        */}
+        <link rel="alternate" type="application/rss+xml" title={SITE_NAME} href="/rss.xml" />
       </head>
       <body className="font-sans bg-bg text-ink antialiased">
         {children}

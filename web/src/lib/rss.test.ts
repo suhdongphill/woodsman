@@ -4,6 +4,8 @@
  * 이 피드의 위험은 XML이 깨지는 게 아니라, 전문을 실어 사이트·블로그 어느 쪽에도 사람이 안 오는 것이다.
  * 그래서 "잘 만든다"보다 "본문을 싣지 않는다 · 링크 규칙이 화면과 같다"를 더 많이 잰다.
  */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { FEED_LIMIT, buildRss, feedGuid, feedLink, toRfc822, xmlEscape, type FeedOptions } from "./rss";
 
@@ -118,5 +120,29 @@ describe("채널", () => {
     const many = Array.from({ length: FEED_LIMIT + 10 }, (_, i) => ({ ...SELF, slug: `p${i}` }));
     const count = (buildRss(many, OPTS).match(/<item>/g) ?? []).length;
     expect(count).toBe(FEED_LIMIT);
+  });
+});
+
+/**
+ * ⚠ 2026-09-16 회귀 — **피드 발견 태그가 조용히 사라진 적이 있다.**
+ *
+ * 처음에는 루트 `metadata.alternates.types`로 넣었는데, 하위 페이지가
+ * `alternates: { canonical: … }`를 설정하면 Next가 상위 `alternates`를 **통째로 덮는다.**
+ * 홈을 포함해 거의 모든 페이지가 canonical을 설정하므로 태그가 전부 사라졌고,
+ * **배포 뒤 운영 HTML을 긁어 보고서야** 알았다(로컬에서는 피드 자체가 404라 눈에 안 띈다).
+ *
+ * 그래서 「루트 레이아웃이 `<head>`에 직접 쓴다」를 여기서 **소스로 대조**한다(CLAUDE.md §2-1의 방식).
+ */
+describe("⚠ 피드 발견 태그는 레이아웃의 <head>에 있어야 한다", () => {
+  const layout = readFileSync(join(process.cwd(), "src", "app", "layout.tsx"), "utf8");
+
+  it("<head>에 rel=alternate · application/rss+xml 링크가 있다", () => {
+    expect(layout).toMatch(/<link\s+rel="alternate"\s+type="application\/rss\+xml"/);
+    expect(layout).toContain('href="/rss.xml"');
+  });
+
+  it("⭐ metadata.alternates로 되돌리지 않는다 — 하위 페이지의 canonical이 덮는다", () => {
+    expect(layout).not.toContain("application/rss+xml\":");
+    expect(layout).not.toMatch(/alternates:\s*\{[\s\S]{0,200}types:/);
   });
 });
