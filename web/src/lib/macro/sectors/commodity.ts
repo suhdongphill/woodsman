@@ -20,7 +20,7 @@ export const sector: MacroSector = {
   indicators: [
     {
       key: "wti",
-      name: "WTI 유가",
+      name: "WTI 유가 (현물)",
       group: "commodity",
       source: "FRED",
       sourceId: "DCOILWTICO",
@@ -31,8 +31,8 @@ export const sector: MacroSector = {
       unit: "$",
       decimals: 2,
       url: FRED("DCOILWTICO"),
-      sourceLabel: "FRED · DCOILWTICO",
-      what: "미국 서부 텍사스산 원유 가격입니다(배럴당 달러).",
+      sourceLabel: "FRED · DCOILWTICO (EIA 현물 · 쿠싱 인도)",
+      what: "미국 서부 텍사스산 원유의 **현물** 가격입니다(배럴당 달러, 쿠싱 인도 기준). 뉴스에 나오는 「WTI 선물」과는 다른 값입니다.",
       why: "유가는 물가의 출발점이자 경기 수요의 온도계입니다. 오르면 물가가, 급락하면 수요가 걱정됩니다.",
       read: "오르는 이유를 함께 봅니다. 수요가 좋아서 오르면 경기 신호, 공급 사고로 오르면 비용 충격입니다.",
       order: 1,
@@ -50,10 +50,10 @@ export const sector: MacroSector = {
       unit: "$",
       decimals: 2,
       url: FRED("DCOILBRENTEU"),
-      sourceLabel: "FRED · DCOILBRENTEU",
-      what: "북해산 원유 가격으로, 국제 유가의 기준으로 더 널리 쓰입니다.",
+      sourceLabel: "FRED · DCOILBRENTEU (EIA 현물 · Dated Brent)",
+      what: "북해산 원유의 **현물** 가격으로, 국제 유가의 기준으로 더 널리 쓰입니다. ⚠ 실제 화물에 매겨지는 값이라, 뉴스가 말하는 「브렌트 선물」과 값이 다를 수 있습니다.",
       why: "한국이 수입하는 원유 가격에 더 가깝습니다.",
-      read: "WTI와의 차이가 벌어지면 지역별 공급 사정이 다르다는 뜻입니다.",
+      read: "WTI와의 차이가 벌어지면 지역별 공급 사정이 다르다는 뜻입니다. 선물보다 현물이 크게 비싸지면 **당장 쓸 기름이 부족하다**는 신호입니다.",
       order: 2,
     },
     {
