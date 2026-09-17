@@ -39,7 +39,7 @@ export const sector: MacroSector = {
     },
     {
       key: "brent",
-      name: "브렌트유",
+      name: "브렌트유 (현물)",
       group: "commodity",
       source: "FRED",
       sourceId: "DCOILBRENTEU",
