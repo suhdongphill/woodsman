@@ -28,11 +28,16 @@
   /* ── 잉크 ── */
   --w-ink: #1e3a2b;
   --w-ink-2: #5c6b5f;
-  --w-ink-3: #8a9188;
+  /* T2(2026-09-18 측정): #8a9188은 바탕 위 2.87로 **그래픽 기준 3.0도 미달**이었다.
+     축 라벨이 안 보였다. 4.25/3.81로 올리되 ink-2(4.99)보다는 밝게 둔다 - 위계가 뒤집히면 안 된다. */
+  --w-ink-3: #6e746c;
 
   /* ── 계열 (차트·배지) ── */
   --w-series-1: #0b6640;
   --w-series-2: #b8672f;
+  /* ⚠ 브랜드색을 바꾸는 게 아니라 **글자용 한 칸 더 진한 값**을 더한 것이다(§8-3).
+     #b8672f는 본문 기준 3.70이라 링크 글자로 쓰면 미달이었다. 배경·테두리는 series-2 그대로. */
+  --w-accent-text: #935225;
   --w-series-3: #3b6ea5;
   --w-danger: #a32d28;
 
@@ -61,8 +66,11 @@
     --w-ink-3: #778579;
     --w-series-1: #4aa87a;
     --w-series-2: #a8622f;
+  /* 다크 글자용 테라코타 - 원래 색조·채도를 지키면서 밝기만 올렸다(5.68/4.50). */
+  --w-accent-text: #d08045;
     --w-series-3: #6b8fd4;
-    --w-danger: #d1554d;
+    /* T2: 4.24로 본문 기준 미달이었다. 오류가 안 읽히면 그건 오류가 아니라 침묵이다. */
+  --w-danger: #da7770;
     --w-up: #e05a52;
     --w-down: #5a8fd6;
     --w-flat: #778579;
@@ -83,8 +91,11 @@
   --w-ink-3: #778579;
   --w-series-1: #4aa87a;
   --w-series-2: #a8622f;
+  /* 다크 글자용 테라코타 - 원래 색조·채도를 지키면서 밝기만 올렸다(5.68/4.50). */
+  --w-accent-text: #d08045;
   --w-series-3: #6b8fd4;
-  --w-danger: #d1554d;
+  /* T2: 4.24로 본문 기준 미달이었다. 오류가 안 읽히면 그건 오류가 아니라 침묵이다. */
+  --w-danger: #da7770;
   --w-up: #e05a52;
   --w-down: #5a8fd6;
   --w-flat: #778579;
@@ -395,7 +406,8 @@ select {
   margin: 1rem 0;
 }
 .prose-woodsman a {
-  color: var(--w-series-2);
+  /* ⚠ 글자에는 accent-text를 쓴다. series-2는 배경·테두리용이다(§8-3). */
+  color: var(--w-accent-text);
   text-decoration: underline;
   text-underline-offset: 3px;
 }

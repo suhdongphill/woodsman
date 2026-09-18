@@ -49,6 +49,12 @@ export async function OutboundStats() {
         <strong className="text-gray-400"> 블로그로 넘어간 수</strong>가 판단 기준입니다.
       </p>
 
+      <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
+        ⚠ <strong className="text-gray-400">조회 수와 나란히 비교하지 마세요.</strong> 조회는 같은
+        탭·같은 화면에서 한 번만 세고(새로고침 뻥튀기 방지), 클릭은 나가는 요청마다 셉니다. 한 사람이
+        한 번 보고 두 번 누르면 조회 1 · 클릭 2가 맞습니다.
+      </p>
+
       {stats.botWeek > 0 && (
         <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
           최근 7일에 봇·미리받기로 들어와 <strong className="text-gray-400">세지 않은 요청이{" "}
