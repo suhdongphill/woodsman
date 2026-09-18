@@ -337,21 +337,28 @@ select {
 }
 
 /* 본문(HTML 콘텐츠) 타이포 — ⚠ 순색(#fff) 대신 잉크 토큰을 쓴다 */
+/* 척도는 `docs/woodsman_design_system.md` §8-2가 정한다 — 재고 나서 쓴 표다.
+   T1(2026-09-18): 본문 15px → 17px. 15px 한글은 720px 폭에서 한 줄 48자가 되어
+   권장(35~45자)을 두 칸 넘었다. ⚠ 17px면 42자로 들어오므로 `max-w-3xl`은 건드리지 않는다 —
+   한 값을 고쳐 두 문제가 풀린다. */
 .prose-woodsman h2 {
-  font-size: 1.125rem;
+  font-size: 1.3125rem;
   font-weight: 700;
+  line-height: 1.4;
   color: var(--w-ink);
   margin: 1.75rem 0 0.75rem;
 }
 .prose-woodsman h3 {
-  font-size: 1rem;
+  font-size: 1.125rem;
   font-weight: 600;
+  line-height: 1.5;
   color: var(--w-ink);
   margin: 1.5rem 0 0.5rem;
 }
 .prose-woodsman p {
-  font-size: 0.9375rem;
-  /* ⚠ 본문 행간 1.7 이상 — 오래 읽는 화면이다 */
+  font-size: 1.0625rem;
+  /* ⚠ 행간 1.85는 KRDS(150%)보다 넓다. 의도한 것이다 — 한글 장문은 1.7~1.9가 편하다.
+     여기가 우리가 KRDS와 다르게 가는 자리다. 줄이지 않는다(§8-2). */
   line-height: 1.85;
   color: var(--w-ink);
   margin-bottom: 1rem;
@@ -362,7 +369,7 @@ select {
   list-style: disc;
 }
 .prose-woodsman li {
-  font-size: 0.9375rem;
+  font-size: 1.0625rem;
   line-height: 1.8;
   color: var(--w-ink);
   margin-bottom: 0.35rem;
