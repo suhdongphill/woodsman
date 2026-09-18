@@ -4,6 +4,7 @@ import {
   summarizeViews,
   fillDailySeries,
   isBotUserAgent,
+  isPrefetchRequest,
   normalizePath,
   postSlugFromPath,
   viewDateKey,
@@ -125,5 +126,27 @@ describe("증감률", () => {
 
   it("⚠ 앞 기간이 0이면 비교하지 않는다 — 0에서 1을 '+100%'로 적으면 성장처럼 읽힌다", () => {
     expect(changePct(1, 0)).toBeUndefined();
+  });
+});
+
+describe("미리받기 판정", () => {
+  const h = (init: Record<string, string>) => new Headers(init);
+
+  it("표준 헤더 — 크롬이 미리 받아 두는 요청", () => {
+    expect(isPrefetchRequest(h({ "Sec-Purpose": "prefetch;prerender" }))).toBe(true);
+    expect(isPrefetchRequest(h({ "Sec-Purpose": "prefetch" }))).toBe(true);
+  });
+
+  it("구형·다른 브라우저 헤더도 같이 본다", () => {
+    expect(isPrefetchRequest(h({ Purpose: "prefetch" }))).toBe(true);
+    expect(isPrefetchRequest(h({ "X-Purpose": "preview" }))).toBe(true);
+    expect(isPrefetchRequest(h({ "X-moz": "prefetch" }))).toBe(true);
+    expect(isPrefetchRequest(h({ "next-router-prefetch": "1" }))).toBe(true);
+  });
+
+  it("⚠ 사람이 누른 요청은 세야 한다 — 과하게 거르면 1순위 지표가 사라진다", () => {
+    expect(isPrefetchRequest(h({}))).toBe(false);
+    expect(isPrefetchRequest(h({ Referer: "https://portfolio-solutions.net/" }))).toBe(false);
+    expect(isPrefetchRequest(h({ "Sec-Fetch-Mode": "navigate" }))).toBe(false);
   });
 });

@@ -60,6 +60,37 @@ export function isBotUserAgent(userAgent: string | null | undefined): boolean {
   );
 }
 
+/**
+ * 브라우저가 **미리 받아 두는 요청**인가.
+ *
+ * ## 왜 필요한가
+ * 크롬·사파리는 사용자가 누르기 **전에** 링크를 미리 가져온다(hover·viewport 예측).
+ * 그 요청은 같은 출처의 리퍼러까지 달고 오므로 사람의 클릭과 구별되지 않는다.
+ * ⚠ 그대로 세면 **누르지도 않은 클릭**이 1순위 지표에 쌓인다.
+ *
+ * ## ⚠ 조회 비콘과 반대 방향의 실수였다
+ * `/api/view`(조회)는 처음부터 봇을 걸렀는데 `/go/*`(클릭)는 아무것도 거르지 않았다.
+ * 그래서 **클릭 수가 조회 수보다 많은** 날이 이어졌다(2026-09-18 발견).
+ */
+export function isPrefetchRequest(headers: Headers): boolean {
+  // 표준(Sec-Purpose: prefetch;prerender) · 크롬 구형(Purpose) · 사파리(X-Purpose) · 파이어폭스(X-moz)
+  const purpose = [
+    headers.get("sec-purpose"),
+    headers.get("purpose"),
+    headers.get("x-purpose"),
+    headers.get("x-moz"),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (/prefetch|prerender|preview/.test(purpose)) return true;
+
+  // Next.js 라우터가 미리 받아 두는 요청. 지금은 `<a>`라 오지 않지만,
+  // 나중에 누가 <Link>로 바꾸면 조용히 숫자가 부풀 자리다.
+  return headers.get("next-router-prefetch") === "1";
+}
+
 /** `/insights/three-bucket` → `three-bucket`. 글이 아니면 null. */
 export function postSlugFromPath(path: string): string | null {
   const match = /^\/insights\/([a-z0-9][a-z0-9-]*)$/.exec(path);

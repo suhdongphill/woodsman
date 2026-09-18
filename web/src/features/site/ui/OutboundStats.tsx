@@ -48,6 +48,14 @@ export async function OutboundStats() {
         개인 식별 정보(IP·쿠키)를 저장하지 않고 날짜별 합계만 셉니다. 사이트 체류가 아니라
         <strong className="text-gray-400"> 블로그로 넘어간 수</strong>가 판단 기준입니다.
       </p>
+
+      {stats.botWeek > 0 && (
+        <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
+          최근 7일에 봇·미리받기로 들어와 <strong className="text-gray-400">세지 않은 요청이{" "}
+          {stats.botWeek.toLocaleString("ko-KR")}건</strong>입니다. 2026-09-18 이전 수치에는 이것이
+          섞여 있어 그 앞뒤를 곧바로 비교할 수 없습니다.
+        </p>
+      )}
     </Card>
   );
 }

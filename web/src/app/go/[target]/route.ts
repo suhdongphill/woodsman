@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { clickDateKey, outboundDestinations, resolveOutbound } from "@/lib/outbound";
-import { normalizePath } from "@/lib/analytics";
+import { isBotUserAgent, isPrefetchRequest, normalizePath } from "@/lib/analytics";
 import { getSiteBasics } from "@/lib/site-settings";
 import { findPostBySlug } from "@/features/posts/repository";
 import { findPublishedTistoryUrl } from "@/features/reports/repository";
@@ -63,11 +63,20 @@ export async function GET(
 
   try {
     const date = clickDateKey(new Date());
-    await recordClick(target, date);
+
+    // ⚠ **사람이 누른 것만 1순위 지표로 센다**(2026-09-18).
+    //    그 전까지 `/go/*`는 아무것도 거르지 않아서, 봇을 거르는 조회 비콘(`/api/view`)보다
+    //    클릭이 더 많은 날이 이어졌다. 같은 판정을 양쪽이 나눠 쓰게 맞췄다.
+    //    UA는 판정에만 쓰고 저장하지 않는다(`lib/analytics.ts`와 같은 규칙).
+    const bot =
+      isBotUserAgent(request.headers.get("user-agent")) || isPrefetchRequest(request.headers);
+
+    await recordClick(target, date, { bot });
 
     // ⚠ 출처 집계는 **부가**다. 실패해도 1순위 지표(recordClick)는 이미 올라가 있다.
     //    순서를 바꾸지 말 것 — 출처를 먼저 쓰다 죽으면 클릭 자체가 누락된다.
-    const from = sourcePathFrom(request.headers.get("referer"));
+    // ⚠ 봇의 출처는 담지 않는다 — 「어느 화면이 잘 보내나」를 봇이 흐리면 안 된다.
+    const from = bot ? null : sourcePathFrom(request.headers.get("referer"));
     if (from) await recordOutboundSource({ path: from, target, date });
   } catch (error) {
     // 집계는 부가 기능이라 이동을 막지 않는다. 다만 조용히 넘기지는 않는다 —

@@ -7,14 +7,26 @@
 import { execute, queryAll, queryOne } from "./d1";
 import { clickDateKey } from "./outbound";
 
-/** 클릭 1건 기록. 같은 (대상, 날짜)면 카운트만 올린다. */
-export async function recordClick(target: string, date: string): Promise<void> {
+/**
+ * 클릭 1건 기록. 같은 (대상, 날짜)면 카운트만 올린다.
+ *
+ * ⚠ `bot`이면 **`count`가 아니라 `botCount`**에 담는다. 버리지 않는 이유는
+ *    우리가 무엇을 얼마나 걸렀는지 나중에 볼 수 있어야 하기 때문이다 —
+ *    자[尺]를 고쳤으면 얼마나 고쳤는지도 기록에 남아야 한다.
+ */
+export async function recordClick(
+  target: string,
+  date: string,
+  options: { bot?: boolean } = {},
+): Promise<void> {
+  const column = options.bot ? "botCount" : "count";
   // D1(SQLite)의 UPSERT. @@unique([target, date]) 인덱스가 충돌 판정을 해 준다.
+  // ⚠ 컬럼 이름은 위에서 **우리가 고른 두 값 중 하나**다 — 바깥에서 들어온 문자열이 아니다.
   await execute(
-    `INSERT INTO OutboundClick (id, target, date, count, updatedAt)
-       VALUES (?, ?, ?, 1, ?)
+    `INSERT INTO OutboundClick (id, target, date, count, botCount, updatedAt)
+       VALUES (?, ?, ?, ${options.bot ? 0 : 1}, ${options.bot ? 1 : 0}, ?)
      ON CONFLICT(target, date) DO UPDATE SET
-       count = count + 1,
+       ${column} = ${column} + 1,
        updatedAt = excluded.updatedAt`,
     [`${target}_${date}`, target, date, new Date().toISOString()],
   );
@@ -25,6 +37,8 @@ export type ClickStats = {
   week: number;
   total: number;
   recent: { date: string; count: number }[];
+  /** ⚠ 봇·프리페치라서 세지 않은 수(최근 7일). 0이 아니면 화면이 그 사실을 밝힌다. */
+  botWeek: number;
 };
 
 export async function loadClickStats(now = new Date()): Promise<ClickStats> {
@@ -32,8 +46,8 @@ export async function loadClickStats(now = new Date()): Promise<ClickStats> {
   // 날짜 문자열(YYYY-MM-DD)은 사전순 비교가 곧 시간순 비교라 별도 파싱이 필요 없다.
   const weekAgo = clickDateKey(new Date(now.getTime() - 6 * 86_400_000));
 
-  const daily = await queryAll<{ date: string; count: number }>(
-    `SELECT date, SUM(count) AS count FROM OutboundClick
+  const daily = await queryAll<{ date: string; count: number; botCount: number }>(
+    `SELECT date, SUM(count) AS count, SUM(botCount) AS botCount FROM OutboundClick
       GROUP BY date ORDER BY date DESC LIMIT 30`,
   );
   const totalRow = await queryOne<{ total: number | null }>(
@@ -45,6 +59,9 @@ export async function loadClickStats(now = new Date()): Promise<ClickStats> {
     week: daily.filter((d) => d.date >= weekAgo).reduce((sum, d) => sum + d.count, 0),
     total: totalRow?.total ?? 0,
     recent: daily.slice(0, 7),
+    botWeek: daily
+      .filter((d) => d.date >= weekAgo)
+      .reduce((sum, d) => sum + (d.botCount ?? 0), 0),
   };
 }
 
