@@ -341,14 +341,24 @@ select {
    T1(2026-09-18): 본문 15px → 17px. 15px 한글은 720px 폭에서 한 줄 48자가 되어
    권장(35~45자)을 두 칸 넘었다. ⚠ 17px면 42자로 들어오므로 `max-w-3xl`은 건드리지 않는다 —
    한 값을 고쳐 두 문제가 풀린다. */
+/* ⚠ `lib/markdown.ts`가 제목을 **한 단계 낮춰서** 낸다(h1은 페이지 제목이 쓰므로 `##` → `<h3>`).
+   그래서 글쓴이가 절 제목으로 쓰는 `##`은 h3으로 온다 — §8-2의 「절 제목 21px」을 **h3에** 건다.
+   여기를 h2에 걸면 표는 맞는데 화면에는 영영 닿지 않는다(2026-09-18 발견). */
 .prose-woodsman h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--w-ink);
+  margin: 1.75rem 0 0.75rem;
+}
+.prose-woodsman h3 {
   font-size: 1.3125rem;
   font-weight: 700;
   line-height: 1.4;
   color: var(--w-ink);
   margin: 1.75rem 0 0.75rem;
 }
-.prose-woodsman h3 {
+.prose-woodsman h4 {
   font-size: 1.125rem;
   font-weight: 600;
   line-height: 1.5;
