@@ -10,6 +10,9 @@ requires-python = ">=3.9"
 dependencies = [
     "click>=8.0",
     "pandas>=1.5",
+    # ⚠ pms/rates/{catalog,compute}.py가 계열 정의를 YAML로 읽는다.
+    #   여기 없으면 GitHub Actions에서 ModuleNotFoundError로 죽는다(로컬은 이미 깔려 있어 안 보였다).
+    "pyyaml>=6.0",
 ]
 
 [project.scripts]
