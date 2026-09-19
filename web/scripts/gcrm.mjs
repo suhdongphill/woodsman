@@ -23,6 +23,7 @@ const { GCRM_CONFIG, CONFIG_PARTS } = await import("../src/lib/gcrm/config/index
 const { GCRM_PILLARS, structuralCoverage, flattenPillar } = await import("../src/lib/gcrm/config/pillars.ts");
 const { GCRM_INDICATOR_BY_CODE, GCRM_INDICATORS } = await import("../src/lib/gcrm/config/indicators.ts");
 const { GATES } = await import("../src/lib/gcrm/config/model.ts");
+const { PROVENANCE, ungrounded, provenanceSummary } = await import("../src/lib/gcrm/config/provenance.ts");
 
 const argv = process.argv.slice(2);
 const command = argv[0] ?? "help";
@@ -108,11 +109,60 @@ async function run() {
     for (const e of errors) console.error(`  ${e.file}.ts: ${e.key} — ${e.message}`);
     process.exit(1);
   }
+  const g = provenanceSummary();
+  console.log(
+    `
+숫자의 출처 — A(명세) ${g.A} · B(기관 대조) ${g.B} · C(관례) ${g.C} · ⚠ D(근거 없음) ${g.D}`,
+  );
+  console.log("  자세히: npm run gcrm -- provenance   ·   점검표: docs/GCRM_근거점검.md");
+
   console.log("\n오류 없음. 설정을 읽었고 지문을 찍었다. (DB는 건드리지 않았다)");
+}
+
+/**
+ * ⚠ 근거 없이 정한 값을 **드러내 놓는 자리**(운영자 지시 2026-09-19).
+ * 화면이 생기기 전까지는 여기가 그 화면이다.
+ */
+function provenance() {
+  const only = argv.includes("--ungrounded") ? ungrounded() : PROVENANCE;
+  if (asJson) {
+    console.log(JSON.stringify(only, null, 2));
+    return;
+  }
+  const g = provenanceSummary();
+  console.log(`GCRM 숫자의 출처 — 전체 ${PROVENANCE.length}건`);
+  console.log(`A 명세 ${g.A} · B 기관 대조 ${g.B} · C 관례 ${g.C} · ⚠ D 근거 없음 ${g.D}
+`);
+
+  const TITLE = {
+    D: "⚠ D — 근거 없음. 내가 정했다",
+    B: "B — 기관 관리체계·문헌과 대조함",
+    C: "C — 업계·수학 관례",
+    A: "A — 명세에 명시",
+  };
+  for (const grade of ["D", "B", "C", "A"]) {
+    const rows = only.filter((x) => x.grade === grade);
+    if (!rows.length) continue;
+    console.log(`${"─".repeat(72)}
+${TITLE[grade]}
+`);
+    for (const x of rows) {
+      console.log(`  ${x.label}`);
+      console.log(`    어디   ${x.where}`);
+      console.log(`    근거   ${x.basis}`);
+      if (x.impact) console.log(`    영향   ${x.impact}`);
+      if (x.reviewPlan) console.log(`    검증   ${x.reviewPlan}`);
+      for (const u of x.source ?? []) console.log(`    출처   ${u}`);
+      console.log("");
+    }
+  }
+  console.log("⚠ D등급은 민감도 분석(P9) 전에는 화면에 점수로 올리지 않는다.");
 }
 
 if (command === "run") {
   await run();
+} else if (command === "provenance") {
+  provenance();
 } else {
   console.log(
     [
@@ -120,6 +170,9 @@ if (command === "run") {
       "",
       "  npm run gcrm -- run --dry-run          설정 검증 + config_hash",
       "  npm run gcrm -- run --dry-run --json   JSON으로",
+      "",
+      "  npm run gcrm -- provenance             숫자의 출처 대장(A~D 등급)",
+      "  npm run gcrm -- provenance --ungrounded  ⚠ 근거 없이 정한 것만",
       "",
       "아직 P0(설정과 스키마)까지다. 명세 Part 4의 P2부터가 계산이다.",
     ].join("\n"),

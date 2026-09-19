@@ -52,7 +52,15 @@ export type GcrmPillar = {
   code: string;
   nameKo: string;
   polarity: PillarPolarity;
-  /** 이 기둥이 레짐 축 점수에 기여하는 무게. ⚠ 10개 합 = 1.00 (테스트가 확인). */
+  /**
+   * 이 기둥이 레짐 축 점수에 기여하는 무게. ⚠ 10개 합 = 1.00 (테스트가 확인).
+   *
+   * ⚠ **전부 0.10 — 균등이다** (운영자 결정 2026-09-19).
+   * 처음에 .18/.14/.12… 로 차등을 뒀는데 **그 차등에 근거가 없었다**(명세에도 v1 엔진에도 없다).
+   * 기준이 명확하지 않으면 균등으로 둔다 — **근거 없는 차등보다 근거 없는 균등이 정직하다.**
+   * 차등을 되살리려면 근거를 먼저 만든다(민감도 분석 P9 · 공행성 기반 추정).
+   * 출처 대장: `provenance.ts`의 `axis_weight_pillars`.
+   */
   axisWeight: number;
   /**
    * 기둥을 화면용 스칼라 하나로 접을 때 쓰는 시간축 가중치 (§B-2 — 명세 §4 표의 정체).
@@ -74,7 +82,7 @@ export const GCRM_PILLARS: GcrmPillar[] = [
     code: "liquidity",
     nameKo: "유동성",
     polarity: "favorable",
-    axisWeight: 0.18,
+    axisWeight: 0.1,
     summaryWeights: CORE,
     from: "v1 §12 Global Liquidity — 하위 점수 트리를 그대로 옮겼다",
     members: {
@@ -199,7 +207,7 @@ export const GCRM_PILLARS: GcrmPillar[] = [
     code: "rate_absorption",
     nameKo: "금리 감내력",
     polarity: "favorable",
-    axisWeight: 0.12,
+    axisWeight: 0.1,
     summaryWeights: CORE,
     from: "v1 §18 Rate Absorption Capacity",
     members: {
@@ -236,7 +244,7 @@ export const GCRM_PILLARS: GcrmPillar[] = [
     code: "engine_power",
     nameKo: "엔진 출력",
     polarity: "favorable",
-    axisWeight: 0.12,
+    axisWeight: 0.1,
     summaryWeights: SLOW,
     from: "v1 §9 Capital Formation · §7 AI Productivity · §10 Private Credit",
     members: {
@@ -334,7 +342,7 @@ export const GCRM_PILLARS: GcrmPillar[] = [
     code: "dollar_network",
     nameKo: "달러 네트워크 지배력",
     polarity: "favorable",
-    axisWeight: 0.06,
+    axisWeight: 0.1,
     summaryWeights: SLOW,
     from: "v1 §39 Dollar Network Power (v1 inputs.ts에 매핑이 없어 여기서 처음 붙인다)",
     members: {
@@ -386,7 +394,7 @@ export const GCRM_PILLARS: GcrmPillar[] = [
     code: "market_risk",
     nameKo: "시장위험·지정학",
     polarity: "stress",
-    axisWeight: 0.12,
+    axisWeight: 0.1,
     summaryWeights: CORE,
     from: "v1 §31 Market Risk & Geopolitical Stress (market 0.70 + geopolitical 0.30)",
     members: {
@@ -439,7 +447,7 @@ export const GCRM_PILLARS: GcrmPillar[] = [
     code: "risk_transmission",
     nameKo: "위험 전이",
     polarity: "stress",
-    axisWeight: 0.14,
+    axisWeight: 0.1,
     summaryWeights: CORE,
     from: "v1 §32 Risk Transmission (v1 inputs.ts에 매핑이 없어 여기서 처음 붙인다)",
     members: {
@@ -468,7 +476,7 @@ export const GCRM_PILLARS: GcrmPillar[] = [
     code: "engine_heat",
     nameKo: "엔진 온도",
     polarity: "stress",
-    axisWeight: 0.12,
+    axisWeight: 0.1,
     summaryWeights: CORE,
     from: "v1 §30 Engine Heat — 채움 가중치가 가장 높은 기둥이다(0.90)",
     members: {
@@ -493,7 +501,7 @@ export const GCRM_PILLARS: GcrmPillar[] = [
     code: "fiscal_dominance",
     nameKo: "재정 우위 압력",
     polarity: "stress",
-    axisWeight: 0.06,
+    axisWeight: 0.1,
     summaryWeights: SLOW,
     from: "v1 §36 Fiscal Dominance Pressure (v1 inputs.ts에 매핑이 없어 여기서 처음 붙인다)",
     members: {
@@ -529,7 +537,7 @@ export const GCRM_PILLARS: GcrmPillar[] = [
     code: "monetary_discipline",
     nameKo: "통화 규율 압력",
     polarity: "stress",
-    axisWeight: 0.05,
+    axisWeight: 0.1,
     summaryWeights: CORE,
     from: "v1 §37 Monetary Discipline Pressure (v1 inputs.ts에 매핑이 없어 여기서 처음 붙인다)",
     members: {
@@ -553,7 +561,7 @@ export const GCRM_PILLARS: GcrmPillar[] = [
     code: "debasement",
     nameKo: "통화가치 희석 기대",
     polarity: "stress",
-    axisWeight: 0.03,
+    axisWeight: 0.1,
     summaryWeights: SLOW,
     from: "v1 §38 Debasement Expectation (v1 inputs.ts에 매핑이 없어 여기서 처음 붙인다)",
     members: {
