@@ -345,10 +345,10 @@ model SiteConfig {
   /// ⚠ 값이 있어도 `adsEnabled`가 꺼져 있으면 **광고를 그리지 않는다.**
   ///    등록과 노출을 분리한 이유: 심사·정착 전에 값만 넣어 두고 싶을 때가 있고,
   ///    문제가 생기면 재배포 없이 즉시 내려야 한다.
-  adsEnabled              Boolean @default(false)
-  adsenseClientId         String?
-  adsenseSlotArticleEnd   String?
-  adsenseSlotFeedEnd      String?
+  adsEnabled               Boolean @default(false)
+  adsenseClientId          String?
+  adsenseSlotArticleEnd    String?
+  adsenseSlotFeedEnd       String?
   adsenseSlotContentBottom String?
 
   updatedAt DateTime @updatedAt
@@ -449,13 +449,13 @@ model OutboundClick {
   id String @id @default(cuid())
 
   /// 대상 키 (src/lib/outbound.ts의 OUTBOUND_TARGETS)
-  target String
+  target   String
   /// 집계 날짜 (KST 기준 YYYY-MM-DD)
-  date   String
-  count  Int    @default(0)
+  date     String
+  count    Int    @default(0)
   /// ⚠ 봇·프리페치라서 **세지 않은** 수. 버리지 않고 따로 담는다 —
   /// 조용히 버리면 우리가 무엇을 얼마나 걸렀는지 영영 모른다.
-  botCount Int  @default(0)
+  botCount Int    @default(0)
 
   updatedAt DateTime @updatedAt
 
@@ -959,7 +959,7 @@ model StockReportContext {
   inPortfolio   Boolean @default(false)
   functionType  String?
   /// ⚠ 발행 시점의 분류 이름. 없으면 이 결정(2026-08-21) 이전 스냅숏이다.
-  functionName String?
+  functionName  String?
   targetWeight  Float?
   holdingThesis String?
 
@@ -1196,4 +1196,159 @@ model MacroEvent {
 
   @@unique([source, externalId])
   @@index([at])
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// GCRM v2 — Global Capital Regime Monitor (2026-09-19, P0)
+// 명세: docs/GCRM_설계점검_v2.md §2-17 · 설정: src/lib/gcrm/config/
+//
+// ⚠ 원자료 테이블을 새로 만들지 않는다. 관측은 MacroPoint(L2)·MacroObservation(L1)을 그대로 읽고,
+//   여기에는 **계산 결과만** 쌓는다. 같은 지표가 사이트 안에서 두 값을 갖지 않게 하는 유일한 방법이다.
+//
+// ⚠ 명세의 DDL은 gcrm_run 같은 snake_case이지만 PascalCase로 바꿨다 —
+//   같은 DB의 MacroPoint·ScoreValue와 어긋나면 나중에 읽는 사람이 두 관례를 외워야 한다.
+// ⚠ 날짜는 D1에 DATE 타입이 없으므로 TEXT "YYYY-MM-DD"다(ScoreValue.asOf와 같은 관례).
+// ════════════════════════════════════════════════════════════════════════════
+
+/// 한 번의 계산. ⚠ (asOf, configHash)로 과거 점수를 언제든 재계산해 대조할 수 있어야 한다 —
+/// 그게 안 되면 버전 관리가 장식이다(명세 §2-17).
+model GcrmRun {
+  runId String @id
+
+  /// YYYY-MM-DD 평가일
+  asOf         String
+  modelVersion String
+  /// 설정 6벌을 키 정렬 JSON으로 직렬화한 SHA-256 앞 12자(src/lib/gcrm/config/hash.ts)
+  configHash   String
+  gitSha       String?
+
+  /// LIVE(그날 알려진 값) · RECOMPUTED(지금 값으로 과거를 다시) — ScoreValue와 같은 어휘를 쓴다
+  basis String @default("LIVE")
+
+  createdAt DateTime @default(now())
+
+  @@index([asOf])
+  @@index([configHash])
+}
+
+/// 지표 × 시간축 점수. ⚠ score는 polarity를 적용한 **뒤**의 값이다(0~100, 높을수록 자본에 우호).
+/// raw와 섞어 쓰지 않는다 — 섞이면 어느 쪽인지 알 방법이 없다.
+model GcrmIndicatorScore {
+  runId     String
+  indicator String
+  /// tide · wind · wave
+  axis      String
+
+  rawValue Float?
+  pctRank  Float?
+  /// polarity 적용 후. ⚠ NULL은 0점이 아니라 「내지 않았다」다
+  score    Float?
+
+  staleness  Float
+  evidence   Float
+  baseWeight Float
+  /// baseWeight × staleness × evidence. ⚠ horizon_weight를 여기 다시 곱하지 않는다(B-6)
+  effWeight  Float
+
+  /// OK · MISSING · STALE · SHORT_HISTORY
+  status   String
+  /// 이력이 minObs에 못 미쳐 MISSING이 된 경우 몇 점이었는지 — 화면이 이유를 말할 수 있어야 한다
+  obsCount Int?
+  obsDate  String?
+
+  @@id([runId, indicator, axis])
+  @@index([runId])
+}
+
+/// 기둥 × 시간축 점수.
+model GcrmPillarScore {
+  runId  String
+  pillar String
+  axis   String
+
+  /// 화면 표시용 — **원래 방향**이다(위험전이 76 = 위험이 크다)
+  scoreRaw Float?
+  /// 집계용 — 우호 방향으로 뒤집은 값(stress 기둥은 100 − scoreRaw)
+  scoreOri Float?
+
+  coverage   Float
+  confidence Float
+  nUsed      Int
+  nTotal     Int
+  /// OK · INSUFFICIENT. ⚠ INSUFFICIENT는 0이 아니다 — 상위 집계의 분모에서 빠진다
+  status     String
+
+  @@id([runId, pillar, axis])
+  @@index([runId])
+}
+
+/// 시간축 종합 점수.
+model GcrmAxisScore {
+  runId String
+  axis  String
+
+  score      Float?
+  /// UP · DOWN · FLAT. ⚠ 불감대 안이면 FLAT이다 — 없으면 화살표가 매일 뒤집힌다
+  direction  String?
+  coverage   Float?
+  confidence Float?
+  status     String
+
+  @@id([runId, axis])
+}
+
+/// 종합·정렬도. ⚠ acuteWatch가 켜져도 레짐 코드는 바뀌지 않는다(§2-12).
+model GcrmRegimeScore {
+  runId String @id
+
+  overall Float?
+  /// 레짐 전이 증거. ⚠ 계산에 wave가 들어가지 않는다(§2-14)
+  rte     Float?
+
+  alignment      Float?
+  proximity      Float?
+  dirAgreement   Float?
+  /// ALIGNED_UP · ALIGNED_DOWN · TRANSITION · DIVERGENT · MIXED · UNDETERMINED
+  alignmentState String?
+
+  acuteWatch Boolean @default(false)
+}
+
+/// 승격 중인 신호. ⚠ 확인은 **서로 다른 채널** 기준으로 센다 — 같은 채널 안은 몇 개든 1표다.
+model GcrmSignal {
+  signalId String @id
+  runId    String
+
+  /// 지표 코드 또는 기둥 코드
+  subject   String
+  direction String
+  /// 0 NOISE · 1 WAVE_ALERT · 2 WIND_CONFIRMATION · 3 TIDE_MIGRATION · 4 REGIME_CONFIRMED
+  stage     Int
+
+  firstSeen String
+  /// 지속 일/주 수
+  persistN  Int
+  /// 확인된 채널 JSON 배열 — 중복은 세지 않는다
+  channels  String
+  note      String?
+
+  @@index([runId])
+  @@index([stage])
+}
+
+/// 레짐 상태. ⚠ 최소 체류 기간 안에는 해제 조건이 충족돼도 바꾸지 않는다(R6만 예외).
+model GcrmRegimeState {
+  /// YYYY-MM-DD
+  asOf String @id
+
+  regimeCode  String
+  regimeKo    String
+  enteredAt   String
+  dwellDays   Int
+  prevRegime  String?
+  /// 충족된 조건 JSON — 「왜 이 레짐인가」를 화면이 그대로 보여 준다
+  entryReason String?
+  runId       String
+
+  @@index([regimeCode])
 }

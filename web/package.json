@@ -20,6 +20,7 @@
     "ai:sync": "node --env-file=.env --import tsx scripts/sync-ai-secrets.mjs",
     "admin:set": "node --env-file=.env --import tsx scripts/set-admin.mjs",
     "admin:apply": "node --env-file=.env --import tsx scripts/set-admin.mjs --from-env",
+    "gcrm": "node --import tsx scripts/gcrm.mjs",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
