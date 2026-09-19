@@ -35,6 +35,7 @@ import {
   STALENESS_CYCLES,
   CYCLE_DAYS,
   CONFIDENCE_WEIGHTS,
+  DIR_AGREEMENT,
 } from "./model";
 import { GCRM_PILLARS } from "./pillars";
 import { CONFIRMATION } from "./channels";
@@ -259,6 +260,54 @@ export const PROVENANCE: ProvenanceEntry[] = [
     basis: "가장 널리 쓰이는 정의",
   },
 
+  {
+    id: "alignment_formula",
+    label: "정렬도 = 0.5 × proximity + 0.5 × 방향일치도",
+    where: "alignment.ts · alignmentOf",
+    value: [0.5, 0.5],
+    grade: "A",
+    basis:
+      "명세 §2-9. v1의 (|C−W|+|W−D|+|C−D|)/3은 대수적으로 2×(최대−최소)/3과 같아 **가운데 값이 계산에 " +
+      "전혀 들어가지 않고**, 0–100 중 절반이 쓰이지 않는다(B-3). spread를 직접 쓰면 같은 정보를 전 구간으로 편다. " +
+      "가운데 값은 표준편차로 **보조 표시**만 한다 — 점수에는 넣지 않는다(명세가 그렇게 권한다)",
+    impact: "이 식이 바뀌면 모든 정렬도와 상태 판정이 바뀐다",
+  },
+  {
+    id: "state_tree",
+    label: "상태 결정 트리 — 정렬 문턱 65 · 이탈 문턱 45",
+    where: "alignment.ts · alignmentState",
+    value: [65, 45],
+    grade: "A",
+    basis:
+      "명세 §2-9. ⚠ **TRANSITION을 DIVERGENT보다 먼저** 판정한다 — 순서를 바꾸면 전환 국면이 이탈로 분류된다. " +
+      "점수 구간이 아니라 트리가 상태를 정하는 것도 명세의 결정이다(B-5: v1은 같은 34점에 두 상태를 적었다)",
+  },
+  {
+    id: "all_flat_agreement",
+    label: "⚠ 셋 다 FLAT일 때의 방향 일치도 = 0",
+    where: "alignment.ts · directionAgreement",
+    value: 0,
+    grade: "D",
+    basis:
+      "⚠ **명세가 정하지 않은 경우다.** 글자대로면 「세 방향이 모두 같음」이라 100이지만, " +
+      "아무것도 움직이지 않는 것을 「강한 정렬」이라 부르면 오독을 부른다. 그래서 0으로 둔다",
+    impact: "정체 국면의 정렬도가 100점씩 달라진다. 화면 문구가 정반대로 읽힐 수 있는 자리다",
+    reviewPlan:
+      "백테스트(P9)에서 정체 구간이 실제로 어떻게 끝났는지 본다 — 정체가 전환의 전조였다면 0이 맞고, " +
+      "안정의 신호였다면 별도 상태(STALLED)를 만드는 것이 맞다",
+  },
+  {
+    id: "flat_majority_agreement",
+    label: "⚠ FLAT·FLAT·방향 하나일 때의 방향 일치도 = 0",
+    where: "alignment.ts · directionAgreement",
+    value: 0,
+    grade: "D",
+    basis:
+      "⚠ **명세가 정하지 않은 경우다.** 「둘이 같고 하나가 FLAT(75)」의 뜻은 *같은 둘이 방향을 가질 때*로 읽었다. " +
+      "멈춘 둘과 움직이는 하나는 정렬의 증거가 아니므로 0으로 둔다",
+    impact: "한 축만 움직이기 시작하는 초기 국면의 정렬도를 75점 낮춘다",
+    reviewPlan: "P9에서 「한 축만 먼저 움직인 뒤 나머지가 따라온 사례」의 빈도를 센다",
+  },
   // ── D · ⚠ 근거 없음 ──────────────────────────────────────────────────
   {
     id: "axis_weight_pillars",
@@ -403,6 +452,10 @@ export function liveValues(): Record<string, unknown> {
     min_windows: HORIZON_GUARD.minWindows,
     cycle_days: CYCLE_DAYS,
     staleness_cycles: STALENESS_CYCLES,
+    alignment_formula: [0.5, 0.5],
+    state_tree: [65, 45],
+    all_flat_agreement: DIR_AGREEMENT.otherwise,
+    flat_majority_agreement: DIR_AGREEMENT.otherwise,
     axis_weight_pillars: GCRM_PILLARS.map((p) => p.axisWeight),
     acute_extra: ACUTE.thresholds.filter((t) => ["spx_etf", "ust10y_rvol"].includes(t.indicator)).length,
     min_obs_by_freq: {
