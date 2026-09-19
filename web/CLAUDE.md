@@ -22,7 +22,7 @@
 `data-mode` `allocation` `manual-price` `markdown` `sanitize-html` `seo` `sections`
 `analytics` `engagement` `beacon-path` `beacon-selftest` `seed-residue`
 `macro/{registry,series,signal,parse}` `bubble/{catalog,score}`
-`gcrm/config/{model,indicators,pillars,channels,regimes,promotion,validate,hash,provenance}` `gcrm/{normalize,horizon,weights,pillar,alignment,confidence,signals}`
+`gcrm/config/{model,indicators,pillars,channels,regimes,promotion,validate,hash,provenance}` `gcrm/{normalize,horizon,weights,pillar,alignment,confidence,signals,regime}`
 `canslim/{catalog,score}` `report/{catalog,rules,context,tistory,link}` `quota`
 `quote/{kpi,envelope,parse,lookup}` `bucket-target`
 `ai/{catalog,persona,context,routing,retrieval,client}` `security-headers` `login-throttle`

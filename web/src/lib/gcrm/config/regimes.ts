@@ -29,8 +29,17 @@ export type GcrmRegime = {
   /** 한 문장 요약의 뼈대 — 숫자보다 먼저 온다(§2-20). */
   headline: string;
   enter: PillarCondition[];
-  /** ⚠ 진입과 다르다. 하나라도 충족되면 해제 후보다. */
+  /** ⚠ 진입과 다르다. 이력현상의 핵심이다. */
   exit: PillarCondition[];
+  /**
+   * 해제 조건을 어떻게 묶는가. ⚠ **레짐마다 다르다** — 명세 §2-13 표의 「또는 / 그리고」를 그대로 옮겼다.
+   * - `any` — 하나라도 충족되면 해제 후보 (R1 · R2 · R4)
+   * - `all` — 전부 충족돼야 해제 후보 (R3 · R5 · R6)
+   *
+   * ⚠ 한 값으로 통일하면 안 된다. 심한 레짐(R5·R6)은 **전부 풀려야** 나가고,
+   *   완만한 레짐(R1·R2)은 **하나만 깨져도** 나간다. 그것이 명세의 판단이다.
+   */
+  exitMode: "any" | "all";
   /** 최소 체류(영업일). */
   minDwellDays: number;
   /** 추가 조건 — 계열이 아니라 신호·승격 상태가 정한다. */
@@ -41,6 +50,13 @@ export type GcrmRegime = {
     channels?: string[];
     /** 조류가 악화 방향이어야 한다. */
     tideDeteriorating?: boolean;
+  };
+  /** 해제에 필요한 신호 조건 — 기둥 점수만으로는 말할 수 없는 것들. */
+  exitRequires?: {
+    /** 바람이 이 주 수만큼 개선돼야 한다. */
+    windImprovingWeeks?: number;
+    /** 자금시장이 이 주 수만큼 정상이어야 한다. */
+    fundingNormalWeeks?: number;
   };
 };
 
@@ -74,6 +90,7 @@ export const GCRM_REGIMES: GcrmRegime[] = [
     enter: [],
     exit: [],
     minDwellDays: 0,
+    exitMode: "any",
   },
   {
     code: "R1",
@@ -90,6 +107,7 @@ export const GCRM_REGIMES: GcrmRegime[] = [
       { pillar: "risk_transmission", op: "gte", value: [55] },
     ],
     minDwellDays: 10,
+    exitMode: "any",
   },
   {
     code: "R2",
@@ -106,6 +124,7 @@ export const GCRM_REGIMES: GcrmRegime[] = [
       { pillar: "risk_transmission", op: "gte", value: [55] },
     ],
     minDwellDays: 10,
+    exitMode: "any",
   },
   {
     code: "R3",
@@ -117,12 +136,12 @@ export const GCRM_REGIMES: GcrmRegime[] = [
       { pillar: "liquidity", op: "lt", value: [55] },
       { pillar: "rate_absorption", op: "between", value: [45, 65] },
     ],
-    // ⚠ R3의 해제는 **둘 다** 충족돼야 한다. 나머지 레짐과 규칙이 다르다(명세 §2-13 그대로).
     exit: [
       { pillar: "monetary_discipline", op: "lt", value: [50] },
       { pillar: "liquidity", op: "gte", value: [60] },
     ],
     minDwellDays: 15,
+    exitMode: "all",
   },
   {
     code: "R4",
@@ -139,6 +158,7 @@ export const GCRM_REGIMES: GcrmRegime[] = [
       { pillar: "engine_heat", op: "gte", value: [55] },
     ],
     minDwellDays: 15,
+    exitMode: "any",
   },
   {
     code: "R5",
@@ -156,6 +176,8 @@ export const GCRM_REGIMES: GcrmRegime[] = [
       { pillar: "rate_absorption", op: "gt", value: [55] },
     ],
     minDwellDays: 20,
+    exitMode: "all",
+    exitRequires: { windImprovingWeeks: 2 },
     requires: { windPersistenceWeeks: 3, tideDeteriorating: true },
   },
   {
@@ -166,6 +188,8 @@ export const GCRM_REGIMES: GcrmRegime[] = [
     enter: [{ pillar: "risk_transmission", op: "gte", value: [80] }],
     exit: [{ pillar: "risk_transmission", op: "lt", value: [60] }],
     minDwellDays: 10,
+    exitMode: "all",
+    exitRequires: { fundingNormalWeeks: 2 },
     /**
      * ⚠ **CREDIT과 FUNDING 두 채널이 모두 확인될 때만 위기다.**
      * 주식만 급락한 것은 위기가 아니다 — v1 §18의 원칙을 규칙으로 고정했다.
