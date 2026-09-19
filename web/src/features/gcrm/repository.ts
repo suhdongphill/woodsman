@@ -10,14 +10,31 @@
  * 써야 하고, 그건 P9 조각에서 붙인다 — **지금 L2로 과거를 계산하면 그때는 몰랐던 수정치가 섞인다.**
  */
 import { getD1, queryAll, type D1Statement } from "@/lib/d1";
-import type { SeriesPoint } from "@/lib/macro/series";
+import { applyTransform, type SeriesPoint } from "@/lib/macro/series";
+import { findIndicator, withDerivedComponents } from "@/lib/macro/registry";
+import { composeDerived } from "@/lib/macro/derived";
 import type { PipelineResult } from "@/lib/gcrm/pipeline";
 import type { RegimeState } from "@/lib/gcrm/regime";
 
-/** 계열을 `since` 이후만 읽는다. 오름차순. */
+/**
+ * 계열을 `since` 이후만 읽는다. 오름차순.
+ *
+ * ## ⚠ 파생 지표는 저장돼 있지 않다 — **성분을 함께 읽어 합성한다**
+ * `sofr_iorb` · `sofr_dispersion` · `sofr_rvol` · `baa_spread` 넷은 `MacroPoint`에 없다.
+ * 화면은 읽을 때 합성하고(`lib/macro/derived.ts`), GCRM도 **같은 함수**를 써야 한다 —
+ * 두 곳에서 만들면 같은 지표가 사이트 안에서 두 값을 갖는다.
+ *
+ * ⚠ 2026-09-20에 이걸 빠뜨려 첫 실계산에서 넷이 통째로 빠졌다.
+ *   그중 `baa_spread`는 **CREDIT 채널에서 유일하게 30년 이력을 가진 지표**다 —
+ *   빠지면 신용 채널이 2023년부터의 ICE 계열만 남는다.
+ *   성분 계열(`sofr`·`iorb`·`sofr99`·`sofr1`·`baa_yield` 등)은 GCRM 지표 목록에 없으므로
+ *   `withDerivedComponents()`로 **키를 넓혀** 읽는다.
+ */
 export async function loadGcrmSeries(seriesKeys: string[], since: string): Promise<Map<string, SeriesPoint[]>> {
   const out = new Map<string, SeriesPoint[]>();
   if (seriesKeys.length === 0) return out;
+  const wanted = seriesKeys;
+  seriesKeys = withDerivedComponents(seriesKeys);
   const placeholders = seriesKeys.map(() => "?").join(", ");
   // ⚠ 저장 형식은 정오 UTC ISO다. 날짜 문자열과의 비교는 사전순으로 맞다.
   const rows = await queryAll<{ seriesKey: string; date: string; value: number }>(
@@ -30,6 +47,21 @@ export async function loadGcrmSeries(seriesKeys: string[], since: string): Promi
     const list = out.get(r.seriesKey) ?? [];
     list.push({ date: String(r.date).slice(0, 10), value: r.value });
     out.set(r.seriesKey, list);
+  }
+
+  // ⚠ 파생은 포털과 같은 함수로 합성한다. 성분은 각자의 표시 변환을 거친 뒤 합성된다(derived.ts 머리말).
+  for (const key of wanted) {
+    if (out.has(key)) continue;
+    const reg = findIndicator(key);
+    if (!reg?.derived) continue;
+    const parts = reg.derived.from.map((k) => {
+      const comp = findIndicator(k);
+      const pts = out.get(k);
+      return comp && pts ? applyTransform(pts, comp.transform) : undefined;
+    });
+    const made = composeDerived(reg.derived, parts);
+    // ⚠ 성분이 하나라도 비면 파생 자체가 없다. 빈 배열을 넣지 않는다 — 「없다」가 「0이다」가 된다.
+    if (made.length > 0) out.set(key, made);
   }
   return out;
 }
