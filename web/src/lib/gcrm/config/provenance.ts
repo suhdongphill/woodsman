@@ -36,6 +36,7 @@ import {
   CYCLE_DAYS,
   CONFIDENCE_WEIGHTS,
   DIR_AGREEMENT,
+  SENSITIVITY,
 } from "./model";
 import { GCRM_PILLARS } from "./pillars";
 import { CONFIRMATION } from "./channels";
@@ -308,6 +309,41 @@ export const PROVENANCE: ProvenanceEntry[] = [
     impact: "한 축만 움직이기 시작하는 초기 국면의 정렬도를 75점 낮춘다",
     reviewPlan: "P9에서 「한 축만 먼저 움직인 뒤 나머지가 따라온 사례」의 빈도를 센다",
   },
+  {
+    id: "dominant_threshold",
+    label: "⚠ 지배 판정 — 명세의 「±10%로 3점」은 뜰 수 없어 **빼고 재기**로 바꿨다",
+    where: "sensitivity.ts · leaveOneOutSensitivity · SENSITIVITY.dominantPillarDelta",
+    value: 3,
+    grade: "D",
+    basis:
+      "명세 §2-15는 「지표 가중치 ±10%가 기둥을 3점 이상 움직이면 DOMINANT_INDICATOR_WARNING」이라 하는데, " +
+      "⚠ **어떤 경우에도 뜰 수 없다.** 기둥 점수가 가중평균이라 이동폭이 " +
+      "(0.1w / (1 ∓ 0.1w)) × |점수 − 기둥점수|로 묶이고, 가중치를 0.01~0.99로 쓸어도 **최대 2.63점**이다 " +
+      "(2026-09-20 수치·테스트로 확인). minNonOverlap=3과 같은 종류의 죽은 임계였다. " +
+      "그래서 지배 판정을 **지표를 빼고 재는 방식**으로 옮겼다 — 「이 지표가 없으면 기둥이 달라지는가」가 " +
+      "원래 물으려던 것에 더 가깝다. 문턱 3점은 그대로 쓰되, ⚠ **그 3점의 근거는 여전히 없다.**",
+    impact:
+      "지배 경고가 뜨는지 마는지를 정한다. 명세대로 두면 경고가 영원히 안 뜨고, " +
+      "그러면 「지배적인 지표가 없다」가 아니라 **「검사를 안 한 것」**이 된다",
+    reviewPlan:
+      "① 실제 run에서 빼고 재기를 돌려 몇 개가 3점을 넘는지 센다 " +
+      "② 경고가 뜨면 **가중치를 고치기 전에 왜 떴는지 먼저 본다** — 쓸 수 있는 지표가 적어 " +
+      "하나가 기둥을 대표하는 것이라면 고칠 것은 가중치가 아니라 빠진 지표다 " +
+      "③ 명세의 ±10% 섭동도 남겨 두고 「얼마나 안 움직이는가」를 함께 보고한다",
+  },
+  {
+    id: "axis_weight_perturbation_scope",
+    label: "축 가중치 섭동으로는 정렬도·레짐이 흔들리지 않는다",
+    where: "sensitivity.ts · axisWeightSensitivity",
+    value: 5,
+    grade: "A",
+    basis:
+      "명세 §2-15의 ±5pp 비례 재배분을 그대로 구현했다(예시 tide 50→55 · wind 31.5 · wave 13.5 재현). " +
+      "⚠ 다만 `AXIS_WEIGHTS.core`는 **종합 점수를 만들 때만** 쓰이므로 축 점수 자체를 바꾸지 않는다 — " +
+      "그래서 MODEL_FRAGILITY_WARNING의 세 조건 중 「overall 5점 이상 변동」만 살아 있다. " +
+      "정렬도·레짐을 흔드는 것은 창 가중치(HORIZON_WEIGHTS)이고 그건 파이프라인을 다시 돌려야 한다",
+    impact: "이 섭동만 돌리고 「모델이 견고하다」고 말하면 안 된다 — 흔들 수 있는 것만 흔든 것이다",
+  },
   // ── D · ⚠ 근거 없음 ──────────────────────────────────────────────────
   {
     id: "axis_weight_pillars",
@@ -456,6 +492,8 @@ export function liveValues(): Record<string, unknown> {
     state_tree: [65, 45],
     all_flat_agreement: DIR_AGREEMENT.otherwise,
     flat_majority_agreement: DIR_AGREEMENT.otherwise,
+    dominant_threshold: SENSITIVITY.dominantPillarDelta,
+    axis_weight_perturbation_scope: SENSITIVITY.axisDeltaPp,
     axis_weight_pillars: GCRM_PILLARS.map((p) => p.axisWeight),
     acute_extra: ACUTE.thresholds.filter((t) => ["spx_etf", "ust10y_rvol"].includes(t.indicator)).length,
     min_obs_by_freq: {
