@@ -97,16 +97,25 @@ export type NormalizedPoint =
       obsCount: number;
     };
 
-/** GCRM이 추가로 거는 변환. ⚠ 전부 **과거만** 본다. */
+/**
+ * GCRM이 추가로 거는 변환. ⚠ 전부 **과거만** 본다.
+ *
+ * ⚠ `yoy`는 **1년 전**과 비교한다 — 바로 앞 점이 아니다.
+ *   처음에 `mom`과 같은 가지에 넣어 두었는데, 그러면 일간 계열의 「전년비」가 **전일비**가 된다.
+ *   날짜를 맞춰 1년 전을 찾는 일은 `lib/macro/series.ts`의 `applyTransform`이 이미 한다
+ *   (주간 계열이 1년 전 같은 요일이 아니어서 통째로 비던 2026-09-14 버그까지 거기서 고쳐져 있다).
+ *   같은 판단을 두 곳에 두지 않는다.
+ */
 function gcrmTransform(points: SeriesPoint[], tf: NormalizeSpec["transform"]): SeriesPoint[] {
   if (tf === "level") return points;
+  if (tf === "yoy") return applyTransform(points, "yoy");
   const out: SeriesPoint[] = [];
   for (let i = 1; i < points.length; i++) {
     const prev = points[i - 1].value;
     const cur = points[i].value;
     if (tf === "diff") out.push({ date: points[i].date, value: cur - prev });
     else if (tf === "ratio" && prev !== 0) out.push({ date: points[i].date, value: cur / prev });
-    else if ((tf === "mom" || tf === "yoy") && prev !== 0)
+    else if (tf === "mom" && prev !== 0)
       out.push({ date: points[i].date, value: ((cur - prev) / Math.abs(prev)) * 100 });
   }
   return out;
