@@ -145,6 +145,66 @@
 
 `npm run check` 통과 — 테스트 **105파일 · 1,686개**(전 104 · 1,678). exit 0.
 
+### ⚠ 확인 ③ — 푸시 뒤 **자동화 둘이 같이 죽었다** (토큰 권한)
+
+푸시하자 `deploy.yml`이 돌았고, **품질 게이트는 통과했는데 배포에서 죽었다.**
+
+```text
+품질 게이트     → success
+Cloudflare 배포 → failure
+  POST /accounts/***/workers/scripts/woodsman/assets-upload-session
+    → No access to the specified resource.
+```
+
+⭐ **운영에는 영향이 없었다.** 손으로 올린 배포본(12:27:45Z)이 그대로 살아 있고(`/macro` 200),
+CI는 **자산 업로드 단계에서 멈춰** 아무것도 갈아치우지 못했다. 실패가 배포 **전에** 난 것이 다행이다.
+
+그래서 같은 토큰을 쓰는 다른 자동화도 의심했다 — `scheduled-data.yml`(월요일 05:30 재무부 수집).
+기다리지 않고 손으로 돌려 봤다. **같이 죽어 있었다.**
+
+```text
+POST /accounts/***/d1/database/e0ef7847.../query
+  → You do not have permission to perform this operation. [code: 7500]
+계열 5개 전부 실패
+```
+
+⚠ **토큰에 Workers Scripts 편집도, D1 편집도 없다.** 하나가 아니라 둘이다.
+
+### ⚠ 이번에 처음 본 것 — 「실패를 반드시 남긴다」가 **이 실패에서는 작동하지 않는다**
+
+`treasury-daily.mjs`는 ⚠ **결과를 반드시 `MacroIngest`에 남긴다**고 적어 두었다. 그런데 그 기록도
+**D1에 쓴다.** D1 권한이 없어 실패한 것이므로, **실패를 적는 일도 같이 실패했다.**
+
+대조해 보니 D1의 마지막 재무부 기록은 여전히 12:48:44Z(성공 5·실패 0) — 손으로 돌린 그 실행이다.
+**관리자 화면에는 「마지막 수집 성공」으로 보인다.** 방금 통째로 실패한 실행은 **흔적이 없다.**
+
+⚠ 이 프로젝트가 가장 크게 데인 「조용한 실패」가, 하필 그것을 막으려고 만든 장치의 **의존 대상이
+무너질 때** 다시 열린다. 지금 이것을 잡아 준 것은 GitHub Actions가 **빨갛게 죽은 것**뿐이었다.
+→ 숙제로 남긴다(지금 고치지 않는다 — 한 번에 하나씩 올린다).
+
+### 데이터는 무사하다
+
+실패는 **쓰기 전**에 났다. 대조했다 — `treasury_marketable` 152점 · `tsy_bill_share` 152점 ·
+`auction10y_btc` 154점, 모두 손으로 넣은 값 그대로다. 반쯤 쓰다 만 자리는 없다.
+
+### 토큰에 있어야 하는 권한 (Cloudflare 문서, 2026-09-20 확인)
+
+| 범위 | 권한 |
+|---|---|
+| Account | Account Settings 읽기 · **Workers Scripts 편집** ← 배포가 막힌 자리 · Workers KV Storage 편집 · Workers R2 Storage 편집 |
+| Account | **D1 편집** ← 재무부 수집이 막힌 자리 |
+| Zone | **Workers Routes 편집** (portfolio-solutions.net) |
+| User | User Details 읽기 · Memberships 읽기 |
+
+⚠ **Zone > Workers Routes 편집을 빠뜨리지 않는다.** `wrangler.jsonc`가 커스텀 도메인을 선언하므로,
+배포가 Route·Custom Domain을 건드릴 때 zone 권한이 따로 필요하다. 그 줄이 떨어지면 **사이트가
+도메인을 잃는다**(`wrangler.jsonc` 머리말의 경고와 같은 자리).
+
+### 다음에 확인할 것
+
+토큰을 고친 뒤 **둘 다** 다시 돌려 봐야 한다 — 배포 하나만 되살아나도 재무부는 여전히 죽어 있을 수 있다.
+⚠ 월요일 05:30을 그냥 기다리면, 실패해도 **D1에 아무 기록이 남지 않아** 화면으로는 알 수 없다.
+
 ## 2026-09-20 (56) — ★ GCRM P1: 재정 우위를 채웠다 · 바람이 게이트에 닿았다
 
 첫 실계산(54)에서 **종합 점수와 레짐이 나오지 않았다.** 바람 커버리지 60% < 게이트 70%.
