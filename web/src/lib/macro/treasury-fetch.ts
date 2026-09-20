@@ -33,6 +33,7 @@ const FETCH_TIMEOUT_MS = 20_000;
 export const TREASURY_SOURCE_IDS = [
   "mspd:bill_share",
   "mspd:coupon_share",
+  "mspd:total_marketable",
   "auction10y:bid_to_cover",
   "auction10y:high_yield",
 ] as const;
@@ -103,7 +104,13 @@ export async function fetchTreasury(sourceId: string, from: string): Promise<Ser
     });
     const shares = mspdShares(rows);
     const series =
-      field === "bill_share" ? shares.billShare : field === "coupon_share" ? shares.couponShare : undefined;
+      field === "bill_share"
+        ? shares.billShare
+        : field === "coupon_share"
+          ? shares.couponShare
+          : field === "total_marketable"
+            ? shares.totalMarketable
+            : undefined;
     if (!series) throw new Error(`재무부 MSPD 필드를 모릅니다: ${sourceId}`);
     if (series.length === 0) throw new Error(`재무부 MSPD ${field}: 「Total Marketable」 행이 있는 달이 없습니다`);
     return series;

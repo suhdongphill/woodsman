@@ -506,19 +506,22 @@ export const GCRM_PILLARS: GcrmPillar[] = [
     from: "v1 §36 Fiscal Dominance Pressure (v1 inputs.ts에 매핑이 없어 여기서 처음 붙인다)",
     members: {
       deficit_pressure: {
-        kind: "unavailable",
+        kind: "indicators",
         weight: 0.25,
-        reason: "연방 재정수지 계열을 아직 받지 않는다(FRED MTSDS133FMS — P1 후보)",
+        indicators: ["fed_outlays_receipts"],
+        note: "⚠ 적자 **금액**이 아니라 지출÷세입이다(2026-09-20). 금액은 물가·경제 규모를 따라 커져 백분위가 늘 최악에 붙는다 — 움직이지 않는 지표는 기둥에 아무것도 보태지 않는다",
       },
       net_treasury_supply: {
-        kind: "unavailable",
+        kind: "indicators",
         weight: 0.2,
-        reason: "시장성 국채 총액 변화 파생을 아직 만들지 않았다(MSPD 합계는 받고 있다)",
+        indicators: ["treasury_marketable"],
+        note: "MSPD 시장성 국채 잔액의 전년비. ⚠ 잔액 자체는 거의 언제나 사상 최대라 수준이 아니라 **속도**로 본다",
       },
       interest_expense: {
-        kind: "unavailable",
+        kind: "indicators",
         weight: 0.15,
-        reason: "연방 이자지출 계열을 아직 받지 않는다(FRED A091RC1Q027SBEA — P1 후보)",
+        indicators: ["fed_interest_receipts"],
+        note: "이자지출÷세입. ⚠ 아래 `debt_service_ratio`가 「원래는 이자지출/세입인데 분모를 못 본다」고 적어 둔 그 분모를 여기서 본다",
       },
       term_premium: { kind: "indicators", weight: 0.15, indicators: ["term_premium"] },
       debt_service_ratio: {

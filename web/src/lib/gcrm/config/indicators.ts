@@ -469,6 +469,78 @@ export const GCRM_INDICATORS: GcrmIndicator[] = [
     enabled: true,
   },
   /** 레버리지 축적 — 수준이 아니라 속도를 본다 */
+  /**
+   * 재정 우위 세 자리 (2026-09-20, P1). ⚠ **금액이 아니라 비율**로 붙였다 —
+   * 명목 금액은 물가·경제 규모를 따라 커져 백분위가 늘 최고치에 붙는다(움직이지 않는 지표).
+   * 근거와 실측 범위는 `lib/macro/sectors/fiscal.ts` 머리말에 있다.
+   */
+  {
+    code: "fed_outlays_receipts",
+    nameKo: "연방 지출 ÷ 세입",
+    series: "fed_outlays_receipts",
+    source: "DERIVED",
+    freq: "q",
+    portalTransform: "level",
+    transform: "level",
+    polarity: -1,
+    scaler: "pct_rank",
+    window: "expanding",
+    minObs: 20,
+    maxWindow: 2500,
+    winsor: [0.01, 0.99],
+    channels: [],
+    evidence: "official",
+    historyStart: null,
+    points: 0,
+    historyNote:
+      "2026-09-20에 붙인 계열이라 아직 D1에 값이 없다. 성분(FGRECPT·FGEXPND)은 1947년부터 있고 수집은 1990-01-01부터 받는다(`ingest.ts` HISTORY_START).",
+    enabled: true,
+  },
+  {
+    code: "fed_interest_receipts",
+    nameKo: "연방 이자지출 ÷ 세입",
+    series: "fed_interest_receipts",
+    source: "DERIVED",
+    freq: "q",
+    portalTransform: "level",
+    transform: "level",
+    polarity: -1,
+    scaler: "pct_rank",
+    window: "expanding",
+    minObs: 20,
+    maxWindow: 2500,
+    winsor: [0.01, 0.99],
+    channels: [],
+    evidence: "official",
+    historyStart: null,
+    points: 0,
+    historyNote:
+      "2026-09-20에 붙인 계열. ⚠ 1990년대 초(27%대)가 지금(20.9%)보다 높다 — 백분위가 최고치에 붙어 있지 않다는 것을 실측으로 확인하고 넣었다.",
+    enabled: true,
+  },
+  /** 시장이 실제로 떠안는 물량. ⚠ 잔액은 거의 언제나 사상 최대라 **증가율**로 본다. */
+  {
+    code: "treasury_marketable",
+    nameKo: "시장성 국채 잔액 (전년비)",
+    series: "treasury_marketable",
+    source: "TREASURY", seriesId: "mspd:total_marketable",
+    freq: "m",
+    portalTransform: "level",
+    transform: "yoy",
+    polarity: -1,
+    scaler: "pct_rank",
+    window: "expanding",
+    minObs: 36,
+    maxWindow: 2500,
+    winsor: [0.01, 0.99],
+    channels: ["RATES"],
+    evidence: "official",
+    historyStart: null,
+    points: 0,
+    historyNote:
+      "MSPD 표 1의 「Total Marketable」은 이미 받고 있었지만(비중 계산의 분모) 계열로 저장하지 않았다. 2026-09-20에 계열로 노출했다 — 수집 뒤에 채워진다.",
+    enabled: true,
+  },
   {
     code: "total_debt_yoy",
     nameKo: "미국 총부채 (전 부문, 전년비)",

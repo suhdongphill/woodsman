@@ -21,6 +21,7 @@ import type { MacroGroup, MacroGroupKey, MacroIndicator, MacroSector } from "./t
 import { sector as rates } from "./sectors/rates";
 import { sector as liquidity } from "./sectors/liquidity";
 import { sector as credit } from "./sectors/credit";
+import { sector as fiscal } from "./sectors/fiscal";
 import { sector as inflation } from "./sectors/inflation";
 import { sector as jobs } from "./sectors/jobs";
 import { sector as fx } from "./sectors/fx";
@@ -38,6 +39,7 @@ export const MACRO_SECTORS: MacroSector[] = [
   rates,
   liquidity,
   credit,
+  fiscal,
   inflation,
   jobs,
   fx,
@@ -103,6 +105,9 @@ export function validateSectors(sectors: MacroSector[] = MACRO_SECTORS): string[
         if (i.derived?.op === "realizedVolBp") {
           if (i.derived.from.length !== 1) problems.push(`${i.key}: 실현변동성의 성분은 하나여야 한다`);
           if (!i.derived.window || i.derived.window < 2) problems.push(`${i.key}: 실현변동성에 창(window)이 없다`);
+        } else if (i.derived?.op === "ratioPct") {
+          // ⚠ 비율은 분자와 분모, **정확히 둘**이다. 셋을 적으면 무엇을 무엇으로 나눈 값인지 읽을 수 없다.
+          if (i.derived.from.length !== 2) problems.push(`${i.key}: 비율(ratioPct)의 성분은 둘이어야 한다`);
         } else if (i.derived && i.derived.from.length < 2) {
           problems.push(`${i.key}: 파생인데 성분이 ${i.derived.from.length}개다`);
         }

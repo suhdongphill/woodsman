@@ -10,7 +10,7 @@ import { runPipeline, explainPillar, type PipelineInput } from "./pipeline";
 import { enabledIndicators, GCRM_INDICATOR_BY_CODE } from "./config/indicators";
 import { initialRegimeState, type SignalContext } from "./regime";
 import { AXES } from "./config/model";
-import { GCRM_PILLARS } from "./config/pillars";
+import { GCRM_PILLARS, flattenPillar } from "./config/pillars";
 import { slowSummary } from "./regime";
 
 /** 달력일 하루 간격 계열. */
@@ -191,10 +191,35 @@ describe("⚠ 파도는 레짐에 닿지 못한다", () => {
     expect(wildWave).toBeCloseTo(withWave!, 10);
   });
 
+  /**
+   * ⚠ 2026-09-20에 이 테스트를 고쳤다. 전에는 **운영 설정의 결함에 얹혀** 통과하고 있었다 —
+   * 바람 커버리지가 60%라 아무것도 하지 않아도 전이가 막혀 있었고, 재정 우위 기둥을 채워
+   * 바람이 70%가 되자 테스트가 깨졌다. 성질을 확인하려면 **그 상황을 테스트가 직접 만들어야** 한다.
+   */
   it("⚠ 총점 커버리지는 조류·바람으로만 본다 — 파도가 전이의 문을 여닫지 못한다", () => {
-    // 파도가 게이트를 넘어도(83%) 조류·바람이 모자라면 전이는 차단된다
-    expect(r.axes.wave.status).toBe("OK");
-    expect(r.regime.blocked).toContain("커버리지");
+    // 파도에만 참여하지 않는 기둥(summaryWeights.wave === 0)의 계열을 통째로 뺀다.
+    // ⚠ 지표 이름을 적어 두지 않는다 — 설정이 바뀌면 같이 따라오게 한다.
+    const slowOnly = new Set<string>();
+    for (const ind of enabledIndicators()) {
+      const owners = GCRM_PILLARS.filter((p) =>
+        flattenPillar(p).some((m) => m.indicator === ind.code),
+      );
+      if (owners.length > 0 && owners.every((p) => p.summaryWeights.wave === 0)) {
+        slowOnly.add(ind.series);
+      }
+    }
+    expect(slowOnly.size).toBeGreaterThan(0);
+
+    const thin = new Map(fullSeries(AS_OF));
+    for (const key of slowOnly) thin.delete(key);
+    const degraded = runPipeline(makeInput({ series: thin }));
+
+    // 파도는 멀쩡하다 — 뺀 기둥이 파도에 참여하지 않으므로 분모가 그대로다
+    expect(degraded.axes.wave.status).toBe("OK");
+    expect(degraded.axes.wave.coverage).toBeCloseTo(r.axes.wave.coverage, 10);
+    // 그래도 전이는 막힌다. 막은 것은 조류이지 파도가 아니다
+    expect(degraded.axes.tide.status).toBe("INSUFFICIENT");
+    expect(degraded.regime.blocked).toContain("커버리지");
   });
 });
 

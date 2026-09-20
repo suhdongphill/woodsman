@@ -205,3 +205,89 @@ describe("실현변동성(bp) — MOVE 대신 쓰는 지나간 국채 변동성 
     }
   });
 });
+
+/**
+ * 비율(`ratioPct`) — 2026-09-20, 재정 묶음을 붙이며 생겼다.
+ *
+ * ## 왜 뺄셈이 아니라 나눗셈이 필요했나
+ * 재정 적자를 **금액**으로 넣으면 물가와 경제 규모를 따라 커져서, 백분위가 늘 최악에 붙는다.
+ * 움직이지 않는 지표는 기둥에 아무것도 보태지 않는다(죽은 지표). 그래서 세입으로 나눈다.
+ */
+describe("composeDerived — 비율(ratioPct)", () => {
+  const RATIO: MacroDerived = { op: "ratioPct", from: ["num", "den"], carryDays: 10 };
+
+  it("분자 ÷ 분모 × 100", () => {
+    const out = composeDerived(RATIO, [[pt("2026-04-01", 130)], [pt("2026-04-01", 100)]]);
+    expect(out).toEqual([pt("2026-04-01", 130)]);
+  });
+
+  it("날짜 눈금은 **분자**가 정한다 — 분모는 그날 이하의 최근 값을 쓴다", () => {
+    const out = composeDerived(RATIO, [
+      [pt("2026-04-05", 21), pt("2026-07-05", 22)],
+      [pt("2026-04-01", 100), pt("2026-07-01", 110)],
+    ]);
+    expect(out.map((p) => p.date)).toEqual(["2026-04-05", "2026-07-05"]);
+    expect(out[1].value).toBeCloseTo(20, 10);
+  });
+
+  it("⚠ 분모가 0인 날은 버린다 — 무한대는 값이 아니다", () => {
+    const out = composeDerived(RATIO, [
+      [pt("2026-01-01", 5), pt("2026-04-01", 6)],
+      [pt("2026-01-01", 0), pt("2026-04-01", 50)],
+    ]);
+    expect(out).toEqual([pt("2026-04-01", 12)]);
+  });
+
+  it("⚠ 분모가 한도보다 낡았으면 그 날을 버린다 — 옛 세입으로 올해 비율을 내지 않는다", () => {
+    const out = composeDerived(RATIO, [[pt("2026-04-20", 130)], [pt("2026-01-01", 100)]]);
+    expect(out).toEqual([]);
+  });
+
+  it("⚠ 성분이 하나라도 비면 아무것도 내지 않는다", () => {
+    expect(composeDerived(RATIO, [[pt("2026-04-01", 130)], []])).toEqual([]);
+    expect(composeDerived(RATIO, [[pt("2026-04-01", 130)], undefined])).toEqual([]);
+  });
+
+  it("⚠ 검증기가 성분 셋짜리 비율을 잡는다 — 무엇을 무엇으로 나눴는지 읽을 수 없다", () => {
+    const broken = validateSectors([
+      {
+        group: { key: "fiscal", name: "x", emoji: "", question: "", intro: "", order: 1 },
+        indicators: [
+          {
+            key: "three",
+            name: "성분 셋짜리 비율",
+            group: "fiscal",
+            source: "DERIVED",
+            derived: { op: "ratioPct", from: ["a", "b", "c"], carryDays: 10 },
+            transform: "level",
+            layer: "L3",
+            type: "level",
+            freq: "q",
+            unit: "%",
+            decimals: 1,
+            url: "https://example.test",
+            sourceLabel: "x",
+            what: "x",
+            why: "x",
+            read: "x",
+            order: 1,
+          },
+        ],
+      },
+    ]);
+    expect(broken.some((p) => p.includes("비율(ratioPct)의 성분은 둘이어야 한다"))).toBe(true);
+  });
+
+  it("카탈로그 — 재정 두 비율은 같은 장부(BEA) 안에서만 나눈다", () => {
+    const spend = findIndicator("fed_outlays_receipts")!;
+    const interest = findIndicator("fed_interest_receipts")!;
+    expect(spend.derived).toMatchObject({ op: "ratioPct", from: ["fed_outlays", "fed_receipts"] });
+    expect(interest.derived).toMatchObject({ op: "ratioPct", from: ["fed_interest", "fed_receipts"] });
+    // ⚠ 성분 셋 다 같은 단위(levelK로 조 달러)여야 비율이 뜻을 갖는다
+    for (const key of ["fed_outlays", "fed_receipts", "fed_interest"]) {
+      expect(findIndicator(key)!.transform, key).toBe("levelK");
+    }
+    // ⚠ 재무부 장부(MSPD)는 이 비율에 섞이지 않는다
+    expect([spend, interest].some((i) => i.derived!.from.includes("treasury_marketable"))).toBe(false);
+  });
+});

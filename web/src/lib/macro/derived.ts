@@ -28,12 +28,16 @@ import type { SeriesPoint } from "./series";
 /**
  * 합성 방법.
  * - `subtract` — 첫 성분에서 나머지를 뺀다(성분 2개 이상).
+ * - `ratioPct` — 첫 성분을 둘째 성분으로 나눈 **비율(%)**. 성분은 **정확히 둘**이다.
+ *   ⚠ 두 성분의 **단위가 같아야** 뜻이 생긴다(둘 다 10억 달러). 단위가 다르면 100배가 조용히 어긋난다 —
+ *   그래서 성분의 `transform`을 여기서 다시 건드리지 않는다(머리말의 「단위는 여기서 다시 맞추지 않는다」).
+ *   ⚠ 분모가 0이면 **그 점을 버린다.** 무한대를 값이라고 내보내지 않는다.
  * - `realizedVolBp` — **성분 하나**(퍼센트 단위 금리)의 일간 변화로 **연율 실현변동성(bp)**을 만든다
  *   = 최근 `window`개 변화의 표본표준편차 × √252 × 100 (2026-09-14, R2b-3).
  *   ⚠ MOVE(옵션에 담긴 **예상** 변동성, ICE 라이선스)가 **아니다** — 이미 지나간 변동이다. 이름에 MOVE를 쓰지 않는다.
  *   ⚠ 성분 하나짜리지만 별칭이 아니다 — 값이 다른 계열을 만든다(`validateSectors`가 op마다 성분 수를 따로 본다).
  */
-export type DerivedOp = "subtract" | "realizedVolBp";
+export type DerivedOp = "subtract" | "ratioPct" | "realizedVolBp";
 
 export type MacroDerived = {
   op: DerivedOp;
@@ -144,7 +148,16 @@ export function composeDerived(
         complete = false;
         break;
       }
-      value -= v;
+      if (spec.op === "ratioPct") {
+        // ⚠ 분모가 0이면 그 점을 버린다 — 무한대는 값이 아니다.
+        if (v === 0) {
+          complete = false;
+          break;
+        }
+        value = (value / v) * 100;
+      } else {
+        value -= v;
+      }
     }
 
     if (complete) out.push({ date: point.date, value });

@@ -15,6 +15,8 @@ export type MacroGroupKey =
   | "liquidity"
   /** 신용·자금 — 연준 밖에서 만들어지는 민간 신용과 자금 조달 비용(2026-09-14, R2a) */
   | "credit"
+  /** 재정·국채 — 정부가 얼마나 빌려 쓰고 그 이자를 감당하는가(2026-09-20, GCRM P1 재정우위) */
+  | "fiscal"
   | "fx"
   | "commodity"
   | "inflation"

@@ -13,7 +13,7 @@ import { GCRM_INDICATORS, GCRM_INDICATOR_BY_CODE, axesFor, enabledIndicators } f
 import { GCRM_PILLARS, flattenPillar, designWeightSum, structuralCoverage, type GcrmPillar } from "./pillars";
 import { countChannels, weightedConfirmation, CONFIRMATION } from "./channels";
 import { GCRM_REGIMES, REGIME_EDGES, testCondition } from "./regimes";
-import { AXIS_WEIGHTS } from "./model";
+import { AXIS_WEIGHTS, GATES } from "./model";
 
 describe("설정 검증", () => {
   it("오류가 하나도 없다", () => {
@@ -151,6 +151,60 @@ describe("기둥 평탄화", () => {
     const cov = structuralCoverage(heat, (c) => !!GCRM_INDICATOR_BY_CODE.get(c)?.enabled);
     // ai_resource_heat 0.10만 못 채운다
     expect(cov).toBeCloseTo(0.9, 6);
+  });
+
+  /**
+   * 2026-09-20 (P1) — 재정 우위의 세 자리를 채웠다. ⚠ 여기서 잰 것은 **설정의 천장**이다
+   * (자료가 다 있다고 쳤을 때). 2026-09-19 첫 실계산은 이 천장과 정확히 같았다 —
+   * 그때 바람을 막은 것은 데이터가 아니라 설정이었다.
+   */
+  describe("축별 커버리지 천장 — `pillar.ts`의 분모 규칙을 그대로 적용한다", () => {
+    /** 참여하지 않는 주기는 **분모에서도 뺀다**(§2-4). 못 채우는 자리·꺼 둔 지표는 분모에 남는다. */
+    function axisCeiling(p: GcrmPillar, axis: "tide" | "wind" | "wave") {
+      let denom = 0;
+      let filled = 0;
+      const used: string[] = [];
+      for (const m of flattenPillar(p)) {
+        const ind = m.indicator === null ? undefined : GCRM_INDICATOR_BY_CODE.get(m.indicator);
+        if (!ind?.enabled) {
+          denom += m.weight; // 못 채우는 자리·꺼 둔 지표는 분모에 남는다
+          continue;
+        }
+        if (!axesFor(ind.freq).includes(axis)) continue; // 분모에서도 뺀다
+        denom += m.weight;
+        filled += m.weight;
+        used.push(ind.code);
+      }
+      return { coverage: denom === 0 ? 0 : filled / denom, used };
+    }
+
+    const fiscal = GCRM_PILLARS.find((p) => p.code === "fiscal_dominance")!;
+
+    it("재정 우위의 세 자리가 채워졌다 — 조류에서 100%다", () => {
+      expect(flattenPillar(fiscal).filter((m) => m.indicator === null)).toEqual([]);
+      expect(axisCeiling(fiscal, "tide").coverage).toBeCloseTo(1, 6);
+    });
+
+    /**
+     * ⚠ 이 100%를 「기둥이 튼튼하다」로 읽으면 안 된다. 분기·월간 지표가 **분모에서 빠져서**
+     *   남은 것이 일간 둘뿐이다. 커버리지는 「참여한 것 중 채운 비율」이지 「얼마나 두껍나」가 아니다.
+     *   두께는 `depth`가 알고 있는데 신뢰도(§2-7)는 그것을 보지 않는다 — 설계점검 v2에 남겨 둔 숙제다.
+     */
+    it("⚠ 바람의 100%는 일간 지표 둘에 얹혀 있다", () => {
+      const wind = axisCeiling(fiscal, "wind");
+      expect(wind.coverage).toBeCloseTo(1, 6);
+      expect(wind.used.sort()).toEqual(["rrp_foreign", "term_premium"]);
+    });
+
+    it("★ 바람 축이 게이트(70%)에 닿는다 — 총점과 레짐이 나올 수 있는 조건", () => {
+      for (const axis of ["tide", "wind"] as const) {
+        const part = GCRM_PILLARS.filter((p) => p.summaryWeights[axis] > 0);
+        const passed = part.filter((p) => axisCeiling(p, axis).coverage >= GATES.pillarMinCoverage);
+        const coverage =
+          passed.reduce((s, p) => s + p.axisWeight, 0) / part.reduce((s, p) => s + p.axisWeight, 0);
+        expect(coverage, axis).toBeGreaterThanOrEqual(GATES.axisMinCoverage);
+      }
+    });
   });
 
   it("못 채우는 자리가 분모에 남아 있다 — 지우면 커버리지가 언제나 100%가 된다", () => {
