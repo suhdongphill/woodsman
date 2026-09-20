@@ -3,7 +3,8 @@
  *
  * 실행:
  *   npm run gcrm -- run --dry-run          설정을 읽고 검증하고 config_hash를 찍는다 (DB를 건드리지 않는다)
- *   npm run gcrm -- run --dry-run --json   같은 것을 JSON으로
+ *   npm run gcrm -- provenance             근거 없이 정한 숫자를 드러낸다
+ *   npm run gcrm -- measure                ★ 운영 D1을 **읽기만** 해서 실계산한다 (저장하지 않는다)
  *
  * ## ⚠ 왜 `pms`가 아닌가
  * 명세는 파이썬 `pms regime run`을 전제하지만, 이 포털은 Next.js + Cloudflare Workers이고
@@ -11,11 +12,11 @@
  * 그쪽에 얹으면 **같은 지표가 두 값을 갖는다.** 그래서 포털의 기존 스크립트 관례
  * (`scripts/alfred-backfill.mjs` — tsx + wrangler)를 따른다.
  *
- * ## ⚠ 지금 할 수 있는 것은 P0까지다
- * 정규화·집계·레짐 판정은 P2부터다. `--dry-run` 없이 부르면 **조용히 아무것도 하지 않는 대신
- * 멈추고 그 사실을 말한다**(CLAUDE.md §3 — 조용한 실패를 만들지 않는다).
+ * ## ⚠ 이 CLI는 아무것도 저장하지 않는다
+ * 쓰기는 `/api/gcrm/run`(시크릿 헤더)만 한다. 개발 중에 「지금 값이 얼마인가」를 보려고 운영에 쓰면,
+ * 나중에 그 run이 진짜 계산인지 시험인지 **구분할 수 없다**(CLAUDE.md §3 — 조용한 실패를 만들지 않는다).
  */
-import { execFileSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 
 const { validateGcrmConfig, summarizeConfig } = await import("../src/lib/gcrm/config/validate.ts");
 const { configHash } = await import("../src/lib/gcrm/config/hash.ts");
@@ -42,8 +43,9 @@ function gitSha() {
 async function run() {
   if (!flags.has("--dry-run")) {
     console.error(
-      "지금은 --dry-run만 된다. 정규화·집계·레짐 판정은 P2부터다(docs/GCRM_설계점검_v2.md Part 4).\n" +
-        "  npm run gcrm -- run --dry-run",
+      "run은 --dry-run(설정 검증)만 한다. 쓰기는 /api/gcrm/run(시크릿 헤더)뿐이다.\n" +
+        "  npm run gcrm -- run --dry-run     설정만 본다\n" +
+        "  npm run gcrm -- measure           운영 D1을 읽기만 해서 실계산한다",
     );
     process.exit(2);
   }
@@ -159,10 +161,157 @@ ${TITLE[grade]}
   console.log("⚠ D등급은 민감도 분석(P9) 전에는 화면에 점수로 올리지 않는다.");
 }
 
+/**
+ * ★ 실계산 — **운영 D1을 읽기만 한다.**
+ *
+ * ## ⚠ 왜 CLI인가
+ * `/api/gcrm/run`은 `CRON_SECRET` 헤더를 요구하는 **쓰기** 경로다. 개발 중에 「지금 값이 얼마인가」를
+ * 보려고 운영에 쓰면, 나중에 그 run이 진짜 계산인지 시험인지 구분할 수 없다.
+ * 이 명령은 **아무것도 저장하지 않는다.**
+ *
+ * ⚠ 조립은 `lib/gcrm/series.ts` **한 벌**을 쓴다 — 운영(`features/gcrm/repository.ts`)과 같은 함수다.
+ *   여기서 따로 합성하면 같은 지표가 두 값을 갖는다(2026-09-20(54)에 데인 자리).
+ * ⚠ `axisHistory`·`signals`·`rawReadings`는 **비운다.** 없는 것을 지어내지 않는다 —
+ *   그래서 방향·승격·R5/R6 진입이 막히고, **막힌 이유가 결과에 그대로 남는다.**
+ */
+function flagValue(name) {
+  const i = argv.indexOf(name);
+  return i >= 0 ? argv[i + 1] : undefined;
+}
+
+/** 한국 날짜(운영과 같은 기준 — `api/gcrm/run`). */
+function todayKst() {
+  return new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10);
+}
+
+/**
+ * 운영 D1에서 계열 하나를 읽는다.
+ * ⚠ `seriesKey`는 **설정 파일에서 온 상수**다(사용자 입력이 아니다).
+ */
+function d1Rows(seriesKey, since) {
+  const sql =
+    `SELECT seriesKey, date, value FROM MacroPoint ` +
+    `WHERE seriesKey = '${seriesKey}' AND date >= '${since}' ORDER BY date ASC`;
+  const raw = execSync(`npx wrangler d1 execute woodsman-db --remote --json --command "${sql}"`, {
+    encoding: "utf8",
+    maxBuffer: 512 * 1024 * 1024,
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+  // ⚠ wrangler가 배너를 먼저 찍는다. JSON은 첫 `[`부터다.
+  const at = raw.indexOf("[");
+  if (at < 0) throw new Error(`${seriesKey}: wrangler가 JSON을 내지 않았다`);
+  const parsed = JSON.parse(raw.slice(at));
+  const first = Array.isArray(parsed) ? parsed[0] : parsed;
+  if (!first?.success) throw new Error(`${seriesKey}: 조회 실패`);
+  return first.results ?? [];
+}
+
+function pct(x) {
+  return x === undefined ? "  —" : `${(x * 100).toFixed(0)}%`.padStart(4);
+}
+function num(x, d = 1) {
+  return x === undefined ? "—" : x.toFixed(d);
+}
+
+async function measure() {
+  const { enabledIndicators } = await import("../src/lib/gcrm/config/indicators.ts");
+  const { seriesKeysToRead, buildGcrmSeries } = await import("../src/lib/gcrm/series.ts");
+  const { runPipeline } = await import("../src/lib/gcrm/pipeline.ts");
+  const { initialRegimeState } = await import("../src/lib/gcrm/regime.ts");
+
+  const errs = validateGcrmConfig().filter((i) => i.level === "error");
+  // ⚠ 잘못된 설정으로 계산하지 않는다.
+  if (errs.length) {
+    for (const e of errs) console.error(`  ${e.file}.ts: ${e.key} — ${e.message}`);
+    process.exit(1);
+  }
+
+  const asOf = flagValue("--as-of") ?? todayKst();
+  const since = flagValue("--since") ?? "1990-01-01";
+  const wanted = enabledIndicators().map((i) => i.series);
+  const keys = seriesKeysToRead(wanted);
+
+  console.error(`운영 D1에서 계열 ${keys.length}개를 읽는다 (${since} 이후) — 읽기만 한다`);
+  const rows = [];
+  const counts = new Map();
+  for (const [n, k] of keys.entries()) {
+    const got = d1Rows(k, since);
+    counts.set(k, got.length);
+    rows.push(...got);
+    process.stderr.write(`\r  ${n + 1}/${keys.length}  ${k} ${got.length}행            `);
+  }
+  process.stderr.write("\n");
+
+  const series = buildGcrmSeries(wanted, rows);
+  const result = runPipeline({
+    asOf,
+    series,
+    axisHistory: [],
+    signals: {
+      confirmedChannels: [],
+      windPersistenceWeeks: 0,
+      windImprovingWeeks: 0,
+      fundingNormalWeeks: 0,
+      tideDeteriorating: false,
+    },
+    rawReadings: [],
+    prev: initialRegimeState(asOf),
+  });
+
+  if (asJson) {
+    console.log(JSON.stringify({ asOf, since, counts: Object.fromEntries(counts), result }, null, 2));
+    return;
+  }
+
+  const hash = await configHash(GCRM_CONFIG);
+  console.log(`\nGCRM 실계산 — ${asOf} 기준 · config ${hash.slice(0, 12)} · git ${gitSha() ?? "없음"}`);
+  console.log("⚠ 저장하지 않았다. 운영 D1을 읽기만 했다.\n");
+
+  const LABEL = { tide: "조류", wind: "바람", wave: "파도" };
+  for (const axis of ["tide", "wind", "wave"]) {
+    const a = result.axes[axis];
+    const c = result.confidence[axis];
+    const dir = result.directions[axis];
+    const score = a.status === "OK" ? num(a.score) : "자료 부족";
+    console.log(
+      `${LABEL[axis]}  ${String(score).padStart(10)}   커버리지 ${pct(a.coverage)} · 두께 ${pct(a.depth)}` +
+        `   기둥 ${a.used.length}/${a.used.length + a.dropped.length}` +
+        `   방향 ${dir ?? "—"}   신뢰도 ${c?.band ?? "—"}`,
+    );
+    for (const d of a.dropped) console.log(`      ⚠ 빠짐 ${d.pillar} — ${d.reason}`);
+  }
+
+  console.log(
+    `\n종합 ${result.overall === undefined ? "—" : num(result.overall)}` +
+      `  ·  RTE ${result.rte === undefined ? "—" : num(result.rte)}` +
+      `  ·  정렬도 ${result.alignmentState?.state ?? "—"}` +
+      `  ·  레짐 ${result.regime.state.code} ${result.regime.state.nameKo}`,
+  );
+  if (result.regime.blocked) console.log(`  ⚠ 막힌 이유 — ${result.regime.blocked}`);
+  console.log(`  전이 판정 — ${result.regime.reason}`);
+
+  console.log("\n기둥 (조류 축)");
+  for (const p of result.pillarScalars) {
+    const r = result.pillars.find((x) => x.pillar === p.pillar && x.axis === "tide");
+    const s = r?.status === "OK" ? num(r.score) : "자료 부족";
+    console.log(`  ${p.nameKo.padEnd(10)} ${String(s).padStart(10)}   반영률 ${pct(r?.coverage)}`);
+  }
+
+  const empty = wanted.filter((k) => !series.has(k));
+  if (empty.length) {
+    console.log(`\n⚠ 계열이 없는 지표 ${empty.length}개`);
+    console.log(`  ${empty.join(" · ")}`);
+  } else {
+    console.log("\n⭐ 켜진 지표가 모두 계열을 가졌다.");
+  }
+}
+
 if (command === "run") {
   await run();
 } else if (command === "provenance") {
   provenance();
+} else if (command === "measure") {
+  await measure();
 } else {
   console.log(
     [
@@ -174,7 +323,11 @@ if (command === "run") {
       "  npm run gcrm -- provenance             숫자의 출처 대장(A~D 등급)",
       "  npm run gcrm -- provenance --ungrounded  ⚠ 근거 없이 정한 것만",
       "",
-      "아직 P0(설정과 스키마)까지다. 명세 Part 4의 P2부터가 계산이다.",
+      "  npm run gcrm -- measure                ★ 운영 D1을 **읽기만** 해서 실계산 (저장 안 함)",
+      "  npm run gcrm -- measure --as-of 2026-09-19 --since 2000-01-01",
+      "  npm run gcrm -- measure --json",
+      "",
+      "⚠ measure는 축 이력·신호를 비운 채 계산한다 — 방향·승격이 막히는 것이 정상이다.",
     ].join("\n"),
   );
 }
