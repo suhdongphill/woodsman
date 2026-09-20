@@ -67,6 +67,18 @@ jobs:
           workingDirectory: web
           command: d1 migrations apply woodsman-db --remote
 
+      # ⚠ 토큰이 **무엇을 가졌는지** 로그에 찍는다.
+      #    2026-09-20에 권한으로 세 번 연속 죽었는데, 에러가 「No access」뿐이라
+      #    무엇이 없는지 **추측으로** 고치다 세 번을 헤맸다. 찍어 두면 다음엔 한 번에 본다.
+      #    ⚠ 찍히는 것은 **권한 이름과 계정 ID**뿐이다 — 토큰 값은 나오지 않는다.
+      #    ⚠ 실패해도 이 단계에서 멈추지 않는다(continue-on-error) — 진단이 본 작업을 막으면 안 된다.
+      - name: 토큰 권한 확인 (진단)
+        continue-on-error: true
+        run: npx wrangler whoami
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       # OpenNext로 변환 후 배포. AUTH_SECRET 등 런타임 시크릿은
       # Cloudflare 대시보드(Settings → Variables and Secrets)에 넣어 둔 값을 쓴다.
       - name: 빌드 & 배포

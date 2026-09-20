@@ -53,6 +53,18 @@ jobs:
 
       - run: npm ci
 
+      # ⚠ 토큰이 **무엇을 가졌는지** 로그에 찍는다.
+      #    2026-09-20에 권한으로 세 번 연속 죽었는데, 에러가 「No access」뿐이라
+      #    무엇이 없는지 **추측으로** 고치다 세 번을 헤맸다. 찍어 두면 다음엔 한 번에 본다.
+      #    ⚠ 찍히는 것은 **권한 이름과 계정 ID**뿐이다 — 토큰 값은 나오지 않는다.
+      #    ⚠ 실패해도 이 단계에서 멈추지 않는다(continue-on-error) — 진단이 본 작업을 막으면 안 된다.
+      - name: 토큰 권한 확인 (진단)
+        continue-on-error: true
+        run: npx wrangler whoami
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       # ⚠ 스크립트가 종료 코드 1을 내면(계열 하나라도 실패) 이 단계가 빨갛게 죽는다 — 그래야 알림이 온다.
       #    실패해도 MacroIngest 줄은 이미 쓰였으므로 관리자 화면에서 사유를 볼 수 있다.
       - name: 재무부 네 계열 수집
