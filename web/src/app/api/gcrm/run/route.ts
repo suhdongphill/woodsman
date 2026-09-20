@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { computeAndSaveGcrm } from "@/features/gcrm/compute";
+import { computeAndSaveGcrm, gcrmToday } from "@/features/gcrm/compute";
 import { CRON_HEADER, isAuthorizedCron } from "@/lib/cron";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
   const q = new URL(request.url).searchParams;
-  const asOf = q.get("as_of") ?? new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10);
+  const asOf = q.get("as_of") ?? gcrmToday();
   try {
     const s = await computeAndSaveGcrm({ asOf, dryRun: q.get("dry_run") === "1" });
     return NextResponse.json({

@@ -7,6 +7,7 @@
  * ⚠ LLM은 여기 없다. 숫자와 규칙만이다(점수 엔진 v1과 같은 원칙).
  */
 import { runPipeline, type PipelineResult } from "@/lib/gcrm/pipeline";
+import { clickDateKey } from "@/lib/outbound";
 import { enabledIndicators } from "@/lib/gcrm/config/indicators";
 import { GCRM_CONFIG, MODEL_VERSION } from "@/lib/gcrm/config";
 import { configHash } from "@/lib/gcrm/config/hash";
@@ -30,6 +31,17 @@ const SERIES_SINCE = "1990-01-01";
 
 function daysBefore(asOf: string, days: number): string {
   return new Date(Date.parse(`${asOf}T00:00:00Z`) - days * 86_400_000).toISOString().slice(0, 10);
+}
+
+/**
+ * GCRM의 「오늘」(KST).
+ *
+ * ⚠ 사이트가 이미 쓰는 **같은 함수**에 얹는다(`clickDateKey`). 「오늘」을 각자 구현하면
+ *    화면의 오늘과 점수의 오늘이 갈리고, 그 어긋남은 **자정 전후 몇 시간에만** 나타나서
+ *    재현이 어렵다. 한국 사용자 기준이라 UTC로 자르면 밤 9시 이후가 다음 날이 된다.
+ */
+export function gcrmToday(now: Date = new Date()): string {
+  return clickDateKey(now);
 }
 
 export type GcrmComputeOptions = {

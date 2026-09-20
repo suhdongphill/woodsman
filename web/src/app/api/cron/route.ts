@@ -29,6 +29,7 @@ import {
 import { ingestMacro } from "@/features/macro/ingest";
 import { ingestQuotes } from "@/features/stocks/ingest";
 import { loadReportSummaries } from "@/features/reports/repository";
+import { computeAndSaveGcrm, gcrmToday } from "@/features/gcrm/compute";
 
 export const runtime = "nodejs";
 /** ⚠ 정적 생성 금지 — 매 실행마다 바깥에서 받아 와야 한다. */
@@ -75,9 +76,39 @@ async function runQuotes(): Promise<CronJobResult> {
   };
 }
 
+/**
+ * GCRM 축 점수 — ⚠ **수집 뒤에 돈다**(`ALL_CRON_JOBS` 순서).
+ *
+ * ## 왜 매일 저장하나
+ * 레짐 판정의 **방향**은 과거 축 점수를 본다(조류는 63영업일 전과 비교 — 명세 §2-8).
+ * 그 과거는 **저장된 run에서만** 나온다. 2026-09-20까지 저장하는 경로가 `/api/gcrm/run`뿐이었고
+ * 아무도 부르지 않아, 축 이력이 **하루도 쌓이지 않고 있었다.** 그래서 종합 점수는 나와도
+ * 레짐은 영원히 R0였다 — 자료가 모자라서가 아니라 **시간이 안 쌓여서**다.
+ *
+ * ⚠ **하루 한 점이다.** 같은 `asOf`에 두 번 저장하지 않는다(`CRON_PLAN`의 22:00 항목 주석).
+ * ⚠ `basis`는 `LIVE` — 그날 알려진 값으로 그날을 계산한 것이다. 과거를 되살린 `RECOMPUTED`와
+ *    **섞이면 안 된다**(P9 백테스트가 그 구분 위에 선다).
+ * ⚠ 점수가 안 나오는 것(커버리지 미달)은 **실패가 아니다.** 게이트가 일한 것이고, 그 사실이
+ *    저장되는 것 자체가 기록이다. 고장과 「아직 못 냄」을 같아 보이게 하지 않는다.
+ */
+async function runGcrm(): Promise<CronJobResult> {
+  const summary = await computeAndSaveGcrm({ asOf: gcrmToday(), basis: "LIVE" });
+  const axes = summary.result.axes;
+  const scored = (["tide", "wind", "wave"] as const).filter((a) => axes[a].status === "OK").length;
+  return {
+    job: "gcrm",
+    ok: true,
+    // 「낸 축 / 3」을 성공 수로 쓴다 — 0이어도 실패가 아니다(커버리지 게이트).
+    okCount: scored,
+    failCount: 3 - scored,
+    addedPoints: summary.saved,
+  };
+}
+
 const RUNNERS: Record<CronJob, () => Promise<CronJobResult>> = {
   macro: runMacro,
   quotes: runQuotes,
+  gcrm: runGcrm,
 };
 
 export async function POST(request: Request) {

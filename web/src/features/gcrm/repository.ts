@@ -91,7 +91,17 @@ export async function loadRegimeState(beforeAsOf: string): Promise<RegimeState |
   };
 }
 
-/** 방향 판정용 과거 축 점수 — `asOf` 오름차순. */
+/**
+ * 방향 판정용 과거 축 점수 — `asOf` 오름차순.
+ *
+ * ## ⚠ 같은 날 run이 둘이면 **나중 것**을 쓴다
+ * 하루 한 번 저장하는 것이 규칙이지만(`lib/cron.ts`의 `CRON_PLAN`), `/api/gcrm/run`을 손으로
+ * 다시 부르면 같은 `asOf`에 run이 둘 생긴다. 예전에는 정렬이 `asOf`뿐이라 **둘 중 어느 것이
+ * 남는지 정해져 있지 않았다** — 같은 입력에 같은 답이 나온다는 보장이 없었고,
+ * 그러면 `regime verify`의 재현성 검증이 무의미해진다.
+ * `createdAt` 오름차순을 덧붙여 **나중 run이 앞의 것을 덮게** 한다.
+ * ⚠ 「나중 것」을 고른 이유: 손으로 다시 돌렸다면 **고치려고** 돌린 것이다.
+ */
 export async function loadAxisHistory(
   since: string,
   modelVersion: string,
@@ -100,7 +110,7 @@ export async function loadAxisHistory(
     `SELECT r.asOf AS asOf, a.axis AS axis, a.score AS score
        FROM GcrmAxisScore a JOIN GcrmRun r ON r.runId = a.runId
       WHERE r.asOf >= ? AND r.modelVersion = ?
-      ORDER BY r.asOf ASC`,
+      ORDER BY r.asOf ASC, r.createdAt ASC`,
     [since, modelVersion],
   );
   const byDate = new Map<string, { asOf: string; tide?: number; wind?: number; wave?: number }>();

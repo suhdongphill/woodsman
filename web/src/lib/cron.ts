@@ -28,11 +28,17 @@ export const CRON_HEADER = "x-woodsman-cron";
  */
 export const CRON_SECRET_MIN_LENGTH = 32;
 
-/** 자동으로 돌리는 수집 작업. */
-export type CronJob = "macro" | "quotes";
+/**
+ * 자동으로 돌리는 작업.
+ *
+ * ⚠ **순서가 뜻을 갖는다.** 실행은 이 배열 순서대로 하나씩 돈다(`api/cron/route.ts`).
+ *    `gcrm`은 **반드시 `macro` 뒤**다 — 그날 수집한 값으로 계산해야 한다.
+ *    앞에 두면 **어제 값으로 오늘 점수를 내고**, 그게 축 이력에 그대로 박힌다.
+ */
+export type CronJob = "macro" | "quotes" | "gcrm";
 
 /** ⚠ 새 작업을 더하면 여기에도 넣는다 — 모르는 스케줄일 때 돌아가는 목록이다. */
-export const ALL_CRON_JOBS: readonly CronJob[] = ["macro", "quotes"];
+export const ALL_CRON_JOBS: readonly CronJob[] = ["macro", "quotes", "gcrm"];
 
 export type CronPlanEntry = {
   /** Cloudflare cron 표현식(UTC). */
@@ -62,6 +68,12 @@ export const CRON_PLAN: readonly CronPlanEntry[] = [
    * ⚠ 요일은 **이름(MON-FRI)** 으로 적는다 — **Cloudflare는 1 = 일요일 ~ 7 = 토요일**이다(공식 문서 「Cron Triggers」,
    *   2026-09-14 확인). 흔한 cron(0 = 일요일)처럼 「1-5」로 적었으면 **일~목**에 돌았다. 문서도 약어를 권한다.
    *   UTC 13:00 월~금 = KST 22:00 월~금.
+   */
+  /**
+   * ⚠ **여기에 `gcrm`을 넣지 않는다** — 빠뜨린 게 아니다.
+   *    축 이력은 **하루 한 점**이어야 한다(방향 판정이 「영업일 간격」을 전제한다 — 명세 §2-8).
+   *    하루에 두 번 저장하면 같은 `asOf`에 run이 둘 생기고, `loadAxisHistory`가 그중 하나를 고른다.
+   *    22:00 수집으로 바뀐 값은 **다음 날 06:00 계산**에 들어간다.
    */
   { expr: "0 13 * * MON-FRI", jobs: ["macro"], note: "평일 22:00(KST) 거시 지표 재수집 — 미국 08:30 ET 발표 반영" },
 ];
