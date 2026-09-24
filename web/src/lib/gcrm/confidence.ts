@@ -2,13 +2,21 @@
  * GCRM v2 — 신뢰도 (명세 §2-7). 순수 함수.
  *
  * ```text
- * confidence = 100 × ( 0.40·coverage
- *                    + 0.25·mean(staleness)
- *                    + 0.20·mean(evidence)
- *                    + 0.15·channel_breadth )
+ * confidence = 100 × ( 0.360·coverage
+ *                    + 0.225·mean(staleness)
+ *                    + 0.180·mean(evidence)
+ *                    + 0.135·channel_breadth
+ *                    + 0.100·mean(depth) )
  *
  * channel_breadth = min(1, 확인된 서로 다른 채널 수 / 4)
+ * depth           = min(1, 쓴 관측 수 / 창이 요구하는 관측 수)   ← 2026-09-24 추가
  * ```
+ *
+ * ## ⚠ `depth`는 커버리지가 못 잡는 것을 잡는다
+ * 커버리지는 **값이 있으면 켜진 것으로 센다** — 3.2년짜리 지표도 온전히 1로 들어간다.
+ * 창을 20년으로 통일한 뒤(`WINDOW_OBS`)에도 소급이 불가능해 못 채우는 지표가 남으므로,
+ * **「말한 창을 얼마나 채웠나」**를 따로 센다. ⚠ 못 채운 것을 **빼지 않는다** — 쓰되 신뢰도를 깎는다.
+ * 빼면 커버리지가 떨어져 게이트에 걸리고, 그러면 **짧은 자료를 가진 기둥이 통째로 사라진다.**
  *
  * ## ⚠ 점수와 신뢰도를 **절대 곱하지 않는다**
  * 나란히 표시할 뿐이다. 곱하면 「자료가 부족한 위험 신호」가 「위험이 작다」로 읽힌다 —
@@ -36,6 +44,11 @@ export type ConfidenceInput = {
   evidenceFactors: number[];
   /** 확인된 채널(중복 무관 — 서로 다른 것만 센다) */
   channels: ChannelCode[];
+  /**
+   * ⚠ **쓴 지표의** 창 충족 비율(0~1). 빈 배열이면 평균을 내지 않는다.
+   * 부르는 쪽이 `min(1, obsCount / maxWindow)`로 만들어 넘긴다 — 이 함수는 설정을 읽지 않는다.
+   */
+  depthFactors: number[];
 };
 
 export type ConfidenceResult = {
@@ -47,6 +60,7 @@ export type ConfidenceResult = {
     staleness: number;
     evidence: number;
     channelBreadth: number;
+    depth: number;
   };
 };
 
@@ -61,18 +75,20 @@ export function confidenceOf(input: ConfidenceInput): ConfidenceResult {
   const staleness = mean(input.stalenessFactors);
   const evidence = mean(input.evidenceFactors);
   const breadth = channelBreadth(input.channels);
+  const depth = mean(input.depthFactors);
 
   const value =
     100 *
     (CONFIDENCE_WEIGHTS.coverage * coverage +
       CONFIDENCE_WEIGHTS.staleness * staleness +
       CONFIDENCE_WEIGHTS.evidence * evidence +
-      CONFIDENCE_WEIGHTS.channelBreadth * breadth);
+      CONFIDENCE_WEIGHTS.channelBreadth * breadth +
+      CONFIDENCE_WEIGHTS.depth * depth);
 
   return {
     value,
     band: confidenceBand(value),
-    parts: { coverage, staleness, evidence, channelBreadth: breadth },
+    parts: { coverage, staleness, evidence, channelBreadth: breadth, depth },
   };
 }
 

@@ -13,7 +13,7 @@ import { GCRM_INDICATORS, GCRM_INDICATOR_BY_CODE, axesFor, enabledIndicators } f
 import { GCRM_PILLARS, flattenPillar, designWeightSum, structuralCoverage, type GcrmPillar } from "./pillars";
 import { countChannels, weightedConfirmation, CONFIRMATION } from "./channels";
 import { GCRM_REGIMES, REGIME_EDGES, testCondition } from "./regimes";
-import { AXIS_WEIGHTS, GATES } from "./model";
+import { AXIS_WEIGHTS, GATES, WINDOW_OBS, WINDOW_YEARS, CONFIDENCE_WEIGHTS } from "./model";
 
 describe("설정 검증", () => {
   it("오류가 하나도 없다", () => {
@@ -301,5 +301,44 @@ describe("config_hash", () => {
 
   it("선택 필드가 없는 것과 undefined인 것은 같다", () => {
     expect(canonicalJson({ a: 1 })).toBe(canonicalJson({ a: 1, b: undefined }));
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════
+describe("정규화 창 — 모든 지표가 같은 햇수를 본다 (2026-09-24)", () => {
+  it("⚠ `maxWindow`는 빈도별 20년이다 — 지표마다 따로 정하지 않는다", () => {
+    const odd = GCRM_INDICATORS.filter((i) => i.maxWindow !== WINDOW_OBS[i.freq]).map(
+      (i) => `${i.code}(${i.freq}): ${i.maxWindow} ≠ ${WINDOW_OBS[i.freq]}`,
+    );
+    expect(odd).toEqual([]);
+  });
+
+  it("⚠ 빈도가 달라도 **같은 햇수**다 — 예전에는 관측 수만 같고 햇수가 갈렸다", () => {
+    const perYear = { d: 250, w: 52, m: 12, q: 4 } as const;
+    for (const f of ["d", "w", "m", "q"] as const) {
+      expect(WINDOW_OBS[f] / perYear[f]).toBe(WINDOW_YEARS);
+    }
+    // 2026-09-24 이전: 넷 다 2500이라 일간 10년 · 주간 48년 · 월간 208년 · 분기 625년이었다
+    expect(new Set(Object.values(WINDOW_OBS)).size).toBe(4);
+  });
+
+  it("⚠ `minObs`는 창보다 짧아야 한다 — 최소 조건이 창을 넘으면 어떤 지표도 점수를 못 낸다", () => {
+    const bad = GCRM_INDICATORS.filter((i) => i.minObs >= WINDOW_OBS[i.freq]).map((i) => i.code);
+    expect(bad).toEqual([]);
+  });
+});
+
+describe("신뢰도 가중치 (2026-09-24 `depth` 추가)", () => {
+  it("다섯 몫의 합이 1이다", () => {
+    const sum = Object.values(CONFIDENCE_WEIGHTS).reduce((a, b) => a + b, 0);
+    expect(sum).toBeCloseTo(1, 10);
+  });
+
+  it("⚠ 명세 §2-7 넷의 **비율**은 그대로다 — 0.90배로 줄였을 뿐이다", () => {
+    const spec = { coverage: 0.4, staleness: 0.25, evidence: 0.2, channelBreadth: 0.15 };
+    const scale = 1 - CONFIDENCE_WEIGHTS.depth;
+    for (const [k, v] of Object.entries(spec)) {
+      expect(CONFIDENCE_WEIGHTS[k as keyof typeof spec]).toBeCloseTo(v * scale, 10);
+    }
   });
 });

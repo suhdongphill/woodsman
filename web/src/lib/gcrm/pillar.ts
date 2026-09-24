@@ -50,6 +50,11 @@ export type IndicatorInput = {
   /** 왜 없는지. ⚠ 화면이 이 문장을 그대로 쓴다 */
   missingReason?: string;
   enabled: boolean;
+  /**
+   * 백분위를 낼 때 **실제로 쓴 관측 수**(창을 자른 뒤). 신뢰도의 `depth`가 이것을 창 길이로 나눈다.
+   * ⚠ 점수에는 들어가지 않는다 — 짧은 역사를 **깎는 것이 아니라 드러내는** 값이다.
+   */
+  obsCount?: number;
 };
 
 export type Contribution = {

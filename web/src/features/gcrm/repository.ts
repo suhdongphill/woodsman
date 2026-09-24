@@ -102,16 +102,35 @@ export async function loadRegimeState(beforeAsOf: string): Promise<RegimeState |
  * `createdAt` 오름차순을 덧붙여 **나중 run이 앞의 것을 덮게** 한다.
  * ⚠ 「나중 것」을 고른 이유: 손으로 다시 돌렸다면 **고치려고** 돌린 것이다.
  */
+/**
+ * 방향 판정이 읽는 축 이력.
+ *
+ * ## ⚠ **자가 바뀌면 이력이 끊긴다** — `configHash`로 거른다 (2026-09-24)
+ * 2026-09-24에 정규화 창을 10년에서 20년으로 바꿨다. 그러자 **같은 `modelVersion`인데
+ * 뜻이 다른 점수**가 한 표에 함께 있게 됐다. 모델 버전만 보고 읽으면 방향 판정이
+ * **다른 자로 잰 63점**을 이어 붙인다 — 화면에는 방향이 정상으로 뜨고, 틀린 것을 알 방법이 없다.
+ *
+ * ⚠ 이것은 보수적인 쪽으로 틀린다 — 설정을 조금만 고쳐도 이력이 끊기고 방향이 `—`로 돌아간다.
+ *   **그게 맞다.** 「자를 바꿨는데 이력이 이어지는 것」보다 「자를 바꿔서 이력이 끊긴 것」이 낫다.
+ *   끊긴 것은 화면에 보이지만, 섞인 것은 보이지 않는다.
+ *
+ * ⚠ **이 선택이 만든 새 대가** — `GCRM_CONFIG`는 표시 전용 값(`nameKo`·`historyStart`·`points`)까지
+ *   지문에 넣기로 **일부러** 정해 두었다(`config/index.ts` 머리말 — 「빼기 시작하면 무엇이 계산용인가를
+ *   매번 판단해야 한다」). 그 결정은 그대로 두었지만, 이제 **메모 한 줄을 고치면 이력이 끊긴다.**
+ *   설정의 낡은 메모(`historyStart: null` 같은 것)를 고칠 때는 **이력을 버릴 각오로** 고친다.
+ *   → 지문을 「계산값」과 「메모」로 가를 것인지는 운영자 결정으로 남긴다(2026-09-24).
+ */
 export async function loadAxisHistory(
   since: string,
   modelVersion: string,
+  configHash: string,
 ): Promise<{ asOf: string; tide?: number; wind?: number; wave?: number }[]> {
   const rows = await queryAll<{ asOf: string; axis: string; score: number | null }>(
     `SELECT r.asOf AS asOf, a.axis AS axis, a.score AS score
        FROM GcrmAxisScore a JOIN GcrmRun r ON r.runId = a.runId
-      WHERE r.asOf >= ? AND r.modelVersion = ?
+      WHERE r.asOf >= ? AND r.modelVersion = ? AND r.configHash = ?
       ORDER BY r.asOf ASC, r.createdAt ASC`,
-    [since, modelVersion],
+    [since, modelVersion, configHash],
   );
   const byDate = new Map<string, { asOf: string; tide?: number; wind?: number; wave?: number }>();
   for (const r of rows) {

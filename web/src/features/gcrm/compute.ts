@@ -83,7 +83,7 @@ export async function computeAndSaveGcrm(opts: GcrmComputeOptions): Promise<Gcrm
       SERIES_SINCE,
     ),
     loadRegimeState(asOf),
-    loadAxisHistory(daysBefore(asOf, HISTORY_DAYS), MODEL_VERSION),
+    loadAxisHistory(daysBefore(asOf, HISTORY_DAYS), MODEL_VERSION, hash),
   ]);
 
   const signals: SignalContext = {

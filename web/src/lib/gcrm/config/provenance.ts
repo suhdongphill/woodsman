@@ -35,6 +35,8 @@ import {
   STALENESS_CYCLES,
   CYCLE_DAYS,
   CONFIDENCE_WEIGHTS,
+  WINDOW_YEARS,
+  WINDOW_OBS,
   DIR_AGREEMENT,
   SENSITIVITY,
 } from "./model";
@@ -128,11 +130,38 @@ export const PROVENANCE: ProvenanceEntry[] = [
   },
   {
     id: "confidence_weights",
-    label: "신뢰도 가중 커버리지 .40 · 신선도 .25 · 근거 .20 · 채널폭 .15",
+    label: "⚠ 신뢰도 가중 — 명세의 넷(.40/.25/.20/.15)을 0.90배로 줄이고 **깊이 .10**을 더했다",
     where: "model.ts · CONFIDENCE_WEIGHTS",
-    value: {"coverage":0.4,"staleness":0.25,"evidence":0.2,"channelBreadth":0.15},
-    grade: "A",
-    basis: "명세 §2-7",
+    value: {"coverage":0.36,"staleness":0.225,"evidence":0.18,"channelBreadth":0.135,"depth":0.1},
+    grade: "D",
+    basis:
+      "넷의 **비율**은 명세 §2-7 그대로다(테스트가 대조한다). ⚠ 다섯째 `depth`의 **0.10은 근거가 없다** — " +
+      "2026-09-24에 창을 20년으로 통일하면서, 소급이 불가능해 창을 못 채우는 지표(ICE 신용 3.2년 · SOFR 7.5년)를 " +
+      "커버리지가 **값이 있으면 1로 세는** 문제를 드러내려고 자리를 잡은 값이다. 크기는 내가 정했다",
+    impact:
+      "창을 절반만 채운 지표뿐인 축의 신뢰도가 5점 낮아진다. ⚠ 점수는 건드리지 않는다 — " +
+      "신뢰도와 점수를 곱하지 않는다는 원칙(명세 Part 5 ②)이 이 값의 영향을 신뢰도 안에 가둔다",
+    reviewPlan:
+      "P9 민감도에서 0.05~0.20을 쓸어 「밴드가 바뀌는 축이 몇 개인가」를 센다. " +
+      "어느 값에서도 밴드가 안 바뀌면 일하지 않는 숫자이므로 빼거나 키운다(`minNonOverlap`을 3에서 10으로 고친 것과 같은 판정)",
+  },
+  {
+    id: "window_years",
+    label: "⚠ 정규화 창 **20년** — 빈도별 관측 수로 환산",
+    where: "model.ts · WINDOW_YEARS · WINDOW_OBS",
+    value: {"years":20,"obs":{"d":5000,"w":1040,"m":240,"q":80}},
+    grade: "D",
+    basis:
+      "명세는 `max_window: 2500`(≈10년) **한 값만** 적었고, 우리는 그것을 빈도와 무관하게 72개 지표에 붙여 두었다. " +
+      "관측 수로 자르므로 뜻이 갈렸다 — 일간 10년 · 주간 48년 · 월간 208년 · 분기 625년(일간 24개만 잘렸다). " +
+      "⚠ **20년은 내가 골랐다.** 근거는 「2008년과 2020년이 둘 다 분포에 들어온다」 한 줄이다 — " +
+      "10년이면 2016~2026이라 금리 사이클이 하나뿐이고, 2008년을 못 본 분포에서 「사상 최악」을 말하게 된다",
+    impact:
+      "**모든 지표의 백분위가 여기에 달려 있다.** 창을 바꾸면 점수의 뜻이 바뀌어 이전 축 이력과 이어 붙일 수 없다 " +
+      "(2026-09-24에 나흘치를 버리고 다시 시작했다). 이 대장에서 영향이 가장 큰 항목이다",
+    reviewPlan:
+      "P9 민감도에서 10·15·20·25·30년으로 다시 계산해 **레짐 판정이 바뀌는 구간**을 찾는다. " +
+      "창 길이에 레짐이 민감하면 그 자체가 `MODEL_FRAGILITY_WARNING`이다",
   },
   {
     id: "confirmation",
@@ -479,6 +508,7 @@ export function liveValues(): Record<string, unknown> {
     evidence_factor: EVIDENCE_FACTOR,
     staleness_factor: STALENESS_FACTOR,
     confidence_weights: CONFIDENCE_WEIGHTS,
+    window_years: { years: WINDOW_YEARS, obs: WINDOW_OBS },
     confirmation: { minChannels: CONFIRMATION.minChannels, comboMultiplier: CONFIRMATION.comboMultiplier },
     acute_spec: ACUTE.thresholds.filter((t) => ["vix", "hy_spread", "sofr_iorb"].includes(t.indicator)).length,
     min_obs_daily: GCRM_INDICATORS.find((i) => i.code === "vix")?.minObs,

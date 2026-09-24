@@ -18,6 +18,7 @@ import {
 } from "./alignment";
 import { confidenceOf, confidenceBand, channelBreadth, displayScore } from "./confidence";
 import { DIRECTION, DIR_AGREEMENT, CONFIDENCE_WEIGHTS } from "./config/model";
+import type { ChannelCode } from "./config/indicators";
 
 const dirs = (tide: Direction, wind: Direction, wave: Direction) => ({ tide, wind, wave });
 
@@ -270,13 +271,15 @@ describe("§2-7 신뢰도", () => {
       stalenessFactors: [1, 0.9],
       evidenceFactors: [1, 0.95],
       channels: ["PRICE", "CREDIT", "FUNDING"],
+      depthFactors: [1, 0.5],
     });
     const expected =
       100 *
       (CONFIDENCE_WEIGHTS.coverage * 0.9 +
         CONFIDENCE_WEIGHTS.staleness * 0.95 +
         CONFIDENCE_WEIGHTS.evidence * 0.975 +
-        CONFIDENCE_WEIGHTS.channelBreadth * 0.75);
+        CONFIDENCE_WEIGHTS.channelBreadth * 0.75 +
+        CONFIDENCE_WEIGHTS.depth * 0.75);
     expect(r.value).toBeCloseTo(expected, 10);
   });
 
@@ -296,6 +299,7 @@ describe("§2-7 신뢰도", () => {
       stalenessFactors: [1],
       evidenceFactors: [1],
       channels: ["PRICE", "CREDIT", "FUNDING", "RATES"],
+      depthFactors: [1],
     });
     expect(r.value).toBeCloseTo(100, 10);
     expect(r.band).toBe("높음");
@@ -315,14 +319,53 @@ describe("§2-7 신뢰도", () => {
   });
 
   it("⚠ 쓴 지표가 없으면 신선도·근거 평균이 0이다 — 지어내지 않는다", () => {
-    const r = confidenceOf({ coverage: 0, stalenessFactors: [], evidenceFactors: [], channels: [] });
+    const r = confidenceOf({
+      coverage: 0,
+      stalenessFactors: [],
+      evidenceFactors: [],
+      channels: [],
+      depthFactors: [],
+    });
     expect(r.value).toBe(0);
     expect(r.band).toBe("참고용");
   });
 
+  it("⚠ 깊이는 창을 채운 비율이다 — 20년 창에 3.2년이면 크게 깎인다", () => {
+    const base = {
+      coverage: 1,
+      stalenessFactors: [1],
+      evidenceFactors: [1],
+      channels: ["PRICE", "CREDIT", "FUNDING", "RATES"] as ChannelCode[],
+    };
+    const full = confidenceOf({ ...base, depthFactors: [1] });
+    const short = confidenceOf({ ...base, depthFactors: [800 / 5000] });
+    expect(full.value).toBeCloseTo(100, 10);
+    // ⚠ 커버리지는 1 그대로다 — 값이 있으면 켜진 것으로 세기 때문이다. 깊이만 이 사실을 안다.
+    expect(short.parts.coverage).toBe(1);
+    expect(short.value).toBeCloseTo(100 - 100 * CONFIDENCE_WEIGHTS.depth * (1 - 800 / 5000), 10);
+  });
+
+  it("⚠ 깊이는 점수를 빼지 않는다 — 신뢰도만 깎는다(짧은 자료를 버리지 않는다)", () => {
+    // 함수가 점수를 받지 않는다는 것이 곧 그 보장이다. 여기서는 깊이가 0이어도 값이 나온다는 것만 본다.
+    const r = confidenceOf({
+      coverage: 1,
+      stalenessFactors: [1],
+      evidenceFactors: [1],
+      channels: ["PRICE", "CREDIT", "FUNDING", "RATES"],
+      depthFactors: [0],
+    });
+    expect(r.value).toBeCloseTo(100 * (1 - CONFIDENCE_WEIGHTS.depth), 10);
+  });
+
   it("⚠ 점수와 신뢰도를 곱하지 않는다 — 함수가 점수를 받지도 않는다", () => {
     // 산식에 점수가 들어갈 자리가 없다는 것을 서명으로 보인다
-    const input = { coverage: 0.8, stalenessFactors: [1], evidenceFactors: [1], channels: ["PRICE"] as const };
+    const input = {
+      coverage: 0.8,
+      stalenessFactors: [1],
+      evidenceFactors: [1],
+      channels: ["PRICE"] as const,
+      depthFactors: [1],
+    };
     expect(Object.keys(input)).not.toContain("score");
   });
 });

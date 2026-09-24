@@ -179,6 +179,7 @@ function scoreIndicatorAxis(
       evidence: evidenceKind,
       staleness,
       enabled: true,
+      obsCount: outcome.obsCount,
     },
   };
 }
@@ -271,6 +272,13 @@ export function runPipeline(input: PipelineInput): PipelineResult {
         ({ official: 1, market: 0.95, manual: 0.9, judgment: 0.7 })[k],
       ),
       channels: signals.confirmedChannels as never[],
+      /**
+       * ⚠ **창을 얼마나 채웠나**. 설정의 `points`(조사 시점 스냅숏)가 아니라 **이번 계산이 실제로 쓴 수**다 —
+       * 설정을 읽으면 오래된 사실로 오늘을 재게 된다(`normalize.ts`가 `minObs`에 대해 같은 말을 한다).
+       */
+      depthFactors: used.map((i) =>
+        Math.min(1, (i.obsCount ?? 0) / GCRM_INDICATOR_BY_CODE.get(i.code)!.maxWindow),
+      ),
     });
   }
 
