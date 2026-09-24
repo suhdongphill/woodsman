@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { execFileSync } from "node:child_process";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import { securityHeaderRules } from "./src/lib/security-headers";
 
@@ -20,7 +21,22 @@ import { securityHeaderRules } from "./src/lib/security-headers";
  */
 const CANONICAL_HOST = "portfolio-solutions.net";
 
+/**
+ * 이 빌드의 커밋. 워커에는 git이 없어 **빌드 때 박는다** — GCRM run이 `gitSha`를 남겨야
+ * 설정을 바꾼 뒤에도 옛 계산을 되살릴 수 있다(`src/lib/gcrm/build-sha.ts`).
+ * ⚠ 못 읽으면 빈 문자열이다 — 런타임이 `null`로 읽고, `verify`가 「재현할 수 없다」고 말한다.
+ */
+function resolveGitSha(): string {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA;
+  try {
+    return execFileSync("git", ["rev-parse", "--short", "HEAD"], { encoding: "utf8" }).trim();
+  } catch {
+    return "";
+  }
+}
+
 const nextConfig: NextConfig = {
+  env: { GIT_SHA: resolveGitSha() },
   /**
    * 응답 보안 헤더. 무엇을 왜 걸었는지는 `src/lib/security-headers.ts`에 적었다
    * (⚠ 전역에 `default-src`를 넣으면 AdSense가 죽는다는 것도 거기 있다).

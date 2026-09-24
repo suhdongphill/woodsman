@@ -12,6 +12,7 @@ import { enabledIndicators } from "@/lib/gcrm/config/indicators";
 import { GCRM_CONFIG, MODEL_VERSION } from "@/lib/gcrm/config";
 import { configHash } from "@/lib/gcrm/config/hash";
 import { assertValidConfig } from "@/lib/gcrm/config/validate";
+import { buildGitSha } from "@/lib/gcrm/build-sha";
 import { initialRegimeState } from "@/lib/gcrm/regime";
 import type { SignalContext } from "@/lib/gcrm/regime";
 import type { RawReading } from "@/lib/gcrm/signals";
@@ -109,7 +110,8 @@ export async function computeAndSaveGcrm(opts: GcrmComputeOptions): Promise<Gcrm
     asOf,
     modelVersion: MODEL_VERSION,
     configHash: hash,
-    gitSha: opts.gitSha ?? null,
+    // 주지 않으면 이 워커를 빌드한 커밋이다 — ⚠ 2026-09-24까지는 여기서 null이 저장됐다.
+    gitSha: opts.gitSha !== undefined ? opts.gitSha : buildGitSha(),
     basis,
     createdAt: new Date().toISOString(),
   };
