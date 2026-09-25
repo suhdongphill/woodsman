@@ -55,6 +55,21 @@ export interface ModelHolding {
   order: number;
   published: boolean;
   updatedAt: string;
+  /** 볼트 판정 태그 — 기계 값(`lib/holding-tags.ts`). 없으면 아직 판정을 싣지 않은 종목 */
+  tags?: HoldingTags;
+}
+
+/** 볼트 주도주 판정 태그(2026-09-25). ⚠ 판정일(`asOf`) 없이 보이지 않는다. */
+export interface HoldingTags {
+  layer?: string;
+  layerName?: string;
+  leaderClass?: string;
+  leaderTier?: string;
+  assetKind?: string;
+  leverage?: number;
+  flag?: string;
+  /** YYYY-MM-DD */
+  asOf?: string;
 }
 
 export interface Rebalance {

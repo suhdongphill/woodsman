@@ -15,6 +15,7 @@
  */
 import { execute, getD1, queryAll, queryOne, toBool } from "@/lib/d1";
 import type { FunctionType, ModelHolding, Rebalance } from "@/lib/types";
+import { toHoldingTags } from "@/lib/holding-tags";
 
 /** DATETIME → YYYY-MM-DD */
 function dayOf(value: string): string {
@@ -44,6 +45,14 @@ type HoldingRow = {
   order: number;
   published: number;
   updatedAt: string;
+  layer: string | null;
+  layerName: string | null;
+  leaderClass: string | null;
+  leaderTier: string | null;
+  assetKind: string | null;
+  leverage: number | null;
+  verdictFlag: string | null;
+  verdictAsOf: string | null;
 };
 
 function toHolding(row: HoldingRow): ModelHolding {
@@ -65,12 +74,14 @@ function toHolding(row: HoldingRow): ModelHolding {
     order: row.order,
     published: toBool(row.published),
     updatedAt: row.updatedAt,
+    tags: toHoldingTags(row),
   };
 }
 
 /** `order`는 SQLite 예약어라 반드시 따옴표로 감싼다. */
 const HOLDING_COLUMNS = `id, name, ticker, market, functionType, targetWeight, avgCost, shares,
-       currency, price, priceAsOf, thesis, canslim, blogUrl, "order", published, updatedAt`;
+       currency, price, priceAsOf, thesis, canslim, blogUrl, "order", published, updatedAt,
+       layer, layerName, leaderClass, leaderTier, assetKind, leverage, verdictFlag, verdictAsOf`;
 
 /** 공개 화면용 — 발행된 것만, 정렬 순서대로. */
 export async function loadPublishedHoldings(limit = 100): Promise<ModelHolding[]> {
@@ -126,7 +137,10 @@ export type HoldingInput = {
   published: boolean;
 };
 
-/** id를 주면 수정, 없으면 새로 만든다. */
+/**
+ * id를 주면 수정, 없으면 새로 만든다.
+ * ⚠ 판정 태그 칸(layer·leaderClass …)은 **쓰지 않는다** — 볼트 export 가 싣는 기계 값이다(`lib/holding-tags.ts`).
+ */
 export async function saveHolding(input: HoldingInput, id?: string): Promise<void> {
   const now = new Date().toISOString();
   const values = [

@@ -5,6 +5,7 @@ import type { PublishCoverage } from "@/lib/publish-selection";
 import type { ModelHolding } from "@/lib/types";
 import type { PortfolioBucket } from "@/lib/bucket-target";
 import { savePublishSelectionAction } from "../actions";
+import { HoldingTagChips } from "./HoldingTagChips";
 
 /**
  * 공개 종목 고르기 — 운영 포트폴리오 전체를 한 표에 놓고 공개할 것만 체크한다(2026-09-25).
@@ -27,6 +28,7 @@ export function PublishPicker({
   coverage: PublishCoverage;
   buckets: PortfolioBucket[];
 }) {
+  const today = new Date().toISOString().slice(0, 10);
   const total = holdings.reduce((sum, h) => sum + (valueKrw.get(h.id) ?? 0), 0);
   const rows = [...holdings].sort(
     (a, b) => (valueKrw.get(b.id) ?? -1) - (valueKrw.get(a.id) ?? -1),
@@ -56,12 +58,13 @@ export function PublishPicker({
       ) : (
         <form action={savePublishSelectionAction}>
           <div className="max-h-[560px] overflow-auto rounded-lg border border-border">
-            <table className="w-full min-w-[520px] text-[12.5px]">
+            <table className="w-full min-w-[600px] text-[12.5px]">
               <thead className="sticky top-0 bg-card text-[11px] text-gray-500">
                 <tr className="border-b border-border">
                   <th className="w-12 px-3 py-2 text-left font-normal">공개</th>
                   <th className="px-2 py-2 text-left font-normal">종목</th>
                   <th className="px-2 py-2 text-left font-normal">분류</th>
+                  <th className="px-2 py-2 text-left font-normal">판정</th>
                   <th className="px-2 py-2 text-right font-normal">계좌 비중</th>
                   <th className="px-3 py-2 text-right font-normal">평가손익</th>
                 </tr>
@@ -94,6 +97,13 @@ export function PublishPicker({
                       </td>
                       <td className="px-2 py-1.5">
                         <FunctionBadge type={h.functionType} name={bucket?.name} color={bucket?.color} />
+                      </td>
+                      <td className="px-2 py-1.5">
+                        {h.tags ? (
+                          <HoldingTagChips tags={h.tags} today={today} compact />
+                        ) : (
+                          <span className="text-[11px] text-gray-600">—</span>
+                        )}
                       </td>
                       <td className="px-2 py-1.5 text-right tabular-nums text-gray-300">
                         {weight != null ? `${weight.toFixed(1)}%` : "—"}

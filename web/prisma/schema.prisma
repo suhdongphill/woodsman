@@ -122,6 +122,23 @@ model ModelHolding {
   canslim Float?
   blogUrl String?
 
+  // ── 볼트 판정 태그 (2026-09-25) — ⚠ 기계 값. 볼트 export 가 재실행마다 덮어쓴다(사람이 고치지 않는다) ──
+  /// 레이어 키: power | semi | connect | dc | model | hi | kr. 없으면 레이어 밖
+  layer       String?
+  layerName   String?
+  /// leader 주도주 | candidate 후발 후보 | watch 추격 주의 | out 제외 | unknown 판정 불가
+  leaderClass String?
+  /// 주도주만: prime ★★ | core ★ | wide
+  leaderTier  String?
+  /// STOCK | ETF | DEPOSITARY_RECEIPT
+  assetKind   String?
+  /// 레버리지 배수(2.0·3.0). 없으면 레버리지 아님
+  leverage    Float?
+  /// 판정 경고(" · "로 이은 문장들)
+  verdictFlag String?
+  /// 판정을 낸 날. ⚠ 태그를 보이는 화면은 이 날짜를 같이 보인다 — 날짜 없는 판정은 오늘 판정처럼 읽힌다
+  verdictAsOf DateTime?
+
   order     Int      @default(0)
   published Boolean  @default(true)
   createdAt DateTime @default(now())

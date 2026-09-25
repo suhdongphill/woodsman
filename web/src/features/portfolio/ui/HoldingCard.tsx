@@ -3,6 +3,7 @@ import { FunctionBadge } from "@/components/ui/Badge";
 import { CanslimScore } from "@/components/ui/CanslimScore";
 import { formatNumber, formatPct, profitColor, cx } from "@/lib/format";
 import type { ModelHolding } from "@/lib/types";
+import { HoldingTagChips } from "./HoldingTagChips";
 
 /**
  * 대표 포트폴리오 종목 카드.
@@ -42,6 +43,7 @@ export function HoldingCard({
           </div>
           <h3 className="mt-2 text-[15px] font-semibold text-ink truncate">{h.name}</h3>
           <p className="text-[11px] text-gray-500 mt-0.5">{h.market ?? "—"}</p>
+          {h.tags && <HoldingTagChips tags={h.tags} today={new Date().toISOString().slice(0, 10)} />}
         </div>
         <div className="text-right shrink-0">
           {hasPrice ? (
