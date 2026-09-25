@@ -26,7 +26,7 @@
 `canslim/{catalog,score}` `report/{catalog,rules,context,tistory,link}` `quota`
 `quote/{kpi,envelope,parse,lookup}` `bucket-target`
 `ai/{catalog,persona,context,routing,retrieval,client}` `security-headers` `login-throttle`
-`calendar-draft` `secret-box` `publish-selection` `holding-tags`
+`calendar-draft` `secret-box` `publish-selection` `holding-tags` `verdict-mix`
 — 전부 테스트가 있다.
 
 거시 지표는 **섹터 하나 = 파일 하나**다(`src/lib/macro/sectors/<key>.ts`).

@@ -14,7 +14,7 @@ import type { BadgeTone } from "@/components/ui/Badge";
 import type { HoldingTags } from "@/lib/types";
 
 /** 볼트 판정(2×2) — 이름은 볼트 화면과 같게 둔다. */
-const CLASS_LABEL: Record<string, { label: string; tone: BadgeTone; hint: string }> = {
+export const CLASS_LABEL: Record<string, { label: string; tone: BadgeTone; hint: string }> = {
   leader: { label: "주도주", tone: "emerald", hint: "이익 성장과 가격이 함께 강하다" },
   candidate: { label: "후발 후보", tone: "info", hint: "성장은 강한데 가격이 아직 따라오지 않았다" },
   watch: { label: "추격 주의", tone: "warn", hint: "가격만 강하고 성장이 받쳐 주지 않는다" },

@@ -36,6 +36,8 @@ import {
 import { RebalanceForm } from "@/features/portfolio/ui/RebalanceForm";
 import { PublishPicker } from "@/features/portfolio/ui/PublishPicker";
 import { publishCoverage } from "@/lib/publish-selection";
+import { verdictMix } from "@/lib/verdict-mix";
+import { VerdictMixCard } from "@/features/portfolio/ui/VerdictMixCard";
 
 export const metadata: Metadata = { title: "대표 포트폴리오" };
 
@@ -77,6 +79,13 @@ export default async function AdminModelPortfolioPage({
   const coverage = publishCoverage(
     holdings.map((h) => ({ published: h.published, valueKrw: valueKrw.get(h.id) })),
   );
+  // 운영 화면 — 전체 종목이 주도주 칸 안/밖 어디에 있나. 판정일은 가장 최근 것(볼트는 한 번에 전부 싣는다).
+  const mix = verdictMix(holdings.map((h) => ({ valueKrw: valueKrw.get(h.id), tags: h.tags })));
+  const verdictAsOf = holdings
+    .map((h) => h.tags?.asOf)
+    .filter((d): d is string => !!d)
+    .sort()
+    .at(-1);
 
   // ⚠ 비중은 반드시 원화로 환산한 뒤 계산한다 — 통화를 섞으면 통째로 틀린다.
   const rows = summarizeAllocation(
@@ -192,6 +201,8 @@ export default async function AdminModelPortfolioPage({
           tone="gold"
         />
       </div>
+
+      <VerdictMixCard mix={mix} verdictAsOf={verdictAsOf} />
 
       <PublishPicker holdings={holdings} valueKrw={valueKrw} coverage={coverage} buckets={buckets} />
 
