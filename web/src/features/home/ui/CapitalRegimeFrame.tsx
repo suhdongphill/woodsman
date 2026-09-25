@@ -48,13 +48,13 @@ export function CapitalRegimeFrame({ frame }: { frame: RegimeFrame }) {
         <h3 className="text-[11px] font-semibold tracking-[0.14em] text-ink-2">{TEXT.heading}</h3>
         <p className="text-[10.5px] tabular-nums text-ink-3">
           {frame.asOf ? `${TEXT.asOfPrefix} ${frame.asOf} · ` : ""}
-          모델 {MODEL_VERSION}
+          {frame.modelLabel ?? `모델 ${MODEL_VERSION}`}
         </p>
       </div>
 
       <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
         <span className="rounded-md bg-surface-3/70 px-1.5 py-0.5 text-[11px] font-medium text-ink-2">
-          {TEXT.pendingRegime}
+          {frame.regimeLabel ?? TEXT.pendingRegime}
         </span>
         <span className="text-ink-3">
           발행 점수 {frame.publishedCount} / {frame.totalCount}
@@ -77,7 +77,7 @@ export function CapitalRegimeFrame({ frame }: { frame: RegimeFrame }) {
             >
               <span className="text-ink-3">{chip.label} </span>
               {chip.value === undefined ? (
-                <span className="text-ink-3">— {TEXT.soon}</span>
+                <span className="text-ink-3">— {chip.pendingReason ?? TEXT.soon}</span>
               ) : (
                 <>
                   <span className="font-semibold tabular-nums text-ink">{Math.round(chip.value)}</span>

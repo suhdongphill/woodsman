@@ -22,7 +22,9 @@ import { loadReadings } from "@/features/bubble/repository";
 import { scoreBubble } from "@/lib/bubble/score";
 import { MODEL_VERSION } from "@/lib/scores/config";
 import { LIQUIDITY_PARTS, buildTide } from "@/lib/scores/tide";
-import { REGIME_CHIP_KEYS, buildRegimeFrame } from "@/lib/scores/regime-summary";
+import { REGIME_CHIP_KEYS } from "@/lib/scores/regime-summary";
+import { buildGcrmFrame } from "@/lib/gcrm/home-frame";
+import { gcrmHomeSnapshots } from "@/features/gcrm/service";
 import { CapitalRegimeFrame } from "@/features/home/ui/CapitalRegimeFrame";
 import { visibleHomeBlocks, type HomeBlock } from "@/lib/home-layout";
 import { macroLede } from "@/lib/home-lede";
@@ -128,11 +130,15 @@ export default async function HomePage() {
     // 유동성 카드 해석 팝업의 2부 — 가장 최근 「그날의 분석」
     loadLatestAnalysis(),
   ]);
+  // Global Capital Regime 줄 — ⚠ 2026-09-25부터 GCRM v2(운영자 결정). 조류 카드(v1)와 따로 읽는다.
+  const gcrm = await gcrmHomeSnapshots();
 
   const perf = summarizePerformance(snapshots);
   const tides = new Map(TIDE_KEYS.map((key) => [key, buildTide(storedScores, key, seoulDay(new Date().toISOString()))]));
-  // Global Capital Regime 프레임 — 위 `tides`와 **같은 행**에서 만든다(다시 읽지 않는다).
-  const regimeFrame = buildRegimeFrame(tides);
+  // Global Capital Regime 프레임 — ⚠ GCRM v2. 못 읽었으면 그리지 않는다(v1로 몰래 되돌아가지 않는다).
+  const regimeFrame = gcrm
+    ? buildGcrmFrame(gcrm.current, gcrm.earlier)
+    : { show: false, chips: [], publishedCount: 0, totalCount: 0, collapsed: true, summary: "" };
 
   /**
    * 홈에 올릴 일정 — **2주 · 중요도 2 이상 · 최대 4건**.

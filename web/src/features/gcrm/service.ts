@@ -174,3 +174,27 @@ export async function gcrmVerify(asOf?: string): Promise<VerifyResult | { status
     current,
   );
 }
+
+/**
+ * 홈 「GLOBAL CAPITAL REGIME」 줄의 재료 — 오늘 run과 약 4주 전 run(방향 비교용). 2026-09-25.
+ * ⚠ 못 읽으면 `undefined`를 돌려주고 **남긴다**. v1 점수로 몰래 되돌아가지 않는다(두 모델이 섞이면 숫자의 뜻이 바뀐다).
+ */
+export async function gcrmHomeSnapshots(): Promise<
+  { current: import("@/lib/gcrm/home-frame").GcrmSnapshot; earlier?: import("@/lib/gcrm/home-frame").GcrmSnapshot } | undefined
+> {
+  try {
+    const now = await gcrmCurrent();
+    if (!now.ok) return undefined;
+    const fourWeeksAgo = new Date(Date.parse(`${now.asOf}T00:00:00Z`) - 28 * 86_400_000).toISOString().slice(0, 10);
+    const before = await gcrmCurrent(fourWeeksAgo);
+    const snap = (x: Extract<Awaited<ReturnType<typeof gcrmCurrent>>, { ok: true }>) => ({
+      asOf: x.asOf,
+      pillars: x.pillars.map((p) => ({ pillar: p.pillar, axis: p.axis, scoreRaw: p.scoreRaw, coverage: p.coverage, status: p.status })),
+      regimeLabel: x.regime?.alignmentStateKo ?? null,
+    });
+    return { current: snap(now), earlier: before.ok ? snap(before) : undefined };
+  } catch (error) {
+    console.error("[gcrm] 홈 프레임 재료를 읽지 못했다 — 프레임을 그리지 않는다", error);
+    return undefined;
+  }
+}
