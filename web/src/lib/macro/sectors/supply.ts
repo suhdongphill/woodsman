@@ -133,5 +133,30 @@ export const sector: MacroSector = {
       read: "노동생산성(전년비)과 나란히 보세요. 근로자당 산출은 늘었는데 시간당 생산성이 제자리면 근로시간이 늘어난 결과이고, 그 반대면 효율이 좋아진 것입니다.",
       order: 5,
     },
+    {
+      /**
+       * ⭐ 2026-09-25 — GCRM 「금리 감내력」 기둥의 `productivity_real_yield`(가중 0.2)를 켜려고 계열로 노출했다.
+       * `lib/macro/capital.ts`의 PRYS 카드는 이 값을 **두 가지로** 보인다 — 최근 분기(byLatest)와 4분기 평균(byTrend).
+       * ⚠ 이 계열은 그중 **byLatest와 같은 값**이다(전년비 − 그날의 실질 10년 금리). 이름에 「추세」를 넣지 않는다.
+       * ⚠ 날짜 눈금은 생산성(분기 첫날)이 정한다. 실질 금리는 그날 값이 없으면 5일까지 앞 값을 쓴다(휴장).
+       */
+      key: "prys",
+      name: "생산성 − 실질금리 (PRYS)",
+      group: "supply",
+      source: "DERIVED",
+      derived: { op: "subtract", from: ["prod_yoy", "real10"], carryDays: 5 },
+      transform: "level",
+      layer: "L2",
+      type: "level",
+      freq: "q",
+      unit: "%p",
+      decimals: 2,
+      url: FRED("OPHNFB"),
+      sourceLabel: "FRED 합성 · OPHNFB(전년비) − DFII10",
+      what: "노동생산성 증가율(전년비)에서 같은 날의 실질 10년 금리(TIPS)를 뺀 값입니다.",
+      why: "기업이 빌린 돈으로 투자할 이유가 있는지를 봅니다. 생산성이 실질 조달비용보다 빨리 늘면 **높은 금리를 감당할 힘**이 있고, 반대면 금리가 투자를 누릅니다. GCRM 「금리 감내력」 기둥에 들어갑니다.",
+      read: "0보다 크면 생산성이 실질 금리를 이기고 있는 것입니다. ⚠ 생산성은 한 분기가 크게 튑니다 — 4분기 흐름으로 보세요. ⚠ 실질 금리 계열(DFII10)이 2003년부터라 그 전 값은 없습니다.",
+      order: 6,
+    },
   ],
 };

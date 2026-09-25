@@ -1654,11 +1654,13 @@ export const GCRM_INDICATORS: GcrmIndicator[] = [
     winsor: [0.01, 0.99],
     channels: [],
     evidence: "official",
-    historyStart: null,
-    points: 0,
-    enabled: false,
-    disabledReason:
-      "`lib/macro/capital.ts`가 이미 계산하지만 계열로 저장하지 않는다. GCRM이 읽으려면 파생 계열로 노출해야 한다 — P1에서 붙인다.",
+    // 운영 D1 실측(2026-09-25): 실질 10년(DFII10)이 2003-01-02부터라, 첫 분기(2003-01-01)는 그날 이전 값이 없어 빠진다.
+    historyStart: "2003-04-01",
+    points: 92,
+    historyNote:
+      "파생 계열 — `MacroPoint`에 저장하지 않고 읽을 때 합성한다(prod_yoy − real10). 점 수는 prod_yoy 분기 중 real10이 있는 것(93 − 첫 분기 1).",
+    // ⭐ 2026-09-25 켰다 — `sectors/supply.ts`의 파생 계열 `prys`(OPHNFB 전년비 − DFII10). 2003년부터.
+    enabled: true,
   },
   {
     code: "sector_breadth",
