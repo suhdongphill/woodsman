@@ -156,6 +156,16 @@ describe("모의/실계좌 표시", () => {
     expect(notice.line).not.toContain("믿");
   });
 
+  it("⚠ 실제 운용은 「운영 포트폴리오」로 부르고, 종목이 일부만 보인다는 걸 밝힌다", () => {
+    const notice = dataModeNotice("LIVE");
+    expect(notice.badge).toBe("운영 포트폴리오");
+    expect(notice.isRealMoney).toBe(true);
+    // 평가액(계좌 전체)과 보이는 종목(고른 것만)의 차이를 적지 않으면 합이 안 맞아 의심받는다.
+    expect(notice.line).toContain("계좌 전체");
+    expect(notice.line).toContain("공개를 고른 것만");
+    expect(notice.line).not.toContain("모의");
+  });
+
   it("실계좌만 실제 자금 성과로 인용할 수 있다", () => {
     expect(isRealMoney("LIVE")).toBe(true);
     expect(isRealMoney("PAPER")).toBe(false);

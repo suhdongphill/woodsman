@@ -32,8 +32,8 @@ export function SiteBasicsForm({ basics }: { basics: SiteBasics }) {
               },
               {
                 value: "LIVE",
-                title: "실계좌",
-                desc: "실제 자금으로 운용한 기록. 매매·납입·평가액 모두 실제일 때만 고릅니다.",
+                title: "운영 포트폴리오 (실제 운용)",
+                desc: "증권사 잔고를 실은 실제 운용 기록. 매매·납입·평가액 모두 실제일 때만 고릅니다. 공개 화면에는 금액도 나갑니다.",
               },
             ] as const
           ).map((option) => (
