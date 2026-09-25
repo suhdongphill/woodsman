@@ -13,7 +13,7 @@
  *    쓰므로 읽을 때 앞 10자를 자르고, 쓸 때는 **정오(UTC)**로 맞춘다
  *    (자정으로 넣으면 화면에서 하루가 밀린다 — features/journal/repository.ts와 같은 규칙).
  */
-import { execute, queryAll, queryOne, toBool } from "@/lib/d1";
+import { execute, getD1, queryAll, queryOne, toBool } from "@/lib/d1";
 import type { FunctionType, ModelHolding, Rebalance } from "@/lib/types";
 
 /** DATETIME → YYYY-MM-DD */
@@ -166,6 +166,29 @@ export async function saveHolding(input: HoldingInput, id?: string): Promise<voi
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [`mh_${now}_${Math.floor(performance.now())}`, ...values, now],
   );
+}
+
+/** id → 지금 공개 여부. 공개 고르기가 "바뀌는 것만" 쓰기 위해 읽는다. */
+export async function loadPublishState(): Promise<Map<string, boolean>> {
+  const rows = await queryAll<{ id: string; published: number }>(
+    `SELECT id, published FROM ModelHolding`,
+  );
+  return new Map(rows.map((r) => [r.id, toBool(r.published)]));
+}
+
+/**
+ * 여러 종목의 공개 여부를 한 번에 바꾼다.
+ * ⚠ 공개 여부만 바꾼다 — `updatedAt`은 건드리지 않는다. 그 값은 "종목 내용을 고친 날"로 화면에 나간다.
+ * ⚠ 한 문장에 id를 몰아 넣지 않고 종목마다 한 문장을 batch로 보낸다(D1 바인딩 개수 한도).
+ */
+export async function setHoldingsPublished(ids: readonly string[], published: boolean): Promise<void> {
+  if (!ids.length) return;
+  const db = await getD1();
+  const stmts = ids.map((id) =>
+    db.prepare(`UPDATE ModelHolding SET published = ? WHERE id = ?`).bind(published ? 1 : 0, id),
+  );
+  const BATCH = 50;
+  for (let i = 0; i < stmts.length; i += BATCH) await db.batch(stmts.slice(i, i + BATCH));
 }
 
 export async function deleteHolding(id: string): Promise<void> {

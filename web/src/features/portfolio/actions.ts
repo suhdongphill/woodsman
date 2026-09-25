@@ -14,10 +14,13 @@ import {
   deleteHolding,
   deleteRebalance,
   findHolding,
+  loadPublishState,
   nextHoldingOrder,
   saveHolding,
   saveRebalance,
+  setHoldingsPublished,
 } from "./repository";
+import { planPublishSelection } from "@/lib/publish-selection";
 import { loadBuckets } from "./buckets-repo";
 import { firstIssue, holdingSchema, rebalanceSchema } from "./schema";
 import { emptyPortfolioFormState, type PortfolioFormState } from "./form-state";
@@ -95,6 +98,27 @@ export async function saveHoldingAction(
 
   revalidateAll();
   return { savedAt: new Date().toISOString(), ...emptyPortfolioFormState };
+}
+
+/**
+ * 공개 종목 고르기 — 표에서 체크한 것만 공개한다.
+ * ⚠ 표에 보였던 종목(`listed`)만 바꾼다. 판단은 `lib/publish-selection.ts`.
+ * ⚠ 실패를 삼키지 않는다 — 조용히 넘어가면 "공개했다"고 믿은 채 화면이 그대로다.
+ */
+export async function savePublishSelectionAction(formData: FormData): Promise<void> {
+  await requireAdmin("/admin/model-portfolio");
+  const strings = (key: string) =>
+    formData.getAll(key).filter((v): v is string => typeof v === "string" && v !== "");
+
+  const plan = planPublishSelection(strings("listed"), strings("published"), await loadPublishState());
+  try {
+    await setHoldingsPublished(plan.publish, true);
+    await setHoldingsPublished(plan.unpublish, false);
+  } catch (error) {
+    console.error("[portfolio] 공개 선택 저장 실패", plan, error);
+    throw error;
+  }
+  revalidateAll();
 }
 
 export async function deleteHoldingAction(formData: FormData): Promise<void> {

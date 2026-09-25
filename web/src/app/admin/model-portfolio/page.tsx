@@ -34,6 +34,8 @@ import {
   orphanHoldings,
 } from "@/lib/bucket-target";
 import { RebalanceForm } from "@/features/portfolio/ui/RebalanceForm";
+import { PublishPicker } from "@/features/portfolio/ui/PublishPicker";
+import { publishCoverage } from "@/lib/publish-selection";
 
 export const metadata: Metadata = { title: "대표 포트폴리오" };
 
@@ -69,6 +71,12 @@ export default async function AdminModelPortfolioPage({
 
   // ⚠ 환율은 **수집값**이다(2026-08-31). 설정값은 수집 전·실패 때의 안전망일 뿐이다.
   const usdKrw = await loadUsdKrwRate(basics.usdKrwRate);
+
+  // 공개 고르기 — 공개 종목이 계좌(종목 평가액)에서 차지하는 몫을 함께 본다.
+  const valueKrw = new Map(holdings.map((h) => [h.id, holdingValueKrw(h, usdKrw.rate)]));
+  const coverage = publishCoverage(
+    holdings.map((h) => ({ published: h.published, valueKrw: valueKrw.get(h.id) })),
+  );
 
   // ⚠ 비중은 반드시 원화로 환산한 뒤 계산한다 — 통화를 섞으면 통째로 틀린다.
   const rows = summarizeAllocation(
@@ -129,7 +137,7 @@ export default async function AdminModelPortfolioPage({
     <AdminShell>
       <AdminPageHeader
         title="대표 포트폴리오 관리"
-        description="여기에 넣은 종목이 그대로 공개 화면(/portfolio)과 홈의 배분 막대가 됩니다."
+        description="공개를 켠 종목만 공개 화면(/portfolio)과 홈의 배분 막대에 나갑니다. 공개 여부는 아래 「공개 종목 고르기」에서 한 번에 정합니다."
       />
 
       {/* 목표 합계 경고 — ⚠ 막지 않고 말해 주기만 한다(작성 중일 수 있다) */}
@@ -171,7 +179,11 @@ export default async function AdminModelPortfolioPage({
         <StatTile
           label="공개 종목"
           value={`${published.length}개`}
-          sub={`전체 ${holdings.length}개`}
+          sub={
+            coverage.publishedValuePct != null
+              ? `전체 ${holdings.length}개 · 평가액의 ${coverage.publishedValuePct}%`
+              : `전체 ${holdings.length}개`
+          }
         />
         <StatTile
           label="구성 완료"
@@ -180,6 +192,8 @@ export default async function AdminModelPortfolioPage({
           tone="gold"
         />
       </div>
+
+      <PublishPicker holdings={holdings} valueKrw={valueKrw} coverage={coverage} buckets={buckets} />
 
       <Card className="mb-5">
         <CardTitle
