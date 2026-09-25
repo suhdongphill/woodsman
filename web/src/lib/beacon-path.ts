@@ -35,6 +35,7 @@ export const PUBLIC_STATIC_PATHS = [
   "/disclaimer",
   "/insights",
   "/journal",
+  "/leaders",
   "/macro",
   "/macro/bubble",
   "/macro/calendar",

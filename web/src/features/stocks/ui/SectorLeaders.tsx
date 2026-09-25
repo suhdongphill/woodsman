@@ -17,6 +17,7 @@ const TEXT = {
   disclaimer:
     "⚠ 이 표는 자금 유입 통계가 아닙니다. 설정주식수·AUM 자료가 아니라 **가격이 만든 결과**(52주 고가 대비 위치와 시장 대비 초과 수익)입니다. 특정 종목의 매수·매도를 권하지 않습니다.",
   toPortfolio: "그래서 내 배분은 →",
+  toLeaders: "레이어별 주도주 판정 →",
 };
 
 /**
@@ -118,12 +119,15 @@ export function SectorLeaders({ items }: { items: SectorStrength[] }) {
 
       <p className="mt-3 text-[11px] leading-relaxed text-ink-3">{TEXT.disclaimer}</p>
 
-      <Link
-        href="/portfolio"
-        className="mt-3 inline-block text-[12.5px] text-gold-500 hover:text-gold-400"
-      >
-        {TEXT.toPortfolio}
-      </Link>
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1">
+        {/* 섹터 ETF는 넓은 그물이다 — 칸 안의 어느 종목이 실적·가격 모두 강한지는 주도주 화면이 판정한다 */}
+        <Link href="/leaders" className="text-[12.5px] text-gold-500 hover:text-gold-400">
+          {TEXT.toLeaders}
+        </Link>
+        <Link href="/portfolio" className="text-[12.5px] text-gold-500 hover:text-gold-400">
+          {TEXT.toPortfolio}
+        </Link>
+      </div>
     </section>
   );
 }

@@ -70,6 +70,7 @@ export function sitemapEntries(input: SitemapInput): SitemapEntry[] {
     // ⚠ 용어 사전은 코드 상수라 언제 바뀌었는지 사이트맵이 모른다. 링크 확인일(`checked`)은
     //    「링크를 본 날」이지 「페이지가 바뀐 날」이 아니다 — 대신 쓰지 않는다.
     { path: "/macro/glossary", priority: 0.5, changeFrequency: "monthly" },
+    { path: "/leaders", priority: 0.8, changeFrequency: "weekly" },
     { path: "/stocks", lastModified: latestReportAt, priority: 0.6, changeFrequency: "weekly" },
     { path: "/about", priority: 0.5, changeFrequency: "monthly" },
     { path: "/disclaimer", priority: 0.3, changeFrequency: "monthly" },

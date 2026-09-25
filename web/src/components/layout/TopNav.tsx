@@ -31,6 +31,11 @@ const BASE_NAV = [
   { href: "/", label: "홈" },
   { href: "/macro", label: "거시 지표" },
   { href: "/insights", label: "인사이트" },
+  /**
+   * ⚠ 주도주는 흐름과 답 **사이**다(2026-09-25). 바람(거시)을 읽은 사람이 「그래서 돈은 어느 칸으로?」를 보고
+   * 포트폴리오(답)로 간다. 인사이트 앞에 두지 않은 이유: 인사이트가 티스토리로 가는 길(1순위)이라 밀지 않는다.
+   */
+  { href: "/leaders", label: "주도주" },
   { href: "/portfolio", label: "포트폴리오" },
   { href: "/stocks", label: "종목분석" },
   /**

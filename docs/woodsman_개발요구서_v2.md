@@ -478,6 +478,23 @@ rm s.json
 
 ⚠ **자동 지표에는 쓰지 않는다** — 다음 수집에서 덮이고 그 사이 화면이 두 값을 오간다.
 
+### 주도주(`/leaders`)·운영 포트폴리오 — 판정은 볼트, 화면은 사이트 (2026-09-25)
+
+볼트(`D:\Woodsman\Investor`)가 로컬에서 실험해 **좋은 것을 포털로 올린다**(사용자 방식). 이날 올린 것:
+
+| 무엇 | 볼트 원천 | 포털 자리 | 싣는 길 |
+|---|---|---|---|
+| 주도주 판정(7 레이어·44종목·2×2) | `fetch-leaders.py` → `leaders.json`·`leaders_fit.json` | `/leaders` · 표 `LeaderRun/Group/Member` | `export-portal-leaders.py` → **주간 파이프라인이 자동 적재** |
+| 운영 포트폴리오(증권사 잔고) | `fetch-portfolio.py` → `portfolio.json` | `ModelHolding`(+ 판정 태그) · `/admin/model-portfolio` | `export-portal-portfolio.py` → **사람이** `apply-portfolio.ps1` |
+
+원칙 — ⚠ 되돌리지 말 것
+1. **포털은 판정을 다시 계산하지 않는다.** 규칙은 볼트 `주도주 판별 프레임 — 4단계·2×2 설계서`. 포털이 더하는 것은
+   ① 읽히는 한 문장 ② **지난 실행 대비 판정 변화**(볼트에 없던 것) ③ 운영 포트폴리오 보유 표시뿐이다.
+2. 원격 D1 쓰기는 `d1-exec-chunked.mjs`(`--command` 묶음)로만 — `--remote --file`은 운영 DB를 잠근다(§4 사고, 2026-09-13).
+3. 주도주 실행은 **LeaderRun을 맨 마지막에** 싣는다. 화면은 LeaderRun에 있는 실행만 읽어 반쯤 실린 판정을 숨긴다.
+4. 계좌는 **「운영 포트폴리오」** — 실제 운용, 금액도 공개(2026-09-25 결정 B). 실돈을 「모의」로 부르지 않는다. 종목은 관리자가 켠 것만.
+5. 기사 AI 요약(`news.json`)은 공개하지 않는다 — 제목만 보고 쓴 요약이라 공개 화면의 근거로 약하다.
+
 ### 금리·거시(rates) 섹션 — 계산은 파이썬, 화면은 사이트 (2026-09-05)
 
 - `pms rates`(파이썬 CLI)가 FRED·ECOS를 수집·계산·검증하고 `web/public/data/rates.json`으로

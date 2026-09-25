@@ -1369,3 +1369,69 @@ model GcrmRegimeState {
 
   @@index([regimeCode])
 }
+
+// ─────────────────────────────────────────────────────────────
+// 주도주 모니터 (2026-09-25) — 볼트 leaders.json 의 **읽기 전용 사본**. 포털은 판정을 다시 계산하지 않는다.
+// 볼트 _scripts/export-portal-leaders.py → d1-exec-chunked.mjs. 실행(run)마다 쌓아 판정 변화를 비교한다.
+// ⚠ LeaderRun 은 볼트가 맨 마지막에 넣는다 — 화면은 LeaderRun 에 있는 실행만 읽어 적재 중인 실행을 숨긴다.
+// ─────────────────────────────────────────────────────────────
+
+model LeaderRun {
+  /// 수집일 YYYY-MM-DD (하루에 한 실행 — 같은 날 다시 싣으면 덮는다)
+  id          String   @id
+  /// 볼트 수집 시각 "YYYY-MM-DD HH:MM" (KST)
+  collectedAt String
+  /// JSON: benchmarks·periods·eps_source·counts·flow_note·flow_source
+  meta        String
+  /// JSON: leaders_fit.json(실증 적합도) — 없으면 그 절을 그리지 않는다
+  fit         String?
+  createdAt   DateTime @default(now())
+}
+
+model LeaderGroup {
+  runId       String
+  /// power | semi | connect | dc | model | hi | kr
+  groupId     String
+  ord         Int
+  name        String
+  why         String?
+  src         String?
+  /// 구성 종목 3개월 상대강도 중앙값(%p)
+  rsMedianM3  Float?
+  /// 신고가권 비율(%)
+  breadthHigh Int?
+  leaders     Int      @default(0)
+  prime       Int      @default(0)
+  /// JSON: 수급 근거(basis: kis | proxy …)
+  supply      String?
+  /// JSON: 레이어 ETF 목록
+  etf         String?
+
+  @@id([runId, groupId])
+}
+
+model LeaderMember {
+  runId   String
+  groupId String
+  ticker  String
+  ord     Int
+  name    String
+  role    String?
+  /// us | kr
+  mkt     String?
+  /// leader | candidate | watch | out | unknown — 볼트 판정 그대로
+  cls     String?
+  /// prime | core | wide (주도주만)
+  tier    String?
+  why     String?
+  flag    String?
+  rs3m    Float?
+  offHigh Float?
+  revYoy  Float?
+  accel   Float?
+  /// JSON: price·fund·eps·flow 원본(화면이 더 보여 줄 때 쓴다)
+  detail  String?
+
+  @@id([runId, groupId, ticker])
+  @@index([ticker])
+}
