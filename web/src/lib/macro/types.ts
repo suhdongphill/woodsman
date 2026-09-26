@@ -62,7 +62,11 @@ export type MacroGroup = {
  * ⚠ `TREASURY`(2026-09-14, R2b-2) — 미 재무부 Fiscal Data API(무료·키 없음). `sourceId`는 `데이터셋:필드` 꼴이고,
  *   해석 규칙(TIPS 제외 · 재발행 포함 · "null"은 결측)은 `lib/macro/treasury.ts`에 있다. 알 수 없는 `sourceId`는 수집기가 **던진다**.
  */
-export type MacroSource = "FRED" | "YAHOO" | "ECOS" | "NAVER" | "TREASURY" | "MANUAL" | "DERIVED";
+/**
+ * ⚠ `IMF`(2026-09-26) — IMF 데이터 포털 SDMX(무료·키 없음). `sourceId`는 `데이터플로:시리즈키` 꼴이고
+ *   해석은 `lib/macro/imf.ts`에 있다. 알 수 없는 `sourceId`는 수집기가 **던진다**.
+ */
+export type MacroSource = "FRED" | "YAHOO" | "ECOS" | "NAVER" | "TREASURY" | "IMF" | "MANUAL" | "DERIVED";
 
 export type { MacroLayer, MacroIndicatorType } from "./layers";
 export type { ReleaseFreq } from "./freshness";

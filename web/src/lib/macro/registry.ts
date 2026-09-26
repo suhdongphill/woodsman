@@ -205,7 +205,8 @@ export function headlineIndicators(): MacroIndicator[] {
 }
 
 /**
- * 서버가 직접 가져올 수 있는 지표(FRED·Yahoo·ECOS·NAVER). MANUAL·DERIVED·TREASURY는 제외.
+ * 서버가 직접 가져올 수 있는 지표(FRED·Yahoo·ECOS·NAVER·IMF). MANUAL·DERIVED·TREASURY는 제외.
+ * ⚠ IMF(2026-09-26)는 워커에서 받는다 — 재무부처럼 막히면 같은 이유로 여기서 빼고 GitHub Actions로 옮긴다(`lib/macro/imf.ts`는 D1을 부르지 않는다).
  * ⚠ 파생을 빼는 이유: 받아 올 시리즈가 애초에 없다. 넣으면 수집기가 매번 실패를 기록한다.
  * ⚠ **TREASURY를 빼는 이유(2026-09-16, S2-c)**: 워커 → treasury.gov가 525·시간 초과로 막혀
  *   2026-09-13부터 **매 수집마다 네 계열이 전부 실패**했다. 고칠 수 없는 실패를 매일 기록하면

@@ -21,7 +21,7 @@
 `auth-providers` `site-url` `site-links` `format` `env-file` `site-basics`
 `data-mode` `allocation` `manual-price` `markdown` `sanitize-html` `seo` `sections`
 `analytics` `engagement` `beacon-path` `beacon-selftest` `seed-residue`
-`macro/{registry,series,signal,parse}` `bubble/{catalog,score}`
+`macro/{registry,series,signal,parse,imf}` `bubble/{catalog,score}`
 `gcrm/config/{model,indicators,pillars,channels,regimes,promotion,validate,hash,provenance}` `gcrm/{normalize,horizon,weights,pillar,alignment,confidence,signals,regime,pipeline,verify,sensitivity}`
 `canslim/{catalog,score}` `report/{catalog,rules,context,tistory,link}` `quota`
 `quote/{kpi,envelope,parse,lookup}` `bucket-target`

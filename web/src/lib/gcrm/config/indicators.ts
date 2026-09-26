@@ -1709,7 +1709,7 @@ export const GCRM_INDICATORS: GcrmIndicator[] = [
     code: "cofer",
     nameKo: "세계 외환보유액 중 달러 비중 (COFER)",
     series: "cofer",
-    source: "MANUAL",
+    source: "IMF", seriesId: "COFER:G001.AFXRA.CI_USD.SHRO_PT.Q",
     freq: "q",
     portalTransform: "level",
     transform: "level",
@@ -1720,12 +1720,12 @@ export const GCRM_INDICATORS: GcrmIndicator[] = [
     maxWindow: WINDOW_OBS.q,
     winsor: [0.01, 0.99],
     channels: [],
-    evidence: "manual",
-    historyStart: null,
-    points: 0,
-    enabled: false,
-    disabledReason:
-      "IMF 분기 · 발표 지연. ⚠ 지연 폭은 구현 시점에 IMF 일정으로 재확인한다 — 명세 부록도 확정하지 않았다. 조류에만 참여할 지표다.",
+    evidence: "official",
+    // IMF SDMX 실측(2026-09-26): 1999-Q1 ~ 2026-Q1 · 109점. 발표는 분기 끝나고 약 3개월 뒤(9/26에 최신이 Q1).
+    historyStart: "1999-01-01",
+    points: 109,
+    // ⭐ 2026-09-26 켰다 — IMF 수집기(`lib/macro/imf.ts`). 분기라 조류에만 참여한다.
+    enabled: true,
   },
   {
     code: "move",
