@@ -1727,6 +1727,31 @@ export const GCRM_INDICATORS: GcrmIndicator[] = [
     // ⭐ 2026-09-26 켰다 — IMF 수집기(`lib/macro/imf.ts`). 분기라 조류에만 참여한다.
     enabled: true,
   },
+  /** 은행 밖의 달러 수요. ⚠ 잔액은 거의 언제나 사상 최대라 **증가율**로 본다(`treasury_marketable`과 같은 이유). */
+  {
+    code: "stablecoin_usd",
+    nameKo: "달러 스테이블코인 잔액 (전년비)",
+    series: "stablecoin_usd",
+    source: "DEFILLAMA", seriesId: "stablecoins:peggedUSD",
+    freq: "d",
+    portalTransform: "levelB",
+    transform: "yoy",
+    polarity: 1,
+    scaler: "pct_rank",
+    window: "expanding",
+    minObs: 750,
+    maxWindow: WINDOW_OBS.d,
+    winsor: [0.01, 0.99],
+    channels: [],
+    // 민간 집계(발행사 공시를 모은 값)라 official이 아니다. 거래 가격도 아니지만 가장 가까운 등급이 market이다.
+    evidence: "market",
+    // DefiLlama 실측(2026-09-26): 2017-11-29 ~ · 3,224점 · 빈 날 없음. 전년비는 2018-11-29부터.
+    historyStart: "2017-11-29",
+    points: 3224,
+    historyNote:
+      "⚠ 2019~2021년 전년비가 몇백 %였다 — 누적 백분위에서는 지금의 정상적인 증가가 낮게 찍힌다. 창이 짧은 새 시장의 기저효과다.",
+    enabled: true,
+  },
   {
     code: "move",
     nameKo: "MOVE 지수",

@@ -164,5 +164,29 @@ export const sector: MacroSector = {
       read: "1999년 70%대에서 2020년대 50%대 후반으로 내려왔습니다. ⚠ 환율에도 흔들립니다 — 달러가 강해지면 다른 통화 자산의 달러 환산액이 줄어 **팔지 않아도** 달러 비중이 오릅니다. 한 분기 움직임보다 몇 년의 흐름으로 보세요. ⚠ 발표가 분기 끝나고 약 3개월 늦습니다.",
       order: 5,
     },
+    {
+      /**
+       * ⭐ 2026-09-26 — GCRM 「달러 네트워크 지배력」의 `stablecoin_dollar_network`(가중 0.15)를 켜려고 붙였다.
+       * 원값은 **달러**다(DefiLlama `peggedUSD` — 달러 고정 스테이블코인 전체, 달러 환산). 화면은 십억 달러(`levelB`).
+       * ⚠ 2017-11-29부터다. 잔액은 거의 늘 사상 최대라 GCRM은 **전년비**로 본다(`treasury_marketable`과 같은 이유).
+       */
+      key: "stablecoin_usd",
+      name: "달러 스테이블코인 잔액",
+      group: "fx",
+      source: "DEFILLAMA",
+      sourceId: "stablecoins:peggedUSD",
+      transform: "levelB",
+      layer: "L1",
+      type: "level",
+      freq: "d",
+      unit: "십억 달러",
+      decimals: 1,
+      url: "https://defillama.com/stablecoins",
+      sourceLabel: "DefiLlama · 달러 고정 스테이블코인 유통 잔액",
+      what: "USDT·USDC처럼 1달러에 가치를 묶어 둔 스테이블코인이 지금 시장에 얼마나 풀려 있는지를 달러로 더한 값입니다.",
+      why: "스테이블코인 발행사는 받은 돈을 대부분 **미국 단기국채와 예금**으로 쥡니다. 잔액이 늘면 은행 밖에서도 달러를 쓰려는 수요가 늘고, 그 수요가 미국 국채를 사 주는 새 경로가 된다는 뜻입니다. GCRM 「달러 네트워크 지배력」 기둥에 들어갑니다.",
+      read: "잔액 자체보다 **1년 전보다 얼마나 늘었나**로 보세요 — 잔액은 거의 늘 최대치입니다. ⚠ 2019~2021년에는 한 해 몇 배씩 늘었습니다. 그 시절과 비교하면 지금의 증가는 작아 보일 수밖에 없습니다. ⚠ 집계 주체(DefiLlama)는 민간이고, 발행사 공시를 모은 값입니다.",
+      order: 6,
+    },
   ],
 };

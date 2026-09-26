@@ -366,11 +366,8 @@ export const GCRM_PILLARS: GcrmPillar[] = [
           "⚠ 부호를 뒤집는다. 유동성 기둥에서 FIMA 풀 사용 증가는 역외 달러 부족(−1)이지만, 네트워크 지배력 관점에서는 **각국 중앙은행이 연준 창구에 의존한다는 증거**다(+1). 같은 사실을 다른 질문에 쓰는 것이다.",
       },
       treasury_safe_asset_demand: { kind: "indicators", weight: 0.15, indicators: ["auction10y_btc"] },
-      stablecoin_dollar_network: {
-        kind: "unavailable",
-        weight: 0.15,
-        reason: "무료 공개 시계열 없음 — 스테이블코인 발행 잔액",
-      },
+      // ⭐ 2026-09-26 — DefiLlama(무료·키 없음)로 채웠다. 전에는 「무료 공개 시계열 없음」으로 적혀 있었다.
+      stablecoin_dollar_network: { kind: "indicators", weight: 0.15, indicators: ["stablecoin_usd"] },
       global_dollar_liquidity: {
         kind: "indicators",
         weight: 0.1,

@@ -66,7 +66,19 @@ export type MacroGroup = {
  * ⚠ `IMF`(2026-09-26) — IMF 데이터 포털 SDMX(무료·키 없음). `sourceId`는 `데이터플로:시리즈키` 꼴이고
  *   해석은 `lib/macro/imf.ts`에 있다. 알 수 없는 `sourceId`는 수집기가 **던진다**.
  */
-export type MacroSource = "FRED" | "YAHOO" | "ECOS" | "NAVER" | "TREASURY" | "IMF" | "MANUAL" | "DERIVED";
+/**
+ * ⚠ `DEFILLAMA`(2026-09-26) — DefiLlama 스테이블코인 API(무료·키 없음). 해석은 `lib/macro/defillama.ts`.
+ */
+export type MacroSource =
+  | "FRED"
+  | "YAHOO"
+  | "ECOS"
+  | "NAVER"
+  | "TREASURY"
+  | "IMF"
+  | "DEFILLAMA"
+  | "MANUAL"
+  | "DERIVED";
 
 export type { MacroLayer, MacroIndicatorType } from "./layers";
 export type { ReleaseFreq } from "./freshness";
@@ -83,6 +95,7 @@ export type { MacroDerived } from "./derived";
  *              (연준 총자산 WALCL 등)을 조 달러로 읽기 위한 것이다. 같은 유동성 블록에서
  *              어떤 계열은 십억, 어떤 계열은 백만으로 오기 때문에 **단위를 맞추지 않으면
  *              합계·비교가 조용히 1000배 틀린다.**
+ * - `levelB`   원값을 10억으로 나눈다 — **달러 단위**로 오는 계열(스테이블코인 잔액)을 십억 달러로 읽는다.
  * - `price100` 100에서 뺀다 — ⚠ **금리 선물**의 관례다. 30일 연방기금 선물은 가격 96.14로
  *              거래되고 그 뜻은 「그 달 평균 실효금리 3.86%」다. 원값(가격)을 저장하고
  *              여기서 금리로 바꾼다(`lib/macro/fedfutures.ts`가 같은 식을 쓴다).
@@ -94,6 +107,7 @@ export type MacroTransform =
   | "momdiff"
   | "levelK"
   | "levelM"
+  | "levelB"
   | "price100";
 
 /** 침체 시그널 판정 규칙. `op`는 "위험한 방향". */

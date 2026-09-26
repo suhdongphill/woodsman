@@ -22,6 +22,7 @@ import { computeAndSaveScores, type ScoreComputeSummary } from "@/features/score
 import { collectPublicNews, type NewsCollectSummary } from "@/features/news/collect";
 import { fetchTreasury } from "@/lib/macro/treasury-fetch";
 import { fetchImf } from "@/lib/macro/imf";
+import { fetchDefiLlama } from "@/lib/macro/defillama";
 import {
   dedupeByDate,
   parseEcosJson,
@@ -270,6 +271,9 @@ async function fetchIndicator(
   }
   if (indicator.source === "IMF") {
     return fetchImf(indicator.sourceId, hasHistory ? daysAgo(REFRESH_DAYS) : HISTORY_START);
+  }
+  if (indicator.source === "DEFILLAMA") {
+    return fetchDefiLlama(indicator.sourceId, hasHistory ? daysAgo(REFRESH_DAYS) : HISTORY_START);
   }
   throw new Error(`알 수 없는 출처: ${indicator.source}`);
 }
