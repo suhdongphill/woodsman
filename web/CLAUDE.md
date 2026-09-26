@@ -173,6 +173,8 @@ npm run check    # typecheck → lint → test → build
   `npm run check > log 2>&1; echo $?`
 - ⚠ **변경은 한 번에 하나씩 배포한다**(운영지침 §3-1). 묶어 올리면 효과를 가릴 수 없다.
   배포할 때마다 `/admin/releases`에 **가설과 함께** 기록한다.
+  ⭐ 기록은 **`release-log` 스킬**이 한다(`scripts/release-log.mjs` — 운영 D1 `SiteRelease`에 한 줄 + 관리자 로그).
+  사람이 붙이기로 했던 동안 9/19 뒤로 한 건도 안 붙었다(2026-09-26 운영자 결정: 「붙이는 것은 스킬에 담아 둬요」).
 
 ## 참고 문서
 
