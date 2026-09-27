@@ -16,7 +16,7 @@
  */
 import { resolveApiEnv } from "@/features/ai/credentials";
 import { autoIndicators, findIndicator, type MacroIndicator } from "@/lib/macro/catalog";
-import { nextMonthOf, resolveFrontContract } from "@/lib/macro/fedfutures";
+import { cmeContractSymbol, contractMonthsToFetch, labelMatchesMonth, pointsForContract } from "@/lib/macro/fedfutures";
 import { dropFuturePoints } from "@/lib/macro/observed";
 import { computeAndSaveScores, type ScoreComputeSummary } from "@/features/scores/compute";
 import { collectPublicNews, type NewsCollectSummary } from "@/features/news/collect";
@@ -114,51 +114,36 @@ async function fetchYahoo(symbol: string, full: boolean, daily: boolean): Promis
  * 모르는 값이고, 그런 값으로 확률을 내면 **그럴듯하게 틀린다**(`^MOVE`가 실은 TIPS 지수였던
  * 2026-09-07과 같은 종류다).
  *
- * ⚠ Yahoo는 이름을 31자에서 잘라 계약월을 **두 글자**만 준다. 그 두 글자로 달을 가릴 수 있게
- *   해 주는 것은 「근월물은 이번 달이나 다음 달」이라는 제약이다(`fedfutures.ts`).
+ * ⭐ **2026-09-27부터 별칭(`ZQ=F`)이 아니라 계약월을 박은 심볼(`ZQV26.CBT`)로 받는다.**
+ *   `ZQ=F`는 Yahoo가 여러 계약을 이어 붙인 계열이었고, 이름표(「…,Oc」)와 가격(9월물)이 서로 다른 계약이었다
+ *   (`lib/macro/fedfutures.ts` `cmeContractSymbol` 머리말). 이름표만 믿고 세운 9/13의 불변식이 실제로는 지켜지지 않았다.
  *
- * ⚠ **다음 달 계약이 아니면 저장하지 않는다.** 읽는 쪽은 「저장된 점의 계약월 = 시세일의
- *   다음 달」이라는 불변식만 알면 되고, 그 대가로 계약월을 따로 저장할 필요가 없다.
- *   Yahoo가 롤 시점을 바꾸면 이 지표는 **수집 이력에 이유를 남기고 멈춘다** — 틀린 값을
- *   내보내는 것보다 멈추는 쪽이 낫다.
+ * ⚠ 불변식은 그대로다 — **저장된 점의 계약월 = 시세일의 다음 달.** 다음 달 계약을 받아 그 불변식에 맞는 날(이번 달 날짜)만 남긴다.
+ * ⚠ 심볼의 달과 이름표가 어긋나면 **저장하지 않는다** — Yahoo가 심볼 규칙을 바꾼 것이다(멈추는 편이 틀린 값보다 낫다).
+ * ⚠ 만기가 지난 계약은 Yahoo에 없다 — 그래서 `full`(처음 받기)이어도 과거 전체를 다시 만들 수는 없다. 받을 수 있는 달만 받는다.
  */
 async function fetchFrontContract(symbol: string, full: boolean): Promise<SeriesPoint[]> {
-  const json = await fetchYahooJson(symbol, full, true);
+  const root = symbol.replace(/=F$/, "");
+  const today = new Date().toISOString().slice(0, 10);
+  const out: SeriesPoint[] = [];
 
-  const points = parseYahooChart(json);
-  if (points.length === 0) throw new Error(`Yahoo ${symbol} 응답에 값이 없습니다`);
-
-  const shortName = parseYahooShortName(json);
-  const latest = points[points.length - 1].date;
-  const contract = resolveFrontContract(shortName, latest);
-
-  if (!contract) {
-    throw new Error(
-      `${symbol} 계약월을 읽지 못했습니다 — Yahoo 이름표 "${shortName}"(시세일 ${latest}). ` +
-        `이번 달도 다음 달도 아닙니다. 값을 저장하지 않았습니다.`,
-    );
+  for (const month of contractMonthsToFetch(today)) {
+    const contractSymbol = cmeContractSymbol(root, month);
+    const json = await fetchYahooJson(contractSymbol, full, true);
+    const shortName = parseYahooShortName(json);
+    if (!labelMatchesMonth(shortName, month)) {
+      throw new Error(
+        `${contractSymbol}의 이름표 "${shortName}"가 ${month} 계약을 말하지 않습니다 — 심볼 규칙이 바뀐 듯하니 값을 저장하지 않았습니다.`,
+      );
+    }
+    out.push(...pointsForContract(parseYahooChart(json), month));
   }
 
-  const expected = nextMonthOf(latest);
-  if (contract.month !== expected) {
-    throw new Error(
-      `${symbol}이 ${contract.month} 계약입니다 — 기대한 것은 ${expected}(시세일 ${latest}의 다음 달)입니다. ` +
-        `Yahoo의 롤 시점이 달라진 듯하니 값을 저장하지 않았습니다.`,
-    );
+  if (out.length === 0) {
+    throw new Error(`${root} 근월물 — 받은 계약(${contractMonthsToFetch(today).join(", ")})에 불변식에 맞는 시세가 없습니다`);
   }
-
-  /**
-   * ⚠ 6월에만 생기는 자리 — `Ju`가 Jun/Jul 둘 다에 붙어 이름표로 못 가린다. 다음 달로 읽되
-   *   **그 사실을 로그에 남긴다.** 조용히 넘기면 한 해에 한 달씩 근거 없는 값이 쌓인다.
-   */
-  if (contract.ambiguous) {
-    console.warn(
-      `[macro] ${symbol} 이름표 "${shortName}"가 이번 달·다음 달에 모두 붙습니다 — ` +
-        `${contract.month} 계약으로 읽었습니다(시세일 ${latest}).`,
-    );
-  }
-
-  return points;
+  // 두 계약에서 받으면 날짜가 겹칠 수 없다(불변식이 날짜로 계약을 가른다) — 그래도 정렬은 믿지 않고 한다.
+  return out.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 /** ECOS 주기 코드 — 발표 주기를 한국은행의 표기로 바꾼다. */

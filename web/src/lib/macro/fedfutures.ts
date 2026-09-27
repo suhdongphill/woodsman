@@ -76,6 +76,9 @@ export type FrontContract = {
 /**
  * 이름표 + 시세일로 근월물 계약월을 정한다.
  *
+ * ⚠ **2026-09-27부터 수집에서 쓰지 않는다** — 이름표와 가격이 다른 계약일 수 있음이 드러나 명시 계약 심볼로 바꿨다(`cmeContractSymbol`).
+ *   판단 기록으로 남긴다(테스트 포함).
+ *
  * @param shortName Yahoo `meta.shortName`(잘린 이름표)
  * @param quoteDate 시세일 `YYYY-MM-DD` — ⚠ **받은 날이 아니라 값의 날짜**다.
  */
@@ -107,6 +110,53 @@ export function resolveFrontContract(
     month: `${pick.year}-${String(pick.month).padStart(2, "0")}`,
     ambiguous: hitsThis && hitsNext,
   };
+}
+
+/**
+ * ⭐ **계약월을 명시한 심볼**(2026-09-27). `ZQ` + CME 월 코드 + 연도 두 자리 + `.CBT` — 10월 2026 = `ZQV26.CBT`.
+ *
+ * ## 왜 별칭(`ZQ=F`)을 버렸나
+ * `ZQ=F`는 한 계약이 아니라 Yahoo가 **여러 계약을 이어 붙인 계열**이었다(2026-09-27 실측):
+ * - 9/23·9/24 값 96.255 = 9월물(`ZQU26`), 9/25 값 95.965 = 11월물(`ZQX26`) — 같은 계열 안에서 계약이 바뀌었다.
+ * - 9/14~9/18에 저장된 값(96.25~96.26)은 이름표가 「…,Oc」(10월)였는데 **가격은 9월물**이었다.
+ *   9/13 설계가 믿은 「이름표 = 가격의 계약」이 틀렸다 — 이름표만 보고 불변식을 세웠기 때문이다.
+ * - 9/19부터는 이름표가 「…,No」(11월)가 되어 안전장치가 8일째 저장을 거부했다(자동 시스템 점검이 잡았다).
+ * 계약월을 심볼에 박으면 「어느 계약인가」를 Yahoo의 롤 규칙에 맡기지 않아도 된다.
+ */
+const CME_MONTH_CODES = "FGHJKMNQUVXZ";
+
+export function cmeContractSymbol(root: string, month: ContractMonth, exchange = "CBT"): string {
+  const m = /^(\d{4})-(\d{2})$/.exec(month);
+  if (!m) throw new Error(`계약월 형식이 아닙니다: ${month}`);
+  const mm = Number(m[2]);
+  if (mm < 1 || mm > 12) throw new Error(`계약월 형식이 아닙니다: ${month}`);
+  return `${root}${CME_MONTH_CODES[mm - 1]}${m[1].slice(2)}.${exchange}`;
+}
+
+/**
+ * 받을 계약월 — 오늘 기준 다음 달, 그리고 **열흘 전 기준 다음 달**(달이 막 바뀐 날 06:00에는 마지막 시세가 아직 지난달이다).
+ * 오름차순 · 중복 없음.
+ */
+export function contractMonthsToFetch(today: string): ContractMonth[] {
+  const d = new Date(`${today}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) throw new Error(`날짜 형식이 아닙니다: ${today}`);
+  const earlier = new Date(d.getTime() - 10 * 86_400_000).toISOString().slice(0, 10);
+  return [...new Set([nextMonthOf(earlier), nextMonthOf(today)])].sort();
+}
+
+/**
+ * 한 계약의 시세 가운데 **「시세일의 다음 달 = 이 계약」인 날**만 남긴다 — 저장 불변식(`nextMonthOf`)을 지키는 자리.
+ * 예: 10월물(`2026-10`)의 시세 중 9월 날짜만.
+ */
+export function pointsForContract<T extends { date: string }>(points: T[], month: ContractMonth): T[] {
+  return points.filter((p) => nextMonthOf(p.date) === month);
+}
+
+/** 명시 심볼의 이름표가 그 달을 말하는가(두 글자). ⚠ 심볼과 이름표가 어긋나면 받은 것을 믿지 않는다. */
+export function labelMatchesMonth(shortName: string, month: ContractMonth): boolean {
+  const mm = Number(month.slice(5, 7));
+  const tag = shortName.split(",").pop()?.trim().slice(0, 2) ?? "";
+  return mm >= 1 && mm <= 12 && tag === monthPrefix(mm);
 }
 
 /** 그 달의 날수. */

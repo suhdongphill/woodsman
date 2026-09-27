@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  cmeContractSymbol,
+  contractMonthsToFetch,
+  labelMatchesMonth,
+  pointsForContract,
   daysInMonth,
   effectiveDate,
   fedFuturesSentence,
@@ -185,5 +189,34 @@ describe("⚠ 안 내는 경우", () => {
     expect(r.impliedChange).toBeCloseTo(-0.25, 3);
     expect(r.hikeShare).toBeCloseTo(-1, 3);
     expect(fedFuturesSentence(r)).toContain("인하");
+  });
+});
+
+describe("명시 계약 심볼 (2026-09-27 — ZQ=F가 여러 계약을 이어 붙인 계열이었다)", () => {
+  it("CME 월 코드", () => {
+    expect(cmeContractSymbol("ZQ", "2026-10")).toBe("ZQV26.CBT");
+    expect(cmeContractSymbol("ZQ", "2026-11")).toBe("ZQX26.CBT");
+    expect(cmeContractSymbol("ZQ", "2027-01")).toBe("ZQF27.CBT");
+    expect(cmeContractSymbol("ZQ", "2026-06")).toBe("ZQM26.CBT");
+    expect(() => cmeContractSymbol("ZQ", "2026-13")).toThrow();
+  });
+
+  it("받을 계약월 — 오늘의 다음 달 + 달이 막 바뀐 날의 지난 시세용", () => {
+    expect(contractMonthsToFetch("2026-09-27")).toEqual(["2026-10"]);
+    // 10/1 06:00 KST — 마지막 시세는 9/30이라 10월물도 필요하다
+    expect(contractMonthsToFetch("2026-10-01")).toEqual(["2026-10", "2026-11"]);
+    expect(contractMonthsToFetch("2026-12-31")).toEqual(["2027-01"]);
+  });
+
+  it("⚠ 저장 불변식 — 계약의 시세 중 「시세일의 다음 달 = 그 계약」인 날만", () => {
+    const pts = [{ date: "2026-08-31" }, { date: "2026-09-01" }, { date: "2026-09-25" }, { date: "2026-10-01" }];
+    expect(pointsForContract(pts, "2026-10").map((p) => p.date)).toEqual(["2026-09-01", "2026-09-25"]);
+  });
+
+  it("이름표가 심볼의 달과 맞는가 — 실측 이름표", () => {
+    expect(labelMatchesMonth("30 Day Federal Funds Futures,Oc", "2026-10")).toBe(true);
+    expect(labelMatchesMonth("30 Day Federal Funds Futures,No", "2026-10")).toBe(false);
+    // 6월·7월은 둘 다 Ju — 심볼이 달을 정하므로 이름표는 모순만 없으면 된다
+    expect(labelMatchesMonth("30 Day Federal Funds Futures,Ju", "2026-07")).toBe(true);
   });
 });
