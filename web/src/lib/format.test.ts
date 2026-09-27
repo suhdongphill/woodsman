@@ -3,6 +3,7 @@ import {
   asOfStamp,
   cx,
   formatKstStamp,
+  keepGlossTogether,
   formatCompact,
   formatDate,
   formatNumber,
@@ -138,5 +139,14 @@ describe("계산 시각 표기 (2026-09-27 — 두 유동성 카드가 같은 �
   it("기준일 · 계산 시각", () => {
     expect(asOfStamp("2026-09-27", "2026-09-26T21:01:01.845Z")).toBe("기준일 2026-09-27 · 계산 2026-09-27 06:01 KST");
     expect(asOfStamp("2026-09-27", null)).toBe("기준일 2026-09-27");
+  });
+});
+
+describe("괄호 풀이 붙이기 (81)", () => {
+  it("한글 뒤 「(」 앞에 보이지 않는 WORD JOINER", () => {
+    expect(keepGlossTogether("바람(wind)과 조류(tide)를 봅니다")).toBe("바람⁠(wind)과 조류⁠(tide)를 봅니다");
+  });
+  it("한글이 아닌 뒤의 괄호는 그대로", () => {
+    expect(keepGlossTogether("GCRM (v2) 5% (연)")).toBe("GCRM (v2) 5% (연)");
   });
 });

@@ -1,6 +1,8 @@
 import { LinkButton } from "@/components/ui/Button";
 import { ArrowRightIcon, ExternalIcon } from "@/components/icons";
 import { outboundHref } from "@/lib/outbound";
+// 「조류(tide)를」이 「조류 / (tide)를」로 갈리지 않게 — 운영 390px에서 실측((81))
+import { keepGlossTogether } from "@/lib/format";
 import type { PerformanceSummary } from "@/lib/performance";
 import type { Rebalance } from "@/lib/types";
 
@@ -77,17 +79,17 @@ export function HeroSection({
           </span>
           {/* 줄 길이를 고르게(text-wrap: balance) — 마지막 줄에 한두 단어만 남는 것을 막는다((81)) */}
           <h1 className="mt-5 text-3xl sm:text-4xl lg:text-[42px] font-bold text-ink leading-[1.25] tracking-tight [text-wrap:balance]">
-            {heroTitle}
+            {keepGlossTogether(heroTitle)}
           </h1>
 
           {/* 오늘의 바람 — 값이 없으면 이 줄은 아예 없다(지어내지 않는다). */}
           {lede && (
             <p className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card/70 px-3.5 py-2 text-[12.5px] text-gray-300 backdrop-blur">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
-              {lede}
+              {typeof lede === "string" ? keepGlossTogether(lede) : lede}
             </p>
           )}
-          <p className="mt-4 text-[15px] text-muted leading-relaxed max-w-xl">{heroSubtitle}</p>
+          <p className="mt-4 text-[15px] text-muted leading-relaxed max-w-xl">{keepGlossTogether(heroSubtitle)}</p>
           <div className="mt-7 flex flex-wrap gap-3">
             <LinkButton href="/macro" variant="gold" size="lg">
               지금 시장 읽기

@@ -107,6 +107,14 @@ export function asOfStamp(asOf?: string | null, computedAt?: string | null): str
   return [day, at ? `계산 ${at}` : ""].filter(Boolean).join(" · ");
 }
 
+/**
+ * 한글 바로 뒤의 괄호 풀이(「조류(tide)를」)를 **한 덩어리로** 묶는다 — 한글과 「(」 사이에 WORD JOINER(U+2060, 보이지 않음)를 넣는다.
+ * ⚠ keep-all이어도 브라우저는 여는 괄호 앞에서 줄을 바꿀 수 있다(UAX #14) — 운영 390px 히어로에서 「조류 / (tide)를」로 갈렸다(2026-09-27 (81) Playwright).
+ */
+export function keepGlossTogether(text: string): string {
+  return text.replace(/([가-힣])\(/g, "$1⁠(");
+}
+
 export function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
