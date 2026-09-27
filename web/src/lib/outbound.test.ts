@@ -13,6 +13,7 @@ import {
   outboundHref,
   outboundPostHref,
   outboundStockHref,
+  outboundBlogHref,
   resolveOutbound, blogLinkForPost } from "./outbound";
 
 describe("오픈 리다이렉트 방지", () => {
@@ -42,6 +43,27 @@ describe("오픈 리다이렉트 방지", () => {
 
   it("⚠ 글 조회 함수를 주지 않으면 post- 경유는 목적지가 없다", () => {
     expect(resolveOutbound("post-어떤글")).toBeNull();
+  });
+
+  it("블로그 목록 경유(blog-<번호>)는 저장된 목록의 주소로만 간다 (2026-09-27)", () => {
+    const stored = new Map([[29, "https://suhdp.tistory.com/entry/x"]]);
+    const find = (id: number) => stored.get(id) ?? null;
+    expect(resolveOutbound("blog-29", undefined, OUTBOUND_TARGETS, undefined, find)).toBe("https://suhdp.tistory.com/entry/x");
+    // 목록에 없는 번호 · 숨긴 글(조회 함수가 null) → 목적지 없음
+    expect(resolveOutbound("blog-30", undefined, OUTBOUND_TARGETS, undefined, find)).toBeNull();
+    expect(outboundBlogHref(29)).toBe("/go/blog-29");
+  });
+
+  it("⚠ blog- 뒤가 숫자가 아니면 조회 함수를 부르지도 않는다", () => {
+    let called = 0;
+    const find = () => {
+      called += 1;
+      return "https://evil.com";
+    };
+    for (const t of ["blog-https://evil.com", "blog-../x", "blog-", "blog-1a"]) {
+      expect(resolveOutbound(t, undefined, OUTBOUND_TARGETS, undefined, find), t).toBeNull();
+    }
+    expect(called).toBe(0);
   });
 
   it("티스토리 원문이 없는 글은 경유해도 목적지가 없다", () => {

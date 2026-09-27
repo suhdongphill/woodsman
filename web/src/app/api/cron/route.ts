@@ -30,6 +30,7 @@ import { ingestMacro } from "@/features/macro/ingest";
 import { ingestQuotes } from "@/features/stocks/ingest";
 import { loadReportSummaries } from "@/features/reports/repository";
 import { computeAndSaveGcrm, gcrmToday } from "@/features/gcrm/compute";
+import { syncBlog } from "@/features/blog/sync";
 
 export const runtime = "nodejs";
 /** ⚠ 정적 생성 금지 — 매 실행마다 바깥에서 받아 와야 한다. */
@@ -105,10 +106,27 @@ async function runGcrm(): Promise<CronJobResult> {
   };
 }
 
+/**
+ * 티스토리 블로그 글 목록 — 홈 「블로그」와 `/blog`가 읽는다. **관리자 「지금 수집」과 같은 함수**다.
+ * ⚠ 사이트맵을 못 읽으면(`error`) 실패다. 글 몇 편만 실패한 것은 `failCount`로 남고 작업은 성공이다.
+ */
+async function runBlog(): Promise<CronJobResult> {
+  const r = await syncBlog("CRON");
+  if (r.error) throw new Error(r.error);
+  return {
+    job: "blog",
+    ok: true,
+    okCount: r.added + r.refreshed,
+    failCount: r.failCount,
+    addedPoints: r.added,
+  };
+}
+
 const RUNNERS: Record<CronJob, () => Promise<CronJobResult>> = {
   macro: runMacro,
   quotes: runQuotes,
   gcrm: runGcrm,
+  blog: runBlog,
 };
 
 export async function POST(request: Request) {
@@ -145,7 +163,7 @@ export async function POST(request: Request) {
   }
 
   // 새 값이 들어왔으면 공개 화면도 같이 바뀌어야 한다.
-  for (const path of ["/", "/macro", "/portfolio", "/stocks"]) revalidatePath(path);
+  for (const path of ["/", "/macro", "/portfolio", "/stocks", "/blog"]) revalidatePath(path);
 
   const summary = cronSummary(results);
   console.log(`[cron] ${summary}`);

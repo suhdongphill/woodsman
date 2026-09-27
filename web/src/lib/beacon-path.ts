@@ -31,6 +31,7 @@ import { findMacroGroup } from "./macro/registry";
 export const PUBLIC_STATIC_PATHS = [
   "/",
   "/about",
+  "/blog",
   "/board",
   "/disclaimer",
   "/insights",

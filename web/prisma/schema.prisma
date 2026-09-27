@@ -1435,3 +1435,50 @@ model LeaderMember {
   @@id([runId, groupId, ticker])
   @@index([ticker])
 }
+
+/// 티스토리 블로그 글 목록(2026-09-27) — 사이트맵·글 페이지 메타·공감 API를 매일 읽어 쌓는 **목록**이다. 본문은 저장하지 않는다.
+///
+/// ⚠ 요약: `summary`는 티스토리가 본문 앞을 자른 것, `summaryOverride`는 운영자가 쓴 것. 화면은 운영자 것을 먼저 쓴다
+///    (`lib/blog/tistory.ts` `displaySummary`). ⚠ 자동 수집은 `summaryOverride`와 `hidden`을 **건드리지 않는다.**
+/// ⚠ `likes`가 NULL이면 「못 읽었다」다 — 0과 다르다. 인기 순위에서 뺀다.
+/// ⚠ 경유 링크 `/go/blog-<entryId>`의 목적지는 이 표의 `url`에서만 나온다(오픈 리다이렉트 방지).
+model BlogEntry {
+  /// 티스토리 글 번호
+  entryId         Int      @id
+  url             String   @unique
+  title           String
+  summary         String?
+  summaryOverride String?
+  /// 카테고리 전체 경로(「자산배분 전략/인컴(Income) 자산」). NULL = 분류 전
+  category        String?
+  thumbnailUrl    String?
+  /// UTC ISO
+  publishedAt     String
+  likes           Int?
+  likesAt         String?
+  hidden          Boolean  @default(false)
+  /// 글 페이지를 마지막으로 읽은 시각 — 오래되면 다시 읽는다(제목·요약 수정 반영)
+  pageFetchedAt   String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now())
+
+  @@index([hidden, publishedAt])
+}
+
+/// 블로그 목록 수집 기록 — 「한 번도 안 돌았다」와 「돌았는데 새 글이 없었다」를 구분한다(조용한 실패 금지).
+model BlogSync {
+  id          String   @id
+  /// CRON | MANUAL
+  trigger     String
+  startedAt   String
+  finishedAt  String?
+  /// 사이트맵에서 찾은 글 수
+  found       Int      @default(0)
+  added       Int      @default(0)
+  refreshed   Int      @default(0)
+  likesRead   Int      @default(0)
+  failCount   Int      @default(0)
+  /// 실패 내역 JSON [{url, reason}]
+  failures    String?
+  error       String?
+}

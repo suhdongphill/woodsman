@@ -27,10 +27,19 @@ import type { Role } from "@/lib/access";
  * "지금 어떤 바람이 부는가"이고 포트폴리오·종목분석은 **그에 대한 답**이다.
  * ⚠ 순서는 곧 우선순위다 — 여기서 앞에 둔 것이 사이트가 무엇을 하는 곳인지 말한다.
  */
+/**
+ * ⚠ 가로 메뉴는 **lg(1024px)부터** 펼친다(2026-09-27). 「블로그」가 더해져 8개가 되자 md(768px)~1023px에서
+ *   「거시 지 / 표」처럼 글자가 두 줄로 꺾였다(로컬 눈 확인). 그보다 좁으면 햄버거 메뉴다. 글자는 `whitespace-nowrap`.
+ */
 const BASE_NAV = [
   { href: "/", label: "홈" },
   { href: "/macro", label: "거시 지표" },
   { href: "/insights", label: "인사이트" },
+  /**
+   * ⚠ 블로그 글 전체(2026-09-27)는 인사이트 **바로 뒤**다. 둘 다 티스토리로 가는 길(1순위)이라 한 묶음으로 읽힌다.
+   * 인사이트는 골라 옮긴 글, 블로그는 전체 목록이다.
+   */
+  { href: "/blog", label: "블로그" },
   /**
    * ⚠ 주도주는 흐름과 답 **사이**다(2026-09-25). 바람(거시)을 읽은 사람이 「그래서 돈은 어느 칸으로?」를 보고
    * 포트폴리오(답)로 간다. 인사이트 앞에 두지 않은 이유: 인사이트가 티스토리로 가는 길(1순위)이라 밀지 않는다.
@@ -88,13 +97,13 @@ export function TopNav({
         <div className="flex h-16 items-center justify-between gap-4">
           <div className="flex items-center gap-8">
             <Logo />
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-1">
               {nav.map((n) => (
                 <Link
                   key={n.href}
                   href={n.href}
                   className={cx(
-                    "px-3 py-2 text-sm rounded-lg transition-colors",
+                    "whitespace-nowrap px-3 py-2 text-sm rounded-lg transition-colors",
                     isActive(n.href)
                       ? "text-gold-400 bg-gold-500/10"
                       : "text-muted hover:text-ink hover:bg-cardHover",
@@ -106,7 +115,7 @@ export function TopNav({
             </nav>
           </div>
 
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2 whitespace-nowrap">
             {/* 테마 선택 — 로그인 여부와 무관하게 누구나 쓴다 */}
             <ThemeToggle className="mr-1" />
             {user ? (
@@ -155,7 +164,7 @@ export function TopNav({
             aria-label="메뉴"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="md:hidden p-2 -mr-2 text-muted hover:text-ink transition-colors"
+            className="lg:hidden p-2 -mr-2 text-muted hover:text-ink transition-colors"
           >
             {open ? <CloseIcon size={22} /> : <MenuIcon size={22} />}
           </button>
@@ -163,7 +172,7 @@ export function TopNav({
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-border bg-card">
+        <div className="lg:hidden border-t border-border bg-card">
           <nav className="px-4 py-3 flex flex-col">
             {nav.map((n) => (
               <Link

@@ -18,6 +18,7 @@
  * 쿠키를 심지 않고, IP·UA를 저장하지 않는다. 날짜별 합계만 센다.
  * 개인정보 처리방침의 "회원정보를 수집하지 않는다"와 어긋나지 않게 유지한다.
  */
+import { blogTargetKey, parseBlogTarget } from "./blog/tistory";
 import { TISTORY_BLOG_URL, TISTORY_FEATURED_URL } from "./site-links";
 
 /**
@@ -77,8 +78,16 @@ export function resolveOutbound(
    * 목적지는 우리가 저장해 둔 값에서만 나오고, 요청이 준 URL을 따라가지 않는다.
    */
   findStockUrl?: (ticker: string) => string | null | undefined,
+  /**
+   * 블로그 글 목록(`BlogEntry`, 2026-09-27)의 원문. ⚠ 같은 규칙 — 목적지는 **저장된 목록**에서만 나온다.
+   * 키는 `blog-<글 번호>`이고, 숫자가 아니면 조회 함수를 부르지도 않는다(`parseBlogTarget`).
+   */
+  findBlogUrl?: (entryId: number) => string | null | undefined,
 ): string | null {
   if (isOutboundTarget(target)) return destinations[target];
+
+  const blogId = parseBlogTarget(target);
+  if (blogId !== null && findBlogUrl) return findBlogUrl(blogId) ?? null;
 
   const postSlug = target.startsWith(POST_PREFIX) ? target.slice(POST_PREFIX.length) : null;
   if (postSlug && findTistoryUrl) return findTistoryUrl(postSlug) ?? null;
@@ -102,6 +111,11 @@ export function outboundHref(target: OutboundTarget): string {
 /** 티스토리 원문이 있는 글의 경유 링크 */
 export function outboundPostHref(slug: string): string {
   return `/go/${POST_PREFIX}${slug}`;
+}
+
+/** 블로그 글 목록(`/blog`·홈 「블로그」)의 경유 링크 */
+export function outboundBlogHref(entryId: number): string {
+  return `/go/${blogTargetKey(entryId)}`;
 }
 
 /** 티스토리에 옮겨 실은 종목 보고서의 경유 링크 */

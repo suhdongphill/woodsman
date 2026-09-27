@@ -34,11 +34,14 @@ export const CRON_SECRET_MIN_LENGTH = 32;
  * ⚠ **순서가 뜻을 갖는다.** 실행은 이 배열 순서대로 하나씩 돈다(`api/cron/route.ts`).
  *    `gcrm`은 **반드시 `macro` 뒤**다 — 그날 수집한 값으로 계산해야 한다.
  *    앞에 두면 **어제 값으로 오늘 점수를 내고**, 그게 축 이력에 그대로 박힌다.
+ *
+ *    `blog`(티스토리 글 목록, 2026-09-27)은 **맨 뒤**다 — 점수와 무관하고, 바깥 블로그가 느리거나 막혀도
+ *    거시 수집·GCRM은 이미 끝나 있어야 한다.
  */
-export type CronJob = "macro" | "quotes" | "gcrm";
+export type CronJob = "macro" | "quotes" | "gcrm" | "blog";
 
 /** ⚠ 새 작업을 더하면 여기에도 넣는다 — 모르는 스케줄일 때 돌아가는 목록이다. */
-export const ALL_CRON_JOBS: readonly CronJob[] = ["macro", "quotes", "gcrm"];
+export const ALL_CRON_JOBS: readonly CronJob[] = ["macro", "quotes", "gcrm", "blog"];
 
 export type CronPlanEntry = {
   /** Cloudflare cron 표현식(UTC). */

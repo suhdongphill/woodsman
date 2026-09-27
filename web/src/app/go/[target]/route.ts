@@ -5,6 +5,8 @@ import { getSiteBasics } from "@/lib/site-settings";
 import { findPostBySlug } from "@/features/posts/repository";
 import { findPublishedTistoryUrl } from "@/features/reports/repository";
 import { recordClick } from "@/lib/outbound-repo";
+import { parseBlogTarget } from "@/lib/blog/tistory";
+import { findBlogEntryUrl } from "@/features/blog/repository";
 import { recordOutboundSource } from "@/features/analytics/engagement-repository";
 
 /**
@@ -50,6 +52,9 @@ export async function GET(
   const stockUrl = target.startsWith("stock-")
     ? await findPublishedTistoryUrl(target.slice("stock-".length))
     : null;
+  // 블로그 글 목록 경유(blog-<번호>)도 같은 규칙이다 — 저장된 목록의 주소로만 간다(숨긴 글은 404).
+  const blogId = parseBlogTarget(target);
+  const blogUrl = blogId !== null ? await findBlogEntryUrl(blogId) : null;
   // ⚠ 목적지는 /admin/settings에서 바꾼 값을 쓴다. 코드 상수로만 가면
   //    운영자가 블로그 주소를 바꿔도 방문자는 옛 주소로 간다(1순위 목적의 경로다).
   const basics = await getSiteBasics();
@@ -58,6 +63,7 @@ export async function GET(
     () => tistoryUrl,
     outboundDestinations(basics),
     () => stockUrl,
+    () => blogUrl,
   );
   if (!destination) notFound();
 

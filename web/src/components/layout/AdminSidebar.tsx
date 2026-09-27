@@ -39,6 +39,8 @@ const MENU = [
   { href: "/admin/analysis", label: "그날의 분석", icon: FileTextIcon },
   { href: "/admin/stocks", label: "종목 보고서", icon: TrendingUpIcon },
   { href: "/admin/posts", label: "콘텐츠", icon: FileTextIcon },
+  // 티스토리 글 목록(2026-09-27) — 매일 자동 수집 · 숨기기 · 요약 고쳐 쓰기.
+  { href: "/admin/blog", label: "블로그 글 목록", icon: RssIcon },
   { href: "/admin/comments", label: "댓글 · 정책", icon: MessageIcon },
   { href: "/admin/ai", label: "AI 제공자", icon: BotIcon },
   { href: "/admin/feeds", label: "RSS 피드", icon: RssIcon },

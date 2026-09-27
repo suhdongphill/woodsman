@@ -71,6 +71,8 @@ export function sitemapEntries(input: SitemapInput): SitemapEntry[] {
     //    「링크를 본 날」이지 「페이지가 바뀐 날」이 아니다 — 대신 쓰지 않는다.
     { path: "/macro/glossary", priority: 0.5, changeFrequency: "monthly" },
     { path: "/leaders", priority: 0.8, changeFrequency: "weekly" },
+    // 블로그 글 목록 — 매일 수집하지만 글은 주 몇 편이다.
+    { path: "/blog", priority: 0.8, changeFrequency: "weekly" },
     { path: "/stocks", lastModified: latestReportAt, priority: 0.6, changeFrequency: "weekly" },
     { path: "/about", priority: 0.5, changeFrequency: "monthly" },
     { path: "/disclaimer", priority: 0.3, changeFrequency: "monthly" },
