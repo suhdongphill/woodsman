@@ -408,3 +408,17 @@ export function clampSummary(text: string, max = SUMMARY_MAX): string {
   const space = text.lastIndexOf(" ", max);
   return `${text.slice(0, space > 60 ? space : max).trim()}…`;
 }
+
+/**
+ * 긴 제목을 **본제목 + 부제**로 — 첫 「 — 」 또는 「 – 」(앞뒤 띄어쓴 대시)에서 한 번만 나눈다(2026-09-27 (81) 운영자 사양).
+ * 매체 카드처럼 본제목은 굵게 두 줄, 부제는 흐리게 한 줄.
+ * ⚠ 앞이 너무 짧거나(6자 미만) 뒤가 너무 짧으면(4자 미만) 나누지 않는다 — 「AI — 왜」 같은 것을 부제로 떼면 제목이 뜻을 잃는다.
+ * ⚠ 화면만 나눈다 — 링크 이름(aria-label)은 **전체 제목**이다.
+ */
+export function splitTitle(title: string): { head: string; dek: string | null } {
+  const m = /^(.*?)\s+[—–]\s+(.+)$/.exec(title.trim());
+  if (!m) return { head: title.trim(), dek: null };
+  const [head, dek] = [m[1].trim(), m[2].trim()];
+  if (head.length < 6 || dek.length < 4) return { head: title.trim(), dek: null };
+  return { head, dek };
+}

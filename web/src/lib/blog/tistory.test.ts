@@ -20,6 +20,7 @@ import {
   clampSummary,
   cleanSummary,
   isKicker,
+  splitTitle,
   visibleEntries,
 } from "./tistory";
 
@@ -258,5 +259,23 @@ describe("머리표 · 정리 · 자르기", () => {
     expect(c.length).toBeLessThanOrEqual(155);
     expect(c).toMatch(/다\. …$/);
     expect(clampSummary("짧은 요약입니다.")).toBe("짧은 요약입니다.");
+  });
+});
+
+describe("제목 나누기 (81)", () => {
+  it("첫 대시에서 본제목·부제", () => {
+    expect(splitTitle("암호화폐로 들어오는 돈의 길이 달라지고 있다 — 2026년 9월 비트코인 ETF·스테이블코인·디지털 달러로 읽는 크립토 자본경로")).toEqual({
+      head: "암호화폐로 들어오는 돈의 길이 달라지고 있다",
+      dek: "2026년 9월 비트코인 ETF·스테이블코인·디지털 달러로 읽는 크립토 자본경로",
+    });
+    expect(splitTitle("Global Capital Regime 2026-09-16 – 5% 할인율은 어디까지 번졌나").dek).toBe("5% 할인율은 어디까지 번졌나");
+  });
+  it("대시가 없거나 한쪽이 너무 짧으면 나누지 않는다", () => {
+    expect(splitTitle("WoodsMan의 투자원칙")).toEqual({ head: "WoodsMan의 투자원칙", dek: null });
+    expect(splitTitle("AI — 왜 지금인가").dek).toBe(null);
+    expect(splitTitle("비트코인 급등의 진짜 원인 — 방아").dek).toBe(null);
+  });
+  it("⚠ 띄어 쓰지 않은 대시(범위 표기)는 나누지 않는다", () => {
+    expect(splitTitle("2026.09.16–09.18 금리 결정 정리").dek).toBe(null);
   });
 });

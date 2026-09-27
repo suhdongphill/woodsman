@@ -28,7 +28,9 @@ export function GroupCard({
   return (
     <Link
       href={`/macro/${group.key}`}
-      className="group block rounded-2xl border border-border bg-card p-5 transition-colors hover:border-gold-600/40 hover:bg-cardHover"
+      // ⚠ grid 항목은 min-w-0 — 1열 grid에서는 가장 넓은 카드의 최소 폭이 모든 카드의 폭이 된다. 전역 한글 keep-all((81))이
+      //   그 최소 폭을 키워 360px에서 380px로 넘쳤다(로컬 Playwright). (78)과 같은 원리.
+      className="group block min-w-0 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-gold-600/40 hover:bg-cardHover"
       aria-label={`${group.name} 지표 자세히 보기 — ${group.question}`}
     >
       <div className="flex items-start justify-between gap-3">

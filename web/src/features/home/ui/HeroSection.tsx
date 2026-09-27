@@ -75,7 +75,8 @@ export function HeroSection({
             <span className="w-1.5 h-1.5 rounded-full bg-gold-400 pulse-glow" />
             CULTIVATING WEALTH LIKE A FOREST
           </span>
-          <h1 className="mt-5 text-3xl sm:text-4xl lg:text-[42px] font-bold text-ink leading-[1.25] tracking-tight">
+          {/* 줄 길이를 고르게(text-wrap: balance) — 마지막 줄에 한두 단어만 남는 것을 막는다((81)) */}
+          <h1 className="mt-5 text-3xl sm:text-4xl lg:text-[42px] font-bold text-ink leading-[1.25] tracking-tight [text-wrap:balance]">
             {heroTitle}
           </h1>
 

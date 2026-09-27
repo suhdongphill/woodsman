@@ -203,6 +203,20 @@ body {
   overflow-x: clip;
 }
 
+/*
+ * 한글은 **단어 단위로** 줄바꿈한다(2026-09-27 (81)) — 기본값은 글자 단위라 「봅니다」가 「봅니 / 다」로 끊긴다.
+ * `overflow-wrap: anywhere`를 같이 둔다 — keep-all만 두면 띄어쓰기 없는 긴 문자열이 다시 가로로 넘친다((78)).
+ * ⚠ 표 셀(td·th)은 대상이 아니다 — 숫자 표의 열 폭 계산을 건드리지 않는다.
+ */
+:lang(ko) h1,
+:lang(ko) h2,
+:lang(ko) h3,
+:lang(ko) p,
+:lang(ko) li {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
 body {
   background: var(--w-bg);
   color: var(--w-ink);
