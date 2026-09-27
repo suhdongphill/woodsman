@@ -144,7 +144,7 @@ describe("계산 시각 표기 (2026-09-27 — 두 유동성 카드가 같은 �
 
 describe("괄호 풀이 붙이기 (81)", () => {
   it("한글 뒤 「(」 앞에 보이지 않는 WORD JOINER", () => {
-    expect(keepGlossTogether("바람(wind)과 조류(tide)를 봅니다")).toBe("바람⁠(wind)과 조류⁠(tide)를 봅니다");
+    expect(keepGlossTogether("바람(wind)과 조류(tide)를 봅니다")).toBe("바람⁠(wind)⁠과 조류⁠(tide)⁠를 봅니다");
   });
   it("한글이 아닌 뒤의 괄호는 그대로", () => {
     expect(keepGlossTogether("GCRM (v2) 5% (연)")).toBe("GCRM (v2) 5% (연)");
