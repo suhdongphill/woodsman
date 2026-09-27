@@ -56,3 +56,8 @@ cloudflare-env.d.ts
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Playwright 결과물
+/test-results/
+/playwright-report/
+/blob-report/

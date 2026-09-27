@@ -32,7 +32,8 @@ export function BlogShowcase({ recent, popular, total }: { recent: BlogEntry[]; 
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 lg:col-span-2">
+        {/* ⚠ grid 항목은 min-w-0 — 긴 문자열이 열 폭을 밀어내지 않게(모바일 가로 넘침, 2026-09-27) */}
+        <div className="min-w-0 rounded-2xl border border-border bg-card p-4 sm:p-5 lg:col-span-2">
           <div className="divide-y divide-border/70">
             {recent.map((e) => (
               <BlogEntryRow key={e.entryId} entry={e} compact />
@@ -40,7 +41,7 @@ export function BlogShowcase({ recent, popular, total }: { recent: BlogEntry[]; 
           </div>
         </div>
 
-        <aside aria-label="인기 글" className="h-fit rounded-2xl border border-border bg-card p-4 sm:p-5">
+        <aside aria-label="인기 글" className="h-fit min-w-0 rounded-2xl border border-border bg-card p-4 sm:p-5">
           <h3 className="text-[15px] font-bold text-ink">인기 글</h3>
           <p className="mt-0.5 text-[11.5px] text-gray-500">기준: 티스토리 공감 수 · 같으면 최신</p>
           {popular.length === 0 ? (
@@ -52,7 +53,7 @@ export function BlogShowcase({ recent, popular, total }: { recent: BlogEntry[]; 
                   <a href={outboundBlogHref(e.entryId)} target="_blank" rel="noopener" className="group flex gap-3">
                     <span className="w-5 shrink-0 text-right text-[15px] font-bold tabular-nums text-gold-500">{i + 1}</span>
                     <span className="min-w-0">
-                      <span className="block text-[13.5px] font-semibold leading-snug text-ink transition-colors group-hover:text-gold-400 line-clamp-2">
+                      <span className="block text-[13.5px] font-semibold leading-snug text-ink transition-colors group-hover:text-gold-400 line-clamp-2 [overflow-wrap:anywhere]">
                         {e.title}
                       </span>
                       <span className="mt-0.5 block text-[11px] tabular-nums text-gray-500">공감 {e.likes}</span>

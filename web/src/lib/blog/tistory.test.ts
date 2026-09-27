@@ -14,6 +14,7 @@ import {
   parseSitemapEntries,
   popularEntries,
   splitCategory,
+  stripUrls,
   visibleEntries,
 } from "./tistory";
 
@@ -81,6 +82,27 @@ describe("공감 수", () => {
 describe("엔티티", () => {
   it("&amp;를 마지막에 푼다 — &amp;lt;는 <가 아니라 &lt;로 남는다", () => {
     expect(decodeEntities("A &mdash; B &#39;C&#39; &amp;lt;")).toBe("A — B 'C' &lt;");
+  });
+});
+
+describe("요약 속 URL (2026-09-27 — 모바일 가로 넘침의 원인)", () => {
+  it("실제 요약의 긴 URL을 뺀다 — entryId 22 「금리는 오르는데, 비트코인은…」", () => {
+    const s = "지난 글 https://suhdp.tistory.com/entry/%EB%B9%84%ED%8A%B8%EC%BD%94%EC%9D%B8-%EA%B8%89%EB%93%B1 에서 이어집니다.";
+    expect(stripUrls(s)).toBe("지난 글 에서 이어집니다.");
+  });
+
+  it("⚠ 붙은 한글·괄호는 남긴다 — 「(https://…/10)에서」 → 「에서」", () => {
+    expect(stripUrls("투자전략(https://suhdp.tistory.com/10)에서 이야기 했던")).toBe("투자전략에서 이야기 했던");
+  });
+
+  it("URL이 없으면 그대로", () => {
+    expect(stripUrls("금리는 5%를 넘었다.")).toBe("금리는 5%를 넘었다.");
+  });
+
+  it("화면 요약은 자동 요약의 URL을 빼고, ⚠ 운영자 요약은 손대지 않는다", () => {
+    expect(displaySummary({ summary: "보기 https://a.b/c 끝", summaryOverride: null })).toBe("보기 끝");
+    expect(displaySummary({ summary: "https://a.b/c", summaryOverride: null })).toBe(null);
+    expect(displaySummary({ summary: null, summaryOverride: "직접 https://a.b" })).toBe("직접 https://a.b");
   });
 });
 

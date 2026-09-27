@@ -116,7 +116,7 @@ export default async function BlogPage({ searchParams }: { searchParams: Promise
               </div>
             </div>
 
-            <div className="mt-3 grid gap-3">
+            <div className="mt-3 grid min-w-0 gap-3">
               {list.length === 0 ? (
                 <p className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-[13px] text-muted">
                   이 분류에는 아직 공감이 달린 글이 없습니다. 최신순으로 보면 전부 보입니다.

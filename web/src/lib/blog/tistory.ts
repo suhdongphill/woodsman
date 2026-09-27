@@ -136,11 +136,28 @@ export function parseReactionSum(json: unknown): number | null {
   return typeof sum === "number" && Number.isInteger(sum) && sum >= 0 ? sum : null;
 }
 
-/** 화면에 쓸 요약. 운영자 요약이 먼저, 없으면 티스토리 자동 요약. 둘 다 없으면 null(지어내지 않는다). */
+/**
+ * 요약에서 **URL을 뺀다**(2026-09-27 운영자 요청) — 카드 전체가 이미 원문 링크라 요약 속 URL은 누를 수 없는 잡음이고,
+ * 띄어쓰기 없는 긴 URL(실측 약 200자)은 모바일 가로 넘침의 원인이었다.
+ *
+ * ⚠ `https?://\S+`를 그대로 쓰지 않는다 — `https://suhdp.tistory.com/10)에서`처럼 **붙은 한글·닫는 괄호까지** 지운다.
+ *   URL은 공백·괄호·따옴표·한글 앞에서 끝난다고 본다. 남은 빈 괄호 `()`와 겹친 공백을 정리한다.
+ * ⚠ 저장된 원문(`summary`)은 건드리지 않는다 — 보일 때만 정리한다(원자료 보존).
+ */
+export function stripUrls(text: string): string {
+  return text
+    .replace(/https?:\/\/[^\s()<>"'ㄱ-ㆎ가-힣]+/g, "")
+    .replace(/\(\s*\)/g, "")
+    .replace(/[ 	]{2,}/g, " ")
+    .replace(/\s+([.,)])/g, "$1")
+    .trim();
+}
+
+/** 화면에 쓸 요약. 운영자 요약이 먼저, 없으면 티스토리 자동 요약(URL 정리). 둘 다 없으면 null(지어내지 않는다). */
 export function displaySummary(entry: Pick<BlogEntry, "summary" | "summaryOverride">): string | null {
   const own = entry.summaryOverride?.trim();
   if (own) return own;
-  const auto = entry.summary?.trim();
+  const auto = entry.summary ? stripUrls(entry.summary) : "";
   return auto ? auto : null;
 }
 

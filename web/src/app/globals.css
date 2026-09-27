@@ -192,6 +192,17 @@
 }
 
 /* ═══ 전역 ═══ */
+
+/*
+ * ⚠ 가로 넘침의 **마지막 안전망**(2026-09-27). 원인은 고치는 것이 먼저다(min-w-0 · overflow-wrap:anywhere).
+ * `hidden`이 아니라 `clip`이다 — clip은 스크롤 컨테이너를 만들지 않아 상단 고정 메뉴(sticky)를 깨지 않는다.
+ * ⚠ 대가: 앞으로 생길 넘침을 눈에서 가린다. 그래서 `e2e/mobile-overflow.spec.ts`가 scrollWidth로 계속 잰다.
+ */
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   background: var(--w-bg);
   color: var(--w-ink);
