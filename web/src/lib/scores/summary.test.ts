@@ -16,22 +16,22 @@ const DETAIL_0912: StoredDetail = {
 describe("유동성 한 줄 요약", () => {
   it("⭐ 점수 · 방향 · 받치는 계기 · 누르는 계기 · 빠진 계기", () => {
     expect(liquidityOneLine({ value: 50.1, coverage: 80, state: "OK", detail: DETAIL_0912, past4: 46.8 })).toBe(
-      "유동성 50 · 보합 — 신용(62)이 받치고 금리시장(40)이 누른다 · 빠진 계기: 재무부",
+      "포털 유동성 점수 50 · 보합 — 신용(62)이 받치고 금리시장(40)이 누른다 · 빠진 계기: 재무부",
     );
   });
 
   it("50과의 차이가 5점 미만이면 받친다/누른다고 말하지 않는다", () => {
     const flat: StoredDetail = { components: [{ key: "credit", weight: 0.5, score: 53 }, { key: "funding", weight: 0.5, score: 47 }] };
-    expect(liquidityOneLine({ value: 50, coverage: 100, state: "OK", detail: flat, past4: 50 })).toBe("유동성 50 · 보합");
+    expect(liquidityOneLine({ value: 50, coverage: 100, state: "OK", detail: flat, past4: 50 })).toBe("포털 유동성 점수 50 · 보합");
   });
 
   it("⚠ 4주 전 점수가 없으면 방향을 말하지 않는다", () => {
-    expect(liquidityOneLine({ value: 50.1, coverage: 80, state: "OK", detail: DETAIL_0912 })).toMatch(/^유동성 50 — /);
+    expect(liquidityOneLine({ value: 50.1, coverage: 80, state: "OK", detail: DETAIL_0912 })).toMatch(/^포털 유동성 점수 50 — /);
   });
 
   it("⚠ 발행하지 않은 점수에는 숫자를 쓰지 않는다", () => {
     const line = liquidityOneLine({ value: null, coverage: 50, state: "DO_NOT_PUBLISH", detail: DETAIL_0912, past4: 47 });
-    expect(line).toBe("유동성 판정 보류 · 채운 계기 50% · 빠진 계기: 재무부");
+    expect(line).toBe("포털 유동성 점수 판정 보류 · 채운 계기 50% · 빠진 계기: 재무부");
     expect(line).not.toMatch(/유동성 \d/);
   });
 
@@ -40,7 +40,7 @@ describe("유동성 한 줄 요약", () => {
       { asOf: "2026-09-12", value: 50.1, coverage: 80, state: "OK", detail: JSON.stringify(DETAIL_0912) },
       46.8,
     );
-    expect(view?.oneLine).toBe("유동성 50 · 보합 — 신용(62)이 받치고 금리시장(40)이 누른다 · 빠진 계기: 재무부");
+    expect(view?.oneLine).toBe("포털 유동성 점수 50 · 보합 — 신용(62)이 받치고 금리시장(40)이 누른다 · 빠진 계기: 재무부");
     expect(view?.components[1]).toEqual({
       key: "treasury",
       label: "재무부",

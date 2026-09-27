@@ -1,3 +1,4 @@
+import { asOfStamp } from "@/lib/format";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { BubbleScore } from "@/lib/bubble/score";
@@ -81,7 +82,8 @@ function ScoreCard({
         <h3 className="text-[13px] font-semibold text-ink">{guide.title}</h3>
         {latest && (
           <span className="text-[10.5px] text-ink-3">
-            {latest.asOf} 기준 · 커버리지 {latest.coverage}%{latest.state === "LOW_CONFIDENCE" ? " · 낮은 신뢰" : ""}
+            {/* ⚠ 기준일·계산 시각은 GCRM 카드와 같은 형식(`asOfStamp`, 2026-09-27) */}
+            {asOfStamp(latest.asOf, latest.computedAt)} · 커버리지 {latest.coverage}%{latest.state === "LOW_CONFIDENCE" ? " · 낮은 신뢰" : ""}
           </span>
         )}
       </div>

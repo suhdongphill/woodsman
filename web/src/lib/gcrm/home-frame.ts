@@ -23,9 +23,18 @@ import {
   type RegimeFrame,
 } from "@/lib/scores/regime-summary";
 
-/** 홈 칩 — 순서가 화면 순서다. 이름은 v2 기둥 이름을 줄인 것(v1의 「위험 전달」·「금리 흡수력」·「달러 역설」 대신). */
+/**
+ * 홈 칩 — 순서가 화면 순서다. 이름은 v2 기둥 이름을 줄인 것(v1의 「위험 전달」·「금리 흡수력」·「달러 역설」 대신).
+ *
+ * ⚠ **유동성만 「GCRM 유동성」이다**(2026-09-27 운영자 신고). 같은 홈 아래 조류 카드에 v1 **「포털 유동성 점수」**(46)가 있어
+ *   이 칩(52)과 둘 다 「유동성」으로 보였다. 두 값은 구성요소 나무는 같지만 점수 매기는 법이 다른 **다른 모델**이다
+ *   (용어 사전 `gcrm-liquidity` · `portal-liquidity-score`).
+ * ⚠ 「GCRM 유동성 **축**」이라고 쓰지 않는다 — GCRM에서 축은 조류·바람·파도이고 유동성은 **기둥**이다. 이 카드 머리에
+ *   「조류(1~12개월) 축」이 이미 적혀 있어 「유동성 축」은 두 번째 혼동을 만든다.
+ * ⚠ 접두어는 유동성에만 붙인다 — 쌍둥이 값이 있는 것은 유동성뿐이다. 여섯 칩 모두에 붙이면 모바일에서 잡음만 는다.
+ */
 export const GCRM_CHIPS = [
-  { pillar: "liquidity", label: "유동성" },
+  { pillar: "liquidity", label: "GCRM 유동성" },
   { pillar: "engine_heat", label: "엔진 온도" },
   { pillar: "market_risk", label: "시장위험·지정학" },
   { pillar: "risk_transmission", label: "위험 전이" },
@@ -48,6 +57,8 @@ export type GcrmPillarRow = {
 
 export type GcrmSnapshot = {
   asOf: string;
+  /** run 저장 시각(UTC ISO). 없으면 화면이 기준일만 적는다 */
+  computedAt?: string;
   pillars: GcrmPillarRow[];
   /** 정렬 상태 한글(예: 「판정 보류」). 없으면 null */
   regimeLabel: string | null;
@@ -108,6 +119,7 @@ export function buildGcrmFrame(current: GcrmSnapshot, earlier?: GcrmSnapshot): R
     collapsed: missing.length >= COLLAPSE_WHEN_UNPUBLISHED_AT_LEAST,
     summary: shown.length ? `${parts.join(" · ")}${tail}` : "발행된 점수가 아직 없습니다.",
     asOf: current.asOf,
+    computedAt: current.computedAt,
     regimeLabel: current.regimeLabel ?? undefined,
     modelLabel: `${MODEL_VERSION.replace("_", " ")} · 조류(1~12개월) 축`,
   };

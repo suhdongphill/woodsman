@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  asOfStamp,
   cx,
+  formatKstStamp,
   formatCompact,
   formatDate,
   formatNumber,
@@ -121,5 +123,20 @@ describe("stripEmphasis — 기계가 읽는 자리에서는 표시를 걷어낸
         expect(stripEmphasis(field)).not.toContain("**");
       }
     }
+  });
+});
+
+describe("계산 시각 표기 (2026-09-27 — 두 유동성 카드가 같은 형식)", () => {
+  it("UTC를 KST로 바꿔 시간대를 글자로 붙인다", () => {
+    expect(formatKstStamp("2026-09-26T21:01:01.845Z")).toBe("2026-09-27 06:01 KST");
+    expect(formatKstStamp("2026-09-27T03:12:06.295Z")).toBe("2026-09-27 12:12 KST");
+  });
+  it("⚠ 못 읽으면 null — 지어내지 않는다", () => {
+    expect(formatKstStamp(undefined)).toBe(null);
+    expect(formatKstStamp("어제")).toBe(null);
+  });
+  it("기준일 · 계산 시각", () => {
+    expect(asOfStamp("2026-09-27", "2026-09-26T21:01:01.845Z")).toBe("기준일 2026-09-27 · 계산 2026-09-27 06:01 KST");
+    expect(asOfStamp("2026-09-27", null)).toBe("기준일 2026-09-27");
   });
 });

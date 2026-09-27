@@ -158,6 +158,33 @@ export const GLOSSARY: GlossaryEntry[] = [
     sourceLabel: "Woodsman 정의 (표준 지표가 아닙니다)",
     own: true,
   },
+  /**
+   * ⭐ 두 유동성 점수(2026-09-27 운영자 신고) — 홈에서 둘 다 「유동성」으로 보여 46과 52가 같은 것의 두 값처럼 읽혔다.
+   * 홈 GCRM 카드의 「두 점수의 차이 →」가 `gcrm-liquidity`로 온다. ⚠ 슬러그는 바꾸지 않는다(글이 링크한다).
+   * 근거: v1 `lib/scores/config.ts` global_liquidity(§12) · `lib/scores/normalize.ts` / v2 `lib/gcrm/config/pillars.ts` liquidity · `lib/gcrm/horizon.ts`.
+   */
+  {
+    term: "포털 유동성 점수",
+    slug: "portal-liquidity-score",
+    aka: ["Global Liquidity Score", "GLS"],
+    short:
+      "유동성 여섯 계기를 각자 지난 10년의 평소에 대어 0~100으로 합친 점수입니다. 50이 평소입니다.",
+    role:
+      "홈 「조류」의 유동성 카드입니다. 계기는 연준 25% · 재무부 20% · 자금시장 15% · 신용 15% · 금리시장 15% · 글로벌 달러 10%이고, 각 지표를 지난 10년의 중앙값·흩어짐(z점수)으로 잽니다. ⚠ 「GCRM 유동성」과 **다른 모델**입니다 — 구성요소는 같지만 점수 매기는 법이 달라 같은 날에도 숫자가 다릅니다.",
+    sourceLabel: "Woodsman 정의 (표준 지표가 아닙니다) · 점수계산명세 v1.0 §12",
+    own: true,
+  },
+  {
+    term: "GCRM 유동성",
+    slug: "gcrm-liquidity",
+    aka: ["GCRM liquidity pillar"],
+    short:
+      "GCRM 2.0의 유동성 기둥을 조류(1~12개월) 축으로 읽은 점수입니다. 지표를 20년 백분위로 잽니다.",
+    role:
+      "홈 「지금 부는 바람」의 GCRM 카드 칩입니다. ⚠ 「포털 유동성 점수」와 **다른 모델**입니다 — 같은 구성요소 나무에서 출발했지만 ① 정규화(20년 백분위 vs 10년 z점수) ② 시간 창(1~12개월 창 합성 vs 지금 수준) ③ 발행 규칙(채운 계기 60% 미만이면 발행하지 않음)이 다릅니다. 두 숫자가 다르면 **틀린 것이 아니라 다른 질문**입니다.",
+    sourceLabel: "Woodsman 정의 (표준 지표가 아닙니다) · GCRM 2.0",
+    own: true,
+  },
 ];
 
 const BY_TERM = new Map<string, GlossaryEntry>();

@@ -75,16 +75,24 @@ export type LiquidityComponentView = {
 
 export type LiquidityCardView = {
   asOf: string;
+  /** 계산 시각(UTC ISO) — 팝업이 `asOfStamp`로 적는다 */
+  computedAt?: string;
   oneLine: string;
   components: LiquidityComponentView[];
 };
+
+/**
+ * ⚠ 이름은 **「포털 유동성 점수」**다(2026-09-27 운영자 신고). 홈 「지금 부는 바람」의 GCRM 칩 「GCRM 유동성」과
+ *   둘 다 「유동성」으로 보였다 — 다른 모델의 다른 숫자(46 vs 52)다. 글(티스토리)도 이 이름으로 인용한다.
+ */
+export const PORTAL_LIQUIDITY = "포털 유동성 점수";
 
 /**
  * 최신 GLS 저장 행 → 카드 한 줄 요약 + 팝업 계기 표. 행이 없거나 detail이 깨졌으면 undefined.
  * ⚠ 라우트가 JSON을 풀고 문장을 만들지 않게 여기서 한다(CLAUDE.md §1).
  */
 export function liquidityCardView(
-  latest: { asOf: string; value: number | null; coverage: number; state: string; detail: string } | undefined,
+  latest: { asOf: string; value: number | null; coverage: number; state: string; detail: string; computedAt?: string } | undefined,
   past4?: number | null,
 ): LiquidityCardView | undefined {
   if (!latest) return undefined;
@@ -92,6 +100,7 @@ export function liquidityCardView(
   if (!detail) return undefined;
   return {
     asOf: latest.asOf,
+    computedAt: latest.computedAt,
     oneLine: liquidityOneLine({ value: latest.value, coverage: latest.coverage, state: latest.state, detail, past4 }),
     components: detail.components.map((c) => ({
       key: c.key,
@@ -110,10 +119,10 @@ export function liquidityOneLine(input: LiquiditySummaryInput): string {
   const missingText = missing.length ? ` · 빠진 계기: ${missing.map((c) => label(c.key)).join("·")}` : "";
 
   if (input.value === null || input.state === "DO_NOT_PUBLISH") {
-    return `유동성 판정 보류 · 채운 계기 ${input.coverage}%${missingText}`;
+    return `${PORTAL_LIQUIDITY} 판정 보류 · 채운 계기 ${input.coverage}%${missingText}`;
   }
 
-  const parts: string[] = [`유동성 ${Math.round(input.value)}`];
+  const parts: string[] = [`${PORTAL_LIQUIDITY} ${Math.round(input.value)}`];
   const dir = DIRECTION_WORD[tideDirection(input.value, input.past4)];
   if (dir) parts[0] += ` · ${dir}`;
 

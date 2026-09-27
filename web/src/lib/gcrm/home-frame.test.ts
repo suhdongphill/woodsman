@@ -24,7 +24,7 @@ describe("홈 GCRM 줄 (v2)", () => {
   it("조류 축 값으로 칩을 채우고, 위험 전이가 발행된다", () => {
     const f = buildGcrmFrame(now);
     expect(f.chips.map((c) => [c.label, c.value && Math.round(c.value)])).toEqual([
-      ["유동성", 52], ["엔진 온도", 70], ["시장위험·지정학", 47], ["위험 전이", 54],
+      ["GCRM 유동성", 52], ["엔진 온도", 70], ["시장위험·지정학", 47], ["위험 전이", 54],
       ["금리 감내력", undefined], ["달러 네트워크", undefined],
     ]);
     expect(f.publishedCount).toBe(4);

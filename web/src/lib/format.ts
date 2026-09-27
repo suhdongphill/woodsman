@@ -87,6 +87,26 @@ export function formatDateTime(iso?: string) {
   return `${formatDate(iso)} ${t}`;
 }
 
+/**
+ * `2026-09-27 06:01 KST` — 계산 시각. ⚠ 한국 시각으로 바꿔 **시간대를 글자로** 붙인다(2026-09-27).
+ * 홈의 두 유동성 카드(포털 점수 · GCRM)가 같은 형식을 쓰게 하려고 만들었다 — 형식이 다르면 두 숫자가 다른 날 것처럼 읽힌다.
+ * 읽을 수 없으면 null(지어내지 않는다).
+ */
+export function formatKstStamp(iso?: string | null): string | null {
+  if (!iso) return null;
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return null;
+  const k = new Date(t + 9 * 3_600_000).toISOString();
+  return `${k.slice(0, 10)} ${k.slice(11, 16)} KST`;
+}
+
+/** `기준일 2026-09-27 · 계산 2026-09-27 06:01 KST`. 계산 시각을 모르면 기준일만. */
+export function asOfStamp(asOf?: string | null, computedAt?: string | null): string {
+  const day = asOf ? `기준일 ${asOf.slice(0, 10)}` : "";
+  const at = formatKstStamp(computedAt);
+  return [day, at ? `계산 ${at}` : ""].filter(Boolean).join(" · ");
+}
+
 export function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }

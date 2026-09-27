@@ -65,6 +65,8 @@ export type RegimeFrame = {
   summary: string;
   /** 점수 기준일(발행된 것 중 가장 늦은 것) */
   asOf?: string;
+  /** 계산 시각(UTC ISO) — 화면은 `asOfStamp`로 「기준일 … · 계산 … KST」 */
+  computedAt?: string;
   /** 레짐 판정 이름(GCRM v2 — 예: 「판정 보류」). 없으면 「판정 준비 중」 */
   regimeLabel?: string;
   /** 모델 표기. 없으면 v1 `MODEL_VERSION` */

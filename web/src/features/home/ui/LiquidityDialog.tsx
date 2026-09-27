@@ -12,6 +12,7 @@
  * - 클라이언트 JS는 이 팝업 하나(열고 닫기)만 쓴다.
  * - `bodyHtml`은 저장 경로에서 `sanitizeHtml`을 거친 값이다(features/analysis/repository.ts) — 여기서 다른 HTML을 넣지 않는다.
  */
+import { asOfStamp } from "@/lib/format";
 import { useRef } from "react";
 import type { LiquidityCardView } from "@/lib/scores/summary";
 
@@ -44,7 +45,7 @@ export function LiquidityDialog({ view, analysis }: { view: LiquidityCardView; a
         <div className="max-h-[80vh] overflow-y-auto p-5">
           <div className="flex items-start justify-between gap-3">
             <h2 id="liquidity-dialog-title" className="text-[15px] font-semibold">
-              유동성 — 숫자와 해석
+              포털 유동성 점수 — 숫자와 해석
             </h2>
             <button type="button" onClick={() => ref.current?.close()} className="text-[12px] text-ink-3 hover:text-ink" aria-label="닫기">
               닫기 ✕
@@ -52,7 +53,7 @@ export function LiquidityDialog({ view, analysis }: { view: LiquidityCardView; a
           </div>
 
           <section className="mt-3">
-            <h3 className="text-[12px] font-semibold text-ink">1. 우리 계산 · {view.asOf} 기준</h3>
+            <h3 className="text-[12px] font-semibold text-ink">1. 우리 계산 · {asOfStamp(view.asOf, view.computedAt)}</h3>
             <p className="mt-1 text-[12.5px] text-muted">{view.oneLine}</p>
             <table className="mt-2 w-full text-[12px]">
               <thead>

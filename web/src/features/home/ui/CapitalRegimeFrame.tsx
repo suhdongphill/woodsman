@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { RegimeFrame } from "@/lib/scores/regime-summary";
 import { MODEL_VERSION } from "@/lib/scores/config";
 import type { TideDirection } from "@/lib/scores/tide";
+import { asOfStamp } from "@/lib/format";
 
 /**
  * 홈 「지금 부는 바람」 타이틀 **바로 아래**의 Global Capital Regime 프레임 (개발요구서 G1).
@@ -47,7 +48,8 @@ export function CapitalRegimeFrame({ frame }: { frame: RegimeFrame }) {
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h3 className="text-[11px] font-semibold tracking-[0.14em] text-ink-2">{TEXT.heading}</h3>
         <p className="text-[10.5px] tabular-nums text-ink-3">
-          {frame.asOf ? `${TEXT.asOfPrefix} ${frame.asOf} · ` : ""}
+          {/* ⚠ 기준일·계산 시각은 조류의 포털 유동성 점수 카드와 **같은 형식**(`asOfStamp`, 2026-09-27) */}
+          {frame.asOf ? `${asOfStamp(frame.asOf, frame.computedAt)} · ` : ""}
           {frame.modelLabel ?? `모델 ${MODEL_VERSION}`}
         </p>
       </div>
@@ -73,7 +75,8 @@ export function CapitalRegimeFrame({ frame }: { frame: RegimeFrame }) {
           {frame.chips.map((chip) => (
             <li
               key={chip.scoreKey}
-              className="rounded-lg border border-border/60 bg-surface-1/60 px-2 py-1 text-[11px]"
+              // ⚠ keep-all — 길어진 라벨(「GCRM 유동성」)이 390px에서 낱자로 끊기지 않고 단어 단위로 줄바꿈된다
+              className="rounded-lg border border-border/60 bg-surface-1/60 px-2 py-1 text-[11px] [word-break:keep-all]"
             >
               <span className="text-ink-3">{chip.label} </span>
               {chip.value === undefined ? (
@@ -85,7 +88,8 @@ export function CapitalRegimeFrame({ frame }: { frame: RegimeFrame }) {
                     {ARROW[chip.dir4]} {DIRECTION_WORD[chip.dir4]}
                   </span>
                   {chip.coverage !== undefined && (
-                    <span className="ml-1 tabular-nums text-ink-3">{Math.round(chip.coverage)}%</span>
+                    // ⚠ 숫자만 두면 무엇의 %인지 모른다(「비교 없음 71%」) — 조류 카드와 같은 말 「커버리지」를 붙인다
+                    <span className="ml-1 tabular-nums text-ink-3">커버리지 {Math.round(chip.coverage)}%</span>
                   )}
                   {/* 🟡는 색이 아니라 글자로도 말한다 */}
                   {chip.lowConfidence && <span className="ml-1 text-gold-500">🟡 낮은 신뢰</span>}
@@ -95,6 +99,17 @@ export function CapitalRegimeFrame({ frame }: { frame: RegimeFrame }) {
           ))}
         </ul>
       )}
+
+      {/*
+        ⚠ 두 유동성 점수(2026-09-27 운영자 신고) — 이 카드의 「GCRM 유동성」과 아래 조류의 「포털 유동성 점수」는 다른 모델이다.
+           툴팁이 아니라 **늘 보이는 한 줄**이다: 터치 화면엔 hover가 없고, 숨긴 설명은 찾기 어렵다(접근성은 설계로 푼다).
+      */}
+      <p className="mt-2 text-[11px] leading-relaxed text-ink-3 [word-break:keep-all]">
+        GCRM 유동성은 아래 조류의 「포털 유동성 점수」와 다른 모델입니다.{" "}
+        <Link href="/macro/glossary#gcrm-liquidity" className="text-gold-500 underline-offset-2 hover:underline">
+          두 점수의 차이 →
+        </Link>
+      </p>
 
       <div className="mt-2.5 text-right">
         {/* ⚠ G8(`/capital-regime`)은 아직 없다. 자본 엔진 카드의 앵커도 아직 없어 묶음 화면으로 보낸다 —

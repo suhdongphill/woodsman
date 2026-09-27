@@ -50,8 +50,10 @@ export type TideGuide = {
 
 export const TIDE_GUIDES: Partial<Record<ScoreKey, TideGuide>> = {
   global_liquidity: {
-    title: "유동성",
-    how: "연준 · 재무부 · 자금시장 · 신용 · 금리시장 다섯 계기를 각자 지난 10년에 대어 0~100으로 합칩니다. 50이 지난 10년의 평소입니다.",
+    // ⚠ 「포털 유동성 점수」 — 홈 GCRM 칩 「GCRM 유동성」과 다른 모델이라 이름으로 가른다(2026-09-27, `summary.ts` PORTAL_LIQUIDITY)
+    title: "포털 유동성 점수",
+    // ⚠ 「다섯 계기」였다 — 글로벌 달러(달러인덱스, 10%, `inputs.ts`)가 빠진 설명이었다(2026-09-27 두 유동성 정리 중 발견).
+    how: "연준 · 재무부 · 자금시장 · 신용 · 금리시장 · 글로벌 달러 여섯 계기를 각자 지난 10년에 대어 0~100으로 합칩니다. 50이 지난 10년의 평소입니다.",
     judge:
       "높을수록 시장에 돈이 넉넉한 쪽입니다. 67 위나 33 아래는 10년 중 드문 구간입니다. 수준보다 4주·13주 사이의 방향이 먼저 바뀌므로, 숫자와 화살표를 함께 봅니다.",
     up: "넉넉해지는 쪽",
@@ -84,6 +86,8 @@ export type StoredScoreLike = {
   value: number | null;
   coverage: number;
   state: string;
+  /** 계산 시각(UTC ISO, `ScoreValue.computedAt`). 화면은 `asOfStamp`로 적는다(2026-09-27) */
+  computedAt?: string;
 };
 
 export type TideReading = {

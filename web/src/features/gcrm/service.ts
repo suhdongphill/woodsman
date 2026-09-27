@@ -26,6 +26,8 @@ export async function gcrmCurrent(asOf?: string) {
   return {
     ok: true as const,
     asOf: run.asOf,
+    /** run을 저장한 시각(UTC ISO) — 홈 카드가 「계산 … KST」로 적는다(2026-09-27) */
+    computedAt: run.createdAt,
     runId: run.runId,
     modelVersion: run.modelVersion,
     configHash: run.configHash,
@@ -189,6 +191,7 @@ export async function gcrmHomeSnapshots(): Promise<
     const before = await gcrmCurrent(fourWeeksAgo);
     const snap = (x: Extract<Awaited<ReturnType<typeof gcrmCurrent>>, { ok: true }>) => ({
       asOf: x.asOf,
+      computedAt: x.computedAt,
       pillars: x.pillars.map((p) => ({ pillar: p.pillar, axis: p.axis, scoreRaw: p.scoreRaw, coverage: p.coverage, status: p.status })),
       regimeLabel: x.regime?.alignmentStateKo ?? null,
     });
