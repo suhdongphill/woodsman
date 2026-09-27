@@ -41,6 +41,14 @@ export const HOME_BLOCKS = [
    */
   "tide",
   /**
+   * 블로그 — 티스토리 최근 글 10편(요약) + 인기 글 5편(2026-09-27 운영자 요청 「개별적으로 하니까 유인책이 없다」).
+   * ⚠ 조류 **바로 아래**, 인사이트 **위**다 — 1순위(티스토리 유입)의 길이고, 전체 목록이 골라 옮긴 인사이트보다 넓다.
+   *    대가: 인사이트가 한 칸 밀리고, 인사이트 6편이 블로그 글과 같아 **같은 제목이 두 번** 보일 수 있다 → 운영자 결정 대기
+   *    (`docs/설계_블로그_목록.md` §3). 배포 가설은 CHANGELOG에.
+   * ⚠ 모은 글이 없으면(수집 전·읽기 실패) 블록을 그리지 않는다.
+   */
+  "blogShowcase",
+  /**
    * 최신 인사이트 + 티스토리 CTA.
    * ⚠ **콘텐츠가 맨 앞이다**(2026-08-30). 1순위 목적이 블로그 유입인데, 전에는 방문자가
    *    거시 보드와 원칙 3장을 지나야 티스토리 링크를 만났다. 목적과 순서를 맞췄다.
@@ -84,6 +92,8 @@ export type HomeContent = {
   homePostCount: number;
   /** 홈에 올릴 수 있는 다가오는 일정 수(2주 · 중요도 2 이상) */
   upcomingEventCount: number;
+  /** 공개 중인 블로그 글 수(`BlogEntry`, 숨김 제외). 못 읽었으면 0 */
+  blogEntryCount: number;
 };
 
 /**
@@ -108,6 +118,9 @@ export function visibleHomeBlocks(content: HomeContent): HomeBlock[] {
        */
       case "upcomingCalendar":
         return content.upcomingEventCount > 0;
+      /** 모은 글이 없으면 뺀다 — 「아직 없습니다」를 홈에 띄우면 빈 사이트로 보인다(일정과 같은 규칙). */
+      case "blogShowcase":
+        return content.blogEntryCount > 0;
       /**
        * ⚠ 계좌 띠는 **스냅숏이 없어도 그린다.** 값이 없으면 띠를 빼는 게 아니라
        *    "아직 없다"고 적는다 — 빈 칸을 0원으로 만들지 않는다(2026-08-30, Step 2).

@@ -3,7 +3,7 @@ import { HOME_BLOCKS, hasBlock, visibleHomeBlocks, type HomeContent } from "./ho
 
 /** 「전부 있는 홈」이 기본값이고, 테스트는 없애 볼 것만 적는다. */
 function content(over: Partial<HomeContent> = {}): HomeContent {
-  return { homePostCount: 3, upcomingEventCount: 2, ...over };
+  return { homePostCount: 3, upcomingEventCount: 2, blogEntryCount: 23, ...over };
 }
 
 describe("홈 블록", () => {
@@ -36,6 +36,7 @@ describe("홈 블록", () => {
       "macroStrip",
       "waves",
       "tide",
+      "blogShowcase",
       "latestInsights",
       "macro",
       "upcomingCalendar",
@@ -91,5 +92,15 @@ describe("홈 블록", () => {
   it("hasBlock은 목록을 그대로 읽는다", () => {
     expect(hasBlock(visibleHomeBlocks(content()), "macro")).toBe(true);
     expect(hasBlock(visibleHomeBlocks(content({ homePostCount: 0 })), "homePosts")).toBe(false);
+  });
+
+  it("블로그는 조류 바로 아래 · 인사이트 위 (2026-09-27)", () => {
+    const blocks = visibleHomeBlocks(content());
+    expect(blocks.indexOf("blogShowcase")).toBe(blocks.indexOf("tide") + 1);
+    expect(blocks.indexOf("blogShowcase")).toBeLessThan(blocks.indexOf("latestInsights"));
+  });
+
+  it("⚠ 모은 블로그 글이 없으면 블록을 그리지 않는다", () => {
+    expect(visibleHomeBlocks(content({ blogEntryCount: 0 }))).not.toContain("blogShowcase");
   });
 });

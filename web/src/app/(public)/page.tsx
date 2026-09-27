@@ -27,6 +27,9 @@ import { buildGcrmFrame } from "@/lib/gcrm/home-frame";
 import { gcrmHomeSnapshots } from "@/features/gcrm/service";
 import { CapitalRegimeFrame } from "@/features/home/ui/CapitalRegimeFrame";
 import { visibleHomeBlocks, type HomeBlock } from "@/lib/home-layout";
+import { loadBlogEntries } from "@/features/blog/repository";
+import { BlogShowcase } from "@/features/blog/ui/BlogShowcase";
+import { popularEntries, visibleEntries } from "@/lib/blog/tistory";
 import { macroLede } from "@/lib/home-lede";
 import { summarizePerformance } from "@/lib/performance";
 import { getSiteBasics } from "@/lib/site-settings";
@@ -130,6 +133,16 @@ export default async function HomePage() {
     // 유동성 카드 해석 팝업의 2부 — 가장 최근 「그날의 분석」
     loadLatestAnalysis(),
   ]);
+  /**
+   * 블로그 글 목록 — ⚠ 보조 콘텐츠라 읽기 실패로 **홈 전체를 죽이지 않는다.** 대신 로그를 남기고 블록만 뺀다.
+   * 「못 읽음」은 `/admin/blog`에서 드러난다(거기서는 삼키지 않는다).
+   */
+  const blogAll = visibleEntries(
+    await loadBlogEntries().catch((error) => {
+      console.error("[home] 블로그 글 목록을 읽지 못했다 — 홈 「블로그」 블록을 뺀다", error);
+      return [];
+    }),
+  );
   // Global Capital Regime 줄 — ⚠ 2026-09-25부터 GCRM v2(운영자 결정). 조류 카드(v1)와 따로 읽는다.
   const gcrm = await gcrmHomeSnapshots();
 
@@ -157,6 +170,7 @@ export default async function HomePage() {
   const blocks = visibleHomeBlocks({
     homePostCount: homePosts.length,
     upcomingEventCount: homeEvents.length,
+    blogEntryCount: blogAll.length,
   });
 
   /**
@@ -199,6 +213,7 @@ export default async function HomePage() {
         analysis={latestAnalysis}
       />
     ),
+    blogShowcase: <BlogShowcase recent={blogAll.slice(0, 10)} popular={popularEntries(blogAll, 5)} total={blogAll.length} />,
     latestInsights: (
       <LatestInsights
         posts={latestPosts.filter((p) => p.type !== "NOTICE")}
