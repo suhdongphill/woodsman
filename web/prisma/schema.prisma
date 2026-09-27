@@ -1459,6 +1459,8 @@ model BlogEntry {
   hidden          Boolean  @default(false)
   /// 글 페이지를 마지막으로 읽은 시각 — 오래되면 다시 읽는다(제목·요약 수정 반영)
   pageFetchedAt   String
+  /// 편집 검사 요약 JSON `{warn, info, rules[], at}` (82). NULL = 아직 검사 안 함
+  lint            String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now())
 

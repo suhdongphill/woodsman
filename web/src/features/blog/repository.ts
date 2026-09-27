@@ -6,6 +6,7 @@
  */
 import { execute, getD1, queryAll, queryOne, toBool, type D1Statement } from "@/lib/d1";
 import type { BlogEntry, ParsedBlogEntry } from "@/lib/blog/tistory";
+import type { LintSummary } from "@/lib/blog/post-lint";
 
 type Row = {
   entryId: number;
@@ -20,9 +21,10 @@ type Row = {
   likesAt: string | null;
   hidden: number;
   pageFetchedAt: string;
+  lint: string | null;
 };
 
-export type StoredBlogEntry = BlogEntry & { likesAt: string | null; pageFetchedAt: string };
+export type StoredBlogEntry = BlogEntry & { likesAt: string | null; pageFetchedAt: string; lint: LintSummary | null };
 
 function toEntry(r: Row): StoredBlogEntry {
   return {
@@ -38,10 +40,22 @@ function toEntry(r: Row): StoredBlogEntry {
     likesAt: r.likesAt,
     hidden: toBool(r.hidden),
     pageFetchedAt: r.pageFetchedAt,
+    lint: parseLint(r.lint),
   };
 }
 
-const COLUMNS = `entryId, url, title, summary, summaryOverride, category, thumbnailUrl, publishedAt, likes, likesAt, hidden, pageFetchedAt`;
+function parseLint(raw: string | null): LintSummary | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as LintSummary;
+  } catch (error) {
+    // ⚠ 삼키지 않는다 — 깨진 기록이 있다는 사실이 로그에 남아야 한다.
+    console.error("[blog] 편집 검사 기록을 읽지 못했다", error);
+    return null;
+  }
+}
+
+const COLUMNS = `entryId, url, title, summary, summaryOverride, category, thumbnailUrl, publishedAt, likes, likesAt, hidden, pageFetchedAt, lint`;
 
 /** 전체(숨김 포함) — 최신순. 공개 화면은 `visibleEntries`로 거른다. */
 export async function loadBlogEntries(): Promise<StoredBlogEntry[]> {
@@ -72,20 +86,20 @@ async function runBatches(statements: D1Statement[]): Promise<void> {
 }
 
 /** 글 페이지에서 읽은 것을 쌓는다. ⚠ `summaryOverride`·`hidden`·`likes`는 UPDATE 목록에 없다. */
-export async function upsertBlogPages(entries: ParsedBlogEntry[], fetchedAt: string): Promise<void> {
+export async function upsertBlogPages(entries: (ParsedBlogEntry & { lint?: string | null })[], fetchedAt: string): Promise<void> {
   const db = await getD1();
   await runBatches(
     entries.map((e) =>
       db
         .prepare(
-          `INSERT INTO BlogEntry (entryId, url, title, summary, category, thumbnailUrl, publishedAt, pageFetchedAt, hidden, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+          `INSERT INTO BlogEntry (entryId, url, title, summary, category, thumbnailUrl, publishedAt, pageFetchedAt, lint, hidden, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
            ON CONFLICT(entryId) DO UPDATE SET
              url = excluded.url, title = excluded.title, summary = excluded.summary, category = excluded.category,
              thumbnailUrl = excluded.thumbnailUrl, publishedAt = excluded.publishedAt,
-             pageFetchedAt = excluded.pageFetchedAt, updatedAt = excluded.updatedAt`,
+             pageFetchedAt = excluded.pageFetchedAt, lint = excluded.lint, updatedAt = excluded.updatedAt`,
         )
-        .bind(e.entryId, e.url, e.title, e.summary, e.category, e.thumbnailUrl, e.publishedAt, fetchedAt, fetchedAt, fetchedAt),
+        .bind(e.entryId, e.url, e.title, e.summary, e.category, e.thumbnailUrl, e.publishedAt, fetchedAt, e.lint ?? null, fetchedAt, fetchedAt),
     ),
   );
 }

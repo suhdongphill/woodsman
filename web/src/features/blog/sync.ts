@@ -10,6 +10,7 @@
  */
 import { getSiteBasics } from "@/lib/site-settings";
 import { parseEntryPage, parseReactionSum, parseSitemapEntries, type ParsedBlogEntry } from "@/lib/blog/tistory";
+import { lintTistoryPost, summarizeLint } from "@/lib/blog/post-lint";
 import { loadKnownPages, saveBlogSync, updateBlogLikes, upsertBlogPages, type BlogSyncRecord } from "./repository";
 
 /** 이만큼 지난 글 페이지는 다시 읽는다 — 제목·요약·카테고리 수정이 늦어도 일주일 안에 반영된다. */
@@ -92,20 +93,31 @@ export async function syncBlog(trigger: "CRON" | "MANUAL", opts: { force?: boole
       return opts.force || !k || Date.parse(k.pageFetchedAt) < staleBefore;
     });
 
-    const parsed = await pool(toRead, async (url): Promise<ParsedBlogEntry | null> => {
+    const parsed = await pool(toRead, async (url): Promise<(ParsedBlogEntry & { lint: string | null }) | null> => {
       try {
-        const r = parseEntryPage(await fetchText(url), url);
+        const html = await fetchText(url);
+        const r = parseEntryPage(html, url);
         if (!r.ok) {
           fail(url, r.reason);
           return null;
         }
-        return r.entry;
+        /*
+          편집 검사 — 경고 단계(82). ⚠ 검사가 실패해도 **수집은 계속**한다: 검사는 보조고, 목록이 1순위다.
+          실패는 NULL(「아직 검사 안 함」과 같아 보인다)이 되므로 로그에 남긴다.
+        */
+        let lint: string | null = null;
+        try {
+          lint = JSON.stringify(summarizeLint(lintTistoryPost(html), new Date().toISOString()));
+        } catch (error) {
+          console.error(`[blog] 편집 검사 실패(수집은 계속) — ${url}`, error);
+        }
+        return { ...r.entry, lint };
       } catch (error) {
         fail(url, error instanceof Error ? error.message : String(error));
         return null;
       }
     });
-    const pages = parsed.filter((p): p is ParsedBlogEntry => p !== null);
+    const pages = parsed.filter((p): p is ParsedBlogEntry & { lint: string | null } => p !== null);
     const fetchedAt = new Date().toISOString();
     await upsertBlogPages(pages, fetchedAt);
     record.added = pages.filter((p) => !known.has(p.url)).length;

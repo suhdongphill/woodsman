@@ -96,6 +96,16 @@ export default async function AdminBlogPage() {
                   <span className="tabular-nums text-ink-3">
                     공감 {e.likes ?? "못 읽음"}
                   </span>
+                  {/* 편집 검사(82) — 경고만 센다. 자세한 내용은 `npm run lint:post -- <URL>` */}
+                  {e.lint === null ? (
+                    <span className="text-ink-3">검사 전</span>
+                  ) : e.lint.warn > 0 ? (
+                    <span className="text-amber-300" title={e.lint.rules.join(", ")}>
+                      ⚠ 편집 검사 {e.lint.warn} · {e.lint.rules.join(" · ")}
+                    </span>
+                  ) : (
+                    <span className="text-emerald-400">편집 검사 통과</span>
+                  )}
                   <a href={e.url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 text-ink hover:text-gold-500">
                     {e.title}
                   </a>
