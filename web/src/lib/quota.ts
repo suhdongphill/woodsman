@@ -1,5 +1,5 @@
 /**
- * Cloudflare 무료 등급 한도와 **한도 때문에 난 에러인지 판정** — 순수 함수.
+ * Cloudflare 요금제 한도와 **한도 때문에 난 에러인지 판정** — 순수 함수.
  *
  * ## 왜 필요한가
  * 무료 등급에서 한도에 닿으면 화면은 그냥 "불러오지 못했습니다"가 된다. 코드 버그와
@@ -11,26 +11,41 @@
  *    ⚠ 확신할 수 없으면 **아니라고 하지 않고 '모름'이라고 한다** — 없는 확신을 팔지 않는다.
  *
  * ## ⚠ 숫자는 확인 시점이 있는 값이다
- * 아래 한도는 **2026-08-11에 확인**한 값이다(`docs/종목분석_보고서_설계서_v1.md` §7-2에
- * 같은 표가 있다). Cloudflare가 바꾸면 여기도 바뀐다 — 화면에 **확인 날짜를 함께 적는다.**
+ * 아래 한도는 **2026-09-27에 확인**한 값이다(처음 표는 2026-08-11, 무료 등급 시절).
+ * Cloudflare가 바꾸면 여기도 바뀐다 — 화면에 **확인 날짜를 함께 적는다.**
+ * 2026-09-27 Workers Paid로 전환했다 — 계기는 `CURRENT_PLAN` 기준으로 잰다.
  * 공식 문서: https://developers.cloudflare.com/d1/platform/limits
  */
 
 /** 한도표를 마지막으로 확인한 날. ⚠ 화면에 그대로 적는다 — 오래된 숫자를 확정처럼 보이지 않게. */
-export const LIMITS_CHECKED_AT = "2026-08-11";
+export const LIMITS_CHECKED_AT = "2026-09-27";
 
 export type Plan = "free" | "paid";
+
+/**
+ * ⚠ **지금 쓰는 요금제.** 2026-09-27 운영자가 Workers Paid로 올렸다.
+ * 계기와 에러 분류는 이 값을 기준으로 말한다 — 무료 한도로 재면 이미 지난 벽을 보여 주는 셈이다.
+ */
+export const CURRENT_PLAN: Plan = "paid";
 
 export type LimitRow = {
   key: string;
   label: string;
   free: string;
   paid: string;
-  /** 이 한도에 닿으면 어떤 증상이 나오나 */
+  /** 지금 요금제(`CURRENT_PLAN`)의 한도에 닿으면 어떤 증상이 나오나 */
   symptom: string;
+  /** 지금 한도를 넘어서려면 무엇을 하나 — 「다음 단계」 */
+  next: string;
 };
 
-/** 우리가 실제로 쓰는 자원의 한도만 적는다. 안 쓰는 것을 적으면 표가 거짓말을 한다. */
+/**
+ * 우리가 실제로 쓰는 자원의 한도만 적는다. 안 쓰는 것을 적으면 표가 거짓말을 한다.
+ * 출처: developers.cloudflare.com/d1/platform/limits · /workers/platform/limits · /workers/platform/pricing
+ *
+ * ⚠ 유료에서는 「막히는 한도」와 「돈이 붙는 포함량」이 섞여 있다. 행·요청은 넘어도 막히지 않고
+ *    과금된다 — 그 둘을 같은 말로 적으면 운영자가 없는 벽을 걱정하거나 있는 벽을 놓친다.
+ */
 export const CLOUDFLARE_LIMITS: LimitRow[] = [
   {
     key: "d1-db-size",
@@ -38,6 +53,15 @@ export const CLOUDFLARE_LIMITS: LimitRow[] = [
     free: "500 MB",
     paid: "10 GB",
     symptom: "쓰기가 실패한다. 읽기는 되므로 화면은 멀쩡해 보이고 저장만 안 된다.",
+    next: "⚠ 더 올릴 수 없다(공식 문서: 10 GB는 상향 불가). 오래된 데이터를 줄이거나 DB를 나눈다.",
+  },
+  {
+    key: "d1-account-storage",
+    label: "D1 계정 전체 저장량",
+    free: "5 GB",
+    paid: "1 TB",
+    symptom: "새 쓰기가 계정 단위로 실패한다.",
+    next: "Cloudflare 한도 상향 요청서로 올린다.",
   },
   {
     key: "d1-queries-per-invocation",
@@ -45,34 +69,39 @@ export const CLOUDFLARE_LIMITS: LimitRow[] = [
     free: "50개",
     paid: "1,000개",
     symptom: "화면 하나가 통째로 실패한다. 섹션마다 왕복하는 코드에서 먼저 터진다.",
+    next: "한도 상향 요청서로 올릴 수 있지만, 먼저 batch()로 묶는다 — 1,000개면 코드가 잘못된 것이다.",
   },
   {
     key: "d1-rows-written",
-    label: "D1 하루 쓰기 행 수",
-    free: "100,000행",
-    paid: "월 5,000만 행(이후 종량)",
-    symptom: "집계 비콘·보고서 저장이 하루 중간부터 실패한다.",
+    label: "D1 쓰기 행 수",
+    free: "하루 100,000행",
+    paid: "월 5,000만 행 포함",
+    symptom: "막히지 않는다. 넘은 만큼 100만 행당 $1.00이 붙는다.",
+    next: "청구서로 본다. 늘면 비콘·보고서 저장 경로의 쓰기부터 줄인다.",
   },
   {
     key: "d1-rows-read",
-    label: "D1 하루 읽기 행 수",
-    free: "5,000,000행",
-    paid: "월 250억 행(이후 종량)",
-    symptom: "읽기가 실패해 화면이 빈다.",
+    label: "D1 읽기 행 수",
+    free: "하루 5,000,000행",
+    paid: "월 250억 행 포함",
+    symptom: "막히지 않는다. 넘은 만큼 100만 행당 $0.001이 붙는다.",
+    next: "청구서로 본다. 늘면 인덱스 없는 전체 스캔부터 찾는다.",
   },
   {
     key: "worker-requests",
-    label: "Worker 하루 요청 수",
-    free: "100,000건",
-    paid: "월 1,000만 건 포함(이후 종량)",
-    symptom: "사이트 전체가 오류 1027로 막힌다.",
+    label: "Worker 요청 수",
+    free: "하루 100,000건",
+    paid: "하루 한도 없음 · 월 1,000만 건 포함",
+    symptom: "막히지 않는다. 넘은 만큼 종량 과금된다.",
+    next: "청구서로 본다. 비정상 급증이면 봇·남용을 먼저 의심한다.",
   },
   {
     key: "worker-cpu",
     label: "Worker 호출당 CPU 시간",
     free: "10 ms",
-    paid: "30초(설정 가능)",
-    symptom: "무거운 화면만 간헐적으로 죽는다. 재현이 어렵다.",
+    paid: "기본 30초 · 최대 5분",
+    symptom: "무거운 화면만 간헐적으로 죽는다(오류 1102). 재현이 어렵다.",
+    next: "wrangler 설정 limits.cpu_ms로 5분까지 올린다. 그 전에 무거운 계산을 나눈다.",
   },
 ];
 
@@ -130,14 +159,17 @@ export function formatBytes(bytes: number): string {
  * D1 사용량을 계기판 값으로.
  * ⚠ 70%에서 경고하고 90%에서 위험이다. 100%에서 알려 주면 **이미 쓰기가 실패한 뒤**다.
  */
-export function gaugeD1(usedBytes: number, plan: Plan = "free"): UsageGauge {
+export function gaugeD1(usedBytes: number, plan: Plan = CURRENT_PLAN): UsageGauge {
   const limitBytes = D1_SIZE_LIMIT[plan];
   const pct = limitBytes > 0 ? Math.round((usedBytes / limitBytes) * 1000) / 10 : 0;
   const level: UsageLevel = pct >= 90 ? "critical" : pct >= 70 ? "warn" : "ok";
 
+  // ⚠ 무료면 요금제를 올리면 되지만, 유료 10 GB는 더 올릴 수 없다 — 다음 단계가 다르다.
+  const escape = plan === "free" ? "요금제를 올리거나 오래된 데이터를 줄이세요." : "10 GB는 더 올릴 수 없습니다. 오래된 데이터를 줄이거나 DB를 나누세요.";
+
   const head = `${formatBytes(usedBytes)} / ${formatBytes(limitBytes)} (${pct}%)`;
   if (level === "critical") {
-    return { usedBytes, limitBytes, pct, level, text: `${head} — ⚠ 곧 쓰기가 실패합니다. 요금제를 올리거나 오래된 데이터를 줄이세요.` };
+    return { usedBytes, limitBytes, pct, level, text: `${head} — ⚠ 곧 쓰기가 실패합니다. ${escape}` };
   }
   if (level === "warn") {
     return { usedBytes, limitBytes, pct, level, text: `${head} — 여유가 줄고 있습니다. 지금 결정해 두면 급하게 옮기지 않아도 됩니다.` };
@@ -178,33 +210,48 @@ export function classifyQuotaError(error: unknown): QuotaVerdict {
   const raw = textOf(error);
   const text = raw.toLowerCase();
 
-  const upgrade = "Cloudflare 대시보드에서 Workers 유료 요금제로 올리면 풀립니다.";
+  /** 지금 요금제의 한도와 「다음 단계」를 표에서 그대로 가져온다 — 문구를 두 군데에 적지 않는다. */
+  const at = (key: string) => {
+    const row = CLOUDFLARE_LIMITS.find((r) => r.key === key)!;
+    return { limit: CURRENT_PLAN === "free" ? row.free : row.paid, next: row.next };
+  };
+  const planKo = CURRENT_PLAN === "free" ? "무료 등급" : "유료(Workers Paid)";
 
-  if (/storage limit|database is full|database or disk is full|sqlite_full/.test(text)) {
+  if (/storage limit|database is full|database or disk is full|sqlite_full|exceeded maximum db size/.test(text)) {
+    const r = at("d1-db-size");
     return {
       kind: "yes",
       resource: "d1-db-size",
       title: "D1 저장 용량 한도에 닿았습니다",
-      detail: `무료 등급은 데이터베이스 하나에 500 MB입니다. (원문: ${raw})`,
-      action: upgrade,
+      detail: `${planKo}는 데이터베이스 하나에 ${r.limit}입니다. (원문: ${raw})`,
+      action: r.next,
     };
   }
   if (/too many sql statements|exceeded.*(queries|statements)|query limit/.test(text)) {
+    const r = at("d1-queries-per-invocation");
     return {
       kind: "yes",
       resource: "d1-queries-per-invocation",
       title: "한 요청에서 D1 쿼리를 너무 많이 보냈습니다",
-      detail: `무료 등급은 Worker 호출당 50개입니다. (원문: ${raw})`,
-      action: `${upgrade} 코드로 줄이려면 여러 행을 한 문장에 담아 batch()로 보내세요.`,
+      detail: `${planKo}는 Worker 호출당 ${r.limit}입니다. (원문: ${raw})`,
+      action: `${r.next} 여러 행을 한 문장에 담아 batch()로 보내세요.`,
     };
   }
-  if (/rows? (read|written).*(limit|exceeded)|daily (read|write) limit/.test(text)) {
+  /**
+   * ⚠ 2026-09-01부터 무료 등급은 하루 행 한도에서 실제로 막힌다(공식 문구:
+   * "exceeded D1's free tier daily row read limit"). 유료에서는 이 에러가 **나올 수 없다** —
+   * 나왔다면 요금제 전환이 계정에 안 먹은 것이다.
+   */
+  if (/rows? (read|written).*(limit|exceeded)|daily (row )?(read|write) limit/.test(text)) {
     return {
       kind: "yes",
       resource: "d1-rows-written",
       title: "D1 하루 행 한도에 닿았습니다",
-      detail: `무료 등급은 하루 쓰기 10만 행 · 읽기 500만 행입니다. 자정(UTC)에 초기화됩니다. (원문: ${raw})`,
-      action: upgrade,
+      detail: `무료 등급의 하루 쓰기 10만 행 · 읽기 500만 행 한도입니다. 자정(UTC)에 초기화됩니다. (원문: ${raw})`,
+      action:
+        CURRENT_PLAN === "paid"
+          ? "⚠ 유료에서는 막히지 않아야 합니다 — 결제 화면에서 이 계정이 정말 Workers Paid인지 확인하세요."
+          : "Cloudflare 대시보드에서 Workers 유료 요금제로 올리면 풀립니다.",
     };
   }
   if (/\b1027\b|daily request limit|exceeded the daily/.test(text)) {
@@ -212,17 +259,21 @@ export function classifyQuotaError(error: unknown): QuotaVerdict {
       kind: "yes",
       resource: "worker-requests",
       title: "Worker 하루 요청 한도에 닿았습니다",
-      detail: `무료 등급은 하루 10만 건입니다. 이 상태에서는 사이트 전체가 막힙니다. (원문: ${raw})`,
-      action: upgrade,
+      detail: `무료 등급의 하루 10만 건 한도입니다. 이 상태에서는 사이트 전체가 막힙니다. (원문: ${raw})`,
+      action:
+        CURRENT_PLAN === "paid"
+          ? "⚠ 유료에는 하루 요청 한도가 없습니다 — 결제 화면에서 이 계정이 정말 Workers Paid인지 확인하세요."
+          : "Cloudflare 대시보드에서 Workers 유료 요금제로 올리면 풀립니다.",
     };
   }
-  if (/exceeded resource limits|cpu time limit|script exceeded time/.test(text)) {
+  if (/exceeded resource limits|cpu time limit|script exceeded time|\b1102\b/.test(text)) {
+    const r = at("worker-cpu");
     return {
       kind: "yes",
       resource: "worker-cpu",
       title: "Worker CPU 시간 한도를 넘었습니다",
-      detail: `무료 등급은 호출당 10 ms입니다. 무거운 화면만 간헐적으로 죽어 재현이 어렵습니다. (원문: ${raw})`,
-      action: `${upgrade} 유료는 30초까지 설정할 수 있습니다.`,
+      detail: `${planKo}는 호출당 ${r.limit}입니다. 무거운 화면만 간헐적으로 죽어 재현이 어렵습니다. (원문: ${raw})`,
+      action: r.next,
     };
   }
 

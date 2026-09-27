@@ -8,7 +8,7 @@ import { probeUsage } from "@/features/diagnostics/usage";
 import { checkSeedResidue } from "@/features/diagnostics/seed-check";
 import { SeedResidueCard } from "@/features/diagnostics/ui/SeedResidueCard";
 import { PUBLIC_STATIC_PATHS, DYNAMIC_PATH_RULES } from "@/lib/beacon-path";
-import { CLOUDFLARE_LIMITS, CLOUDFLARE_LINKS, LIMITS_CHECKED_AT, gaugeD1 } from "@/lib/quota";
+import { CLOUDFLARE_LIMITS, CLOUDFLARE_LINKS, CURRENT_PLAN, LIMITS_CHECKED_AT, gaugeD1 } from "@/lib/quota";
 
 export const metadata: Metadata = { title: "자가 진단" };
 
@@ -31,13 +31,15 @@ export default async function AdminDiagnosticsPage() {
   await requireAdmin("/admin/diagnostics");
 
   const [usage, seed] = await Promise.all([probeUsage(), checkSeedResidue()]);
-  const gauge = usage.sizeBytes === undefined ? undefined : gaugeD1(usage.sizeBytes, "free");
+  // ⚠ 2026-09-27 Workers Paid로 전환 — 계기·표는 지금 요금제를 기준으로 말한다(`lib/quota.ts` CURRENT_PLAN).
+  const planLabel = CURRENT_PLAN === "paid" ? "유료" : "무료 등급";
+  const gauge = usage.sizeBytes === undefined ? undefined : gaugeD1(usage.sizeBytes, CURRENT_PLAN);
 
   return (
     <AdminShell>
       <AdminPageHeader
         title="자가 진단"
-        description="방어 장치가 실제로 동작하는지, 무료 등급 한도에 얼마나 가까운지 운영 런타임에서 직접 잽니다."
+        description="방어 장치가 실제로 동작하는지, 지금 요금제 한도에 얼마나 가까운지 운영 런타임에서 직접 잽니다."
         action={
           <Link
             href="/admin"
@@ -64,11 +66,11 @@ export default async function AdminDiagnosticsPage() {
                 rel="noreferrer noopener"
                 className="text-[11px] text-gold-400 hover:text-gold-500"
               >
-                요금제 전환 →
+                요금제 보기 →
               </a>
             }
           >
-            무료 등급 사용량
+            {planLabel} 한도 · 사용량
           </CardTitle>
 
           {usage.failure ? (
@@ -129,18 +131,24 @@ export default async function AdminDiagnosticsPage() {
               <thead>
                 <tr className="border-b border-border text-left text-[10.5px] text-muted">
                   <th className="py-2 pr-3">자원</th>
-                  <th className="py-2 pr-3">무료</th>
-                  <th className="py-2 pr-3">유료</th>
-                  <th className="py-2">한도에 닿으면</th>
+                  <th className="py-2 pr-3">지금 한도({planLabel})</th>
+                  <th className="py-2 pr-3">닿으면</th>
+                  <th className="py-2 pr-3">다음 단계</th>
+                  <th className="py-2">{CURRENT_PLAN === "paid" ? "무료(이전)" : "유료"}</th>
                 </tr>
               </thead>
               <tbody>
                 {CLOUDFLARE_LIMITS.map((row) => (
                   <tr key={row.key} className="border-b border-border/50 last:border-0">
                     <td className="py-2 pr-3 text-gray-300 whitespace-nowrap">{row.label}</td>
-                    <td className="py-2 pr-3 text-gray-400 whitespace-nowrap tabular-nums">{row.free}</td>
-                    <td className="py-2 pr-3 text-emerald-300/80 whitespace-nowrap tabular-nums">{row.paid}</td>
-                    <td className="py-2 text-gray-500">{row.symptom}</td>
+                    <td className="py-2 pr-3 text-emerald-300/80 whitespace-nowrap tabular-nums">
+                      {CURRENT_PLAN === "paid" ? row.paid : row.free}
+                    </td>
+                    <td className="py-2 pr-3 text-gray-400">{row.symptom}</td>
+                    <td className="py-2 pr-3 text-gray-300">{row.next}</td>
+                    <td className="py-2 text-gray-600 whitespace-nowrap tabular-nums">
+                      {CURRENT_PLAN === "paid" ? row.free : row.paid}
+                    </td>
                   </tr>
                 ))}
               </tbody>

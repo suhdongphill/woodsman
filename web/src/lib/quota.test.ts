@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CLOUDFLARE_LIMITS,
   CLOUDFLARE_LINKS,
+  CURRENT_PLAN,
   D1_MAX_COMPOUND_SELECT,
   D1_SIZE_LIMIT,
   LIMITS_CHECKED_AT,
@@ -18,6 +19,8 @@ describe("한도표", () => {
       expect(row.paid, row.key).not.toBe("");
       // ⚠ "한도가 얼마다"만 적으면 닿았을 때 무슨 일이 나는지 모른다.
       expect(row.symptom, row.key).not.toBe("");
+      // ⚠ 지금 한도를 넘으려면 무엇을 하나 — 없으면 벽 앞에서 멈춘다.
+      expect(row.next, row.key).not.toBe("");
     }
   });
 
@@ -49,9 +52,16 @@ describe("D1 사용량 계기", () => {
   });
 
   it("⚠ 100%가 아니라 70%에서 경고한다 — 100%면 이미 쓰기가 실패한 뒤다", () => {
-    expect(gaugeD1(D1_SIZE_LIMIT.free * 0.71).level).toBe("warn");
-    expect(gaugeD1(D1_SIZE_LIMIT.free * 0.69).level).toBe("ok");
-    expect(gaugeD1(D1_SIZE_LIMIT.free * 0.95).level).toBe("critical");
+    expect(gaugeD1(D1_SIZE_LIMIT.free * 0.71, "free").level).toBe("warn");
+    expect(gaugeD1(D1_SIZE_LIMIT.free * 0.69, "free").level).toBe("ok");
+    expect(gaugeD1(D1_SIZE_LIMIT.free * 0.95, "free").level).toBe("critical");
+  });
+
+  it("기본은 지금 요금제(유료 10 GB)로 잰다 — 2026-09-27 전환", () => {
+    expect(CURRENT_PLAN).toBe("paid");
+    expect(gaugeD1(D1_SIZE_LIMIT.paid * 0.71).level).toBe("warn");
+    // ⚠ 유료 위험 문구는 「요금제를 올려라」가 아니다 — 10 GB는 더 못 올린다.
+    expect(gaugeD1(D1_SIZE_LIMIT.paid * 0.95).text).toContain("더 올릴 수 없습니다");
   });
 
   it("유료로 바꾸면 같은 사용량이 여유로워진다", () => {
@@ -66,7 +76,21 @@ describe("비용·한도 에러 분류", () => {
     const v = classifyQuotaError(new Error("D1_ERROR: database or disk is full"));
     expect(v.kind).toBe("yes");
     expect(v.resource).toBe("d1-db-size");
-    expect(v.action).toContain("유료");
+    // ⚠ 유료 10 GB는 올릴 수 없다 — 요금제를 올리라고 하면 안 된다.
+    expect(v.action).toContain("나눈다");
+  });
+
+  it("공식 문구 — Exceeded maximum DB size", () => {
+    expect(classifyQuotaError("D1_ERROR: Exceeded maximum DB size.").resource).toBe("d1-db-size");
+  });
+
+  it("공식 문구 — 무료 하루 행 한도(2026-09-01부터 실제로 막힘)", () => {
+    const v = classifyQuotaError(
+      "Your account has exceeded D1's free tier daily row read limit. Upgrade to a paid plan or wait until tomorrow (midnight UTC) to continue.",
+    );
+    expect(v.resource).toBe("d1-rows-written");
+    // 유료로 올린 뒤에 이 에러가 나면 전환이 안 먹은 것이다.
+    expect(v.action).toContain("Workers Paid");
   });
 
   it("호출당 쿼리 수", () => {

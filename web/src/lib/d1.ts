@@ -26,7 +26,7 @@ import { classifyQuotaError } from "./quota";
 
 /**
  * D1이 결과에 함께 주는 계측값.
- * ⚠ `size_after`는 **데이터베이스의 실제 바이트 크기**다. 무료 등급 500 MB에 얼마나
+ * ⚠ `size_after`는 **데이터베이스의 실제 바이트 크기**다. 요금제 한도(유료 10 GB · 무료 500 MB)에 얼마나
  *    가까운지를 이 값으로만 알 수 있어서, `/admin/diagnostics`가 이걸 계기판으로 쓴다.
  */
 export type D1Meta = {
@@ -120,7 +120,7 @@ export async function execute(sql: string, params: unknown[] = []): Promise<void
 /**
  * 데이터베이스의 실제 크기(바이트)를 잰다. 재지 못하면 undefined.
  *
- * ⚠ 이 값이 무료 등급 한도(500 MB)에 얼마나 가까운지를 알려 주는 **유일한 실측치**다.
+ * ⚠ 이 값이 요금제 한도(유료 10 GB)에 얼마나 가까운지를 알려 주는 **유일한 실측치**다.
  *    D1은 아무 질의에나 `meta.size_after`를 함께 준다 — 그래서 가장 싼 질의 하나로 잰다.
  */
 export async function probeD1SizeBytes(): Promise<number | undefined> {
