@@ -1,3 +1,4 @@
+import { OG_DEFAULT_IMAGES } from "@/lib/site-identity";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -33,7 +34,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: post.title,
     description: post.excerpt,
-    openGraph: { title: post.title, description: post.excerpt, type: "article" },
+    // ⚠ 글 썸네일이 있으면 그것, 없으면 기본 공유 이미지(얕은 합치기라 루트 이미지를 물려받지 못한다 — (80))
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      type: "article",
+      images: post.thumbnailUrl ? [{ url: post.thumbnailUrl }] : OG_DEFAULT_IMAGES,
+    },
     /**
      * 티스토리에서 가져온 글은 **원문이 정본**이다. canonical을 원문으로 넘겨
      * 검색엔진이 둘을 중복으로 보고 서로 순위를 깎는 일을 막는다.

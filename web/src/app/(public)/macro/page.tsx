@@ -1,3 +1,4 @@
+import { OG_DEFAULT_IMAGES } from "@/lib/site-identity";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -31,6 +32,7 @@ export const metadata: Metadata = {
       // ⚠ 정적 메타라 개수를 셀 수 없다. 손으로 적은 「9개 묶음 40여 지표」가 11개 묶음 72개가 된 뒤에도 남아 있었다 — 숫자를 적지 않는다.
       "침체 신호 5가지와 묶음별 거시 지표를, 초보자도 읽을 수 있게 설명과 함께 공개합니다.",
     url: "/macro",
+    images: OG_DEFAULT_IMAGES,
   },
 };
 

@@ -15,6 +15,11 @@ import {
   popularEntries,
   splitCategory,
   stripUrls,
+  articleBlocks,
+  articleSummary,
+  clampSummary,
+  cleanSummary,
+  isKicker,
   visibleEntries,
 } from "./tistory";
 
@@ -46,7 +51,8 @@ describe("글 페이지", () => {
     expect(r.entry.category).toBe("CryptoMarket");
     // ⚠ +09:00을 UTC로 옮긴다 — 날짜만 보면 하루가 밀려 보일 수 있다
     expect(r.entry.publishedAt).toBe("2026-09-20T14:52:44.000Z");
-    expect(r.entry.summary).toMatch(/^2026\.09\.20/);
+    // ⚠ 예전엔 티스토리 요약을 그대로 써서 「2026.09.20 · CRYPTO MARKET…」으로 시작했다 — 이제 머리표를 걷는다(80)
+    expect(r.entry.summary).not.toMatch(/^2026\.09\.20/);
     expect(r.entry.thumbnailUrl).toMatch(/^https:\/\//);
   });
 
@@ -170,5 +176,87 @@ describe("경유 대상 키", () => {
     for (const bad of ["blog-", "blog-2a", "blog-../x", "blog-1e3", "post-29", "blog-1234567890"]) {
       expect(parseBlogTarget(bad), bad).toBe(null);
     }
+  });
+});
+
+describe("본문에서 요약 (2026-09-27 (80) — 매체 수준 요약)", () => {
+  const T = (name: string) => ({ html: fx(name), title: fx(name).match(/og:title" content="([^"]*)"/)![1] });
+
+  it("블록마다 끊는다 — 「다시 읽습니다기준일」처럼 붙지 않는다", () => {
+    const texts = articleBlocks(fx("body-crypto-glance.html")).map((b) => b.text);
+    expect(texts).toContain("이번 주 8만 달러 회복을 숲의 눈으로 다시 읽습니다");
+    expect(texts.some((t) => t.includes("읽습니다기준일"))).toBe(false);
+  });
+
+  it("「한눈에 보기」 상자 — 작가가 쓴 요약을 쓴다", () => {
+    const { html, title } = T("body-crypto-glance.html");
+    expect(articleSummary(html, title)).toMatch(/^암호화폐 시장은 나무 한 그루가 아닙니다/);
+  });
+
+  it("「한 줄 요약」 표지 다음 블록", () => {
+    const { html, title } = T("body-fedboj-oneline.html");
+    expect(articleSummary(html, title)).toMatch(/^정책금리는 올랐지만/);
+  });
+
+  it("「한 줄 요약 — …」 한 블록 안", () => {
+    const { html, title } = T("body-aimodel-inline.html");
+    expect(articleSummary(html, title)).toMatch(/^AI 모델 가중치/);
+  });
+
+  it("「메타 설명: …」", () => {
+    const { html, title } = T("body-leverage-meta.html");
+    expect(articleSummary(html, title)).toMatch(/^레버리지 ETF 손절선은/);
+  });
+
+  it("표지가 없으면 첫 완결 문장", () => {
+    const { html, title } = T("body-principles-fallback.html");
+    expect(articleSummary(html, title)).toMatch(/^최근 주식시장이 상승장으로/);
+  });
+
+  it("⚠ URL은 빼고 괄호 뒤 한글은 남긴다 · 제목 반복·「업데이트:」는 건너뛴다", () => {
+    const { html, title } = T("body-brazil-fragment.html");
+    const s = articleSummary(html, title)!;
+    expect(s).not.toMatch(/https?:/);
+    expect(s).not.toContain("업데이트");
+  });
+
+  it("인라인 태그는 공백이 아니다 — 「숲 입니다」가 되지 않는다", () => {
+    const s = articleSummary(T("body-crypto-glance.html").html, "x")!;
+    expect(s).not.toMatch(/숲 입니다/);
+  });
+
+  it("⚠ 수용 기준 — 어느 요약도 「WOODSMAN ·」·날짜로 시작하지 않고, 한글 뒤에 영문 대문자가 붙지 않는다", () => {
+    for (const name of ["body-crypto-glance.html", "body-fedboj-oneline.html", "body-aimodel-inline.html", "body-leverage-meta.html", "body-principles-fallback.html", "body-brazil-fragment.html"]) {
+      const { html, title } = T(name);
+      const s = articleSummary(html, title)!;
+      expect(s, name).not.toMatch(/^(WOODSMAN\s*·|\d{4}\.\d{2}\.\d{2})/);
+      expect(s, name).not.toMatch(/[가-힣][A-Z]{2,}/);
+    }
+  });
+});
+
+describe("머리표 · 정리 · 자르기", () => {
+  it("머리표를 알아본다", () => {
+    expect(isKicker("2026.09.20 · CRYPTO MARKET")).toBe(true);
+    expect(isKicker("CAPITAL FLOW · 2026.09.16 – 09.18")).toBe(true);
+    expect(isKicker("이번 주 8만 달러 회복을 숲의 눈으로 다시 읽습니다")).toBe(false);
+  });
+
+  it("티스토리 요약의 머리표를 걷는다 — 실측 두 모양", () => {
+    expect(cleanSummary("WOODSMAN · CRYPTO 자본경로 · 2026.09.27 9월 셋째 주 비트코인")).toBe("9월 셋째 주 비트코인");
+    expect(cleanSummary("2026.09.20 · CRYPTO MARKET크립토 시장은 어떻게")).toBe("크립토 시장은 어떻게");
+  });
+
+  it("엔티티를 푼다 — 실측 &rarr; &minus; &hellip;", () => {
+    expect(cleanSummary("5.01% &rarr; 4.94%, 약 &minus;4bp 라니&hellip;")).toBe("5.01% → 4.94%, 약 −4bp 라니…");
+  });
+
+  it("약 140자에서 문장 단위로 자르고 「…」", () => {
+    const long = "가".repeat(70) + "다. " + "나".repeat(60) + "다. " + "라".repeat(80) + "다.";
+    const c = clampSummary(long);
+    expect(c.endsWith("…")).toBe(true);
+    expect(c.length).toBeLessThanOrEqual(155);
+    expect(c).toMatch(/다\. …$/);
+    expect(clampSummary("짧은 요약입니다.")).toBe("짧은 요약입니다.");
   });
 });

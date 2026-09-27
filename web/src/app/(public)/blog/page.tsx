@@ -1,3 +1,4 @@
+import { OG_DEFAULT_IMAGES } from "@/lib/site-identity";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -9,10 +10,28 @@ import { categoryTree, filterByCategory, popularEntries, visibleEntries } from "
 import { cx } from "@/lib/format";
 import { outboundHref } from "@/lib/outbound";
 
+const BLOG_DESCRIPTION = "WoodsMan 티스토리 블로그의 글을 카테고리별로 모았습니다. 요약을 보고 원문으로 이어서 읽을 수 있습니다.";
+
+/**
+ * ⚠ og:title은 템플릿(`%s | Woodsman`)이 **안 붙는다** — 그래서 적어 준다. 안 적으면 홈과 같은 제목으로 공유된다(2026-09-27 (80)).
+ */
 export const metadata: Metadata = {
   alternates: { canonical: "/blog" },
   title: "블로그 글 전체",
-  description: "WoodsMan 티스토리 블로그의 글을 카테고리별로 모았습니다. 요약을 보고 원문으로 이어서 읽을 수 있습니다.",
+  description: BLOG_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    title: "블로그 글 전체 | Woodsman",
+    description: BLOG_DESCRIPTION,
+    url: "/blog",
+    images: OG_DEFAULT_IMAGES,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "블로그 글 전체 | Woodsman",
+    description: BLOG_DESCRIPTION,
+    images: OG_DEFAULT_IMAGES.map((i) => i.url),
+  },
 };
 
 /** ⚠ 정적 생성 금지 — 수집이 새 글을 넣어도 화면이 안 바뀐다. */

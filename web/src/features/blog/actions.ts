@@ -36,6 +36,13 @@ export async function syncBlogNowAction(): Promise<void> {
   revalidateAll();
 }
 
+/** 전부 다시 읽기 — 요약·제목 규칙이 바뀐 뒤 25편을 한 번에 새로 읽는다. 운영자 요약·숨김은 그대로다. */
+export async function syncBlogAllAction(): Promise<void> {
+  await requireAdmin("/admin/blog");
+  await syncBlog("MANUAL", { force: true });
+  revalidateAll();
+}
+
 export async function setBlogHiddenAction(formData: FormData): Promise<void> {
   await requireAdmin("/admin/blog");
   const id = entryIdOf(formData);

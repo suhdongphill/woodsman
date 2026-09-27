@@ -1,3 +1,4 @@
+import { OG_DEFAULT_IMAGES } from "@/lib/site-identity";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -23,6 +24,7 @@ export const metadata: Metadata = {
     title: "AI·반도체 버블 모니터 — 지금 어디쯤인가",
     description: `다섯 층 ${ALL_BUBBLE_INDICATORS.length}개 지표로 본 AI·반도체 사이클의 위치. 채점 근거를 그대로 공개합니다.`,
     url: "/macro/bubble",
+    images: OG_DEFAULT_IMAGES,
   },
 };
 

@@ -57,7 +57,10 @@ export function blogOrigin(blogUrl: string): string {
   return u.origin;
 }
 
-export async function syncBlog(trigger: "CRON" | "MANUAL"): Promise<BlogSyncRecord> {
+/**
+ * @param opts.force 모든 글 페이지를 다시 읽는다 — 요약 규칙을 바꾼 뒤 한 번에 반영할 때(관리자 「전부 다시 읽기」, 2026-09-27 (80)).
+ */
+export async function syncBlog(trigger: "CRON" | "MANUAL", opts: { force?: boolean } = {}): Promise<BlogSyncRecord> {
   const record: BlogSyncRecord = {
     id: crypto.randomUUID(),
     trigger,
@@ -86,7 +89,7 @@ export async function syncBlog(trigger: "CRON" | "MANUAL"): Promise<BlogSyncReco
     const staleBefore = Date.now() - PAGE_REFRESH_DAYS * 86_400_000;
     const toRead = urls.filter((u) => {
       const k = known.get(u);
-      return !k || Date.parse(k.pageFetchedAt) < staleBefore;
+      return opts.force || !k || Date.parse(k.pageFetchedAt) < staleBefore;
     });
 
     const parsed = await pool(toRead, async (url): Promise<ParsedBlogEntry | null> => {

@@ -5,7 +5,7 @@ import { Card, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { requireAdmin } from "@/lib/session";
 import { loadBlogEntries, loadRecentBlogSyncs } from "@/features/blog/repository";
-import { setBlogHiddenAction, setBlogSummaryAction, syncBlogNowAction } from "@/features/blog/actions";
+import { setBlogHiddenAction, setBlogSummaryAction, syncBlogAllAction, syncBlogNowAction } from "@/features/blog/actions";
 import { displaySummary, splitCategory } from "@/lib/blog/tistory";
 import { formatDate, formatDateTime } from "@/lib/format";
 
@@ -38,11 +38,19 @@ export default async function AdminBlogPage() {
       <Card className="mb-6">
         <CardTitle
           action={
-            <form action={syncBlogNowAction}>
-              <button type="submit" className="rounded-lg bg-gold-500 px-3 py-1.5 text-[12px] font-semibold text-onAccent hover:bg-gold-400">
-                지금 수집
-              </button>
-            </form>
+            <div className="flex gap-2">
+              {/* 요약 규칙을 바꾼 뒤 한 번에 반영 — 평소 수집은 새 글·7일 지난 글만 다시 읽는다 */}
+              <form action={syncBlogAllAction}>
+                <button type="submit" className="rounded-lg border border-border px-3 py-1.5 text-[12px] text-ink hover:border-gold-600/40">
+                  전부 다시 읽기
+                </button>
+              </form>
+              <form action={syncBlogNowAction}>
+                <button type="submit" className="rounded-lg bg-gold-500 px-3 py-1.5 text-[12px] font-semibold text-onAccent hover:bg-gold-400">
+                  지금 수집
+                </button>
+              </form>
+            </div>
           }
         >
           수집 기록

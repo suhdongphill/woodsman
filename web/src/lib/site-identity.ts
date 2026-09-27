@@ -38,3 +38,13 @@ export const SITE_DESCRIPTION =
  */
 export const SITE_OG_DESCRIPTION =
   "파도가 아니라 바람과 조류를 봅니다. 금리·물가·유동성이 어느 쪽으로 부는지 먼저 읽고, 그 흐름에 맞춘 판단을 그대로 남깁니다.";
+
+/**
+ * 기본 공유 이미지 — 1200×630(`public/og-default.png`, 원본 `scripts/og-default.html`). 2026-09-27 (80).
+ *
+ * ⚠ **Next 메타데이터는 최상위 키 단위로 얕게 합쳐진다.** 페이지가 자기 `openGraph`를 내면 루트의 `openGraph.images`를
+ *   물려받지 못한다 — 그래서 `openGraph`를 쓰는 페이지는 이 상수를 **직접** 넣는다(`/macro`·`/macro/bubble`·`/macro/[group]`·`/blog`·글).
+ */
+export const OG_DEFAULT_IMAGES = [
+  { url: "/og-default.png", width: 1200, height: 630, alt: `${SITE_NAME} — ${SITE_TAGLINE}` },
+];

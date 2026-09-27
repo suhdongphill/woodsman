@@ -1,0 +1,156 @@
+<!doctype html><html><head>
+<meta property="og:title" content="레버리지 ETF 손절선, 몇 %가 아니라 이 순서로 정하세요"/>
+<meta property="og:description" content="메타 설명: 레버리지 ETF 손절선은 고정된 5%나 10%로 정할 수 없습니다. 기초자산의 투자 논리, ATR, 허용 손실금액을 이용해 손절 가격과 투자금액을 계산하는 방법을 쉽게 설명합니다.핵심 키워드 : 레버리지 ETF 손절선보조 키워드 : ATR, 포지션 사이징, 변동성 드래그, 손실 관리, 최대낙폭레버리지 ETF에 투자할 때 가장 많이 하는 질문은 “몇 퍼센트 떨어지면 손절해야 하나요?”입니다. 그러나 모든 상품에 적용되는 5% 또는 10% 같은 정답은 없습니다. 종목마다 변동성이 다르고, 투자자가 감당할 수 있는 손실도 다르기 때문입니다. 특히 단일종목 레버리지 ETF는 기초 주식의 하루 수익률을 일정 배수로 추종하도록 설계됩니다. 필자는 최근 7월 장에서 매매시 10% 고정 손절원칙을 잡았.."/>
+<meta property="article:published_time" content="2026-08-09T19:45:15+09:00"/>
+<script>window.T.entryInfo = {"entryId":16,"isAuthor":false,"categoryId":1305510,"categoryLabel":"최근 이슈사항"};</script>
+</head><body>
+<div class="tt_article_useless_p_margin contents_style"><p data-ke-size="size16">&nbsp;</p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>메타 설명: 레버리지 ETF 손절선은 고정된 5%나 10%로 정할 수 없습니다. 기초자산의 투자 논리, ATR, 허용 손실금액을 이용해 손절 가격과 투자금액을 계산하는 방법을 쉽게 설명합니다.</li>
+<li>핵심 키워드 :&nbsp; 레버리지 ETF 손절선</li>
+<li>보조 키워드 :&nbsp; ATR, 포지션 사이징, 변동성 드래그, 손실 관리, 최대낙폭</li>
+</ul>
+<hr data-ke-style="style1" />
+<p style="text-align: justify;" data-ke-size="size18"><span style="font-family: 'Noto Serif KR';">레버리지 ETF에 투자할 때 가장 많이 하는 질문은 <u><b><span style="color: #006dd7;">&ldquo;몇 퍼센트 떨어지면 손절해야 하나요?&rdquo;</span></b></u>입니다. 그러나 모든 상품에 적용되는 5% 또는 10% 같은 정답은 없습니다. 종목마다 변동성이 다르고, 투자자가 감당할 수 있는 손실도 다르기 때문입니다. </span><span style="font-family: 'Noto Serif KR';">특히 단일종목 레버리지 ETF는 기초 주식의 <span style="color: #006dd7;"><u><b>하루 수익률을 일정 배수로 추종</b></u></span>하도록 설계됩니다.</span></p>
+<p style="text-align: justify;" data-ke-size="size18">&nbsp;</p>
+<p style="text-align: justify;" data-ke-size="size18"><span style="font-family: 'Noto Serif KR'; color: #333333; text-align: start;">필자는 최근 7월 장에서 매매시 10% 고정 손절원칙을 잡았다가, 단순 장중 노이즈에 털린 뒤 급등하는 것을 보고 ATR기반 손절법으로 전환했습니다.&nbsp; 하루에도 10% 이상의 변동성이 있는 장에서 잘못된 방법이 계좌를 녹계한다는 것을 발견하였습니다.</span></p>
+<p style="text-align: justify;" data-ke-size="size18">&nbsp;</p>
+<p style="text-align: justify;" data-ke-size="size18"><span style="font-family: 'Noto Serif KR';">2026년 5월 27일 국내에 출시된 단일종목 레버리지&middot;인버스 상품 16개의 시가총액은 4.4조원에서 7월 15일 11.9조원으로 늘었습니다. 같은 날 거래대금은 13조원에 달했습니다. 이처럼 시장 과열 및 변동성 위험이 커지자 금융위원회가 기본예탁금 강화와 신규 상장 잠정 중단 등을 내놓은 것입니다.</span></p>
+<p style="text-align: justify;" data-ke-size="size18">&nbsp;</p>
+<p style="text-align: justify;" data-ke-size="size18"><span style="font-family: 'Noto Serif KR';">관심이 커진 만큼 손절선도 감이 아니라 규칙으로 정해야 합니다. 핵심 순서는 다음과 같습니다.</span></p>
+<blockquote data-ke-style="style1">
+<p data-ke-size="size16"><b>투자 논리가 깨지는 지점 &rarr; 평소 변동성 &rarr; 허용 손실금액 &rarr; 실제 투자금액</b></p>
+</blockquote>
+<h2 data-ke-size="size26"><span style="color: #006dd7;">손실이 나면 왜 매도하기 어려울까?</span></h2>
+<p data-ke-size="size18"><span style="font-family: 'Noto Serif KR';">사람은 같은 금액의 이익보다 손실에 더 민감하게 반응하는 경향이 있습니다. 행동재무학에서는 이를 <b>손실회피(loss aversion)</b>라고 부릅니다. 다만 &ldquo;손실은 정확히 두 배 더 아프다&rdquo;는 표현은 모든 사람과 상황에 적용되는 고정 법칙이 아닙니다.</span></p>
+<p data-ke-size="size18">&nbsp;</p>
+<p data-ke-size="size18"><span style="font-family: 'Noto Serif KR';">손실회피는 수익 종목을 일찍 팔고 손실 종목은 오래 보유하는 <b>처분 효과</b>로 이어질 수 있습니다. &ldquo;지금 팔면 손실이 확정된다&rdquo;는 생각도 여기에 해당합니다.</span></p>
+<p data-ke-size="size18">&nbsp;</p>
+<p data-ke-size="size18"><span style="font-family: 'Noto Serif KR';">하지만 1,000만원이 700만원이 되었다면 경제적 손실은 이미 발생했습니다. 매도는 손실을 새로 만드는 행위가 아니라, 남은 700만원을 같은 상품에 계속 투자할지 결정하는 행위입니다. 따라서 매수 가격보다 중요한 질문은 이것입니다.</span></p>
+<blockquote data-ke-style="style1">
+<p data-ke-size="size16"><b>지금 현금 700만원이 있다면 이 상품을 다시 살 것인가?</b></p>
+</blockquote>
+<h2 data-ke-size="size26"><span style="color: #006dd7;">손실이 커질수록 본전 회복이 힘들까?</span></h2>
+<p data-ke-size="size18"><span style="font-family: 'Noto Serif KR';">하락률과 회복에 필요한 상승률은 대칭이 아닙니다.</span></p>
+<p data-ke-size="size18">&nbsp;</p>
+<p data-ke-size="size18"><span style="font-family: 'Noto Serif KR';"><code>회복 필요 수익률 = 손실률 &divide; (1 &minus; 손실률)</code></span></p>
+<p data-ke-size="size16"><code></code></p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1851" data-origin-height="1033"><span data-url="https://blog.kakaocdn.net/dna/ccgpfE/dJMcaafgHVS/AAAAAAAAAAAAAAAAAAAAAPQUvk6RCn9iQ34_8gSpKQ06t23K2na1QhgGybyzkXqM/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1790780399&allow_ip=&allow_referer=&signature=JtVYCgufn%2Fny93LxSzB%2FYHS6f7Q%3D" data-phocus="https://blog.kakaocdn.net/dna/ccgpfE/dJMcaafgHVS/AAAAAAAAAAAAAAAAAAAAAPQUvk6RCn9iQ34_8gSpKQ06t23K2na1QhgGybyzkXqM/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1790780399&allow_ip=&allow_referer=&signature=JtVYCgufn%2Fny93LxSzB%2FYHS6f7Q%3D"><img src="https://blog.kakaocdn.net/dna/ccgpfE/dJMcaafgHVS/AAAAAAAAAAAAAAAAAAAAAPQUvk6RCn9iQ34_8gSpKQ06t23K2na1QhgGybyzkXqM/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1790780399&allow_ip=&allow_referer=&signature=JtVYCgufn%2Fny93LxSzB%2FYHS6f7Q%3D" srcset="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdna%2FccgpfE%2FdJMcaafgHVS%2FAAAAAAAAAAAAAAAAAAAAAPQUvk6RCn9iQ34_8gSpKQ06t23K2na1QhgGybyzkXqM%2Fimg.png%3Fcredential%3DyqXZFxpELC7KVnFOS48ylbz2pIh7yKj8%26expires%3D1790780399%26allow_ip%3D%26allow_referer%3D%26signature%3DJtVYCgufn%252Fny93LxSzB%252FYHS6f7Q%253D" onerror="this.onerror=null; this.src='//t1.daumcdn.net/tistory_admin/static/images/no-image-v1.png'; this.srcset='//t1.daumcdn.net/tistory_admin/static/images/no-image-v1.png';" loading="lazy" width="690" height="385" data-origin-width="1851" data-origin-height="1033"/></span></figure>
+</p>
+<p data-ke-size="size16"><code></code></p>
+<p data-ke-size="size16">&nbsp;</p>
+<table style="height: 196px;" width="495" data-ke-align="alignLeft" data-ke-style="style6">
+<thead>
+<tr>
+<th style="text-align: center; width: 151px;"><b>손실률</b></th>
+<th style="text-align: center; width: 340px;"><b>본전 회복에 필요한 상승률</b></th>
+</tr>
+</thead>
+<tbody>
+<tr style="height: 17px;">
+<td style="height: 17px; text-align: center; width: 151px;" align="right"><b>-10%</b></td>
+<td style="height: 17px; text-align: center; width: 340px;" align="right"><b>+11.1%</b></td>
+</tr>
+<tr style="height: 17px;">
+<td style="height: 17px; text-align: center; width: 151px;" align="right"><b>-20%</b></td>
+<td style="height: 17px; text-align: center; width: 340px;" align="right"><b>+25.0%</b></td>
+</tr>
+<tr style="height: 17px;">
+<td style="height: 17px; text-align: center; width: 151px;" align="right"><b>-30%</b></td>
+<td style="height: 17px; text-align: center; width: 340px;" align="right"><b>+42.9%</b></td>
+</tr>
+<tr style="height: 17px;">
+<td style="height: 17px; text-align: center; width: 151px;" align="right"><b>-50%</b></td>
+<td style="height: 17px; text-align: center; width: 340px;" align="right"><b>+100.0%</b></td>
+</tr>
+<tr style="height: 17px;">
+<td style="height: 17px; text-align: center; width: 151px;" align="right"><b>-70%</b></td>
+<td style="height: 17px; text-align: center; width: 340px;" align="right"><b>+233.3%</b></td>
+</tr>
+</tbody>
+</table>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size18"><span style="font-family: 'Noto Serif KR';">손실이 10%라면 약 11.1% 상승하면 회복할 수 있지만, 50% 손실 후에는 100% 상승해야 합니다. 손절의 목적은 저점을 정확히 예측하는 것이 아니라 <span style="color: #006dd7;"><u><b>회복하기 어려운 손실 구간으로 계좌가 들어가는 것을 제한하는 것</b></u></span>입니다.</span></p>
+<h2 data-ke-size="size26"><span style="color: #006dd7;">레버리지 ETF는 왜 손실 관리가 더 중요할까?</span></h2>
+<p data-ke-size="size18"><span style="font-family: 'Noto Serif KR';">대부분의 레버리지 ETF는 기초자산의 장기 누적수익률이 아니라 <b>하루 수익률의 2배 또는 3배</b>를 목표로 합니다. 매일 목표 배율을 다시 맞추기 때문에 여러 날의 성과는 기초자산 누적수익률의 단순한 배수가 아닐 수 있습니다. </span></p>
+<p data-ke-size="size18"><span style="font-family: 'Noto Serif KR';">예를 들어 기초자산이 100에서 10% 오른 뒤 10% 하락하면 99가 됩니다. 2배 상품을 단순화해 계산하면 100에서 20% 오른 120이 된 뒤 20% 하락해 96이 됩니다. 방향이 반복해서 바뀌는 시장에서는 이 차이가 누적될 수 있습니다. </span></p>
+<p data-ke-size="size18"><span style="font-family: 'Noto Serif KR';">미국 SEC와 FINRA도 일간 재설정형 레버리지 ETF의 여러 날 성과가 표시 배율과 크게 달라질 수 있으며, 변동성이 높은 시장에서 차이가 확대될 수 있다고 안내합니다. 따라서 &ldquo;언젠가 기초자산이 돌아오면 ETF도 같은 비율로 회복한다&rdquo;고 가정해서는 안 됩니다.</span></p>
+<h3 data-ke-size="size23">&nbsp;</h3>
+<h3 data-ke-size="size23"><span style="color: #006dd7;">1)&nbsp; 투자 논리가 깨지는 지점을 정한다</span></h3>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';">좋은 손절 기준은 먼저 퍼센트가 아니라 문장으로 정합니다.</span></p>
+<blockquote data-ke-style="style1">
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';"><b>이 가격 아래에서는 내가 매수한 이유가 더 이상 성립하지 않는다.</b></span></p>
+</blockquote>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';">다음과 같은 조건을 사용할 수 있습니다.</span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span style="font-family: 'Noto Serif KR';">실적 발표 뒤 형성된 주요 지지선 이탈</span></li>
+<li><span style="font-family: 'Noto Serif KR';">상승 추세를 지탱하던 직전 저점 하향 돌파</span></li>
+<li><span style="font-family: 'Noto Serif KR';">돌파 매매 후 기준 가격 아래로 재진입</span></li>
+<li><span style="font-family: 'Noto Serif KR';">기대했던 실적&middot;정책&middot;수급 촉매의 소멸</span></li>
+</ul>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';">판단 기준은 가능하면 <b>기초자산 차트</b>에서 찾는 것이 좋습니다. 레버리지 ETF 가격에는 일간 재조정, 비용, 추적오차와 시장가격 괴리가 반영되기 때문입니다. 다만 실제 주문과 손실 계산은 ETF 가격을 기준으로 해야 합니다.</span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span style="font-family: 'Noto Serif KR';">기초자산 가설이 무효가 되는 가격</span></li>
+<li><span style="font-family: 'Noto Serif KR';">그 시점에 예상되는 ETF 청산 가격</span></li>
+</ul>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';">두 숫자를 함께 기록해야 합니다.</span></p>
+<h3 data-ke-size="size23">&nbsp;</h3>
+<h3 data-ke-size="size23"><span style="color: #006dd7;">2)&nbsp; ATR로 평소 변동폭을 확인한다.</span></h3>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';">ATR(Average True Range, 평균진폭)은 최근 일정 기간의 가격 변동폭을 평균낸 지표입니다. ATR이 큰 상품에 지나치게 좁은 손절선을 두면 평범한 하루 변동만으로 청산될 수 있습니다.</span></p>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';">예를 들어 ETF 가격이 10만원이고 14일 ATR이 6,000원이라면 ATR 비율은 약 6%입니다.</span></p>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';"><code>ATR 비율 = 6,000원 &divide; 100,000원 = 6%</code></span></p>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';">이 상품에 3% 손절선을 두면 평소 변동폭보다도 좁습니다. 반대로 1.5 ATR을 참고하면 약 9%가 됩니다. 다만 <b>1.5 ATR이나 2 ATR은 정답이 아니라 검토용 기준</b>입니다. 추세, 지지선, 거래기간과 상품 특성을 함께 봐야 합니다.</span></p>
+<h3 data-ke-size="size23">&nbsp;</h3>
+<h3 data-ke-size="size23"><span style="color: #006dd7;">3)&nbsp; 계좌에서 허용할 손실을 먼저 정한다.</span></h3>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';">손절폭을 정했다면 투자금액을 역산합니다.</span></p>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';"><code>허용 손실금액 = 전체 투자자산 &times; 거래당 허용 손실률</code></span></p>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';"><code>최대 투자금액 = 허용 손실금액 &divide; 손절폭</code></span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';">전체 투자자산이 1억원이고 한 번의 거래에서 0.5%, 즉 50만원까지만 잃기로 했다고 가정해 보겠습니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<table style="height: 84px;" width="743" data-ke-align="alignLeft" data-ke-style="style6">
+<tbody>
+<tr style="height: 21px;">
+<td style="text-align: center; height: 21px;"><b><span style="font-family: 'Noto Serif KR';"> <span style="font-family: 'Noto Serif KR'; color: #333333; text-align: -webkit-right;">ETF 손절폭</span> </span></b></td>
+<td style="text-align: center; height: 21px;"><b><span style="font-family: 'Noto Serif KR';"> <span style="font-family: 'Noto Serif KR'; color: #333333; text-align: -webkit-right;">계산상 최대 투자금액</span> </span></b></td>
+<td style="text-align: center; height: 21px;"><b><span style="font-family: 'Noto Serif KR';"> <span style="font-family: 'Noto Serif KR'; color: #333333; text-align: -webkit-right;">예상 손실</span> </span></b></td>
+</tr>
+<tr style="height: 21px;">
+<td style="text-align: center; height: 21px;" align="right"><b><span style="font-family: 'Noto Serif KR';">5%</span></b></td>
+<td style="text-align: center; height: 21px;" align="right"><b><span style="font-family: 'Noto Serif KR';">1,000만원</span></b></td>
+<td style="text-align: center; height: 21px;" align="right"><b><span style="font-family: 'Noto Serif KR';">50만원</span></b></td>
+</tr>
+<tr style="height: 21px;">
+<td style="text-align: center; height: 21px;" align="right"><b><span style="font-family: 'Noto Serif KR';">10%</span></b></td>
+<td style="text-align: center; height: 21px;" align="right"><b><span style="font-family: 'Noto Serif KR';">500만원</span></b></td>
+<td style="text-align: center; height: 21px;" align="right"><b><span style="font-family: 'Noto Serif KR';">50만원</span></b></td>
+</tr>
+<tr style="height: 21px;">
+<td style="text-align: center; height: 21px;" align="right"><b><span style="font-family: 'Noto Serif KR';">15%</span></b></td>
+<td style="text-align: center; height: 21px;" align="right"><b><span style="font-family: 'Noto Serif KR';">약 333만원</span></b></td>
+<td style="text-align: center; height: 21px;" align="right"><b><span style="font-family: 'Noto Serif KR';">약 50만원</span></b></td>
+</tr>
+</tbody>
+</table>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';">손절폭이 넓어지면 투자금액은 줄어야 합니다. 여기서 0.5%는 설명을 위한 가정일 뿐 권장 수치가 아닙니다. 투자자의 재산, 소득, 투자 경험과 감내 가능한 최대낙폭에 따라 달라집니다.</span></p>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';">또한 위 계산은 정상적인 가격 체결을 가정합니다. 실제 시장에서는 갭 하락, 호가 공백, 거래정지 때문에 계획한 손실보다 커질 수 있으므로 계산값을 투자 한도로 보고 여유를 두는 편이 안전합니다.</span></p>
+<h3 data-ke-size="size23"><span style="color: #006dd7;">4) 가격 손절과 시간 손절을 함께 정한다.</span></h3>
+<p data-ke-size="size16">가격이 손절선에 닿지 않아도 투자 아이디어는 실패할 수 있습니다. 예를 들어 &ldquo;실적 발표 전까지 상승 모멘텀이 나타날 것&rdquo;이라는 판단으로 진입했다면, 정해진 날짜까지 움직임이 없을 때 가설을 다시 평가해야 합니다.</p>
+<p data-ke-size="size16">레버리지 ETF는 방향 없이 등락하는 기간이 길어질수록 복리 효과와 비용 때문에 기대한 성과에서 멀어질 수 있습니다. 따라서 다음 두 기준을 함께 적습니다.</p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><b>가격 손절:</b> 어느 가격에서 가설이 무효가 되는가</li>
+<li><b>시간 손절:</b> 어느 날짜까지 가설이 실현되지 않으면 재평가할 것인가</li>
+</ul>
+<h2 data-ke-size="size26">&nbsp;</h2>
+<h2 data-ke-size="size26"><span style="color: #006dd7;">손절 주문은 체결가격을 보장하지 않는걸까?</span></h2>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';">스톱 주문의 기준가격은 체결가격이 아닙니다. 스톱 가격에 도달하면 시장가 주문으로 전환되므로 빠르게 하락하는 시장에서는 더 낮은 가격에 체결될 수 있습니다.</span></p>
+<p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';">스톱리밋 주문은 체결가격의 범위를 제한하지만, 가격이 제한선을 건너뛰면 주문이 체결되지 않을 수 있습니다. 단일종목 레버리지 ETF에서는 다음 위험을 고려해야 합니다.</spa
+<!-- 픽스처: 본문 앞 14,000자만 잘랐다 -->
+<!-- System - START -->
+</body></html>

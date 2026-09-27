@@ -8,6 +8,7 @@ import {
   SITE_NAME,
   SITE_OG_DESCRIPTION,
   SITE_TITLE,
+  OG_DEFAULT_IMAGES,
 } from "@/lib/site-identity";
 import "./globals.css";
 
@@ -42,6 +43,14 @@ export const metadata: Metadata = {
     locale: "ko_KR",
     title: SITE_TITLE,
     description: SITE_OG_DESCRIPTION,
+    images: OG_DEFAULT_IMAGES,
+  },
+  /** 공유 카드 — 큰 이미지형. X는 og:* 를 대신 읽지만 카드 종류는 이 태그로만 정한다(2026-09-27 (80)). */
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_OG_DESCRIPTION,
+    images: OG_DEFAULT_IMAGES.map((i) => i.url),
   },
   /**
    * ⚠ 파비콘은 `src/app/icon.svg`에 두되 **여기서 명시적으로 가리킨다.**

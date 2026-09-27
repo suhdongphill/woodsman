@@ -1,3 +1,4 @@
+import { OG_DEFAULT_IMAGES } from "@/lib/site-identity";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -46,6 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${group.name} 지표 — ${group.question}`,
       description: stripEmphasis(group.intro),
       url: `/macro/${group.key}`,
+      images: OG_DEFAULT_IMAGES,
     },
   };
 }
