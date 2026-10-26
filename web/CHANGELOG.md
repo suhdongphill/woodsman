@@ -10,6 +10,30 @@
 
 ---
 
+## 2026-10-26 — 배포 복구: Next 15 지원 종료로 OpenNext가 빌드를 거부 (임시 플래그)
+
+### 증상
+매일 도는 「Deploy to Cloudflare Workers」가 10/20까지 성공하다가 **10/21·22·23에 연달아 실패**했다(run 39690420819 · 39868516599 · 40036284364).
+로그: `ERROR Next.js version 15.5.22 is not supported by the Next.js team.` 사이트는 10/20 판으로 계속 응답했다(system-check 화면 7개 200).
+9/30 커밋(d0e19e2) 뒤로 코드는 바뀌지 않았고, CI는 `npm ci`라 설치 버전도 같았다.
+
+### 원인 (원문 대조)
+`@opennextjs/aws/dist/build/helper.js:243` `isNextVersionSupported` — 메이저별 출시일(`NEXT_RELEASE_DATES`, 15 = 2024-10-21)에 **2년을 더한 날이 지나면** 빌드를 막는다.
+즉 2026-10-21 = 실패 시작일. 코드가 아니라 **달력**이 바꾼 것이다.
+
+### 결정 ⚠ (운영자 10/26 · 임시)
+- 빌드에 `--dangerouslyUseUnsupportedNextVersion`을 붙였다(`.github/workflows/deploy.yml`, `package.json`의 `cf:*`). 경고는 남고 빌드는 계속된다.
+- 근거: 운영 중인 판이 이미 15.5.22다 — 플래그가 위험을 새로 늘리지 않고, 막힌 배포만 푼다.
+- ⚠ **임시다.** Next 15는 보안 패치가 끊겼다. 다음 조각으로 **Next 16 이전**(middleware → proxy, React 19.2+, `eslint-config-next`, next-auth 5 beta 호환 확인, OpenNext 1.20.13 — peer `next >=16.4.1`)을 하고, 끝나면 플래그를 지운다.
+
+### 재발 방지
+- system-check가 「마지막 배포 failure」를 잡았다 — 다만 3일 늦게 봤다(세션이 없었다). 이 날짜 기반 차단은 미리 알 수 있었다: **메이저 출시일 + 2년**을 일정에 둔다. Next 16은 2027-10-21.
+
+### 배포 전 가설
+- 이 배포는 성공한다(빌드가 버전 검사를 경고로 넘긴다). 화면·데이터 변화는 없다 — 10/20 판과 같은 코드다.
+
+---
+
 ## 2026-09-30 기록 — 8월 PCE(과거치 대폭 수정) · 모델 최신성 점검 · 개선 후보 (배포 없음)
 
 ### 사실 (원문)
