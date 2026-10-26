@@ -18,6 +18,7 @@ import { MACRO_GROUPS } from "./macro/groups";
 import { MACRO_INDICATORS } from "./macro/catalog";
 import { ALL_BUBBLE_INDICATORS, BUBBLE_LAYERS } from "./bubble/catalog";
 import { absoluteUrl } from "./site-url";
+import { BUBBLE_PUBLIC } from "./site-policy";
 import { SITE_TITLE } from "./site-identity";
 
 export type LlmsTxtInput = {
@@ -42,7 +43,7 @@ export function renderLlmsTxt(input: LlmsTxtInput): string {
 > 금리·물가·유동성 같은 거시 지표를 기준일·출처와 함께 공개하고, **그 흐름에 맞춰 굴린 계좌와
 > 판단을 그대로 남기는** 개인 기록 사이트입니다. 하루의 등락(파도)이 아니라 구조의 변화
 > (바람과 조류)를 봅니다.
-> 매크로 지표 ${MACRO_INDICATORS.length}개와 AI·반도체 버블 지표 ${ALL_BUBBLE_INDICATORS.length}개를
+> 매크로 지표 ${MACRO_INDICATORS.length}개${BUBBLE_PUBLIC ? `와 AI·반도체 버블 지표 ${ALL_BUBBLE_INDICATORS.length}개` : ""}를
 > 공개하고, 매매할 때마다 판단의 근거를 투자일지로 남깁니다.
 
 ## 이 사이트가 가진 것
@@ -50,9 +51,9 @@ export function renderLlmsTxt(input: LlmsTxtInput): string {
 - **거시 지표 ${MACRO_INDICATORS.length}개** — ${MACRO_GROUPS.length}개 묶음. 미국 FRED와 Yahoo Finance에서 수집해
   데이터베이스에 누적하며, 지표마다 **기준일과 원 출처 링크**가 붙어 있습니다.
   ${input.macroAsOf ? `가장 최근 기준일: ${input.macroAsOf}` : "아직 수집 전입니다."}
-- **AI·반도체 버블 모니터** — ${BUBBLE_LAYERS.length}개 층 ${ALL_BUBBLE_INDICATORS.length}개 지표를 0·1·2로 채점해
+${BUBBLE_PUBLIC ? `- **AI·반도체 버블 모니터** — ${BUBBLE_LAYERS.length}개 층 ${ALL_BUBBLE_INDICATORS.length}개 지표를 0·1·2로 채점해
   0~100으로 냅니다. 채점 규칙과 임계값을 공개하며, 결측은 분모에서 제외합니다.
-- **모의 투자 계좌 기록** — 매매·납입은 가상이고 종목 시세는 실제 시장가격입니다.
+` : ""}- **모의 투자 계좌 기록** — 매매·납입은 가상이고 종목 시세는 실제 시장가격입니다.
   이 구분은 계좌 숫자가 나오는 모든 화면에 표시됩니다.
 - **투자일지** — 매매 전에 적은 판단과 그 결과.
 
@@ -69,8 +70,8 @@ export function renderLlmsTxt(input: LlmsTxtInput): string {
 
 ${groups.join("\n")}
 
-- [버블 모니터](${absoluteUrl("/macro/bubble")}): AI·반도체 사이클이 지금 어디쯤인지 5개 층으로 채점한 결과.
-- [지표 허브](${absoluteUrl("/macro")}): 침체 신호 5가지 종합과 묶음 목록.
+${BUBBLE_PUBLIC ? `- [버블 모니터](${absoluteUrl("/macro/bubble")}): AI·반도체 사이클이 지금 어디쯤인지 5개 층으로 채점한 결과.
+` : ""}- [지표 허브](${absoluteUrl("/macro")}): 침체 신호 5가지 종합과 묶음 목록.
 - [용어 사전](${absoluteUrl("/macro/glossary")}): 화면에 쓰는 거시 용어의 뜻과 원 발표 기관 링크(확인일 포함). 우리가 계산해 붙인 지표 이름은 표준 지표가 아니라고 표시합니다.
 
 ## 계좌와 판단

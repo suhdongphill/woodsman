@@ -14,6 +14,7 @@ import Link from "next/link";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { ChevronRightIcon } from "@/components/icons";
 import { findBubbleTrigger } from "@/lib/bubble/catalog";
+import { BUBBLE_PUBLIC } from "@/lib/site-policy";
 import { recessionCounts, type ReportContextSnapshot } from "@/lib/report/context";
 
 const row = "flex flex-wrap items-baseline justify-between gap-2 py-1.5 border-b border-border/60";
@@ -82,7 +83,8 @@ export function SiteContextCard({ snapshot }: { snapshot: ReportContextSnapshot 
           </span>
         </div>
 
-        <div className={row}>
+        {/* ⚠ 버블은 공개할 때만(`BUBBLE_PUBLIC`) — 얼린 값이라도 공개 화면에 싣지 않는다 */}
+        {BUBBLE_PUBLIC && <div className={row}>
           <span className={key}>
             <Link href="/macro/bubble" className="hover:text-gold-400">
               AI·반도체 버블
@@ -100,10 +102,10 @@ export function SiteContextCard({ snapshot }: { snapshot: ReportContextSnapshot 
               </>
             )}
           </span>
-        </div>
+        </div>}
       </div>
 
-      {bubble.firedTriggerKeys.length > 0 && (
+      {BUBBLE_PUBLIC && bubble.firedTriggerKeys.length > 0 && (
         <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
           <p className="text-[11.5px] text-amber-300">
             작성 시점에 발화해 있던 하드 트리거

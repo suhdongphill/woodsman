@@ -26,6 +26,7 @@ import { REPORT_SECTIONS } from "./catalog";
 import { findDataTag, CANSLIM_ITEMS } from "../canslim/catalog";
 import { holdingFunctionLabel, recessionCounts, type ReportContextSnapshot } from "./context";
 import { findBubbleTrigger } from "../bubble/catalog";
+import { BUBBLE_PUBLIC } from "../site-policy";
 import type { ReportBlock, ReportDraft, ReportSectionKey, ChecklistItem } from "./types";
 import type { CanslimReading } from "../canslim/types";
 
@@ -212,6 +213,8 @@ export type TistoryExportInput = {
   siteUrl: string;
   /** 내보낸 날짜(YYYY-MM-DD) */
   today: string;
+  /** 버블 점수를 싣는가. 기본은 `BUBBLE_PUBLIC`(테스트에서만 바꾼다) */
+  includeBubble?: boolean;
 };
 
 /** ⚠ 투자자문업 미인가 고지 — `/disclaimer`와 같은 선이다. **빼지 않는다.** */
@@ -352,26 +355,28 @@ function renderChecklist(report: TistoryExportInput["report"]): string {
 }
 
 /** 작성 시점 사이트 자료. ⚠ **얼린 값**이고, 지금 값은 사이트에서 보라고 링크를 준다. */
-function renderContext(snapshot: ReportContextSnapshot, siteUrl: string): string {
+function renderContext(snapshot: ReportContextSnapshot, siteUrl: string, includeBubble: boolean): string {
   const base = trimSlash(siteUrl);
   const { macro, bubble, holding } = snapshot;
 
-  const items: string[] = [
+  const items: (string | false)[] = [
     macro.level === "unknown"
       ? "<strong>침체 신호 종합</strong> — 아직 수집 전"
       : `<strong>침체 신호 종합</strong> — ${escapeHtml(macro.label)} · ${escapeHtml(recessionCounts(macro))} (${macro.total}개 지표)${macro.asOf ? ` · 기준일 ${escapeHtml(macro.asOf)}` : ""}`,
     macro.fed
       ? `<strong>연준 방향</strong> — ${escapeHtml(macro.fed.biasLabel)} · 인상 ${Math.round(macro.fed.hike * 100)}%${macro.fed.asOf ? ` · 기준일 ${escapeHtml(macro.fed.asOf)}` : ""}`
       : "<strong>연준 방향</strong> — 산출하지 않았습니다",
-    bubble.score === undefined
-      ? "<strong>AI·반도체 버블</strong> — 아직 채점 전"
-      : `<strong>AI·반도체 버블</strong> — ${bubble.score}점 · ${escapeHtml(bubble.regime ?? "—")} (${bubble.total}개 중 ${bubble.scored}개 채점)`,
+    // ⚠ 버블은 공개할 때만(`site-policy.ts` `BUBBLE_PUBLIC`)
+    includeBubble &&
+      (bubble.score === undefined
+        ? "<strong>AI·반도체 버블</strong> — 아직 채점 전"
+        : `<strong>AI·반도체 버블</strong> — ${bubble.score}점 · ${escapeHtml(bubble.regime ?? "—")} (${bubble.total}개 중 ${bubble.scored}개 채점)`),
     holding.inPortfolio
       ? `<strong>대표 포트폴리오</strong> — 편입 · ${escapeHtml(holdingFunctionLabel(holding))} · 목표비중 ${holding.targetWeight != null ? `${holding.targetWeight}%` : "—"}`
       : "<strong>대표 포트폴리오</strong> — 미편입 (관찰 종목)",
   ];
 
-  if (bubble.firedTriggerKeys.length) {
+  if (includeBubble && bubble.firedTriggerKeys.length) {
     items.push(
       `<strong style="color:${C.amber}">발화한 하드 트리거</strong> — ${bubble.firedTriggerKeys
         .map((k) => escapeHtml(findBubbleTrigger(k)?.text ?? k))
@@ -381,8 +386,8 @@ function renderContext(snapshot: ReportContextSnapshot, siteUrl: string): string
 
   return panel(
     `${label(`작성 시점 사이트 자료 · 기준 ${snapshot.capturedAt}`)}
-<ul style="margin:0 0 10px;padding-left:20px;color:${C.txt};line-height:1.8;font-size:14px">${items.map((i) => `<li style="margin:0 0 4px">${i}</li>`).join("")}</ul>
-<p style="margin:0;font-size:12px;color:${C.sub}">이 글을 쓸 때의 값입니다. 갱신하지 않고 그대로 둡니다 — 지금 값은 <a href="${base}/macro" style="color:${C.cyan};text-decoration:underline">거시 지표</a> · <a href="${base}/macro/bubble" style="color:${C.cyan};text-decoration:underline">버블 모니터</a>에서 봅니다.</p>`,
+<ul style="margin:0 0 10px;padding-left:20px;color:${C.txt};line-height:1.8;font-size:14px">${items.filter((i): i is string => !!i).map((i) => `<li style="margin:0 0 4px">${i}</li>`).join("")}</ul>
+<p style="margin:0;font-size:12px;color:${C.sub}">이 글을 쓸 때의 값입니다. 갱신하지 않고 그대로 둡니다 — 지금 값은 <a href="${base}/macro" style="color:${C.cyan};text-decoration:underline">거시 지표</a>${includeBubble ? ` · <a href="${base}/macro/bubble" style="color:${C.cyan};text-decoration:underline">버블 모니터</a>` : ""}에서 봅니다.</p>`,
   );
 }
 
@@ -416,7 +421,7 @@ ${sections}
 ${renderCanslim(report)}
 ${renderConsensus(report)}
 ${renderLimitation(report)}
-${snapshot ? renderContext(snapshot, siteUrl) : ""}
+${snapshot ? renderContext(snapshot, siteUrl, input.includeBubble ?? BUBBLE_PUBLIC) : ""}
 ${renderChecklist(report)}
 <div style="border-top:1px solid ${C.line};margin:18px 0 0;padding:14px 2px 0">
 ${footerBody}

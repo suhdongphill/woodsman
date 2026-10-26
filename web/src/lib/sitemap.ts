@@ -21,6 +21,7 @@
  * | `/` | 있다 | 위 셋 중 가장 최근 — 홈이 그 셋을 싣는다 |
  * | `/portfolio`·`/journal`·`/about`·`/privacy`·`/disclaimer`·`/board` | **없다** | 언제 바뀌었는지 모른다 |
  */
+import { BUBBLE_PUBLIC } from "./site-policy";
 
 export type SitemapEntry = {
   /** 사이트 기준 경로. 절대 URL 변환은 라우트가 한다(`absoluteUrl`). */
@@ -64,7 +65,10 @@ export function sitemapEntries(input: SitemapInput): SitemapEntry[] {
     { path: "/insights", lastModified: latestPostAt, priority: 0.8, changeFrequency: "weekly" },
     // 거시 지표는 매주 갱신되는 고유 콘텐츠라 색인 우선순위를 높게 둔다.
     { path: "/macro", lastModified: input.macroAsOf, priority: 0.9, changeFrequency: "daily" },
-    { path: "/macro/bubble", lastModified: input.macroAsOf, priority: 0.8, changeFrequency: "weekly" },
+    // ⚠ 버블은 공개할 때만(`BUBBLE_PUBLIC`)
+    ...(BUBBLE_PUBLIC
+      ? [{ path: "/macro/bubble", lastModified: input.macroAsOf, priority: 0.8, changeFrequency: "weekly" as const }]
+      : []),
     { path: "/macro/compare", lastModified: input.macroAsOf, priority: 0.7, changeFrequency: "daily" },
     { path: "/macro/calendar", priority: 0.6, changeFrequency: "weekly" },
     // ⚠ 용어 사전은 코드 상수라 언제 바뀌었는지 사이트맵이 모른다. 링크 확인일(`checked`)은

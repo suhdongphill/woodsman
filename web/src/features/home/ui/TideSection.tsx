@@ -239,7 +239,8 @@ export function TideSection({
   analysis,
 }: {
   tides: Map<string, TideReading>;
-  bubble: BubbleScore;
+  /** ⚠ 없으면 버블 카드를 싣지 않는다 — 공개 여부는 `site-policy.ts` `BUBBLE_PUBLIC` */
+  bubble?: BubbleScore;
   rates: RateDirection;
   /** 최신 GLS 저장 행에서 만든 한 줄 요약 · 계기 표(없으면 한 줄·팝업을 빼고 지어내지 않는다) */
   liquidity?: LiquidityCardView;
@@ -257,7 +258,7 @@ export function TideSection({
           몇 달 단위의 흐름입니다. 이번 주의 움직임은 위 「지금 부는 바람」에서 봅니다. 점수는 프로그램이 규칙대로 계산하며 예측이 아닙니다.
         </p>
       </div>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className={`grid gap-3 md:grid-cols-2 ${bubble ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}>
         <ScoreCard
           reading={empty("global_liquidity")}
           guide={TIDE_GUIDES.global_liquidity!}
@@ -275,7 +276,7 @@ export function TideSection({
         />
         {/* ⭐ 원칙 ⑥ — 대표 지표(금리인상 확률)를 앞줄로. 자리는 홈 섹션 계획표 §2-1 */}
         <RateCard rates={rates} />
-        <BubbleCard score={bubble} />
+        {bubble && <BubbleCard score={bubble} />}
         <ScoreCard reading={empty("engine_heat")} guide={TIDE_GUIDES.engine_heat!} href="/macro/inflation" />
       </div>
     </section>

@@ -16,6 +16,10 @@ import {
 import { markdownToHtml } from "../markdown";
 import { FUNCTION_LABEL_KO } from "../ai/labels";
 import { BUBBLE_TRIGGERS } from "../bubble/catalog";
+import { BUBBLE_PUBLIC } from "../site-policy";
+
+/** 버블을 싣는 경로를 시험할 때 — 기본값(`BUBBLE_PUBLIC`)과 따로 */
+const BUBBLE_ON = { includeBubble: true };
 
 const MACRO: MacroContext = {
   level: "caution",
@@ -149,7 +153,7 @@ describe("recessionCounts — ⚠ 미수집을 숨기지 않는다", () => {
 
 describe("renderContextMarkdown — 붙여 넣을 목록", () => {
   it("값이 있으면 값과 기준일을 함께 적는다", () => {
-    const md = renderContextMarkdown(SNAPSHOT);
+    const md = renderContextMarkdown(SNAPSHOT, BUBBLE_ON);
 
     expect(md).toContain("기준 2026-08-16");
     expect(md).toContain("경계 · 경고 2 · 주의 1");
@@ -176,10 +180,19 @@ describe("renderContextMarkdown — 붙여 넣을 목록", () => {
   });
 
   it("출처 링크가 사이트 안으로 이어진다 — 도는 동선이다", () => {
-    const html = markdownToHtml(renderContextMarkdown(SNAPSHOT));
+    const html = markdownToHtml(renderContextMarkdown(SNAPSHOT, BUBBLE_ON));
     expect(html).toContain('href="/macro"');
     expect(html).toContain('href="/macro/bubble"');
     expect(html).toContain('href="/portfolio"');
+  });
+
+  it("⚠ 버블을 공개하지 않으면(`BUBBLE_PUBLIC` 기본값) 점수·트리거·링크를 싣지 않는다 — 글은 티스토리로 나간다", () => {
+    expect(BUBBLE_PUBLIC).toBe(false); // 2026-10-26 운영자 결정. 되살리면 이 줄과 함께 바꾼다
+    const md = renderContextMarkdown(SNAPSHOT);
+    expect(md).not.toContain("AI·반도체 버블");
+    expect(md).not.toContain("하드 트리거");
+    expect(md).not.toContain("/macro/bubble");
+    expect(md).toContain("[거시 지표](/macro)");
   });
 
   it("⚠ 없는 값은 0이 아니라 —와 조회처로 적는다(R2)", () => {
@@ -188,7 +201,7 @@ describe("renderContextMarkdown — 붙여 넣을 목록", () => {
       macro: EMPTY_MACRO,
       bubble: { ...SNAPSHOT.bubble, score: undefined, regime: undefined, scored: 0 },
       holding: { inPortfolio: false },
-    });
+    }, BUBBLE_ON);
 
     expect(md).toContain("아직 수집 전입니다");
     expect(md).toContain("Core PCE·기준금리·실업률이 있어야 계산됩니다");
@@ -201,7 +214,7 @@ describe("renderContextMarkdown — 붙여 넣을 목록", () => {
     const md = renderContextMarkdown({
       ...SNAPSHOT,
       bubble: { ...SNAPSHOT.bubble, priorityFired: true },
-    });
+    }, BUBBLE_ON);
     expect(md).toContain("⚠ 우선 경보 3종 동시 발화");
   });
 });

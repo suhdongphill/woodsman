@@ -19,6 +19,7 @@
 import type { FunctionType } from "../types";
 import type { RecessionLevel } from "../macro/signal";
 import type { FedHikeBias } from "../macro/fedhike";
+import { BUBBLE_PUBLIC } from "../site-policy";
 
 /** 침체 신호 종합 + 연준 방향. `loadMacroOverview()`가 이미 계산한 것을 옮겨 담는다. */
 export type MacroContext = {
@@ -339,7 +340,10 @@ function quoteLines(quote: QuoteContext): string[] {
  *    쓰던 글을 프로그램이 건드리면 다시는 안 쓴다.
  * ⚠ 없는 값은 `—`로 두고 어디서 보는지 적는다(R2). 0이나 "안전"으로 채우지 않는다.
  */
-export function renderContextMarkdown(snapshot: ReportContextSnapshot): string {
+export function renderContextMarkdown(
+  snapshot: ReportContextSnapshot,
+  { includeBubble = BUBBLE_PUBLIC }: { includeBubble?: boolean } = {},
+): string {
   const { macro, bubble, holding, quote } = snapshot;
 
   const lines: string[] = [`> 사이트 자료 자동 주입 · 기준 ${snapshot.capturedAt}`, ""];
@@ -360,19 +364,22 @@ export function renderContextMarkdown(snapshot: ReportContextSnapshot): string {
       : "- **연준 방향** — 산출하지 않았습니다 (Core PCE·기준금리·실업률이 있어야 계산됩니다 · /macro)",
   );
 
-  lines.push(
-    bubble.score === undefined
-      ? "- **AI·반도체 버블** — 아직 채점 전입니다 (/macro/bubble에서 채점합니다)"
-      : `- **AI·반도체 버블** — ${bubble.score}점 · ${bubble.regime ?? "—"} (${bubble.total}개 중 ${
-          bubble.scored
-        }개 채점)${asOfSuffix(snapshot.capturedAt)}`,
-  );
+  // ⚠ 버블은 공개할 때만 글에 싣는다(`site-policy.ts` `BUBBLE_PUBLIC`) — 글은 티스토리로 나간다
+  if (includeBubble) {
+    lines.push(
+      bubble.score === undefined
+        ? "- **AI·반도체 버블** — 아직 채점 전입니다 (/macro/bubble에서 채점합니다)"
+        : `- **AI·반도체 버블** — ${bubble.score}점 · ${bubble.regime ?? "—"} (${bubble.total}개 중 ${
+            bubble.scored
+          }개 채점)${asOfSuffix(snapshot.capturedAt)}`,
+    );
 
-  lines.push(
-    `- **발화한 하드 트리거** — ${
-      bubble.firedTriggerKeys.length ? bubble.firedTriggerKeys.join(" · ") : "없음"
-    }${bubble.priorityFired ? " · ⚠ 우선 경보 3종 동시 발화" : ""}`,
-  );
+    lines.push(
+      `- **발화한 하드 트리거** — ${
+        bubble.firedTriggerKeys.length ? bubble.firedTriggerKeys.join(" · ") : "없음"
+      }${bubble.priorityFired ? " · ⚠ 우선 경보 3종 동시 발화" : ""}`,
+    );
+  }
 
   lines.push(
     holding.inPortfolio
@@ -386,7 +393,7 @@ export function renderContextMarkdown(snapshot: ReportContextSnapshot): string {
     "",
     // ⚠ 시세는 사이트 안에 공개 화면이 없으므로 **출처를 글로 적는다.** 링크가 없다고 빼면
     //    독자가 어디서 온 숫자인지 알 수 없다(설계서 §12 — 항목별 수치 출처).
-    "출처: [거시 지표](/macro) · [버블 모니터](/macro/bubble) · [대표 포트폴리오](/portfolio)" +
+    `출처: [거시 지표](/macro)${includeBubble ? " · [버블 모니터](/macro/bubble)" : ""} · [대표 포트폴리오](/portfolio)` +
       (snapshot.quote.price != null ? " · 시세 Yahoo Finance(일봉 종가)" : ""),
   );
 

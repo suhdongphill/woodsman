@@ -13,12 +13,16 @@ import { ALL_BUBBLE_INDICATORS, BUBBLE_TRIGGERS } from "@/lib/bubble/catalog";
 import { scoreBubble } from "@/lib/bubble/score";
 import { breadcrumbJsonLd } from "@/lib/seo";
 import { getSiteBasics } from "@/lib/site-settings";
+import { BUBBLE_PUBLIC } from "@/lib/site-policy";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "AI·반도체 버블 모니터 — 지금 어디쯤인가",
   description:
     `AI 설비투자·밸류에이션·실물 수요·신용·심리 다섯 층 ${ALL_BUBBLE_INDICATORS.length}개 지표를 0·1·2로 채점해 0~100으로 냅니다. 판이 바뀌는 사건 ${BUBBLE_TRIGGERS.length}가지(하드 트리거)도 함께 감시합니다. 점수보다 '무엇을 보고 그렇게 봤나'를 남기는 것이 목적입니다.`,
   alternates: { canonical: "/macro/bubble" },
+  // ⚠ 내려 둔 동안 색인되지 않게
+  robots: BUBBLE_PUBLIC ? undefined : { index: false, follow: false },
   openGraph: {
     type: "article",
     title: "AI·반도체 버블 모니터 — 지금 어디쯤인가",
@@ -40,6 +44,9 @@ const POINT_LABEL = ["안정", "주의", "과열"];
  * ⚠ 여기서 내는 것은 **국면 표시**까지다. 매매 지시로 넘어가지 않는다.
  */
 export default async function BubbleMonitorPage() {
+  // ⚠ 공개하지 않을 때는 404가 아니라 /macro로 넘긴다 — 발행된 티스토리 글에 이 링크가 있다(`site-policy.ts`).
+  if (!BUBBLE_PUBLIC) redirect("/macro");
+
   const [readings, triggers, basics] = await Promise.all([
     loadReadings(),
     loadTriggerStates(),

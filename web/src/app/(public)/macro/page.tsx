@@ -19,6 +19,7 @@ import { MACRO_INDICATORS } from "@/lib/macro/catalog";
 import { ALL_BUBBLE_INDICATORS, BUBBLE_TRIGGERS } from "@/lib/bubble/catalog";
 import { breadcrumbJsonLd, datasetJsonLd } from "@/lib/seo";
 import { getSiteBasics } from "@/lib/site-settings";
+import { BUBBLE_PUBLIC } from "@/lib/site-policy";
 
 export const metadata: Metadata = {
   title: "거시 지표 — 지금 경제는 어떤 상태인가",
@@ -200,8 +201,8 @@ export default async function MacroHubPage() {
           </span>
         </Link>
 
-        {/* ③-3 반도체 사이클은 따로 깊게 본다 */}
-        <Link
+        {/* ③-3 반도체 사이클은 따로 깊게 본다 — ⚠ 공개할 때만(`BUBBLE_PUBLIC`) */}
+        {BUBBLE_PUBLIC && <Link
           href="/macro/bubble"
           className="block rounded-2xl border border-border bg-card p-5 transition-colors hover:border-gold-600/40 hover:bg-cardHover"
         >
@@ -215,7 +216,7 @@ export default async function MacroHubPage() {
             모니터 보기
             <ChevronRightIcon size={13} />
           </span>
-        </Link>
+        </Link>}
 
         {/* ④ 이 화면에 대해 쓴 글 — 발행할 때마다 쌓인다 */}
         <SectionFrame section="MACRO" posts={sectionPosts} />

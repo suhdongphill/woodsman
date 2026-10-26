@@ -20,6 +20,7 @@ import { liquidityCardView } from "@/lib/scores/summary";
 import { loadStoredScores } from "@/features/scores/repository";
 import { loadReadings } from "@/features/bubble/repository";
 import { scoreBubble } from "@/lib/bubble/score";
+import { BUBBLE_PUBLIC } from "@/lib/site-policy";
 import { MODEL_VERSION } from "@/lib/scores/config";
 import { LIQUIDITY_PARTS, buildTide } from "@/lib/scores/tide";
 import { REGIME_CHIP_KEYS } from "@/lib/scores/regime-summary";
@@ -127,7 +128,8 @@ export default async function HomePage() {
      *   (2026-09-14 로컬 눈 확인에서 잡힘). 91 + 여유 7 + 멈춤 허용 한 달 = 130일.
      */
     loadStoredScores(TIDE_KEYS, daysBefore(seoulDay(new Date().toISOString()), 130), MODEL_VERSION),
-    loadReadings(),
+    // ⚠ 버블은 공개할 때만 읽는다(`BUBBLE_PUBLIC`) — 안 쓰는 판정을 매 요청 읽지 않는다
+    BUBBLE_PUBLIC ? loadReadings() : Promise.resolve(undefined),
     // 파도 — 숨기지 않은 최신 기사 6건
     loadLatestNews(6),
     // 유동성 카드 해석 팝업의 2부 — 가장 최근 「그날의 분석」
@@ -197,7 +199,7 @@ export default async function HomePage() {
     tide: (
       <TideSection
         tides={tides}
-        bubble={scoreBubble(bubbleReadings)}
+        bubble={bubbleReadings ? scoreBubble(bubbleReadings) : undefined}
         // ⚠ 금리 방향은 거시 개요가 한 번만 계산한 값을 그대로 넘긴다(/macro와 같은 숫자)
         rates={{
           futures: macro.fedFutures,

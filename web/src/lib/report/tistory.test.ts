@@ -240,7 +240,7 @@ describe("renderTistoryHtml — ⚠ 티스토리에서 살아남는 모양", () 
 
 describe("renderTistoryHtml — 사이트 자료", () => {
   it("주입한 스냅숏은 **기준일과 함께** 나가고 지금 값 링크를 준다", () => {
-    const html = renderTistoryHtml(input());
+    const html = renderTistoryHtml(input({ includeBubble: true }));
     expect(html).toContain("작성 시점 사이트 자료 · 기준 2026-08-16");
     expect(html).toContain("54.3점");
     expect(html).toContain("미수집 1");
@@ -249,7 +249,16 @@ describe("renderTistoryHtml — 사이트 자료", () => {
   });
 
   it("발화한 트리거는 **문장**으로 나간다 — 키만 적으면 읽는 사람이 모른다", () => {
-    expect(renderTistoryHtml(input())).toContain("10년물");
+    expect(renderTistoryHtml(input({ includeBubble: true }))).toContain("10년물");
+  });
+
+  it("⚠ 버블을 공개하지 않으면(기본값) 점수·트리거·링크가 글에 나가지 않는다", () => {
+    const html = renderTistoryHtml(input());
+    expect(html).toContain("작성 시점 사이트 자료 · 기준 2026-08-16");
+    expect(html).not.toContain("54.3점");
+    expect(html).not.toContain("10년물");
+    expect(html).not.toContain(`${SITE}/macro/bubble`);
+    expect(html).toContain(`${SITE}/macro"`);
   });
 
   it("주입하지 않았으면 그 상자를 아예 만들지 않는다 — 빈 카드를 두지 않는다", () => {
