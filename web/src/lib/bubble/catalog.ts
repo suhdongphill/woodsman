@@ -85,10 +85,13 @@ export const BUBBLE_LAYERS: BubbleLayer[] = [
     note: "과열의 가격",
     indicators: [
       {
+        // ⚠ 2026-10-26: 이름이 「12M 선행 PER」였는데 원천은 올해 컨센 추정EPS 기준 PER이다(볼트 원천 주석 「12M 선행 아님」).
+        //   라벨을 정의에 맞췄다. 눈금은 rule 그대로 붙였다(볼트 동기화가 대조한다).
         key: "kr_fwd_pe",
-        label: "KR 메모리 12M 선행 PER",
+        label: "KR 메모리 컨센 추정 PER (SK하이닉스·삼성전자 평균)",
         rule: "<8배 · 8~10배 · >10배",
-        source: "매크로 대시보드(Naver/IR)",
+        scale: { op: "gt", t1: 8, t2: 10 },
+        source: "Naver 증권 추정PER(FnGuide 컨센 추정EPS 기준 · 12M 선행 아님) — 볼트 fetch-bubble-auto.py",
       },
       {
         /**

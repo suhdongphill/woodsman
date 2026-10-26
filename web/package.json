@@ -21,6 +21,7 @@
     "admin:set": "node --env-file=.env --import tsx scripts/set-admin.mjs",
     "admin:apply": "node --env-file=.env --import tsx scripts/set-admin.mjs --from-env",
     "gcrm": "node --import tsx scripts/gcrm.mjs",
+    "bubble:sync": "node --import tsx scripts/bubble-sync.mjs",
     "cf:build": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion",
     "cf:preview": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && opennextjs-cloudflare deploy",
