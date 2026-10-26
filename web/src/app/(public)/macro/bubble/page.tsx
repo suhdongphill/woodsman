@@ -88,8 +88,9 @@ export default async function BubbleMonitorPage() {
           <h2 className="text-[15px] font-semibold text-ink">이 점수를 어떻게 읽나요</h2>
           <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-gray-300">
             <li>
-              <strong className="text-gold-400">0·1·2 세 칸</strong>으로만 채점합니다. 지표 절반이
-              숫자가 아니라 판단이라, 소수점을 붙이면 없는 정밀도가 생깁니다.
+              <strong className="text-gold-400">0·1·2 세 칸</strong>으로만 채점합니다. 신용등급·공시
+              건수처럼 원래 단계로 나오는 지표가 있고, 경계값 상당수는 연구가 정한 것이 아니라 저희가 정한
+              것이라, 소수점을 붙이면 없는 정밀도가 생깁니다.
             </li>
             <li>
               <strong className="text-gold-400">결측은 분모에서 뺍니다.</strong> 아직 안 본 지표를
