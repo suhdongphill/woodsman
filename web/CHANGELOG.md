@@ -10,6 +10,29 @@
 
 ---
 
+## 2026-10-26 (운영 데이터 · 볼트 스크립트, 배포 없음) — 운영 포트폴리오 적재 · 볼트가 옛 복사본 대신 현재 저장소를 쓰게
+
+### 운영 포트폴리오 적재 (운영자 「올려 줘」 10/26)
+- 적재 전 운영 `ModelHolding`의 `bk_` 행은 **0개**였다. AdminLog에 삭제 기록이 없고, 9/28부터 「운영자 대기」였다 → 원격에는 한 번도 적재되지 않은 것으로 본다(추정).
+- 순서: `fetch-portfolio.py`(토스 125 · KIS 23, 2026-10-26 21:48) → `build-portfolio-composition.py`(구성이 잔고보다 옛것이라는 export 경고를 따랐다) → `export-portal-portfolio.py`(135행 · 조정 기록 97건, 모두 토스·한투 실제 체결).
+  ⚠ 처음 export는 「잔고가 73시간 전 것」이라며 멈췄다 — `--allow-stale`로 넘기지 않고 다시 수집했다.
+- 쓰기 전 대조: INSERT 135개 전부 `published=0`, `ON CONFLICT`가 `published`를 바꾸지 않음, DELETE·DROP 없음.
+- `apply-portfolio.ps1 -Yes`(현재 저장소 `web`에서, `--command` 묶음 8번 · 19초).
+- 결과: `bk_` 135행 · 보유 135 · **공개 0** · `Rebalance bk_rb_20261026`. system-check ⚠ 0.
+- 남은 일(운영자): `/admin/model-portfolio`에서 공개할 종목을 켠다.
+
+### 볼트 스크립트 경로 — 옛 복사본 `D:\Woodsman\woodsman\web` → `D:\P1.VideCoding\3. StockMng\web` (운영자 결정 (a))
+- 왜: 9/30 기록의 ②. 주간 파이프라인이 옛 복사본에서 wrangler를 불렀다. 옛 것이 바뀌거나 지워지는 날 **진짜** 실패가 난다. 로그 문구만 고치는 (b)는 이 위험을 남긴다.
+- 바꾼 곳(볼트, git 밖 — 백업은 세션 scratchpad `*.bak-20261026`):
+  - `update-macro-dashboard.ps1` `$web`(361) · `$webX`(443) — 실행 경로.
+  - `d1/apply-portfolio.ps1` · `d1/apply-remote.ps1` 사용법 주석과 오류 메시지, `build-home.py:518` 홈 안내 — 사람이 따라 하면 다시 옛 복사본에서 돌기 때문.
+- 확인: BOM·CRLF 그대로, PowerShell 파서 오류 0, `build-home.py` 구문 통과, 옛 경로는 설명 주석 한 줄만 남았다.
+  ⚠ Git Bash `sed -i`가 CRLF를 LF로 바꿔 놓아 `build-home.py`를 백업으로 되돌린 뒤 Edit로 다시 고쳤다 — **볼트 파일은 sed로 고치지 않는다**.
+- 「거짓 FAIL」의 stderr 처리(`$ErrorActionPreference='Continue'`)는 이미 들어가 있었다. 이번엔 경로만 바꿨다.
+- 가설: 다음 주간 파이프라인에서 [D1 원격]·[주도주→포털] 두 단계가 FAIL 없이 「적재 완료」로 찍힌다. → **다음 실행 로그로 확인할 것.**
+
+---
+
 ## 2026-10-26 — 배포 복구: Next 15 지원 종료로 OpenNext가 빌드를 거부 (임시 플래그)
 
 ### 증상
