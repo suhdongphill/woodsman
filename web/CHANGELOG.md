@@ -30,6 +30,12 @@
 - 배포 뒤 홈에서 버블 카드가 사라지고 조류가 3장이다. `/macro/bubble` → `/macro` 307. sitemap·llms.txt에 `/macro/bubble`이 없다. 다른 화면은 그대로다.
 - 티스토리 클릭: 영향이 없어야 한다(버블 카드는 티스토리로 보내는 링크가 아니었다).
 
+### 확인 (배포 뒤)
+- b348bfe → run 40329829001 success(2026-10-26T13:24:54Z). 운영: `/macro/bubble` 307 → `/macro` · 홈 「AI·반도체 버블」 0건 · 홈·`/macro`의 `/macro/bubble` 링크 0 · sitemap 0 · llms.txt 0 · `/`·`/macro`·`/blog`·`/portfolio`·`/stocks` 200. 가설 맞음.
+- 클릭 영향은 다음 주 `/admin/releases`에서 본다.
+
+기록: /admin/releases rel_20261026_bubble_unpublish
+
 ---
 
 ## 2026-10-26 (볼트 · 배포 없음) — 개선 후보 2 고침: probit이 「이미 결정이 난 달」 대신 이번 달을 예측 · 3·4는 이미 풀려 있었다
