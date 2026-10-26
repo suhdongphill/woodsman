@@ -109,14 +109,15 @@ export function showCommunityNav(policy: SitePolicy): boolean {
 }
 
 /**
- * ⚠ AI·반도체 버블 모니터를 **공개 화면에 싣는가** (2026-10-26 운영자 결정: 내림 — 관리자 전용).
+ * ⚠ AI·반도체 버블 모니터를 **공개 화면에 싣는가**.
  *
- * 운영자는 관리자 전용으로 알고 있었는데 홈 「조류」 카드 · `/macro/bubble` · 종목 페이지 「사이트 맥락」 ·
- * 보고서 문맥 · 사이트맵 · llms.txt · AI 검색 문서에 실려 있었다. 출처에 유튜브·2차 인용이 섞여 있어
- * 지표를 정비한 뒤 다시 공개할지 정한다. 되살릴 때는 **이 한 줄만** 바꾼다.
- * `/macro/bubble`은 404가 아니라 `/macro`로 넘긴다 — 이미 발행된 티스토리 글에 그 링크가 있다.
+ * 2026-10-26 하루의 경과: 운영자는 관리자 전용으로 알고 있었는데 홈 「조류」 카드 · `/macro/bubble` · 종목 페이지
+ * 「사이트 맥락」 · 보고서 문맥 · 사이트맵 · llms.txt에 실려 있었다 → 출처(유튜브·2차 인용) 때문에 **내렸다**(b348bfe)
+ * → 지표를 30→28로 정비(327d7bd)한 뒤 운영자 「공개해 주세요」로 **다시 켰다**.
+ * 끄면 홈 카드·링크·보고서의 버블 줄이 함께 빠지고, `/macro/bubble`은 404가 아니라 `/macro`로 넘긴다
+ * (발행된 티스토리 글에 그 링크가 있다).
  */
-export const BUBBLE_PUBLIC = false;
+export const BUBBLE_PUBLIC = true;
 
 /** 방문자에게 로그인·회원가입 링크를 보여줄지 (가입을 받을 때만 노출) */
 export function showAuthEntry(policy: SitePolicy): boolean {

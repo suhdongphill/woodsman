@@ -186,9 +186,12 @@ describe("renderContextMarkdown — 붙여 넣을 목록", () => {
     expect(html).toContain('href="/portfolio"');
   });
 
-  it("⚠ 버블을 공개하지 않으면(`BUBBLE_PUBLIC` 기본값) 점수·트리거·링크를 싣지 않는다 — 글은 티스토리로 나간다", () => {
-    expect(BUBBLE_PUBLIC).toBe(false); // 2026-10-26 운영자 결정. 되살리면 이 줄과 함께 바꾼다
-    const md = renderContextMarkdown(SNAPSHOT);
+  it("기본값은 공개 스위치(`BUBBLE_PUBLIC`)를 따른다", () => {
+    expect(renderContextMarkdown(SNAPSHOT)).toBe(renderContextMarkdown(SNAPSHOT, { includeBubble: BUBBLE_PUBLIC }));
+  });
+
+  it("⚠ 버블을 공개하지 않으면 점수·트리거·링크를 싣지 않는다 — 글은 티스토리로 나간다", () => {
+    const md = renderContextMarkdown(SNAPSHOT, { includeBubble: false });
     expect(md).not.toContain("AI·반도체 버블");
     expect(md).not.toContain("하드 트리거");
     expect(md).not.toContain("/macro/bubble");

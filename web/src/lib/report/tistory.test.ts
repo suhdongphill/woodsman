@@ -252,8 +252,8 @@ describe("renderTistoryHtml — 사이트 자료", () => {
     expect(renderTistoryHtml(input({ includeBubble: true }))).toContain("10년물");
   });
 
-  it("⚠ 버블을 공개하지 않으면(기본값) 점수·트리거·링크가 글에 나가지 않는다", () => {
-    const html = renderTistoryHtml(input());
+  it("⚠ 버블을 공개하지 않으면 점수·트리거·링크가 글에 나가지 않는다", () => {
+    const html = renderTistoryHtml(input({ includeBubble: false }));
     expect(html).toContain("작성 시점 사이트 자료 · 기준 2026-08-16");
     expect(html).not.toContain("54.3점");
     expect(html).not.toContain("10년물");
