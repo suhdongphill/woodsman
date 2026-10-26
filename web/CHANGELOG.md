@@ -10,6 +10,19 @@
 
 ---
 
+## 2026-10-26 (볼트 · 배포 없음) — 버블 동기화를 주간 파이프라인에 붙임 (운영자 「주간 파이프라인에 자동으로 붙여 주세요」)
+
+- `update-macro-dashboard.ps1`(작업 스케줄러 `Woodsman-Macro-Dashboard-Update` · 매주 월 08:10): 버블 자동 산출(`fetch-edgar-l1` · `fetch-l2-valuation` · `fetch-form4-insider` · `fetch-bubble-auto`) **바로 뒤**에 `[버블 → 사이트]` 단계를 넣었다 — 그 주 값이 같은 실행에서 넘어간다.
+  `node --import tsx scripts/bubble-sync.mjs --apply`(사이트 저장소 `web`에서).
+- 지킨 것: `d1\auto-apply.off` 비상 스위치를 따른다([D1 원격]과 같다) · stderr 경고가 거짓 실패가 되지 않게 `ErrorActionPreference='Continue'` + exit code로 판정 ·
+  한글 출력을 맞춰 읽으려고 그 단계만 콘솔 인코딩 UTF-8 · 실패해도 파이프라인은 계속(로그 `FAIL`).
+- 로그 한 줄: `── [버블 → 사이트] 오늘 YYYY-MM-DD · 쓸 것 N · 건너뜀 M · ✓ key 점수 … ──`.
+- 확인: BOM·CRLF 그대로 · 파서 오류 0 · 그 블록만 떼어 **스케줄러와 같은 `powershell -NoProfile -File`**로 실행 → 「쓸 것 0 · 건너뜀 18」(멱등, 운영 데이터 변화 없음). 볼트 백업: scratchpad `update-macro-dashboard.ps1.bak-20261026b`.
+- ⚠ 원인 미확인: 같은 블록을 Git Bash에서 띄운 `powershell`로 돌리면 wrangler가 운영 D1을 못 읽었다(Cloudflare 토큰 환경변수는 없다). Git Bash에서 `npm run bubble:sync`를 직접 돌리면 된다. 스케줄러 경로는 PowerShell이라 영향 없음 — 추측으로 원인을 적지 않는다.
+- 가설: **11/2(월) 08:10 실행 로그**에 `[버블 → 사이트]` 줄이 찍히고, 그 주 바뀐 자동값만 넘어간다(TSMC는 볼트가 9월을 못 받으면 계속 「사이트가 더 새것」). → 그날 로그로 확인할 것.
+
+---
+
 ## 2026-10-26 — 볼트 → 사이트 버블 판정 동기화 스크립트 (`npm run bubble:sync`)
 
 운영자 「동기화 스크립트도 만들어 주세요」. 바로 앞 절의 재발 방지 — 사이트 판정이 사람이 넣을 때만 움직였다.
