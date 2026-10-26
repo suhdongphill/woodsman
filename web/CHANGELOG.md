@@ -10,6 +10,30 @@
 
 ---
 
+## 2026-10-26 — 버블 모니터 지표 정비 (30 → 28) · 네오클라우드·오라클 신용 · 연구 기반 런업
+
+운영자 요청: 네오클라우드(CoreWeave 등) 사모 신용위험 추가 · 오라클 모니터링 · 근거 부족·실효성 없는 항목 제거 · 유튜브 등 출처를 객관적인 것으로 교체 · 필요하면 버블 연구논문으로.
+근거 전부: [`docs/연구_버블지표_정비_2026-10-26.md`](../docs/연구_버블지표_정비_2026-10-26.md)(evidence 스킬 규칙 · 에이전트 네 갈래 · 직접 연 URL만).
+
+### `lib/bubble/catalog`
+- **뺌(5):** `llm_token_spend`(유튜브 · 원지수 유료) · `capex_accel`(감속 → 하락의 연구 근거 없음) · `dram_momentum`(유튜브 · 계약가와 중복) · `analyst_dispersion`(학술 근거가 EPS 분산·소형주 — 근거 밖) · `narrative_flag`(측정 불가 토글).
+- **새 키로 바꿈(3):** `hbm_asp_trend`→`dram_contract_outlook`(TrendForce) · `asset_life_mismatch`→`server_useful_life`(10-K) · `ipo_froth`→`ipo_first_day`(Ritter).
+  ⚠ 뜻이 바뀌면 키를 바꾼다 — 같은 키면 DB의 옛 판정이 새 정의의 점수로 조용히 섞인다. 옛 행은 지우지 않는다(점수는 카탈로그 키만 읽는다).
+- **더함(3):** `sox_runup`(Greenwood·Shleifer·You 2019 — 초과 런업 50/100/150%에서 붕괴 확률 20/53/80%, 「꼬리위험」으로 읽는다) · `neocloud_credit`(CoreWeave 무담보채 스프레드 · DDTL · 1000bp = S&P 부실 정의) · `oracle_credit`(등급 사다리 + FCF 부호).
+- 출처 교체: `circular_flag`(공시 확인분만) · `rpo_concentration`(MSFT 공시 45%) · `hyper_ig_leverage`(EDGAR 계산) · `concentration`(SPY 보유내역) · `retail_froth`(근거 논문 + 문턱 명시) · `capex_guidance`(8-K).
+- L5 설명 「정성 신호가 정점을 가장 잘 잡는다」를 뺐다 — 근거가 없었다.
+- 층 구성 L1 6 · L2 6 · L3 5 · L4 8 · L5 3. 테스트: 개수 · 옛 키 부활 금지 · **출처에 유튜브·뉴스레터·사람 판단만 있는 지표 금지**.
+
+### 그 밖
+- `~/.claude/skills/bubble-review/SKILL.md`: 기준을 사이트 카탈로그로 · 새 지표별 1차 출처와 채점법 · 정성 질문 절차 삭제.
+- ⚠ 볼트 대시보드(`_apps/메모리 버블 트리거.html`)·설계서는 아직 옛 구성이다 — 맞추는 일이 남았다(연구 문서 §6).
+
+### 배포 전 가설
+- 공개 화면 변화 없음(`BUBBLE_PUBLIC = false`). `/admin/bubble`에 28지표가 보이고, 새 키 6개는 「미채점」 → 커버리지가 약 22/28로 내려간다. 점수는 뺀 지표가 빠지며 바뀐다(관리자 화면에서만).
+- 티스토리 클릭: 영향 없음(공개 화면이 아니다).
+
+---
+
 ## 2026-10-26 — 버블 모니터 공개 내림 (운영자 결정 · `BUBBLE_PUBLIC = false`)
 
 ### 왜

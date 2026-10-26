@@ -49,30 +49,32 @@ export const BUBBLE_LAYERS: BubbleLayer[] = [
         source: "SEC EDGAR (5사 TTM) · ORCL은 LongTermNotesAndLoans 계열 태그",
       },
       {
+        /**
+         * ⚠ 2026-10-26: 「웹 조사 + 사용자 판단」 → **SEC 공시로 확인된 계약만 센다.** 보도만 있는 협상은 세지 않는다
+         *   (NVDA 10-K의 OpenAI 투자는 "There is no assurance" — 확정 공시가 아니라 0건).
+         */
         key: "circular_flag",
-        label: "순환·벤더파이낸싱 정황",
-        rule: "없음 · 1건 · 2건+",
-        source: "웹 조사 + 사용자 판단(2026-07-22 점검)",
-      },
-      {
-        key: "capex_accel",
-        label: "ΣCAPEX 증가율의 가속도(2차 미분)",
-        rule: "가속 지속 · 둔화 · 마이너스 전환",
-        source: "Groundbreaker 「The Second Derivative」 (컨센 기반)",
-      },
-      {
-        key: "rpo_concentration",
-        label: "빅4 백로그 중 프리-프로핏 랩 비중",
-        rule: "<20% · 20~40% · >40%",
-        source: "Groundbreaker 「The Second Derivative」",
-      },
-      {
-        key: "llm_token_spend",
-        label: "LLM 토큰 지출 지수 (AI 수익화의 실물 증거)",
-        rule: "증가 지속 · 횡보 · 감소 전환",
+        label: "순환·벤더파이낸싱 계약 (공시 확인분)",
+        rule: "없음 · 1건 · 2건+ (8-K·10-Q·10-K에 적힌 것만)",
         source:
-          "실리콘데이터 LLM Token Expenditure Index (경제학교 경읽남 257화 인용) · ⚠ 원지수 실수치·계열 정의 미확인",
-      }
+          "SEC 공시 — 예: AMD 8-K(OpenAI 신주인수권 최대 1.6억 주 × $0.01) · NVDA 10-Q(보증 한도 $105B) · AMZN 10-Q(OpenAI 우선주·Anthropic 투자) · MSFT 10-K(OpenAI 특수관계자)",
+      },
+      {
+        /**
+         * ⚠ 2026-10-26: 출처를 뉴스레터에서 **회사 공시**로 바꿨다. 비중을 숫자로 공시한 것은 MSFT뿐이다
+         *   — 「상업 RPO의 약 45%가 OpenAI」(FY26 2분기 실적 발표). AMZN은 계약 규모만, ORCL·GOOGL은 공시에 이름이 없다.
+         *   공시가 없는 회사를 추정으로 채우지 않는다.
+         */
+        key: "rpo_concentration",
+        label: "빅테크 백로그 중 적자 AI 랩 비중 (공시 기준)",
+        rule: "<20% · 20~40% · >40%",
+        source:
+          "MSFT 실적 발표(상업 RPO의 약 45%가 OpenAI) · AMZN 10-Q(OpenAI·Anthropic 계약 규모) · ⚠ ORCL·GOOGL은 비중 미공시",
+      },
+      // ⚠ 2026-10-26 뺐다(근거 부족) — 판정 행은 DB에 남지만 점수에서 빠진다(점수는 카탈로그 키만 읽는다).
+      //   capex_accel: CAPEX 증가율 **감속**이 하락에 앞선다는 연구를 못 찾았다. 근거는 반대쪽(투자 급증 기업의 이후 수익률 저조 —
+      //     Titman·Wei·Xie 2004, JFQA)뿐이고 그건 capex_yoy가 이미 잰다. 회계연도가 회사마다 달라 2차 미분은 잡음이 크다.
+      //   llm_token_spend: 유튜브 인용이었고 원지수(Silicon Data)는 유료 · 공개 시계열이 없다 · 지출 총액이 아니라 토큰당 가중 가격이다.
     ],
   },
   {
@@ -110,7 +112,24 @@ export const BUBBLE_LAYERS: BubbleLayer[] = [
         key: "concentration",
         label: "Mag7 시총 / S&P500",
         rule: "<30% · 30~35% · >35%",
-        source: "Forbes 2026-06(34%)·타출처 32.24% — 둘 다 30~35% 구간",
+        scale: { op: "gt", t1: 30, t2: 35 },
+        // ⚠ 2026-10-26: 기사(Forbes) → 원자료. 문턱은 연구 근거를 못 찾아 자체 보정이다.
+        source: "SSGA SPY 일간 보유내역(xlsx) — Mag7(GOOGL+GOOG 합산) 지수 비중 · 임계값은 자체 보정",
+      },
+      {
+        /**
+         * ⭐ 2026-10-26 추가(운영자: 버블 연구논문 등 객관적 근거로) — Greenwood·Shleifer·You (2019, JFE 131(1)).
+         *   1928~2014 미국 업종: 2년 **시장 초과** 수익률이 50% · 100% · 150%를 넘으면 이후 2년 안에 고점 대비 40% 하락할
+         *   확률이 20% · 53% · 80%(논문 Table 3, NBER WP 23191판으로 확인). 논문은 원수익률 조건도 함께 건다.
+         * ⚠ 같은 논문이 런업 뒤 **평균 수익률은 평범**했다고 쓴다(Fama의 반론이 맞은 부분 · 오탐 47%).
+         *   그래서 이 점수는 「곧 떨어진다」가 아니라 **「꼬리위험이 커졌다」**로 읽는다. 업종 단위 결과라 단일 종목에 쓰지 않는다.
+         */
+        key: "sox_runup",
+        label: "반도체 업종 2년 런업 (SOX, 시장 초과)",
+        rule: "<50% · 50~100% · ≥100% (2년 원수익률·S&P500 대비 초과수익률 중 작은 값)",
+        scale: { op: "gt", t1: 50, t2: 100 },
+        source:
+          "Greenwood·Shleifer·You (2019) 「Bubbles for Fama」 JFE — 초과 런업 50/100/150%에서 2년 내 40% 하락 확률 20/53/80% · 값: Yahoo ^SOX·^GSPC 월말 종가",
       },
       {
         key: "peg",
@@ -128,22 +147,23 @@ export const BUBBLE_LAYERS: BubbleLayer[] = [
     note: "수요 검증 — 주가는 가는데 실물이 식는 괴리 탐지",
     indicators: [
       {
-        key: "hbm_asp_trend",
-        label: "메모리 계약가 3M 추세",
-        rule: "상승 · 횡보 · 하락전환",
-        source: "메리츠 김선우",
+        /**
+         * ⚠ 2026-10-26: 출처를 개인 애널리스트에서 **TrendForce 분기 계약가 보도자료(무료 전문)**로 바꾸고,
+         *   같은 것을 두 번 세던 `dram_momentum`(유튜브 출처)을 여기로 합쳤다. ⚠ 뜻이 바뀌어 **새 키**다 — 옛 키(`hbm_asp_trend`)의
+         *   판정은 옛 정의로 매긴 것이라 이 지표의 점수로 세지 않는다(라벨과 값이 어긋나는 것이 가장 비싼 실패다).
+         *   HBM 계약가는 공개 시계열이 없다(주간 Bulletin 유료) — 일반 D램 계약가로 잰다.
+         */
+        key: "dram_contract_outlook",
+        label: "D램 계약가 다음 분기 전망 (QoQ)",
+        rule: "상승 전망 · 보합(±3%) · 하락 전망",
+        source: "TrendForce 분기 계약가 보도자료(예: 2026-09-30 「4Q26 일반 D램 계약가 +10~15% QoQ」) · 문턱 ±3%는 자체 보정",
       },
-      {
-        key: "dram_momentum",
-        label: "D램 가격 상승률 모멘텀",
-        rule: "가속 · 둔화 · 마이너스 전환",
-        source: "별주부전(소현철·박세익)",
-      },
+      // ⚠ 2026-10-26 뺐다: hbm_asp_trend(개인 애널리스트 출처 · 위 새 키로 대체) · dram_momentum(위와 같은 것을 두 번 셌고 출처가 유튜브).
       {
         key: "capex_guidance",
         label: "하이퍼스케일러 가이던스",
         rule: "상향 · 유지 · 하향",
-        source: "실적시즌 수동",
+        source: "실적 발표·8-K(EX-99.1)의 CAPEX 전망 문장",
       },
       {
         key: "equip_billings_yoy",
@@ -212,41 +232,80 @@ export const BUBBLE_LAYERS: BubbleLayer[] = [
       {
         key: "hyper_ig_leverage",
         label: "하이퍼스케일러 IG 레버리지",
-        rule: "<1.0배 · 1.0~1.5배 · >1.5배 (총부채/EBITDA)",
-        source: "Morgan Stanley (Groundbreaker 인용) · 임계값은 자체 보정",
+        rule: "<1.0배 · 1.0~1.5배 · >1.5배 (5사 Σ총차입 / ΣEBITDA)",
+        scale: { op: "gt", t1: 1.0, t2: 1.5 },
+        // ⚠ 2026-10-26: 뉴스레터가 인용한 증권사 수치 → EDGAR에서 직접 계산(볼트 fetch-bubble-auto.py와 같은 정의).
+        //   운용리스는 차입에 넣지 않는다 — 평가사 「조정 레버리지」와 다르다.
+        source:
+          "SEC EDGAR 5사 TTM — Σ총차입(금융리스 포함) ÷ Σ(영업이익+감가상각) · 임계값은 자체 보정(공개된 평가사 문턱은 ORCL뿐 — S&P 「4.5배 초과 지속 시 하향」)",
       },
       {
-        key: "asset_life_mismatch",
-        label: "AI 자산 경제수명 vs 부채 만기 미스매치",
-        rule: "정합(1~2배) · 3~5배 괴리 · 5배+ 괴리",
-        source: "경제학교 특강 반론 리서치(반대 시각 조사) · 임계값은 자체 보정",
-      }
+        /**
+         * ⭐ 2026-10-26 추가(운영자 요청) — 네오클라우드의 차입 스트레스. 기준 주체는 CoreWeave(공개 무담보채가 있는 유일한 곳).
+         *   Nebius는 전환사채뿐이라 신용 스프레드 대용이 안 된다 · Lambda·Crusoe는 공개 부채 지표가 없다.
+         * ⚠ 자동 채점이 안 된다 — 144A 채권이고 CDS는 단말기 전용이다. 채점 때 수익률·스프레드의 출처와 날짜를 값에 적는다.
+         * 근거: 1000bp = S&P의 부실(distressed) 정의(국채 대비 1000bp 이상). 500bp 경계는 자체 보정.
+         *   연준 FSR(2026-05-08)이 AI 위험으로 "부채로 조달하는 설비투자"를 짚었다. 반대 근거: GPU·투자등급 고객 계약을 담보로 한
+         *   DDTL은 회사 등급보다 높게 평가된다(2026-03 무디스 A3) — 무담보채 스트레스가 담보부 사모신용으로 그대로 옮겨가지는 않는다.
+         */
+        key: "neocloud_credit",
+        label: "네오클라우드 신용 스트레스 (CoreWeave 무담보채)",
+        rule:
+          "스프레드 <500bp · 500~1000bp · ≥1000bp — 평가사 부정적 전망·강등 또는 신규 DDTL 가산금리가 직전보다 100bp+ 넓어지면 한 칸 올린다(최대 2)",
+        source:
+          "CoreWeave 8-K·10-Q(DDTL 가산금리: 3월 SOFR+2.25% → 5월 +4.50% → 8월 +5.50% · 고객 2곳이 매출 62% · 2분기 이자비용 $6.4억 > 영업손실) · S&P 부실 정의 1000bp · 연준 FSR 2026-05",
+      },
+      {
+        /**
+         * ⭐ 2026-10-26 추가(운영자: 「오라클도 주요 모니터링 대상이 아닌지」) — 오라클은 L1의 5사 합산에 묻혀 있었다.
+         *   차입으로 짓는 AI 데이터센터 · RPO $664B · FCF 5분기 연속 음수 · 미개시 리스 약정 $288B(10-Q).
+         * ⚠ CDS·개별 채권 스프레드는 무료로 매일 받을 곳이 없어 채점에 쓰지 않는다(보도에만 간헐적으로 나온다 — 값 칸의 참고로만).
+         * 근거: BBB-/Baa3는 투자등급의 마지막 칸이다(평가사 등급 정의). 「4분기 FCF 음수 = 1점」은 자체 보정.
+         * 반대 근거: OCF 사상 최대 · 고객 선급금 · 주식 $200억 발행으로 자본 보강 · 매출 10% 이상 단일 고객 없음.
+         */
+        key: "oracle_credit",
+        label: "오라클 신용 (등급 사다리 + FCF 부호)",
+        rule:
+          "3사 BBB 이상·전망 안정+·4분기 FCF 양 · BBB-/Baa3 또는 부정적 전망 또는 4분기 FCF 음 · 투기등급 강등 또는 BBB-/Baa3에서 부정적 전망·감시",
+        source:
+          "Oracle 8-K(EX-99.1 FCF 표)·10-Q(차입금·리스 약정) · 등급은 증권신고서(FWP·424B2) 예상 등급란과 평가사 발표 · 2026-10: S&P BBB-(7/9, 2차 출처) · Moody's Baa2 부정적 · Fitch BBB",
+      },
+      {
+        /**
+         * ⚠ 2026-10-26: 「경제수명 vs 부채 만기」(유튜브 강의 출처 · 수치 없음) → **10-K의 서버 감가 내용연수 공시**로 바꿨다.
+         *   뜻이 바뀌어 **새 키**다(옛 `asset_life_mismatch` 판정은 세지 않는다).
+         *   예: AMZN 2025 10-K 「일부 서버·네트워크 장비 6년 → 5년」(감가 +$14억) · 반대 방향: META 5.5년으로 연장.
+         */
+        key: "server_useful_life",
+        label: "서버 감가 내용연수 공시 변화 (5사 + CoreWeave)",
+        rule: "연장·유지 · 혼재 · 단축 공시가 2곳+",
+        source: "각사 10-K 감가상각 정책 주석(MSFT·GOOGL·AMZN·META·ORCL·CRWV) · 문턱은 자체 보정",
+      },
     ],
   },
   {
     id: "L5",
     name: "센티먼트·구조신호",
     weight: 0.8,
-    note: "정성 신호가 정점을 가장 잘 잡는다",
+    // ⚠ 2026-10-26: 예전 문구 「정성 신호가 정점을 가장 잘 잡는다」는 근거가 없었다. 정성 토글을 빼고 원자료가 있는 것만 남겼다.
+    note: "투자자 쏠림 — 관심·내부자 매도·IPO 첫날 수익률(원자료가 있는 것만)",
     indicators: [
       {
+        /**
+         * ⚠ 2026-10-26 근거를 붙였다 — 관심이 쏠린 종목의 이후 수익률이 낮다(Barber·Huang·Odean·Schwarz 2022, JF:
+         *   Robinhood 매수 상위의 20일 비정상수익 −4.7%). ⚠ 다만 **WSB 언급 수 자체**가 반전을 예측한다는 동료심사 논문은 못 찾았다
+         *   (WSB 추천의 예측력은 GME 뒤 사라졌다 — RFS 2024). 그래서 문턱은 자체 보정이고, 이 층의 가중치(0.8)는 낮게 둔다.
+         */
         key: "retail_froth",
         label: "리테일 심리(WSB)",
-        rule: "정상 · 상승 · 급증·과열",
-        source: "ApeWisdom(WSB)",
+        rule: "<1.2배 · 1.2~1.5배 · >1.5배 (반도체 언급 비중 / 직전 스냅샷 평균)",
+        scale: { op: "gt", t1: 1.2, t2: 1.5 },
+        source: "ApeWisdom(WSB 언급) · 근거: Barber 외(2022, JF) 관심 쏠림 → 이후 저조 · 임계값은 자체 보정",
       },
-      {
-        key: "analyst_dispersion",
-        label: "애널리스트 타깃 분산도",
-        rule: "좁음 · 보통 · 확대",
-        source: "JP모건(MarketWatch)",
-      },
-      {
-        key: "narrative_flag",
-        label: "'이번엔 다르다' 서사",
-        rule: "수동 토글",
-        source: "수동 판단(2026-07-22 점검에서 1→2 정정: value '강함'과 points 불일치 해소)",
-      },
+      // ⚠ 2026-10-26 뺐다(근거 부족·실효성 없음):
+      //   analyst_dispersion: 학술 근거(Diether·Malloy·Scherbina 2002, JF)는 **EPS 예측 분산**이고 효과가 **소형주**에 집중됐다
+      //     — 목표가 분산·초대형주에 쓰면 근거 밖이다. 출처도 기사(MarketWatch)였다.
+      //   narrative_flag: 「이번엔 다르다」 서사를 객관적으로 재는 방법이 없는 수동 토글이었다. 런업의 객관적 대용은 L2 `sox_runup`.
       {
         key: "insider_sell",
         label: "임원 매도 모멘텀(Form4)",
@@ -255,10 +314,17 @@ export const BUBBLE_LAYERS: BubbleLayer[] = [
         source: "EDGAR Form4 5사 장내 S/P · 임계값은 자체 보정",
       },
       {
-        key: "ipo_froth",
-        label: "AI·반도체 IPO/SPAC",
-        rule: "낮음 · 보통 · 과열",
-        source: "웹 조사 + 사용자 판단(2026-07-22 점검)",
+        /**
+         * ⚠ 2026-10-26: 「웹 조사 + 사용자 판단」 → **Jay Ritter IPO 통계**(플로리다대, 연 갱신)의 첫날 평균 수익률.
+         *   문턱은 원자료의 역사 구간이다 — 1980~2025 평균 19.0% · 1999년 71.2% · 2000년 56.3%(2024 15.3% · 2025 29.3%).
+         * ⚠ 연 단위라 늦고 AI만 따로 가르지 않는다. 적자 IPO 비율은 2020~21년에도 2000년 수준이라 단독 신호로 쓰지 않는다.
+         * ⚠ 뜻이 바뀌어 **새 키**다(옛 `ipo_froth` 「AI·반도체 IPO/SPAC」 판정은 세지 않는다).
+         */
+        key: "ipo_first_day",
+        label: "미국 IPO 첫날 평균 수익률",
+        rule: "<20%(장기 평균) · 20~40% · >40%(1999·2000년 쪽)",
+        scale: { op: "gt", t1: 20, t2: 40 },
+        source: "Jay Ritter 「IPO Statistics」(site.warrington.ufl.edu/ritter) · 1980~2025 평균 19.0% · 1999 71.2% · 2000 56.3%",
       }
     ],
   },

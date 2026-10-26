@@ -8,26 +8,54 @@ function readings(entries: [string, 0 | 1 | 2][]): Map<string, BubbleReading> {
 }
 
 describe("버블 카탈로그", () => {
-  it("설계서의 5레이어 30지표를 그대로 옮겼다", () => {
+  it("5레이어 28지표 · 하드 트리거 8 (2026-10-26 정비: 5개 빼고 3개 더함 · 뜻이 바뀐 3개는 새 키)", () => {
     expect(BUBBLE_LAYERS).toHaveLength(5);
-    expect(ALL_BUBBLE_INDICATORS).toHaveLength(30);
+    expect(ALL_BUBBLE_INDICATORS).toHaveLength(28);
     expect(BUBBLE_TRIGGERS).toHaveLength(8);
   });
 
   /**
-   * ⚠ 층별 개수까지 못 박는 이유: 총합만 보면 한 층에서 빠지고 다른 층에서 늘어난 것을
-   * 놓친다. 볼트 대시보드(`00_Dashboard/메모리 버블 트리거.html`)의 층 구성과 대조하는 자리다.
+   * ⚠ 층별 개수까지 못 박는 이유: 총합만 보면 한 층에서 빠지고 다른 층에서 늘어난 것을 놓친다.
+   * ⚠ 2026-10-26부터 볼트 대시보드(`_apps/메모리 버블 트리거.html`)와 구성이 다르다 — 사이트 카탈로그가 앞서고 볼트를 맞추는 일이 남았다.
    */
-  it("층별 지표 수가 볼트와 같다", () => {
+  it("층별 지표 수", () => {
     const byId = Object.fromEntries(BUBBLE_LAYERS.map((l) => [l.id, l.indicators.length]));
-    expect(byId).toEqual({ L1: 8, L2: 5, L3: 6, L4: 6, L5: 5 });
+    expect(byId).toEqual({ L1: 6, L2: 6, L3: 5, L4: 8, L5: 3 });
   });
 
-  it("2026-08 볼트 ingest로 늘어난 지표가 들어 있다", () => {
+  it("2026-10-26 운영자 요청으로 더한 지표가 들어 있다", () => {
     const keys = ALL_BUBBLE_INDICATORS.map((i) => i.key);
-    expect(keys).toContain("llm_token_spend"); // L1 · AI 수익화의 실물 증거
-    expect(keys).toContain("asset_life_mismatch"); // L4 · 부채의 만기 구조
+    expect(keys).toContain("neocloud_credit"); // L4 · CoreWeave 무담보채
+    expect(keys).toContain("oracle_credit"); // L4 · 등급 사다리 + FCF
+    expect(keys).toContain("sox_runup"); // L2 · Greenwood·Shleifer·You (2019)
     expect(BUBBLE_TRIGGERS.map((t) => t.key)).toContain("trg8"); // 엔캐리 청산 재발화
+  });
+
+  /**
+   * ⚠ 뺀 키·뜻이 바뀐 옛 키는 카탈로그에 다시 들어오면 안 된다 — DB에 옛 판정 행이 남아 있어서,
+   *   키가 돌아오는 순간 **옛 정의로 매긴 점수**가 조용히 총점에 섞인다.
+   */
+  it("⚠ 뺀 키와 뜻이 바뀐 옛 키가 되살아나지 않는다", () => {
+    const keys = ALL_BUBBLE_INDICATORS.map((i) => i.key);
+    for (const retired of [
+      "llm_token_spend",
+      "capex_accel",
+      "dram_momentum",
+      "analyst_dispersion",
+      "narrative_flag",
+      "hbm_asp_trend",
+      "asset_life_mismatch",
+      "ipo_froth",
+    ]) {
+      expect(keys).not.toContain(retired);
+    }
+  });
+
+  /** ⚠ 운영자(2026-10-26): 「유튜브 등의 출처는 제거하고 객관적이고 논리적인 부분으로 교체」 */
+  it("⚠ 출처에 유튜브·뉴스레터·사람 판단만 있는 지표가 없다", () => {
+    for (const i of ALL_BUBBLE_INDICATORS) {
+      expect(i.source ?? "").not.toMatch(/유튜브|YouTube|경제학교|경읽남|별주부전|김선우|Groundbreaker|사용자 판단|웹 조사/);
+    }
   });
 
   it("지표 키가 중복되지 않는다", () => {
