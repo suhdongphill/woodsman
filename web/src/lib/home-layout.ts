@@ -33,6 +33,12 @@ export const HOME_BLOCKS = [
    */
   "waves",
   /**
+   * 오늘의 브리핑 — 최신 공개 브리핑의 제목 · 3줄 요약(2026-10-31 운영자 「오늘의 기사 바로 아래에 홈에도」).
+   * ⚠ 파도 **바로 아래**, 조류 위다. 파도는 기관 원문 **목록**, 브리핑은 그 사건들을 엮은 **해설** — 같은 「오늘」 층이다.
+   * ⚠ 최신 브리핑이 `BRIEFING_FRESH_DAYS`보다 오래됐거나 없으면 그리지 않는다 — 지난 글을 「오늘의」로 보이지 않게.
+   */
+  "dailyBriefing",
+  /**
    * 조류 — 돈은 어느 쪽으로 흐르나(유동성 · AI 버블 · 경기 엔진 온도 + 읽는 법 · 판단법 + 방향).
    * ⚠ 「지금 부는 바람」 **바로 아래**다(설계서 자본레짐 §2 C안 · 운영자 원칙 ④ 「점수는 앞줄에」, 2026-09-14).
    * ⚠ 바람(이번 주)과 조류(몇 달)를 **한 블록에 섞지 않는다**(운영자 원칙 ⑤).
@@ -94,7 +100,22 @@ export type HomeContent = {
   upcomingEventCount: number;
   /** 공개 중인 블로그 글 수(`BlogEntry`, 숨김 제외). 못 읽었으면 0 */
   blogEntryCount: number;
+  /** 최신 공개 브리핑이 아직 「오늘의」라고 부를 만한가(`isBriefingFresh`). 없거나 못 읽었으면 false */
+  briefingFresh: boolean;
 };
+
+/**
+ * 브리핑을 홈에 「오늘의」로 걸어 둘 수 있는 날수. 3일 — 금요일 장 마감을 다룬 토요일 브리핑이 월요일 아침까지 산다.
+ * 그보다 오래되면 홈에서 내린다(`/briefing` 목록에는 남는다).
+ */
+export const BRIEFING_FRESH_DAYS = 3;
+
+/** `date`(브리핑 날짜)가 `today`(서울 날짜)로부터 `BRIEFING_FRESH_DAYS`일 안인가. 둘 다 YYYY-MM-DD. */
+export function isBriefingFresh(date: string | undefined, today: string): boolean {
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+  const days = (Date.parse(`${today}T00:00:00Z`) - Date.parse(`${date}T00:00:00Z`)) / 86_400_000;
+  return days >= 0 && days <= BRIEFING_FRESH_DAYS;
+}
 
 /**
  * 그릴 블록을 순서대로 돌려준다.
@@ -121,6 +142,8 @@ export function visibleHomeBlocks(content: HomeContent): HomeBlock[] {
       /** 모은 글이 없으면 뺀다 — 「아직 없습니다」를 홈에 띄우면 빈 사이트로 보인다(일정과 같은 규칙). */
       case "blogShowcase":
         return content.blogEntryCount > 0;
+      case "dailyBriefing":
+        return content.briefingFresh;
       /**
        * ⚠ 계좌 띠는 **스냅숏이 없어도 그린다.** 값이 없으면 띠를 빼는 게 아니라
        *    "아직 없다"고 적는다 — 빈 칸을 0원으로 만들지 않는다(2026-08-30, Step 2).

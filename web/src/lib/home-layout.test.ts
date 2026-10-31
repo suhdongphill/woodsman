@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { HOME_BLOCKS, hasBlock, visibleHomeBlocks, type HomeContent } from "./home-layout";
+import { HOME_BLOCKS, hasBlock, isBriefingFresh, visibleHomeBlocks, type HomeContent } from "./home-layout";
 
 /** 「전부 있는 홈」이 기본값이고, 테스트는 없애 볼 것만 적는다. */
 function content(over: Partial<HomeContent> = {}): HomeContent {
-  return { homePostCount: 3, upcomingEventCount: 2, blogEntryCount: 23, ...over };
+  return { homePostCount: 3, upcomingEventCount: 2, blogEntryCount: 23, briefingFresh: true, ...over };
 }
 
 describe("홈 블록", () => {
@@ -35,6 +35,7 @@ describe("홈 블록", () => {
       "hero",
       "macroStrip",
       "waves",
+      "dailyBriefing",
       "tide",
       "blogShowcase",
       "latestInsights",
@@ -64,7 +65,11 @@ describe("홈 블록", () => {
   it("⭐ 바람 → 파도 → 조류 — 가까운 시간부터 먼 시간으로(운영자 결정 2026-09-14 · 원칙 ⑤ 층을 섞지 않는다)", () => {
     const blocks = visibleHomeBlocks(content());
     expect(blocks[blocks.indexOf("macroStrip") + 1]).toBe("waves");
-    expect(blocks[blocks.indexOf("waves") + 1]).toBe("tide");
+    // 오늘의 브리핑(2026-10-31)은 파도와 같은 「오늘」 층 — 파도 바로 아래, 조류 위
+    expect(blocks[blocks.indexOf("waves") + 1]).toBe("dailyBriefing");
+    expect(blocks[blocks.indexOf("dailyBriefing") + 1]).toBe("tide");
+    const noBriefing = visibleHomeBlocks(content({ briefingFresh: false }));
+    expect(noBriefing[noBriefing.indexOf("waves") + 1]).toBe("tide");
     // ⚠ 점수·기사가 없어도 블록은 빠지지 않는다 — 없다고 적는다
     const empty = visibleHomeBlocks(content({ homePostCount: 0, upcomingEventCount: 0 }));
     expect(empty).toContain("tide");
@@ -98,6 +103,15 @@ describe("홈 블록", () => {
     const blocks = visibleHomeBlocks(content());
     expect(blocks.indexOf("blogShowcase")).toBe(blocks.indexOf("tide") + 1);
     expect(blocks.indexOf("blogShowcase")).toBeLessThan(blocks.indexOf("latestInsights"));
+  });
+
+  it("⚠ 브리핑이 없거나 3일보다 오래됐으면 홈에서 뺀다 — 지난 글을 「오늘의」로 보이지 않게", () => {
+    expect(visibleHomeBlocks(content({ briefingFresh: false }))).not.toContain("dailyBriefing");
+    expect(isBriefingFresh("2026-10-31", "2026-10-31")).toBe(true);
+    expect(isBriefingFresh("2026-10-31", "2026-11-03")).toBe(true); // 토요일분이 월요일까지
+    expect(isBriefingFresh("2026-10-31", "2026-11-04")).toBe(false);
+    expect(isBriefingFresh("2026-11-01", "2026-10-31")).toBe(false); // 미래 날짜
+    expect(isBriefingFresh(undefined, "2026-10-31")).toBe(false);
   });
 
   it("⚠ 모은 블로그 글이 없으면 블록을 그리지 않는다", () => {

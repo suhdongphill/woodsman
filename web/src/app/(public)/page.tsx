@@ -14,6 +14,8 @@ import { JournalAndReports } from "@/features/home/ui/JournalAndReports";
 import { UpcomingCalendar } from "@/features/home/ui/UpcomingCalendar";
 import { TideSection } from "@/features/home/ui/TideSection";
 import { WavesSection } from "@/features/home/ui/WavesSection";
+import { HomeBriefing } from "@/features/briefing/ui/HomeBriefing";
+import { loadPublishedBriefings } from "@/features/briefing/repository";
 import { loadLatestNews } from "@/features/news/repository";
 import { loadLatestAnalysis } from "@/features/analysis/repository";
 import { liquidityCardView } from "@/lib/scores/summary";
@@ -27,7 +29,7 @@ import { REGIME_CHIP_KEYS } from "@/lib/scores/regime-summary";
 import { buildGcrmFrame } from "@/lib/gcrm/home-frame";
 import { gcrmHomeSnapshots } from "@/features/gcrm/service";
 import { CapitalRegimeFrame } from "@/features/home/ui/CapitalRegimeFrame";
-import { visibleHomeBlocks, type HomeBlock } from "@/lib/home-layout";
+import { isBriefingFresh, visibleHomeBlocks, type HomeBlock } from "@/lib/home-layout";
 import { loadBlogEntries } from "@/features/blog/repository";
 import { BlogShowcase } from "@/features/blog/ui/BlogShowcase";
 import { popularEntries, visibleEntries } from "@/lib/blog/tistory";
@@ -111,6 +113,7 @@ export default async function HomePage() {
     bubbleReadings,
     latestNews,
     latestAnalysis,
+    briefings,
   ] = await Promise.all([
     loadSnapshots(),
     loadPublishedJournal(),
@@ -134,6 +137,8 @@ export default async function HomePage() {
     loadLatestNews(6),
     // 유동성 카드 해석 팝업의 2부 — 가장 최근 「그날의 분석」
     loadLatestAnalysis(),
+    // 오늘의 브리핑 — 최신 공개 1편(못 읽으면 빈 목록 + console.error · 블록만 빠진다)
+    loadPublishedBriefings(1),
   ]);
   /**
    * 블로그 글 목록 — ⚠ 보조 콘텐츠라 읽기 실패로 **홈 전체를 죽이지 않는다.** 대신 로그를 남기고 블록만 뺀다.
@@ -169,7 +174,9 @@ export default async function HomePage() {
     limit: Number.MAX_SAFE_INTEGER,
   }).length;
 
+  const latestBriefing = briefings[0];
   const blocks = visibleHomeBlocks({
+    briefingFresh: isBriefingFresh(latestBriefing?.date, today),
     homePostCount: homePosts.length,
     upcomingEventCount: homeEvents.length,
     blogEntryCount: blogAll.length,
@@ -196,6 +203,8 @@ export default async function HomePage() {
     ),
     macroStrip: <MacroStrip indicators={macro.headlines} frame={<CapitalRegimeFrame frame={regimeFrame} />} />,
     waves: <WavesSection news={latestNews} />,
+    // ⚠ 보일지는 visibleHomeBlocks가 정했다(최신 공개 브리핑이 3일 안일 때만)
+    dailyBriefing: latestBriefing ? <HomeBriefing briefing={latestBriefing} /> : null,
     tide: (
       <TideSection
         tides={tides}
