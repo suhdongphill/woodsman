@@ -33,6 +33,7 @@ export const PUBLIC_STATIC_PATHS = [
   "/about",
   "/blog",
   "/board",
+  "/briefing",
   "/disclaimer",
   "/insights",
   "/journal",
@@ -62,6 +63,11 @@ export const DYNAMIC_PATH_RULES: { template: string; matches: (segment: string) 
     // 글 slug — 소문자·숫자·하이픈. ⚠ 실재하는 글인지는 여기서 모른다(§아래 주석).
     template: "/insights/[slug]",
     matches: (s) => /^[a-z0-9][a-z0-9-]{0,80}$/.test(s),
+  },
+  {
+    // 브리핑 날짜 — YYYY-MM-DD만(2026-10-31).
+    template: "/briefing/[date]",
+    matches: (s) => /^\d{4}-\d{2}-\d{2}$/.test(s),
   },
   {
     // 게시글 id — 숫자만.

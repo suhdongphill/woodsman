@@ -22,6 +22,13 @@ const find = (entries: ReturnType<typeof sitemapEntries>, path: string) =>
   entries.find((e) => e.path === path)!;
 
 describe("sitemapEntries", () => {
+  it("공개된 브리핑만 넣고, 목록의 lastmod는 가장 최근 브리핑 날짜", () => {
+    const entries = sitemapEntries({ ...input, briefings: ["2026-10-30", "2026-10-31"] });
+    expect(find(entries, "/briefing").lastModified).toBe("2026-10-31");
+    expect(find(entries, "/briefing/2026-10-30").lastModified).toBe("2026-10-30");
+    expect(find(sitemapEntries(input), "/briefing").lastModified).toBeUndefined();
+  });
+
   it("⚠ 언제 바뀌었는지 모르는 페이지에는 lastmod를 넣지 않는다", () => {
     const entries = sitemapEntries(input);
     for (const path of ["/portfolio", "/journal", "/about", "/privacy", "/disclaimer", "/macro/glossary"]) {

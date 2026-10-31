@@ -80,7 +80,7 @@ export async function saveAdsAction(
   });
 
   // 광고는 거의 모든 공개 화면에 걸린다.
-  for (const path of ["/", "/insights", "/macro", "/portfolio", "/journal", "/stocks", "/ads.txt"]) {
+  for (const path of ["/", "/insights", "/macro", "/portfolio", "/journal", "/stocks", "/briefing", "/ads.txt"]) {
     revalidatePath(path);
   }
   revalidatePath("/admin/ads");

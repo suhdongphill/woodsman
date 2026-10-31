@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { loadPublishedSummaries } from "@/features/reports/repository";
 import { loadPublishedPosts } from "@/features/posts/repository";
 import { loadMaxDates } from "@/features/macro/repository";
+import { loadPublishedBriefings } from "@/features/briefing/repository";
 import { absoluteUrl } from "@/lib/site-url";
 import { MACRO_GROUPS } from "@/lib/macro/groups";
 import { getSitePolicy } from "@/lib/site-settings";
@@ -17,11 +18,12 @@ import { latestOf, sitemapEntries } from "@/lib/sitemap";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [policy, posts, reports, maxDates] = await Promise.all([
+  const [policy, posts, reports, maxDates, briefings] = await Promise.all([
     getSitePolicy(),
     loadPublishedPosts(500),
     loadPublishedSummaries(200),
     loadMaxDates(),
+    loadPublishedBriefings(400),
   ]);
 
   const entries = sitemapEntries({
@@ -32,6 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // 지표가 마지막으로 갱신된 날. ⚠ 수집 전이면 `undefined`이고 lastmod가 안 붙는다.
     macroAsOf: latestOf(...maxDates.values()),
     communityEnabled: policy.communityEnabled,
+    briefings: briefings.map((b) => b.date),
   });
 
   return entries.map((e) => ({

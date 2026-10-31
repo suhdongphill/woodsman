@@ -9,6 +9,7 @@ const CONTENT_LINKS = [
   { href: "/macro", label: "거시 지표" },
   { href: "/insights", label: "인사이트" },
   { href: "/blog", label: "블로그" },
+  { href: "/briefing", label: "오늘의 브리핑" },
   { href: "/leaders", label: "주도주" },
   { href: "/portfolio", label: "대표 포트폴리오" },
   { href: "/stocks", label: "종목분석" },

@@ -1484,3 +1484,25 @@ model BlogSync {
   failures    String?
   error       String?
 }
+
+/// 오늘의 브리핑(2026-10-31) — 규칙으로 거르고 AI로 다듬은 **공개본**만. 원고 원문은 두지 않는다.
+model Briefing {
+  /// YYYY-MM-DD(서울)
+  date        String   @id
+  headline    String
+  /// `BriefingArticle` JSON
+  article     String
+  /// DRAFT | PUBLISHED
+  status      String   @default("DRAFT")
+  /// rules | ai:<모델>
+  editor      String
+  /// AI가 다듬다 되돌린 문장들 JSON [{id, reason}]
+  editNote    String?
+  sourceName  String?
+  /// UTC ISO — 처음 공개한 시각
+  publishedAt String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+
+  @@index([status, date])
+}

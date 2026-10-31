@@ -42,6 +42,8 @@ export type SitemapInput = {
   /** 지표의 마지막 관측일(YYYY-MM-DD). 수집 전이면 없다. */
   macroAsOf?: string;
   communityEnabled: boolean;
+  /** 공개된 오늘의 브리핑 날짜들(YYYY-MM-DD). ⚠ 초안은 넣지 않는다 — 404를 색인 요청하게 된다. */
+  briefings?: string[];
 };
 
 /** 가장 최근 날짜. 전부 없으면 `undefined` — ⚠ 오늘로 메우지 않는다. */
@@ -77,6 +79,8 @@ export function sitemapEntries(input: SitemapInput): SitemapEntry[] {
     { path: "/leaders", priority: 0.8, changeFrequency: "weekly" },
     // 블로그 글 목록 — 매일 수집하지만 글은 주 몇 편이다.
     { path: "/blog", priority: 0.8, changeFrequency: "weekly" },
+    // 오늘의 브리핑(2026-10-31) — 매일 아침 한 편.
+    { path: "/briefing", lastModified: latestOf(...(input.briefings ?? [])), priority: 0.7, changeFrequency: "daily" },
     { path: "/stocks", lastModified: latestReportAt, priority: 0.6, changeFrequency: "weekly" },
     { path: "/about", priority: 0.5, changeFrequency: "monthly" },
     { path: "/disclaimer", priority: 0.3, changeFrequency: "monthly" },
@@ -90,6 +94,10 @@ export function sitemapEntries(input: SitemapInput): SitemapEntry[] {
       changeFrequency: "monthly",
       priority: 0.7,
     });
+  }
+
+  for (const date of input.briefings ?? []) {
+    entries.push({ path: `/briefing/${date}`, lastModified: date, changeFrequency: "monthly", priority: 0.6 });
   }
 
   // 지표 묶음 — 각각 다른 주제의 본문을 가진 페이지다(중복 콘텐츠가 아니다).
