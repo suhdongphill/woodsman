@@ -67,8 +67,8 @@ export default async function AdminAdsPage() {
             클릭」입니다.
           </li>
           <li>
-            · ⚠ <strong className="text-ink">켜기 전에 `/privacy`를 고쳐야 합니다.</strong> 지금은
-            “향후 게재할 수 있습니다”로 적혀 있어, 실제로 켜는 순간 사실과 달라집니다.{" "}
+            · ⚠ <strong className="text-ink">`/privacy` 4항이 광고 게재를 고지합니다</strong>(2026-10-31 개정).
+            광고를 오래 끄거나 다른 광고 사업자를 붙이면 그 문구를 같이 고칩니다.{" "}
             <Link href="/privacy" className="text-gold-500 underline">
               개인정보 처리방침 보기
             </Link>

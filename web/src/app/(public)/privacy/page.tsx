@@ -17,7 +17,7 @@ export default async function PrivacyPage() {
       eyebrow="PRIVACY"
       title="개인정보 처리방침"
       description="지금 이 사이트가 무엇을 수집하고 무엇을 수집하지 않는지 그대로 적었습니다."
-      effectiveDate="2026년 8월 6일"
+      effectiveDate="2026년 10월 31일"
     >
       <PolicySection title="1. 회원가입을 지원하지 않습니다">
         <p>
@@ -53,7 +53,7 @@ export default async function PrivacyPage() {
         <PolicyList
           items={[
             "접속 로그(IP 주소, 브라우저 종류, 접속 시각) — 서버·호스팅 사업자가 보안과 장애 대응을 위해 일정 기간 보관합니다.",
-            "쿠키 — 로그인 세션 유지를 위해 사용하며, 로그인하지 않은 방문자에게는 세션 쿠키가 발급되지 않습니다.",
+            "쿠키 — 로그인 세션 유지를 위해 사용하며, 로그인하지 않은 방문자에게는 세션 쿠키가 발급되지 않습니다. 광고 사업자(Google)의 쿠키는 4항에 따로 적었습니다.",
             "조회수 집계 — 어떤 화면이 몇 번 열렸는지를 (경로, 날짜, 합계)로만 셉니다. IP·브라우저 정보·유입 경로는 저장하지 않고, 방문자를 구분하는 식별자도 만들지 않습니다.",
           ]}
         />
@@ -69,9 +69,10 @@ export default async function PrivacyPage() {
 
       <PolicySection title="4. 광고 및 제3자 도구">
         <p>
-          이 사이트는 운영 비용 충당을 위해 향후 Google AdSense 등 제3자 광고를 게재할 수 있습니다.
-          광고 사업자는 이용자의 관심에 기반한 광고를 제공하기 위해 쿠키를 사용할 수 있으며, 이는
-          해당 사업자의 정책에 따릅니다.
+          이 사이트는 운영 비용 충당을 위해 <strong className="text-ink">Google AdSense 광고를
+          게재합니다.</strong> Google을 비롯한 제3자 광고 사업자는 쿠키를 사용해 이용자가 이 사이트와
+          다른 사이트를 방문한 기록을 바탕으로 광고를 게재할 수 있습니다. 이 쿠키는 운영자가 아니라
+          해당 사업자가 설정하고 관리하며, 그 사업자의 정책에 따릅니다.
         </p>
         <PolicyList
           items={[
@@ -96,6 +97,19 @@ export default async function PrivacyPage() {
               </a>
               에서 맞춤 광고를 끌 수 있습니다.
             </>,
+            <>
+              Google 외 제3자 광고 사업자의 맞춤 광고 쿠키는{" "}
+              <a
+                href="https://www.aboutads.info/choices/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gold-400 hover:text-gold-500"
+              >
+                aboutads.info
+              </a>
+              에서 끌 수 있습니다.
+            </>,
+            "광고는 글을 다 읽은 자리 등 정해진 곳에만 두고, 광고임을 표시합니다.",
             "운영자는 광고 사업자가 수집한 정보에 접근하지 않으며, 방문자를 개인 단위로 식별하지 않습니다.",
           ]}
         />
@@ -129,7 +143,9 @@ export default async function PrivacyPage() {
         <p className="text-[12.5px] text-gray-500">
           이 방침이 변경될 경우 시행일을 갱신해 이 페이지에 공지합니다.
           <br />
-          최근 개정 · 2026년 8월 6일: 조회수 집계(쿠키·IP를 저장하지 않는 날짜별 합계) 항목을 추가.
+          최근 개정 · 2026년 10월 31일: 광고 항목을 「게재할 수 있습니다」에서 「게재합니다」로 고치고, 제3자 광고 쿠키와 거부 방법을 보탰습니다.
+          <br />
+          이전 개정 · 2026년 8월 6일: 조회수 집계(쿠키·IP를 저장하지 않는 날짜별 합계) 항목을 추가.
         </p>
       </PolicySection>
     </PolicyPage>
