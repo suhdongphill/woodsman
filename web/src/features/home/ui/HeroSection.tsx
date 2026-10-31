@@ -1,13 +1,14 @@
-import { LinkButton } from "@/components/ui/Button";
-import { ArrowRightIcon, ExternalIcon } from "@/components/icons";
-import { outboundHref } from "@/lib/outbound";
 // 「조류(tide)를」이 「조류 / (tide)를」로 갈리지 않게 — 운영 390px에서 실측((81))
 import { keepGlossTogether } from "@/lib/format";
-import type { PerformanceSummary } from "@/lib/performance";
-import type { Rebalance } from "@/lib/types";
 
 /**
- * 첫 화면 — 문구 + CTA + 기록의 두께.
+ * 첫 화면 — 문구 + 오늘의 바람 한 줄.
+ *
+ * ## ⚠ 2026-10-31: 버튼 둘(「지금 시장 읽기」·「블로그에서 이어 읽기」)과 숫자 셋(기록 개월·투자일지·리밸런싱)을 뺐다
+ * 운영자 결정(「이 부분도 제거」 · 「운영원칙은 개선을 위해 재정립하면 된다」). 메뉴에 같은 길이 있고,
+ * 숫자 셋은 기록이 얇은 지금 「0건」으로 사이트를 비어 보이게 했다.
+ * ⚠ 1순위(티스토리 유입)의 첫 화면 버튼이 사라졌다 — 그 길은 이제 블로그 블록 · 인사이트 CTA · 글 끝 CTA가 맡는다.
+ *   배포 뒤 「티스토리로 넘어간 클릭」으로 잰다(CHANGELOG 가설). 아래 옛 주석은 판단 기록으로 남긴다.
  *
  * ## ⚠ 2026-08-30(Step 2): 계좌 카드를 내렸다
  * 여기 오른쪽에 **계좌 평가액 카드**가 있었다. 그런데 검색으로 들어온 사람은 남의 계좌
@@ -31,37 +32,12 @@ export function HeroSection({
   heroTitle,
   heroSubtitle,
   lede,
-  perf,
-  rebalances,
-  journalCount,
 }: {
   heroTitle: string;
   heroSubtitle: string;
   /** 오늘의 바람 한 줄. ⚠ 값이 없으면 null이고, 그때는 줄 자체를 그리지 않는다 */
   lede: string | null;
-  perf: PerformanceSummary | null;
-  rebalances: Rebalance[];
-  journalCount: number;
 }) {
-  /**
-   * ⚠ **기록 셋이 모두 0이면 숫자 줄을 그리지 않는다**(2026-09-14 사용자 결정).
-   *
-   * 처음 온 사람에게 「기록 개월 0 · 투자일지 0건 · 리밸런싱 0회」는
-   * **"아무것도 없는 사이트"** 로 읽힌다. 8/30에는 그 자리를 「추적 중인 지표 72개 · 계좌 기록
-   * 준비 중 · 공개 방식 모의 투자」로 채웠는데, 첫 화면에서 숫자 하나로 떨어진 「72개」는
-   * 무엇을 추적하는지 말해 주지 못했다. 지표 수는 **묶음과 함께** 말할 때 뜻이 생긴다 —
-   * 그래서 거시 지표 묶음 자리(`/macro`·홈 `MacroSection`)로 옮겼다.
-   * ⚠ 「모의 투자」 표시는 계좌 숫자가 나오는 자리(`AccountStrip`)가 계속 맡는다.
-   * 계좌 기록이 시작되면 기록 셋이 다시 뜬다.
-   */
-  const hasRecord = (perf?.months ?? 0) > 0 || journalCount > 0 || rebalances.length > 0;
-  const stats = hasRecord
-    ? [
-        { label: "기록 개월", value: String(perf?.months ?? 0) },
-        { label: "투자일지", value: `${journalCount}건` },
-        { label: "리밸런싱", value: `${rebalances.length}회` },
-      ]
-    : [];
   return (
     <section className="relative overflow-hidden border-b border-border">
       <div
@@ -90,27 +66,6 @@ export function HeroSection({
             </p>
           )}
           <p className="mt-4 text-[15px] text-muted leading-relaxed max-w-xl">{keepGlossTogether(heroSubtitle)}</p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <LinkButton href="/macro" variant="gold" size="lg">
-              지금 시장 읽기
-              <ArrowRightIcon size={16} />
-            </LinkButton>
-            {/* ⚠ 1순위 목적이 블로그 유입이다. 그 버튼이 첫 화면에 있어야 한다. */}
-            <LinkButton href={outboundHref("tistory")} variant="outline" size="lg">
-              블로그에서 이어 읽기
-              <ExternalIcon size={14} />
-            </LinkButton>
-          </div>
-          {stats.length > 0 && (
-            <dl className="mt-9 grid grid-cols-3 gap-4 max-w-md">
-              {stats.map((s) => (
-                <div key={s.label}>
-                  <dt className="text-[11px] text-gray-500">{s.label}</dt>
-                  <dd className="text-xl font-bold text-ink tabular-nums mt-0.5">{s.value}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
         </div>
       </div>
     </section>

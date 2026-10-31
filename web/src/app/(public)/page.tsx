@@ -37,7 +37,6 @@ import { macroLede } from "@/lib/home-lede";
 import { summarizePerformance } from "@/lib/performance";
 import { getSiteBasics } from "@/lib/site-settings";
 import { loadPublishedJournal, loadSnapshots } from "@/features/journal/repository";
-import { loadRebalances } from "@/features/portfolio/repository";
 import { loadBuckets } from "@/features/portfolio/buckets-repo";
 import { loadMacroOverview } from "@/features/macro/service";
 import { loadPublishedSummaries } from "@/features/reports/repository";
@@ -102,7 +101,6 @@ export default async function HomePage() {
     snapshots,
     allJournal,
     basics,
-    rebalances,
     macro,
     latestPosts,
     homePosts,
@@ -118,7 +116,6 @@ export default async function HomePage() {
     loadSnapshots(),
     loadPublishedJournal(),
     getSiteBasics(),
-    loadRebalances(),
     loadMacroOverview(),
     loadPublishedPosts(6),
     loadSectionPosts("HOME", 4),
@@ -196,9 +193,6 @@ export default async function HomePage() {
         heroTitle={basics.heroTitle}
         heroSubtitle={basics.heroSubtitle}
         lede={macroLede({ empty: macro.empty, summary: macro.summary, asOf: macro.asOf })}
-        perf={perf}
-        rebalances={rebalances}
-        journalCount={allJournal.length}
       />
     ),
     macroStrip: <MacroStrip indicators={macro.headlines} frame={<CapitalRegimeFrame frame={regimeFrame} />} />,
