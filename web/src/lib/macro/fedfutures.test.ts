@@ -6,6 +6,7 @@ import {
   pointsForContract,
   daysInMonth,
   effectiveDate,
+  fedFuturesGap,
   fedFuturesSentence,
   impliedFromFutures,
   monthPrefix,
@@ -251,6 +252,41 @@ describe("계약월 안 회의를 푸는 경우", () => {
     })!;
     expect(before.solved).toBeUndefined();
     expect(before.meeting).toBe("2026-09-16");
+  });
+});
+
+/** ⭐ 2026-10-31 — 「수집 전」 하나로 뭉쳐 보이던 네 경우를 가른다. */
+describe("계산을 못 낸 이유", () => {
+  const base = { impliedAvg: 3.9, contractMonth: "2026-11", currentRate: 3.88, quoteDate: "2026-10-30" };
+
+  it("시세가 없으면 정말 수집 전이다", () => {
+    expect(fedFuturesGap({ meetings: MEETINGS }).reason).toBe("no-quote");
+    expect(fedFuturesGap({ ...base, impliedAvg: Number.NaN, meetings: MEETINGS }).reason).toBe("no-quote");
+  });
+
+  it("시세는 있고 실효금리가 없으면 그렇게 말한다", () => {
+    expect(fedFuturesGap({ ...base, currentRate: undefined, meetings: MEETINGS }).reason).toBe("no-rate");
+  });
+
+  it("FOMC 일정이 비면 일정 탓이다", () => {
+    expect(fedFuturesGap({ ...base, meetings: [] }).reason).toBe("no-calendar");
+  });
+
+  /** 2026-10-31 운영 실제: 10/30 시세 → 11월물, 10/28은 지났고 다음 12/9는 12월물 — 11월 시세부터. */
+  it("이 계약에 걸리는 회의가 없으면 다음 회의와 계산이 시작되는 달을 말한다", () => {
+    expect(impliedFromFutures({ ...base, meetings: MEETINGS })).toBeUndefined();
+    expect(fedFuturesGap({ ...base, meetings: MEETINGS })).toEqual({
+      reason: "no-meeting",
+      ...base,
+      nextMeeting: "2026-12-09",
+      nextContract: "2026-12",
+      readyFromMonth: "2026-11",
+    });
+  });
+
+  it("다음 회의가 1월물에 걸리면 12월 시세부터다", () => {
+    const g = fedFuturesGap({ ...base, quoteDate: "2026-12-10", contractMonth: "2027-01", meetings: ["2027-01-27"] });
+    expect(g).toMatchObject({ nextContract: "2027-01", readyFromMonth: "2026-12" });
   });
 });
 

@@ -333,6 +333,67 @@ export function impliedFromFutures(input: FedFuturesInput): FedFuturesResult | u
 }
 
 /**
+ * ⭐ 계산을 못 낸 **이유** (2026-10-31).
+ *
+ * 왜: `impliedFromFutures`가 `undefined`를 내는 경우가 넷인데 홈 카드는 전부 「시장 내재 값 **수집 전**」이라고 했다.
+ * 10/29~31에는 10/30 시세(11월물)가 들어와 있었는데 11월물에 걸리는 회의가 없었을 뿐이다 — 「없음」과 「못 읽음」이
+ * 같은 화면이 된 것이다(CLAUDE.md §3). 회의 직후 월말마다(회의가 없는 달의 계약을 받는 동안) 되풀이된다.
+ */
+export type FedFuturesGap =
+  /** 선물 시세가 없다 — 정말 수집 전 */
+  | { reason: "no-quote" }
+  /** 시세는 있는데 일간 실효금리(DFF)가 없다 */
+  | { reason: "no-rate"; contractMonth: ContractMonth; quoteDate: string }
+  /** FOMC 일정이 비었다 — 캘린더를 못 읽었거나 비어 있다 */
+  | { reason: "no-calendar"; contractMonth: ContractMonth; quoteDate: string }
+  /** 다 있는데 이 계약에 걸리는 회의가 없다 — 다음 회의는 뒤 계약에 걸린다 */
+  | {
+      reason: "no-meeting";
+      contractMonth: ContractMonth;
+      quoteDate: string;
+      impliedAvg: number;
+      currentRate: number;
+      nextMeeting?: string;
+      /** 다음 회의가 걸리는 계약월(효력일의 달) */
+      nextContract?: ContractMonth;
+      /** 그 계약을 받기 시작하는 시세월 — 저장 불변식 「시세일의 다음 달」의 역 */
+      readyFromMonth?: ContractMonth;
+    };
+
+function prevMonthOf(month: ContractMonth): ContractMonth {
+  const [y, m] = month.split("-").map(Number);
+  return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+}
+
+/**
+ * `impliedFromFutures`가 아무것도 내지 않았을 때 **왜인지**. 이유를 아는 순서대로 본다.
+ * ⚠ 결과가 있을 때 부르지 않는다 — 이 함수는 결과를 다시 계산하지 않는다.
+ */
+export function fedFuturesGap(input: Partial<FedFuturesInput> & { meetings: string[] }): FedFuturesGap {
+  const { impliedAvg, contractMonth, currentRate, meetings, quoteDate } = input;
+  if (impliedAvg === undefined || !Number.isFinite(impliedAvg) || !contractMonth || !quoteDate) {
+    return { reason: "no-quote" };
+  }
+  if (currentRate === undefined || !Number.isFinite(currentRate)) {
+    return { reason: "no-rate", contractMonth, quoteDate };
+  }
+  if (meetings.length === 0) return { reason: "no-calendar", contractMonth, quoteDate };
+
+  const nextMeeting = meetings.filter((d) => d > quoteDate).sort()[0];
+  const nextContract = nextMeeting ? effectiveDate(nextMeeting).slice(0, 7) : undefined;
+  return {
+    reason: "no-meeting",
+    contractMonth,
+    quoteDate,
+    impliedAvg,
+    currentRate,
+    nextMeeting,
+    nextContract,
+    readyFromMonth: nextContract ? prevMonthOf(nextContract) : undefined,
+  };
+}
+
+/**
  * 한 문장 요약 — ⚠ 숫자와 **가정**을 같이 넣는다. 검색·AI가 이 문장만 떠 가도
  * 「우리 계산」이라는 사실과 한계가 함께 가야 한다(`docs/계획_AI친화_사이트_GEO.md`).
  */

@@ -26,7 +26,9 @@ import {
 import { judgeSignal, summarizeRecession, type RecessionSummary, type SignalStatus } from "@/lib/macro/signal";
 import { estimateFedHike, type FedHikeResult } from "@/lib/macro/fedhike";
 import {
+  fedFuturesGap,
   impliedFromFutures,
+  type FedFuturesGap,
   nextMonthOf,
   type FedFuturesResult,
 } from "@/lib/macro/fedfutures";
@@ -169,6 +171,8 @@ export type MacroOverview = {
   fedFutures?: FedFuturesResult;
   /** 선물 시세일 — 이 계산이 언제 값인지 */
   fedFuturesAsOf?: string;
+  /** `fedFutures`가 없을 때 그 이유 */
+  fedFuturesGap?: FedFuturesGap;
   /**
    * ⭐ 자본 엔진의 두 격차 — 「생산성이 버는 것 vs 돈값」과 「성장 vs 이자」.
    * ⚠ 여기서 한 번만 계산한다. 화면마다 따로 계산하면 같은 질문에 다른 답이 나온다.
@@ -248,20 +252,23 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
    * ⚠ 회의 일정은 캘린더에서 온다. 비어 있으면 계산하지 않는다(`impliedFromFutures`).
    */
   const zq = views.get("zq_front");
-  const fedFutures =
+  const futuresInput =
     zq?.value !== undefined && zq.asOf
-      ? impliedFromFutures({
+      ? {
           impliedAvg: zq.value,
           contractMonth: nextMonthOf(zq.asOf),
           /**
            * ⚠ 현재 금리는 **일간 실효금리(DFF)** 다(2026-09-14). 월간 FEDFUNDS는 FOMC 직후 최대 한 달 묵어, 이미 반영된
-           *   인상을 또 인상으로 센다. ⚠ DFF가 없으면 월간 값으로 **조용히 대신하지 않는다** — 계산하지 않는다(카드가 「수집 전」).
+           *   인상을 또 인상으로 센다. ⚠ DFF가 없으면 월간 값으로 **조용히 대신하지 않는다** — 계산하지 않는다(카드가 「실효금리 없음」).
            */
           currentRate: views.get("dff")?.value,
           meetings: fomc,
           quoteDate: zq.asOf,
-        })
+        }
       : undefined;
+  const fedFutures = futuresInput ? impliedFromFutures(futuresInput) : undefined;
+  /** ⚠ 못 낸 이유를 함께 넘긴다 — 「없음」과 「못 읽음」이 같은 화면이 되지 않게(2026-10-31). */
+  const fedFuturesGapInfo = fedFutures ? undefined : fedFuturesGap(futuresInput ?? { meetings: fomc });
 
   /**
    * ⭐ 자본 엔진의 두 격차.
@@ -294,6 +301,7 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
     fedHikeAsOf: fedHike ? fedHikeAsOf : undefined,
     fedFutures,
     fedFuturesAsOf: fedFutures ? zq?.asOf : undefined,
+    fedFuturesGap: fedFuturesGapInfo,
   };
 }
 

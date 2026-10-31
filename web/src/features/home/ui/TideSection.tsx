@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import type { BubbleScore } from "@/lib/bubble/score";
 import type { LiquidityCardView } from "@/lib/scores/summary";
 import { LiquidityDialog, type LiquidityAnalysis } from "./LiquidityDialog";
-import type { FedFuturesResult } from "@/lib/macro/fedfutures";
+import type { FedFuturesGap, FedFuturesResult } from "@/lib/macro/fedfutures";
 import { formatProbability, type FedHikeResult } from "@/lib/macro/fedhike";
 import {
   BUBBLE_GUIDE,
@@ -174,12 +174,42 @@ function BubbleCard({ score }: { score: BubbleScore }) {
 export type RateDirection = {
   futures?: FedFuturesResult;
   futuresAsOf?: string;
+  /** `futures`가 없을 때 그 이유 — ⚠ 「수집 전」 하나로 뭉치지 않는다(2026-10-31) */
+  futuresGap?: FedFuturesGap;
   hike?: FedHikeResult;
   hikeAsOf?: string;
 };
 
+/**
+ * 선물 계산이 없을 때의 말. ⚠ 이유마다 다르게 — 시세가 있는데 「수집 전」이라고 하면 사실이 아니다.
+ * 「회의 없음」은 고장이 아니라 달력의 결과다: 지난 회의는 이미 현재 금리에 있고, 다음 회의는 뒤 계약에 걸린다.
+ */
+function FuturesGapNote({ gap }: { gap?: FedFuturesGap }) {
+  const text =
+    !gap || gap.reason === "no-quote"
+      ? "선물 시세가 다음 수집 뒤에 들어오면 계산됩니다."
+      : gap.reason === "no-rate"
+        ? "일간 실효금리(DFF)가 아직 없어 계산하지 않았습니다. 다음 수집 뒤에 계산됩니다."
+        : gap.reason === "no-calendar"
+          ? "FOMC 일정을 읽지 못해 계산하지 않았습니다."
+          : gap.nextMeeting
+            ? `이 계약에 걸리는 회의가 없습니다. 다음 회의 ${gap.nextMeeting}는 ${gap.nextContract} 계약에 걸려 ${gap.readyFromMonth} 시세부터 계산됩니다.`
+            : "이 계약에 걸리는 회의가 없고, 일정에 다음 회의가 아직 없습니다.";
+  return (
+    <>
+      <p className="mt-3 text-[13px] text-muted">{text}</p>
+      {gap?.reason === "no-meeting" && (
+        <p className="mt-1 text-[12px] text-ink">
+          참고: 현재 {gap.currentRate.toFixed(2)}% · {gap.contractMonth} 평균 내재 {gap.impliedAvg.toFixed(2)}%
+        </p>
+      )}
+    </>
+  );
+}
+
 function RateCard({ rates }: { rates: RateDirection }) {
   const f = rates.futures;
+  const g = rates.futuresGap;
   const h = rates.hike;
   const dir = f && f.impliedChange >= 0 ? "인상" : "인하";
   /** ⚠ 1을 넘을 수 있다(인상 두 번이면 200%) — 자르지 않는다 */
@@ -189,7 +219,11 @@ function RateCard({ rates }: { rates: RateDirection }) {
       <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
         <h3 className="text-[13px] font-semibold text-ink">{RATE_GUIDE.title}</h3>
         <span className="text-[10.5px] text-ink-3">
-          {f ? `${rates.futuresAsOf ?? "?"} 선물 · ${f.contractMonth} 계약` : "시장 내재 값 수집 전"}
+          {f
+            ? `${rates.futuresAsOf ?? "?"} 선물 · ${f.contractMonth} 계약`
+            : g && g.reason !== "no-quote"
+              ? `${g.quoteDate} 선물 · ${g.contractMonth} 계약`
+              : "시장 내재 값 수집 전"}
         </span>
       </div>
 
@@ -213,7 +247,7 @@ function RateCard({ rates }: { rates: RateDirection }) {
           )}
         </>
       ) : (
-        <p className="mt-3 text-[13px] text-muted">선물 시세·일간 실효금리가 다음 수집 뒤에 들어오면 계산됩니다.</p>
+        <FuturesGapNote gap={g} />
       )}
 
       {h ? (
