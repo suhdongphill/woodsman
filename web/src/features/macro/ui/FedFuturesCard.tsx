@@ -11,6 +11,8 @@
  *   (`docs/분석_막힌_지표_경로.md` §2).
  * - **가정의 크기를 숨기지 않는다.** 계약월 안의 회의는 「변화 없음」으로 뒀고, 그 가정이
  *   몇 %의 날수에 걸려 있는지 그대로 적는다.
+ * - 계약월 안 회의를 **푼** 경우(2026-10-31, `fedfutures.ts` ⭐ 예외)는 회의 전·후 날수를 함께 적는다 —
+ *   그 값은 「현재 금리가 회의 전까지 이어진다」는 전제 위에 서 있다.
  */
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
@@ -62,19 +64,33 @@ export function FedFuturesCard({
 
       <p className="mt-3 text-[13.5px] leading-relaxed text-gray-300">
         {result.contractMonth} 연방기금 선물이 말하는 그 달 평균 실효금리는{" "}
-        <strong className="text-ink">{result.impliedAvg.toFixed(3)}%</strong>입니다. 현재{" "}
-        {result.currentRate.toFixed(2)}%보다{" "}
-        <strong className={up ? "text-red-300" : "text-sky-300"}>
-          {signed(result.impliedChange)}%p
-        </strong>{" "}
-        {up ? "높습니다" : "낮습니다"}.
+        <strong className="text-ink">{result.impliedAvg.toFixed(3)}%</strong>입니다.{" "}
+        {result.solved ? (
+          <>
+            {result.solved.meeting} 회의 전 {result.solved.daysBefore}일을 현재 금리{" "}
+            {result.currentRate.toFixed(2)}%로 두고 풀면, 회의 뒤 금리는{" "}
+            <strong className="text-ink">{result.rateAfter.toFixed(2)}%</strong> — 현재보다{" "}
+            <strong className={up ? "text-red-300" : "text-sky-300"}>
+              {signed(result.impliedChange, 2)}%p
+            </strong>
+            입니다.
+          </>
+        ) : (
+          <>
+            현재 {result.currentRate.toFixed(2)}%보다{" "}
+            <strong className={up ? "text-red-300" : "text-sky-300"}>
+              {signed(result.impliedChange)}%p
+            </strong>{" "}
+            {up ? "높습니다" : "낮습니다"}.
+          </>
+        )}
       </p>
 
       {result.singleMeeting ? (
         <div className="mt-4 rounded-xl border border-border bg-bg px-3 py-2.5">
           <div className="flex items-baseline justify-between gap-2">
             <span className="text-[12px] text-gray-400">
-              {result.reflected[0]} 회의 · {STEP * 100}bp {dir} 한 번을 1로 보면
+              {result.meeting} 회의 · {STEP * 100}bp {dir} 한 번을 1로 보면
             </span>
             <span className="text-[17px] font-bold tabular-nums text-gold-400">
               {(share * 100).toFixed(0)}%
@@ -101,9 +117,15 @@ export function FedFuturesCard({
           {(100 - result.impliedAvg).toFixed(3)} → {result.impliedAvg.toFixed(3)}%
         </Row>
         <Row label="현재 실효금리">{result.currentRate.toFixed(2)}%</Row>
-        <Row label="온전히 반영된 회의">
-          {result.reflected.length > 0 ? result.reflected.join(" · ") : "없음"}
-        </Row>
+        {result.solved ? (
+          <Row label="계약월 안에서 푼 회의">
+            {result.solved.meeting} · 전 {result.solved.daysBefore}일 / 뒤 {result.solved.daysAfter}일
+          </Row>
+        ) : (
+          <Row label="온전히 반영된 회의">
+            {result.reflected.length > 0 ? result.reflected.join(" · ") : "없음"}
+          </Row>
+        )}
       </dl>
 
       {result.assumedFlat.length > 0 && (
@@ -120,7 +142,9 @@ export function FedFuturesCard({
         ※ 30일 연방기금 선물은 <strong>계약월의 평균 실효금리</strong>를 거래합니다
         (금리 = 100 − 가격). 계약월이 시작되기 전에 열리는 회의의 결과는 그 달 전체에
         반영되므로, 현재 금리와의 차이를 {STEP * 100}bp로 나누면 「인상 한 번」 기준의 비중이
-        됩니다. <strong>CME 페드워치가 아니라 선물 가격에서 우리가 계산한 값이며</strong>,
+        됩니다. 회의가 계약월 안에 하나뿐이고 그 전에 다른 회의가 없으면, 회의 전 날들을 현재
+        금리로 두고 회의 뒤 금리를 거꾸로 풉니다(월말 회의는 풀지 않습니다).{" "}
+        <strong>CME 페드워치가 아니라 선물 가격에서 우리가 계산한 값이며</strong>,
         페드워치와 소수점이 다를 수 있습니다. 확률의 절대 수준이 아니라 방향과 변화로
         읽어 주세요.{" "}
         <Link href="/disclaimer" className="underline hover:text-gold-400">

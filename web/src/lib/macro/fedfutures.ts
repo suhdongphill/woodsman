@@ -18,16 +18,34 @@
  *   없다. 화면에는 「선물 내재(우리 계산)」이라고 적는다.
  *   ⚠ CME는 우리를 막아 두었다(2026-09-13 재확인: CmeWS **403** + "scraping은 이용약관 위반").
  *   그래서 원재료(Yahoo `ZQ=F`)에서 우리가 직접 계산하는 것 외에 길이 없다.
- * - **계약월 안의 회의는 결과를 모른다고 둔다.** 계약 하나로는 미지수가 둘(회의 전·후
- *   금리)인데 식이 하나뿐이다. 그래서 **계약월 안의 회의는 「변화 없음」으로 가정**하고,
- *   ⚠ 그 가정이 얼마나 큰지(그 회의가 차지하는 날수 비중)를 함께 돌려준다.
- *   숨기면 가정이 사실처럼 읽힌다.
+ * - **계약월 안의 회의는 결과를 모른다고 둔다** — 단 하나의 예외(아래)를 빼고.
+ *   계약 하나로는 미지수가 둘(회의 전·후 금리)인데 식이 하나뿐이다. 그래서 **계약월 안의
+ *   회의는 「변화 없음」으로 가정**하고, ⚠ 그 가정이 얼마나 큰지(그 회의가 차지하는 날수
+ *   비중)를 함께 돌려준다. 숨기면 가정이 사실처럼 읽힌다.
+ *
+ * ## ⭐ 예외 — 회의 전 금리를 아는 경우는 푼다 (2026-10-31)
+ * 시세일과 계약월 사이에 회의가 **없고**, 계약월 안 회의가 **하나뿐**이면 회의 전 금리는
+ * 지금 금리다. 그러면 미지수가 하나라 풀 수 있다(CME 페드워치와 같은 식):
+ *   `평균 = (M/N)·지금 금리 + ((N−M)/N)·회의 뒤 금리`  (M = 회의 전 날수, N = 그 달 날수)
+ * 볼트 `_scripts/fedwatch.py` `implied_path`가 8/11부터 쓰는 방식이다.
+ * 왜 바꿨나: 「다음 달」 계약 안에 회의가 있는 기간(예: 11월 시세 → 12월물 · 12/9 회의)에
+ * 카드가 그 회의를 「변화 없음」으로 둬서(날수의 71%) 다음 회의의 몫을 말하지 못했다
+ * (CHANGELOG 2026-10-26 확인 절).
+ * ⚠ 월말 회의(회의 뒤 날수 < `MIN_TAIL_DAYS`)는 풀지 않는다 — 분모가 작아 가격 잡음이
+ *   몇 배로 불어난다. 볼트는 그때 익월 계약을 쓰지만 사이트는 계약을 하나만 저장하므로
+ *   예전처럼 「변화 없음」 가정과 그 비중을 보인다.
  * - **확률이라고 단정하지 않는다.** `hikeShare`는 "인상 한 번(25bp)을 1로 봤을 때의 비중"이다.
  *   실제 확률분포는 0.25 단위 여러 갈래에 걸쳐 있고, 그 갈래를 계약 하나로 못 가른다.
  */
 
 /** 정책금리 조정의 기본 단위(%p). */
 export const STEP = 0.25;
+
+/**
+ * 계약월 안 회의를 풀 때 필요한 「회의 뒤 날수」의 최소값.
+ * ⚠ 볼트 `fedwatch.py` `min_tail_days=5`와 같은 값이다 — 회의 뒤가 4일이면 가격 잡음이 31/4 ≈ 8배가 된다.
+ */
+export const MIN_TAIL_DAYS = 5;
 
 /** `2026-10` 꼴. */
 export type ContractMonth = string;
@@ -215,12 +233,30 @@ export type FedFuturesResult = {
   assumedFlat: string[];
   /** 그 가정이 걸린 날수 비중(0~1). ⚠ 클수록 이 숫자를 믿지 말라는 뜻이다 */
   assumedWeight: number;
-  /** 내재 누적 변화(%p) = impliedAvg − currentRate */
+  /**
+   * 계약월 안 회의를 날수 가중으로 푼 경우(⭐ 모듈 주석의 예외). 없으면 `undefined`.
+   * ⚠ 이때 `reflected`·`assumedFlat`은 비어 있다 — 그 회의는 반영된 것도, 가정한 것도 아니고 **푼** 것이다.
+   */
+  solved?: {
+    meeting: string;
+    /** 회의 전 날수(지금 금리가 이어진다고 본 날) */
+    daysBefore: number;
+    /** 회의 뒤 날수 */
+    daysAfter: number;
+  };
+  /**
+   * 시장이 거는 **회의 뒤 금리**(%). 푼 경우는 그 값, 아니면 `impliedAvg`와 같다.
+   * ⚠ 푼 값은 가격 잡음이 `N / daysAfter`배로 불어난 값이다 — 소수 셋째 자리를 믿지 않는다.
+   */
+  rateAfter: number;
+  /** 내재 누적 변화(%p) = rateAfter − currentRate */
   impliedChange: number;
   /** 인상 한 번(25bp)을 1로 봤을 때의 비중. 음수면 인하 쪽 */
   hikeShare: number;
-  /** `reflected`가 하나뿐인가 — 그때만 "그 회의의" 비중이라고 말할 수 있다 */
+  /** 회의 하나의 몫인가 — `reflected`가 하나뿐이거나, 하나를 풀었을 때만 "그 회의의" 비중이라고 말할 수 있다 */
   singleMeeting: boolean;
+  /** `singleMeeting`일 때 그 회의 */
+  meeting?: string;
 };
 
 /**
@@ -251,10 +287,32 @@ export function impliedFromFutures(input: FedFuturesInput): FedFuturesResult | u
 
   // 가정이 걸린 날수: 계약월 안 회의들 중 **가장 이른** 것이 적용되는 날부터 월말까지.
   let assumedWeight = 0;
+  let daysBefore = 0;
   if (assumedFlat.length > 0) {
     const firstEffective = effectiveDate(assumedFlat[0]);
-    const dayOfMonth = Number(firstEffective.slice(8, 10));
-    assumedWeight = (days - dayOfMonth + 1) / days;
+    daysBefore = Number(firstEffective.slice(8, 10)) - 1;
+    assumedWeight = (days - daysBefore) / days;
+  }
+
+  // ⭐ 회의 전 금리를 아는 경우(사이에 회의 없음 · 계약월 안 회의 하나 · 월말 아님)는 푼다.
+  const daysAfter = days - daysBefore;
+  if (reflected.length === 0 && assumedFlat.length === 1 && daysAfter >= MIN_TAIL_DAYS) {
+    const rateAfter = (impliedAvg * days - daysBefore * currentRate) / daysAfter;
+    const impliedChange = rateAfter - currentRate;
+    return {
+      impliedAvg,
+      currentRate,
+      contractMonth,
+      reflected: [],
+      assumedFlat: [],
+      assumedWeight: 0,
+      solved: { meeting: assumedFlat[0], daysBefore, daysAfter },
+      rateAfter,
+      impliedChange,
+      hikeShare: impliedChange / STEP,
+      singleMeeting: true,
+      meeting: assumedFlat[0],
+    };
   }
 
   const impliedChange = impliedAvg - currentRate;
@@ -266,9 +324,11 @@ export function impliedFromFutures(input: FedFuturesInput): FedFuturesResult | u
     reflected,
     assumedFlat,
     assumedWeight,
+    rateAfter: impliedAvg,
     impliedChange,
     hikeShare: impliedChange / STEP,
     singleMeeting: reflected.length === 1,
+    meeting: reflected.length === 1 ? reflected[0] : undefined,
   };
 }
 
@@ -279,6 +339,15 @@ export function impliedFromFutures(input: FedFuturesInput): FedFuturesResult | u
 export function fedFuturesSentence(r: FedFuturesResult): string {
   const dir = r.impliedChange >= 0 ? "인상" : "인하";
   const pct = `${(Math.abs(r.hikeShare) * 100).toFixed(0)}%`;
+  if (r.solved) {
+    const s = r.solved;
+    return (
+      `${r.contractMonth} 연방기금 선물이 말하는 그 달 평균 실효금리는 ${r.impliedAvg.toFixed(3)}%입니다. ` +
+      `${s.meeting} 회의 전 ${s.daysBefore}일을 현재 금리 ${r.currentRate.toFixed(2)}%로 두고 풀면 회의 뒤 금리는 ${r.rateAfter.toFixed(2)}%로, ` +
+      `${STEP * 100}bp ${dir} 한 번을 1로 보면 ${pct}에 해당합니다. ` +
+      `CME 페드워치가 아니라 선물 가격에서 우리가 계산한 값입니다.`
+    );
+  }
   const head =
     `${r.contractMonth} 연방기금 선물이 말하는 그 달 평균 실효금리는 ${r.impliedAvg.toFixed(3)}%로, ` +
     `현재 ${r.currentRate.toFixed(2)}%보다 ${r.impliedChange >= 0 ? "+" : ""}${r.impliedChange.toFixed(3)}%p ` +

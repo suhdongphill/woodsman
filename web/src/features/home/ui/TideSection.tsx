@@ -198,11 +198,13 @@ function RateCard({ rates }: { rates: RateDirection }) {
           <p className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold tabular-nums text-ink">{(share * 100).toFixed(0)}%</span>
             <span className="text-[12px] text-muted">
-              {f.singleMeeting ? `${f.reflected[0]} 회의 · 25bp ${dir} 한 번 대비` : `${dir} 쪽 누적 · 25bp 한 번 대비`}
+              {f.singleMeeting ? `${f.meeting} 회의 · 25bp ${dir} 한 번 대비` : `${dir} 쪽 누적 · 25bp 한 번 대비`}
             </span>
           </p>
           <p className="mt-1 text-[12px] text-ink">
-            시장이 거는 것: 현재 {f.currentRate.toFixed(2)}% → 계약월 평균 {f.impliedAvg.toFixed(2)}%
+            {f.solved
+              ? `시장이 거는 것: 현재 ${f.currentRate.toFixed(2)}% → 회의 뒤 ${f.rateAfter.toFixed(2)}% (계약월 평균 ${f.impliedAvg.toFixed(2)}%에서 풂)`
+              : `시장이 거는 것: 현재 ${f.currentRate.toFixed(2)}% → 계약월 평균 ${f.impliedAvg.toFixed(2)}%`}
           </p>
           {f.assumedFlat.length > 0 && (
             <p className="mt-1 text-[10.5px] text-ink-3">

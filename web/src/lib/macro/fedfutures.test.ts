@@ -192,6 +192,68 @@ describe("⚠ 안 내는 경우", () => {
   });
 });
 
+/**
+ * ⭐ 2026-10-31 — 계약월 안 회의를 날수 가중으로 푼다(볼트 `fedwatch.py` `implied_path`와 같은 식).
+ * 11월 시세 → 12월물 · 12/9 회의(효력 12/10): 회의 전 9일 · 뒤 22일.
+ */
+describe("계약월 안 회의를 푸는 경우", () => {
+  const DFF = 3.88;
+  /** 회의 뒤 4.13%(+25bp)를 가정해 만든 평균 — (9·3.88 + 22·4.13) / 31 */
+  const avg = (9 * DFF + 22 * 4.13) / 31;
+  const r = impliedFromFutures({
+    impliedAvg: avg,
+    contractMonth: "2026-12",
+    currentRate: DFF,
+    meetings: MEETINGS,
+    quoteDate: "2026-11-02",
+  })!;
+
+  it("회의 뒤 금리를 거꾸로 푼다", () => {
+    expect(r.solved).toEqual({ meeting: "2026-12-09", daysBefore: 9, daysAfter: 22 });
+    expect(r.rateAfter).toBeCloseTo(4.13, 6);
+    expect(r.hikeShare).toBeCloseTo(1, 6);
+  });
+
+  it("그 회의의 몫이라고 말하고, 「변화 없음」 가정은 남기지 않는다", () => {
+    expect(r.singleMeeting).toBe(true);
+    expect(r.meeting).toBe("2026-12-09");
+    expect(r.assumedFlat).toEqual([]);
+    expect(r.assumedWeight).toBe(0);
+    const s = fedFuturesSentence(r);
+    expect(s).toContain("회의 전 9일");
+    expect(s).toContain("4.13%");
+    expect(s).toContain("100%");
+    expect(s).not.toContain("변화 없음");
+  });
+
+  /** ⚠ 1/27 회의(효력 1/28)는 회의 뒤가 4일 — 가격 잡음이 31/4배가 된다. 풀지 않고 가정을 보인다. */
+  it("⚠ 월말 회의는 풀지 않는다", () => {
+    const late = impliedFromFutures({
+      impliedAvg: 3.9,
+      contractMonth: "2027-01",
+      currentRate: DFF,
+      meetings: ["2027-01-27"],
+      quoteDate: "2026-12-15",
+    })!;
+    expect(late.solved).toBeUndefined();
+    expect(late.assumedFlat).toEqual(["2027-01-27"]);
+    expect(late.rateAfter).toBe(3.9);
+  });
+
+  /** ⚠ 계약월 전에 다른 회의가 있으면 회의 전 금리를 모른다 — 미지수가 둘이다. */
+  it("⚠ 앞에 반영된 회의가 있으면 풀지 않는다", () => {
+    const before = impliedFromFutures({
+      impliedAvg: YAHOO_2026_09_11.impliedAvg,
+      contractMonth: "2026-10",
+      currentRate: 3.63,
+      meetings: ["2026-09-16", "2026-10-14"],
+      quoteDate: "2026-09-11",
+    })!;
+    expect(before.solved).toBeUndefined();
+    expect(before.meeting).toBe("2026-09-16");
+  });
+});
+
 describe("명시 계약 심볼 (2026-09-27 — ZQ=F가 여러 계약을 이어 붙인 계열이었다)", () => {
   it("CME 월 코드", () => {
     expect(cmeContractSymbol("ZQ", "2026-10")).toBe("ZQV26.CBT");
