@@ -19,9 +19,9 @@ import {
 } from "./site-status";
 
 describe("사이트 단계", () => {
-  it("지금은 베타다", () => {
-    expect(SITE_STAGE).toBe("BETA");
-    expect(isBeta).toBe(true);
+  it("베타 고지를 내렸다(2026-11-03 운영자) — 배너·소개 화면의 BETA 표시가 사라진다", () => {
+    expect(SITE_STAGE).toBe("OPEN");
+    expect(isBeta).toBe(false);
   });
 
   it("베타 고지 문구가 비어 있지 않다", () => {
@@ -80,7 +80,7 @@ describe("말과 동작의 일치", () => {
     }
   });
 
-  it("베타 단계에서는 기록 단계가 진행 중이다", () => {
-    if (isBeta) expect(currentPhase()?.id).toBe("record");
+  it("⚠ 베타 고지를 내려도 진행 단계는 여전히 「혼자 기록한다」다 — 단계(말)와 개방(동작)은 따로다", () => {
+    expect(currentPhase()?.id).toBe("record");
   });
 });

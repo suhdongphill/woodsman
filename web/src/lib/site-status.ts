@@ -11,10 +11,18 @@
 
 export type ReleaseStage = "BETA" | "OPEN";
 
-/** 현재 단계. 커뮤니티를 열고 안정화되면 "OPEN"으로 바꾼다. */
-export const SITE_STAGE: ReleaseStage = "BETA";
+/**
+ * 현재 단계.
+ *
+ * 2026-11-03 운영자 결정 「Beta 버젼으로 되어 있는 문구를 제거해 주세요」로 "OPEN".
+ * 원래는 「커뮤니티를 열고 안정화되면 OPEN」이었다 — 커뮤니티는 **아직 잠겨 있다**.
+ * ⚠ 이 값은 **말**(상단 배너·소개 화면의 베타 고지)만 바꾼다. 가입·커뮤니티 개방은
+ *   `site-policy.ts`(DB 스위치)가 정하고, 로드맵의 진행 단계도 여전히 「혼자 기록한다」다.
+ */
+export const SITE_STAGE: ReleaseStage = "OPEN";
 
-export const isBeta = SITE_STAGE === "BETA";
+// `as ReleaseStage`: 상수 리터럴끼리 비교하면 타입 검사가 「겹치지 않는 비교」로 막는다.
+export const isBeta = (SITE_STAGE as ReleaseStage) === "BETA";
 
 /** 상단 배너·메타 설명에 쓰는 짧은 문구 */
 export const BETA_NOTICE = {
