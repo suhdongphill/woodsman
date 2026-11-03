@@ -34,6 +34,7 @@ export const PUBLIC_STATIC_PATHS = [
   "/blog",
   "/board",
   "/briefing",
+  "/data-terms",
   "/disclaimer",
   "/insights",
   "/journal",

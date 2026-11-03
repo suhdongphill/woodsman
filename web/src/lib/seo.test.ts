@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   breadcrumbJsonLd,
@@ -35,6 +37,13 @@ describe("구조화 데이터", () => {
     expect(jsonLd.isAccessibleForFree).toBe(true);
     expect(jsonLd.variableMeasured).toContain("미 국채 10년");
     expect(jsonLd.dateModified).toBe("2026-08-06");
+  });
+
+  it("데이터셋은 이용 조건 화면을 license로 가리킨다 — 절대 URL, 그 화면이 실제로 있어야 한다", () => {
+    const jsonLd = datasetJsonLd({ name: "x", description: "y", path: "/macro", variables: [], sources: [] });
+    expect(jsonLd.license).toMatch(/^https?:\/\/.+\/data-terms$/);
+    // 화면이 없는데 license만 가리키면 거짓 주소가 된다.
+    expect(existsSync(join(process.cwd(), "src/app/(public)/data-terms/page.tsx"))).toBe(true);
   });
 
   it("갱신일이 없으면 dateModified를 아예 넣지 않는다 — 빈 날짜를 만들지 않는다", () => {

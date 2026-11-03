@@ -86,6 +86,7 @@ ${posts.length ? `\n${posts.join("\n")}` : "\n아직 발행된 글이 없습니�
 ## 정책
 
 - [투자 판단 책임 고지](${absoluteUrl("/disclaimer")})
+- [데이터 이용 조건](${absoluteUrl("/data-terms")}): Woodsman이 만든 지표 해설·판정은 출처만 밝히면 자유롭게 인용할 수 있습니다. 원자료는 각 기관의 조건을 따릅니다.
 - [개인정보 처리방침](${absoluteUrl("/privacy")}): 방문자 개인정보를 수집하지 않습니다.
   조회수는 (경로, 날짜, 합계)만 세며 쿠키·IP를 저장하지 않습니다.
 

@@ -11,6 +11,9 @@
  */
 import { absoluteUrl } from "./site-url";
 
+/** 데이터 이용 조건 화면 — Dataset의 `license`가 가리킨다. */
+export const DATA_TERMS_PATH = "/data-terms";
+
 export type Crumb = { name: string; path: string };
 
 /** 빵부스러기. 마지막 항목이 현재 페이지다. */
@@ -30,6 +33,11 @@ export function breadcrumbJsonLd(crumbs: Crumb[]) {
 /**
  * 지표 묶음 = 데이터셋.
  * `variableMeasured`에 지표 이름을 넣어 "무엇을 다루는 데이터인가"를 밝힌다.
+ *
+ * `license`(2026-11-03): Search Console이 「'license' 입력란 누락」을 알렸다.
+ * ⚠ 표준 라이선스(CC BY 등) 주소를 넣지 않고 **우리 이용 조건 화면**(`/data-terms`)을 가리킨다.
+ *    원자료(FRED·ECOS·Yahoo 등)의 권리는 각 기관에 있어 우리가 통째로 라이선스를 줄 수 없다 —
+ *    그 구분은 화면에 적혀 있고, 구조화 데이터는 화면에 있는 것만 말한다(이 파일 맨 위 규칙).
  */
 export function datasetJsonLd(input: {
   name: string;
@@ -49,6 +57,7 @@ export function datasetJsonLd(input: {
     url: absoluteUrl(input.path),
     ...(input.dateModified ? { dateModified: input.dateModified } : {}),
     isAccessibleForFree: true,
+    license: absoluteUrl(DATA_TERMS_PATH),
     creator: { "@type": "Organization", name: "Woodsman", url: absoluteUrl("/") },
     variableMeasured: input.variables,
     ...(input.sources.length

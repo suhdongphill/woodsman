@@ -20,6 +20,7 @@ const POLICY_LINKS = [
   { href: "/about", label: "사이트 소개" },
   { href: "/disclaimer", label: "투자 판단 책임 고지" },
   { href: "/privacy", label: "개인정보 처리방침" },
+  { href: "/data-terms", label: "데이터 이용 조건" },
 ];
 
 export async function Footer({ showCommunity = false }: { showCommunity?: boolean }) {

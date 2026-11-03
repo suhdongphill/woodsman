@@ -83,6 +83,7 @@ export function sitemapEntries(input: SitemapInput): SitemapEntry[] {
     { path: "/briefing", lastModified: latestOf(...(input.briefings ?? [])), priority: 0.7, changeFrequency: "daily" },
     { path: "/stocks", lastModified: latestReportAt, priority: 0.6, changeFrequency: "weekly" },
     { path: "/about", priority: 0.5, changeFrequency: "monthly" },
+    { path: "/data-terms", priority: 0.3, changeFrequency: "monthly" },
     { path: "/disclaimer", priority: 0.3, changeFrequency: "monthly" },
     { path: "/privacy", priority: 0.3, changeFrequency: "monthly" },
   ];
