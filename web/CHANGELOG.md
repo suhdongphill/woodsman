@@ -24,6 +24,12 @@
 ### 배포 전 가설
 - 며칠~몇 주 뒤 Search Console 데이터 세트 보고서에서 「license 누락」 경고가 사라진다(재크롤링 뒤). 색인·유입에는 변화가 없어야 한다(권장 칸이라서).
 
+### 확인 (배포 뒤)
+- 7191afc → success(2026-11-03T13:02:33Z). 운영 `/data-terms` 200 · 본문 문구 확인. `/macro`·`/macro/inflation`의 JSON-LD에 `"license":"https://portfolio-solutions.net/data-terms"`. 사이트맵·홈 푸터에 `/data-terms`. Search Console 경고 해소는 재크롤링 뒤에 본다.
+- release-log 모의 실행이 한 번 wrangler 7403(권한)으로 실패했고, 바로 이은 실제 실행은 성공했다 — 운영 D1에 한 줄만 있는 것 확인.
+
+기록: /admin/releases rel_20261103_data_terms_license
+
 ---
 
 ## 2026-10-31 — 홈 윗부분 정리: 히어로 버튼·숫자 빼기 · 대표 지표 중복 빼기 (운영자 「위에것을 없애고 홈화면 개선」 · 「이 부분도 제거」)
