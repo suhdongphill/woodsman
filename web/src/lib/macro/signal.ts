@@ -38,6 +38,19 @@ export const SIGNAL_LABEL: Record<SignalStatus, string> = {
   unknown: "미수집",
 };
 
+/**
+ * 지표 칩에 붙이는 상태 글자. 글자를 붙이지 않을 때는 `null`.
+ *
+ * `unknown`은 두 가지를 함께 담고 있다(2026-11-07 확인 — 홈 칩 5개가 전부 「모름」이었다).
+ * - **판정 규칙이 없는 지표**(10년물·순유동성처럼 값 자체를 보여 주는 칩): 정상·주의를 말할 수 없다 → 비적용 → 글자 없음.
+ * - **규칙은 있는데 값이 없는 지표**: 판정을 못 했다 → 「자료 미제공」.
+ * ⚠ 어느 쪽도 「정상」으로 바꾸지 않는다.
+ */
+export function chipStatusLabel(rule: MacroSignalRule | undefined, status: SignalStatus): string | null {
+  if (status !== "unknown") return SIGNAL_LABEL[status];
+  return rule ? "자료 미제공" : null;
+}
+
 export type RecessionLevel = "calm" | "watch" | "caution" | "danger" | "unknown";
 
 export type RecessionSummary = {

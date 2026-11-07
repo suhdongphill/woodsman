@@ -53,7 +53,10 @@ export function LiquidityDialog({ view, analysis }: { view: LiquidityCardView; a
           </div>
 
           <section className="mt-3">
-            <h3 className="text-[12px] font-semibold text-ink">1. 우리 계산 · {asOfStamp(view.asOf, view.computedAt)}</h3>
+            {/* 분석이 없으면 소제목이 하나뿐이라 번호를 뗀다. */}
+            <h3 className="text-[12px] font-semibold text-ink">
+              {analysis ? "1. " : ""}우리 계산 · {asOfStamp(view.asOf, view.computedAt)}
+            </h3>
             <p className="mt-1 text-[12.5px] text-muted">{view.oneLine}</p>
             <table className="mt-2 w-full text-[12px]">
               <thead>
@@ -84,10 +87,10 @@ export function LiquidityDialog({ view, analysis }: { view: LiquidityCardView; a
             </p>
           </section>
 
-          <section className="mt-5 border-t border-border/60 pt-4">
-            <h3 className="text-[12px] font-semibold text-ink">2. 그날의 분석</h3>
-            {analysis ? (
-              <>
+          {/* ⚠ 저장된 분석이 없으면 칸을 숨긴다. 「운영자가 올리면 보인다」는 독자에게 할 말이 아니다. */}
+          {analysis && (
+            <section className="mt-5 border-t border-border/60 pt-4">
+              <h3 className="text-[12px] font-semibold text-ink">2. 그날의 분석</h3>
                 <p className={stale ? "mt-1 text-[12.5px] font-semibold text-gold-500" : "mt-1 text-[12px] text-ink-3"}>
                   {analysis.date} 분석{stale ? " — 점수 기준일보다 오래됐습니다" : ""} · {analysis.sourceLabel}
                 </p>
@@ -98,11 +101,8 @@ export function LiquidityDialog({ view, analysis }: { view: LiquidityCardView; a
                   // ⚠ 저장 경로에서 sanitizeHtml을 거친 HTML이다(features/analysis/repository.ts)
                   dangerouslySetInnerHTML={{ __html: analysis.bodyHtml }}
                 />
-              </>
-            ) : (
-              <p className="mt-1 text-[12.5px] text-muted">아직 저장된 분석이 없습니다 — 운영자가 분석을 올리면 여기에 보입니다.</p>
-            )}
-          </section>
+            </section>
+          )}
         </div>
       </dialog>
     </>

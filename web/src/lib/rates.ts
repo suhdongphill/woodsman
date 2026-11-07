@@ -81,7 +81,20 @@ export const LAYER_LABEL: Record<string, string> = {
   two_speed: "금리 민감 vs 현금 조달",
   liquidity: "유동성",
   krus: "한·미",
+  // 인하 압력 지수의 구성 요소
+  external: "대외",
+  policy_stance: "정책 기조",
 };
+
+/**
+ * 부분 산출 안내 한 줄. 빠진 것이 없으면 `null`.
+ * ⚠ 변수명을 화면에 내지 않는다 — 모르는 키는 「일부」로 적는다. 부분 산출이라는 사실은 숨기지 않는다.
+ */
+export function missingComponentsNote(missing: string[]): string | null {
+  if (missing.length === 0) return null;
+  const names = [...new Set(missing.map((key) => LAYER_LABEL[key] ?? "일부"))];
+  return `${names.join("·")} 요소 미반영 · 부분 산출치`;
+}
 
 export const BAND_LABEL: Record<string, string> = {
   rising: "늘고 있음",

@@ -7,6 +7,7 @@ import { seoulDay } from "@/lib/kst";
 import {
   BAND_LABEL,
   LAYER_LABEL,
+  missingComponentsNote,
   formatMetric,
   latestObservation,
   staleness,
@@ -61,7 +62,7 @@ function ReadingNote({ how, cannot }: { how: string; cannot: string }) {
 
 function Gauge({ data }: { data: RatesPayload }) {
   const head = data.headline.easing_pressure_index;
-  const missing = head.missing_layers ?? [];
+  const missingNote = missingComponentsNote(head.missing_layers ?? []);
   const value = head.value;
 
   return (
@@ -82,11 +83,7 @@ function Gauge({ data }: { data: RatesPayload }) {
         <div className="text-right text-[11.5px] text-ink-3">
           <p>기준일 {data.meta.asof}</p>
           <p>생성 {seoulDay(data.meta.generated_at)}</p>
-          {missing.length > 0 && (
-            <p className="mt-1 text-gold-500">
-              ⚠ 부분 산출 — {missing.join(", ")} 레이어가 빠졌습니다
-            </p>
-          )}
+          {missingNote && <p className="mt-1 text-gold-500">⚠ {missingNote}</p>}
         </div>
       </div>
 
@@ -109,7 +106,7 @@ function Gauge({ data }: { data: RatesPayload }) {
       <div className="mt-4 grid gap-2 sm:grid-cols-5">
         {Object.entries(head.components).map(([layer, score]) => (
           <div key={layer} className="rounded-xl border border-border px-2.5 py-2">
-            <p className="text-[10.5px] text-muted">{LAYER_LABEL[layer] ?? layer}</p>
+            <p className="text-[10.5px] text-muted">{LAYER_LABEL[layer] ?? "기타"}</p>
             <p className="mt-0.5 text-[15px] font-semibold tabular-nums text-ink">
               {formatMetric(score, "index")}
             </p>
@@ -644,7 +641,7 @@ export default async function RatesPage() {
       </p>
 
       <p className="mt-3 text-[11.5px] leading-relaxed text-ink-3">
-        지표의 정의와 계산식은 <code>docs/금리섹션_지표해설.md</code>가 단일 출처입니다. 값은{" "}
+        주요 지표를 읽는 법과 그 숫자로 말할 수 없는 것은 각 카드 아래에 적어 두었습니다. 값은{" "}
         <Link href="/macro" className="underline underline-offset-2 hover:text-ink">
           거시 지표
         </Link>{" "}

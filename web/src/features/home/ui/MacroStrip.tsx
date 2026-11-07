@@ -5,7 +5,7 @@ import Link from "next/link";
 import { cx } from "@/lib/format";
 import { Emphasis } from "@/components/ui/Emphasis";
 import type { IndicatorView } from "@/features/macro/service";
-import type { SignalStatus } from "@/lib/macro/signal";
+import { chipStatusLabel, type SignalStatus } from "@/lib/macro/signal";
 
 /**
  * 거시 지표 스트립 — 첫 화면 아래로 **흘러가듯** 지나가는 지표 띠.
@@ -31,13 +31,6 @@ const TEXT = {
   hint: "옆으로 밀어 보세요 · 눌러서 펼치기",
   asOfSuffix: "기준",
   collecting: "수집 전",
-};
-
-const STATUS_LABEL: Record<SignalStatus, string> = {
-  normal: "정상",
-  watch: "주의",
-  alert: "경고",
-  unknown: "모름",
 };
 
 /** ⚠ 계열색이 아니라 상태색이다. 등락색(적/청)과도 섞지 않는다. */
@@ -85,6 +78,7 @@ export function MacroStrip({ indicators, frame }: { indicators: IndicatorView[];
         {indicators.map((view) => {
           const key = view.indicator.key;
           const isOpen = key === openKey;
+          const statusLabel = chipStatusLabel(view.indicator.signal, view.status);
           return (
             <button
               key={key}
@@ -99,10 +93,13 @@ export function MacroStrip({ indicators, frame }: { indicators: IndicatorView[];
               )}
             >
               <span className="flex items-center gap-1.5">
-                <span
-                  className={cx("h-1.5 w-1.5 shrink-0 rounded-full", STATUS_DOT[view.status])}
-                  aria-hidden
-                />
+                {/* ⚠ 판정이 없는 지표에는 점도 찍지 않는다 — 회색 점도 상태처럼 읽힌다. */}
+                {statusLabel && (
+                  <span
+                    className={cx("h-1.5 w-1.5 shrink-0 rounded-full", STATUS_DOT[view.status])}
+                    aria-hidden
+                  />
+                )}
                 <span className="whitespace-nowrap text-[11px] text-muted">
                   {view.indicator.name}
                 </span>
@@ -112,9 +109,7 @@ export function MacroStrip({ indicators, frame }: { indicators: IndicatorView[];
                   {view.display}
                 </span>
                 {/* ⚠ 상태를 색만으로 말하지 않는다 */}
-                <span className="whitespace-nowrap text-[10px] text-ink-3">
-                  {STATUS_LABEL[view.status]}
-                </span>
+                {statusLabel && <span className="whitespace-nowrap text-[10px] text-ink-3">{statusLabel}</span>}
               </span>
               <span className="mt-0.5 block whitespace-nowrap text-[10px] text-ink-3">
                 {view.asOf ? `${view.asOf} ${TEXT.asOfSuffix}` : TEXT.collecting}

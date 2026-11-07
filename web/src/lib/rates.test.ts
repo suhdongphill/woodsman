@@ -4,6 +4,7 @@ import {
   formatMetric,
   latestObservation,
   linePath,
+  missingComponentsNote,
   staleness,
   tail,
   type RatesObservation,
@@ -119,5 +120,22 @@ describe("표시 규칙", () => {
         "2026-09-05",
       ),
     ).toBe(4);
+  });
+});
+
+describe("missingComponentsNote", () => {
+  it("빠진 것이 없으면 안내하지 않는다", () => {
+    expect(missingComponentsNote([])).toBeNull();
+  });
+
+  it("독자용 이름으로 적는다", () => {
+    expect(missingComponentsNote(["policy_stance"])).toBe("정책 기조 요소 미반영 · 부분 산출치");
+    expect(missingComponentsNote(["policy_stance", "labor"])).toBe("정책 기조·노동 요소 미반영 · 부분 산출치");
+  });
+
+  it("⚠ 모르는 키도 변수명을 내지 않고, 부분 산출이라는 사실은 남긴다", () => {
+    const note = missingComponentsNote(["new_layer_x"]);
+    expect(note).toBe("일부 요소 미반영 · 부분 산출치");
+    expect(note).not.toContain("new_layer_x");
   });
 });
