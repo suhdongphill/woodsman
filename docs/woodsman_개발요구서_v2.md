@@ -493,7 +493,7 @@ rm s.json
 
 ### 주도주 최신화 요청(`/admin/leaders`) (2026-11-07)
 
-- 버튼 → D1 `LeaderRefreshRequest` → PC `refresh-leaders-on-request.ps1`(1시간마다 호출)이 계산·적재. ⚠ 계산은 PC에서만 돈다(볼트 자료). 꺼져 있으면 화면이 그렇게 말한다.
+- 버튼 → D1 `LeaderRefreshRequest` → PC `refresh-leaders-on-request.ps1`(매일 07:40~23:40, 10분마다 호출)이 계산·적재. ⚠ 계산은 PC에서만 돈다(볼트 자료). 꺼져 있으면 화면이 그렇게 말한다.
 
 ### 종목 보고서 파일·블로그 연결(`/admin/stocks` 맨 위) (2026-11-07)
 

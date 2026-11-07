@@ -19,9 +19,9 @@ export type RefreshRequest = {
 
 /** 판정이 이보다 오래되면 화면이 알린다 — 주간 파이프라인 주기(7일). */
 export const LEADER_STALE_DAYS = 7;
-/** 이만큼 지나도 시작 안 했으면 PC가 꺼져 있는 것으로 본다(호출 주기 1시간 + 여유). */
+/** 이만큼 지나도 시작 안 했으면 PC가 꺼져 있는 것으로 본다(호출 주기 10분 · 낮 시간대에 넉넉히). */
 const NOT_PICKED_UP_MS = 2 * 60 * 60 * 1000;
-/** 돌기 시작하고 이만큼 지나면 멈춘 것으로 본다(평소 5분 · 단계별 제한의 합보다 길게). */
+/** 돌기 시작하고 이만큼 지나면 멈춘 것으로 본다(첫 실측 72초 · 단계별 제한의 합보다 길게). */
 const STUCK_MS = 60 * 60 * 1000;
 
 const ms = (iso?: string | null) => (iso ? Date.parse(iso) : Number.NaN);
@@ -41,11 +41,11 @@ export function refreshView(latest: RefreshRequest | null | undefined, now: Date
     case "REQUESTED":
       return t - ms(latest.requestedAt) > NOT_PICKED_UP_MS
         ? { canRequest: true, line: "요청이 2시간 넘게 시작되지 않았습니다. PC가 꺼져 있거나 절전 중일 수 있습니다.", tone: "warn" }
-        : { canRequest: false, line: "요청을 받았습니다. PC가 켜져 있으면 1시간 안에 시작합니다.", tone: "busy" };
+        : { canRequest: false, line: "요청을 받았습니다. PC가 켜져 있으면 10분 안에 시작합니다.", tone: "busy" };
     case "RUNNING":
       return t - ms(latest.startedAt) > STUCK_MS
         ? { canRequest: true, line: "1시간 넘게 끝나지 않았습니다. 멈춘 것으로 보입니다.", tone: "warn" }
-        : { canRequest: false, line: "지금 계산하고 있습니다. 보통 5분쯤 걸립니다.", tone: "busy" };
+        : { canRequest: false, line: "지금 계산하고 있습니다. 보통 몇 분 안에 끝납니다.", tone: "busy" };
     case "FAILED":
       return { canRequest: true, line: `지난 요청이 실패했습니다${latest.note ? ` — ${latest.note}` : ""}.`, tone: "warn" };
     case "DONE":

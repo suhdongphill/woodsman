@@ -63,7 +63,7 @@ export default async function AdminLeadersPage() {
           </p>
         </form>
         <p className="mt-3 text-[11.5px] leading-relaxed text-ink-3">
-          PC가 켜져 있으면 07:40~23:40 사이 1시간 안에 시작하고, 보통 5분쯤 걸립니다. 그 밖의 시간이거나 PC가 꺼져 있으면 다음 호출 때 시작합니다.
+          PC가 켜져 있으면 07:40~23:40 사이 10분 안에 시작하고, 보통 몇 분 안에 끝납니다. 그 밖의 시간이거나 PC가 꺼져 있으면 다음 호출 때 시작합니다.
           시세·상대강도는 새로 받고, 실적·EPS는 마지막 일일 수집 값을 씁니다.
         </p>
       </Card>
