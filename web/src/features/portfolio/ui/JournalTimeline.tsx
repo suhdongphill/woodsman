@@ -70,10 +70,10 @@ export function JournalTimeline({ entries }: { entries: JournalEntry[] }) {
               <h3 className="mt-2.5 text-[15px] font-semibold text-ink">{e.title}</h3>
               <p className="mt-2 text-[13px] leading-relaxed text-gray-300">{e.body}</p>
 
-              {e.shares != null && e.price != null && (
+              {/* ⚠ 수량은 공개하지 않는다(2026-11-07). 체결가만 적는다. */}
+              {e.price != null && (
                 <p className="mt-3 border-t border-border/70 pt-3 text-[12px] text-muted tabular-nums">
-                  체결 {e.shares.toLocaleString("ko-KR")}주 ·{" "}
-                  {formatNumber(e.price, e.currency ?? "KRW")}
+                  체결가 {formatNumber(e.price, e.currency ?? "KRW")}
                 </p>
               )}
 

@@ -55,6 +55,23 @@ export function holdingValueKrw(
   return holding.currency === "USD" ? raw * usdKrwRate : raw;
 }
 
+/**
+ * 종목별 비중(%) — 공개 종목의 원화 환산 합계를 100으로 본 값.
+ * ⚠ 값을 모르는 종목은 0%로 만들지 않고 결과에서 뺀다. 합계가 0이면 빈 결과다.
+ */
+export function holdingWeightsPct(
+  holdings: { id: string; shares?: number; price?: number; currency?: "KRW" | "USD" }[],
+  usdKrwRate: number,
+): Map<string, number> {
+  const values = holdings.flatMap((h) => {
+    const value = holdingValueKrw(h, usdKrwRate);
+    return value !== undefined && Number.isFinite(value) ? [{ id: h.id, value }] : [];
+  });
+  const total = values.reduce((sum, v) => sum + v.value, 0);
+  if (total <= 0) return new Map();
+  return new Map(values.map((v) => [v.id, (v.value / total) * 100]));
+}
+
 export type AllocationRow = {
   /** 버킷 키 */
   functionType: string;

@@ -18,6 +18,7 @@ export function HoldingCard({
   reportHref,
   bucketName,
   bucketColor,
+  weightPct,
 }: {
   holding: ModelHolding;
   /** 발행된 보고서가 있을 때만 온다. 없으면 카드는 링크가 아니다 */
@@ -25,6 +26,8 @@ export function HoldingCard({
   /** 관리자가 붙인 분류 이름·색 */
   bucketName?: string;
   bucketColor?: string;
+  /** 공개 종목 합계 대비 비중(%). 값을 모르면 오지 않는다 */
+  weightPct?: number;
 }) {
   const cur = h.currency ?? "KRW";
   const hasPrice = h.price != null;
@@ -69,11 +72,17 @@ export function HoldingCard({
       )}
 
       <div className="mt-4 pt-3 border-t border-border/70 flex items-center justify-between gap-3">
+        {/* ⚠ 금액·수량은 공개하지 않는다(2026-11-07). 목표가 없으면 「—」를 반복하지 않고 뺀다. */}
         <div className="flex items-baseline gap-1.5">
-          <span className="text-[11px] text-gray-500">목표비중</span>
-          <span className="text-sm font-bold text-gold-400 tabular-nums">
-            {h.targetWeight != null ? `${h.targetWeight}%` : "—"}
-          </span>
+          {weightPct !== undefined && (
+            <>
+              <span className="text-[11px] text-gray-500">비중</span>
+              <span className="text-sm font-bold text-gold-400 tabular-nums">{weightPct.toFixed(1)}%</span>
+            </>
+          )}
+          {h.targetWeight != null && (
+            <span className="text-[11px] text-gray-500 tabular-nums">목표 {h.targetWeight}%</span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {profitPct != null && (

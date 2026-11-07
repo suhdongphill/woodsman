@@ -45,15 +45,15 @@ export default async function AboutPage() {
         <RoadmapTimeline />
       </PolicySection>
 
-      <PolicySection title="한 사람의 계좌를 그대로 공개합니다">
+      <PolicySection title="한 사람의 포트폴리오를 비중으로 공개합니다">
         <p>
-          이 사이트는 운영자 Woodsman이 자신의 투자 계좌를 공개하고, 매달 얼마를 넣었고 지금 얼마가
-          되었는지를 기록하는 블로그입니다. 종목 추천을 하는 곳이 아니라,{" "}
+          이 사이트는 운영자 Woodsman이 실제로 운용하는 포트폴리오의 구성과 비중을 공개하고, 그 판단을
+          기록하는 블로그입니다. 금액은 공개하지 않습니다. 종목 추천을 하는 곳이 아니라,{" "}
           <strong className="text-ink">원칙대로 한 투자가 실제로 어떤 결과를 내는지</strong>를
           긴 시간에 걸쳐 확인하는 곳입니다.
         </p>
         <p>
-          그래서 좋은 달만 올리지 않습니다. 평가액이 납입원금을 밑돌았던 구간과, 그때 아무것도 하지
+          그래서 좋은 달만 올리지 않습니다. 수익률이 마이너스였던 구간과, 그때 아무것도 하지
           않기로 한 판단까지 같이 남깁니다.
         </p>
       </PolicySection>
@@ -90,7 +90,7 @@ export default async function AboutPage() {
               <Link href="/portfolio" className="text-gold-400 hover:text-gold-500">
                 대표 포트폴리오
               </Link>{" "}
-              — 납입원금 대비 평가액 곡선, 기능별 배분, 종목별 편입 논리
+              — 기능별 배분, 종목별 비중과 편입 논리
             </>,
             <>
               <Link href="/journal" className="text-gold-400 hover:text-gold-500">

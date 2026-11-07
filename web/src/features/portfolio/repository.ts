@@ -84,7 +84,8 @@ const HOLDING_COLUMNS = `id, name, ticker, market, functionType, targetWeight, a
        layer, layerName, leaderClass, leaderTier, assetKind, leverage, verdictFlag, verdictAsOf`;
 
 /** 공개 화면용 — 발행된 것만, 정렬 순서대로. */
-export async function loadPublishedHoldings(limit = 100): Promise<ModelHolding[]> {
+/** ⚠ 비중은 공개 종목 전체를 분모로 한다 — 상한이 공개 수보다 작으면 비중이 조용히 틀린다(2026-11-07, 공개 114 · 상한 100이었다). */
+export async function loadPublishedHoldings(limit = 500): Promise<ModelHolding[]> {
   const rows = await queryAll<HoldingRow>(
     `SELECT ${HOLDING_COLUMNS} FROM ModelHolding WHERE published = 1 ORDER BY "order" ASC LIMIT ?`,
     [limit],

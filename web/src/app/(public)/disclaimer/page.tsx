@@ -24,7 +24,7 @@ export default async function DisclaimerPage() {
       eyebrow="DISCLAIMER"
       title="투자 판단 책임 고지"
       description="이 사이트를 읽기 전에 반드시 확인해 주세요."
-      effectiveDate="2026년 8월 2일"
+      effectiveDate="2026년 11월 7일"
     >
       <PolicySection title="1. 정보 제공 목적입니다">
         <p>
@@ -64,7 +64,7 @@ export default async function DisclaimerPage() {
               는 <strong className="text-ink">{mode.badge}</strong> 기록입니다. {mode.line} 손실
               구간과 잘못된 판단도 지우지 않고 남깁니다.
             </>,
-            "평가액·수익률은 기록 시점의 종가 기준이며, 세금·거래비용·환전 수수료가 모두 반영되지 않을 수 있습니다.",
+            "수익률은 기록 시점의 종가 기준이며, 세금·거래비용·환전 수수료가 모두 반영되지 않을 수 있습니다.",
             "환율이 개입되는 종목은 원화 환산 시점에 따라 수치가 달라질 수 있습니다.",
             "게시 이후 운영자의 보유 상태가 바뀌어도 지난 글을 소급해 수정하지 않습니다. 각 글의 작성일을 함께 확인해 주세요.",
           ]}

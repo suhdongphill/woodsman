@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   fillProgressPct,
   holdingValueKrw,
+  holdingWeightsPct,
   sumTargetWeights,
   summarizeAllocation,
   targetSumPct,
@@ -96,6 +97,36 @@ describe("목표 대비 현재 비중", () => {
   });
 });
 
+describe("종목별 비중", () => {
+  it("원화로 환산한 뒤 공개 종목 합계를 100으로 나눈다", () => {
+    const w = holdingWeightsPct(
+      [
+        { id: "a", shares: 10, price: 1000, currency: "KRW" },
+        { id: "b", shares: 1, price: 10, currency: "USD" },
+      ],
+      1000,
+    );
+    expect(w.get("a")).toBeCloseTo(50);
+    expect(w.get("b")).toBeCloseTo(50);
+  });
+
+  it("⚠ 값을 모르는 종목은 0%로 만들지 않고 빼 둔다", () => {
+    const w = holdingWeightsPct(
+      [
+        { id: "a", shares: 10, price: 1000, currency: "KRW" },
+        { id: "cash", currency: "KRW" },
+      ],
+      1000,
+    );
+    expect(w.get("a")).toBeCloseTo(100);
+    expect(w.has("cash")).toBe(false);
+  });
+
+  it("합계가 0이면 비중을 내지 않는다", () => {
+    expect(holdingWeightsPct([{ id: "a", shares: 0, price: 1000, currency: "KRW" }], 1000).size).toBe(0);
+  });
+});
+
 describe("통화 환산", () => {
   it("⚠ 달러 종목을 원화로 환산한다 — 안 하면 비중이 통째로 틀린다", () => {
     // 실제로 겪은 값: TSMC 40주 × $191.20
@@ -160,8 +191,9 @@ describe("모의/실계좌 표시", () => {
     const notice = dataModeNotice("LIVE");
     expect(notice.badge).toBe("운영 포트폴리오");
     expect(notice.isRealMoney).toBe(true);
-    // 평가액(계좌 전체)과 보이는 종목(고른 것만)의 차이를 적지 않으면 합이 안 맞아 의심받는다.
-    expect(notice.line).toContain("계좌 전체");
+    // ⚠ 금액은 공개하지 않는다(2026-11-07 운영자 결정).
+    expect(notice.line).toContain("금액은 공개하지 않고");
+    expect(notice.line).toContain("비중");
     expect(notice.line).toContain("공개를 고른 것만");
     expect(notice.line).not.toContain("모의");
   });

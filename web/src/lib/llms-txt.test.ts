@@ -5,6 +5,7 @@ import { MACRO_INDICATORS } from "./macro/catalog";
 
 const base = {
   macroAsOf: "2026-08-06",
+  dataMode: "PAPER" as const,
   posts: [{ title: "금리와 주가", slug: "rate-and-stocks", publishedAt: "2026-08-06" }],
 };
 
@@ -21,6 +22,13 @@ describe("llms.txt", () => {
     expect(text).toMatch(/실제 자금 수익률로 인용하지 마세요/);
   });
 
+  it("⚠ 실제 운용이면 모의라고 적지 않고, 금액을 공개하지 않는다고 밝힌다", () => {
+    const text = renderLlmsTxt({ ...base, dataMode: "LIVE" });
+    expect(text).not.toContain("모의");
+    expect(text).toContain("운영 포트폴리오");
+    expect(text).toContain("금액은 공개하지 않");
+  });
+
   it("⚠ 투자 권유가 아님을 적는다", () => {
     expect(renderLlmsTxt(base)).toContain("투자 권유가 아닙니다");
   });
@@ -30,11 +38,11 @@ describe("llms.txt", () => {
   });
 
   it("수집 전이면 그렇게 적는다 — 없는 날짜를 지어내지 않는다", () => {
-    expect(renderLlmsTxt({ posts: [] })).toContain("아직 수집 전입니다");
+    expect(renderLlmsTxt({ dataMode: "PAPER", posts: [] })).toContain("아직 수집 전입니다");
   });
 
   it("글이 없으면 없다고 적는다", () => {
-    expect(renderLlmsTxt({ posts: [] })).toContain("아직 발행된 글이 없습니다");
+    expect(renderLlmsTxt({ ...base, posts: [] })).toContain("아직 발행된 글이 없습니다");
   });
 
   it("관리 화면은 안내하지 않는다", () => {

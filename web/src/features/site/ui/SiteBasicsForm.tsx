@@ -33,7 +33,7 @@ export function SiteBasicsForm({ basics }: { basics: SiteBasics }) {
               {
                 value: "LIVE",
                 title: "운영 포트폴리오 (실제 운용)",
-                desc: "증권사 잔고를 실은 실제 운용 기록. 매매·납입·평가액 모두 실제일 때만 고릅니다. 공개 화면에는 금액도 나갑니다.",
+                desc: "증권사 잔고를 실은 실제 운용 기록. 매매·납입이 실제일 때만 고릅니다. 공개 화면에는 금액을 내지 않고 비중과 수익률만 나갑니다.",
               },
             ] as const
           ).map((option) => (

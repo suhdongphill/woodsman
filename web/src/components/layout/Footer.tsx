@@ -41,7 +41,7 @@ export async function Footer({ showCommunity = false }: { showCommunity?: boolea
             </div>
             <p className="text-xs text-muted mt-3 leading-relaxed">
               성장·인컴·방어 세 기능으로 자산을 나누고, 매달의 납입과 판단을 기록으로 남기는
-              개인 투자 블로그입니다. 운용 중인 계좌의 성과를 그대로 공개합니다.
+              개인 투자 블로그입니다. 운용 중인 포트폴리오의 구성과 비중을 공개합니다.
             </p>
             <p className="text-[11px] text-gray-600 mt-3 leading-relaxed">
               본 사이트의 모든 콘텐츠는 <strong className="text-gray-500">정보 제공 목적</strong>

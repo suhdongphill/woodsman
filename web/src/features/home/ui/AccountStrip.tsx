@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/Card";
 import { StatBar } from "@/components/ui/StatBar";
 import { ChevronRightIcon } from "@/components/icons";
 import { DataModeNotice } from "@/components/ui/DataModeNotice";
-import { formatDate, formatNumber, formatPct, profitColor } from "@/lib/format";
+import { formatDate, formatPct, profitColor } from "@/lib/format";
 import { cashTargetPct, isBucketTargetSet, type PortfolioBucket } from "@/lib/bucket-target";
 import type { PerformanceSummary } from "@/lib/performance";
 import type { DataMode } from "@/lib/data-mode";
@@ -49,25 +49,17 @@ export function AccountStrip({
           <div className="min-w-0">
             <p className="text-[11px] text-muted">이 흐름 속에서 저는 이렇게 하고 있습니다</p>
             {perf ? (
+              /* ⚠ 금액은 공개하지 않는다(2026-11-07 운영자 결정). 수익률과 기준일만. */
               <p className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="text-2xl font-bold tabular-nums leading-none text-ink">
-                  {formatNumber(perf.value)}
-                </span>
-                <span
-                  className={`text-[13px] font-medium tabular-nums ${
-                    profitColor(perf.profit)
-                  }`}
-                >
+                <span className={`text-2xl font-bold tabular-nums leading-none ${profitColor(perf.profit)}`}>
                   {formatPct(perf.returnPct)}
                 </span>
-                <span className="text-[11px] text-gray-500">
-                  납입원금 {formatNumber(perf.principal)} · {formatDate(perf.asOf)} 기준
-                </span>
+                <span className="text-[11px] text-gray-500">납입원금 대비 · {formatDate(perf.asOf)} 기준</span>
               </p>
             ) : (
               /* ⚠ 없는 값을 0으로 만들지 않는다 — 없다고 말한다. */
               <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
-                아직 계좌 스냅숏이 없습니다. 첫 기록이 올라가면 여기에 평가액과 수익률이 나옵니다.
+                금액은 공개하지 않고 구성과 비중으로 보여 드립니다.
               </p>
             )}
           </div>

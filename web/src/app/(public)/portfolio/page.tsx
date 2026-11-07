@@ -12,7 +12,7 @@ import { AllocationProgress } from "@/features/portfolio/ui/AllocationProgress";
 import { ChevronRightIcon } from "@/components/icons";
 import { formatDate } from "@/lib/format";
 import { summarizePerformance } from "@/lib/performance";
-import { fillProgressPct, holdingValueKrw, summarizeAllocation } from "@/lib/allocation";
+import { fillProgressPct, holdingValueKrw, summarizeAllocation, holdingWeightsPct } from "@/lib/allocation";
 import { summarizeManualPrices } from "@/lib/manual-price";
 import { DataModeNotice } from "@/components/ui/DataModeNotice";
 import { getSiteBasics } from "@/lib/site-settings";
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/portfolio" },
   title: "대표 포트폴리오",
   description:
-    "지표가 말하는 흐름에 대해 실제로 계좌를 어떻게 굴렸는지 그대로 공개합니다. 납입원금 대비 평가액 추이, 기능별 배분, 종목별 편입 논리(thesis)와 목표 비중을 채워 가는 과정까지 기록합니다.",
+    "지표가 말하는 흐름에 대해 실제로 포트폴리오를 어떻게 운용하는지 공개합니다. 기능별 비중과 종목별 편입 논리를 기록합니다. 금액은 공개하지 않습니다.",
 };
 
 /** ⚠ 정적 생성 금지 — 기록을 올려도 화면이 안 바뀐다. */
@@ -108,7 +108,9 @@ export default async function PortfolioPage() {
   // ⚠ 보고서가 **발행돼 있을 때만** 카드에 링크를 건다. 전에는 티커만 있으면 걸어서
   //    발행본이 없는 종목이 전부 404로 갔다(`lib/report/link.ts`).
   const reportIndex = buildReportIndex(reportEntries);
+  const weights = holdingWeightsPct(published, usdKrw.rate);
   const cardProps = (h: ModelHolding) => ({
+    weightPct: weights.get(h.id),
     reportHref: publicReportHref(h, reportIndex),
     bucketName: buckets.find((b) => b.key === h.functionType)?.name,
     bucketColor: buckets.find((b) => b.key === h.functionType)?.color,
@@ -125,7 +127,7 @@ export default async function PortfolioPage() {
       <PageHeader
         eyebrow="MODEL PORTFOLIO"
         title="대표 포트폴리오"
-        description="지표가 말하는 흐름에 대한 저의 답입니다. 매달 얼마를 넣어 지금 얼마가 되었는지, 각 종목이 맡은 '기능'과 편입 논리까지 그대로 공개합니다."
+        description="지표가 말하는 흐름에 대한 저의 답입니다. 어떤 비중으로 나눴는지, 각 종목이 맡은 '기능'과 편입 논리까지 공개합니다."
       />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 space-y-12">
@@ -137,11 +139,7 @@ export default async function PortfolioPage() {
         />
 
         {/* ─── 자금 흐름: 넣은 돈과 불어난 돈. ⚠ 스냅숏이 없어도 섹션을 빼지 않는다 ─── */}
-        <CapitalFlowSection
-          snapshots={snapshots}
-          rebalances={rebalances.map((r) => ({ date: r.date, memo: r.memo }))}
-          perf={perf}
-        />
+        <CapitalFlowSection perf={perf} />
 
         {/* 요약 */}
         <section className="grid lg:grid-cols-[auto_1fr] gap-8 items-center">
@@ -269,7 +267,7 @@ export default async function PortfolioPage() {
         </section>
 
         <p className="text-[11px] text-gray-600 leading-relaxed">
-          ※ 본 포트폴리오는 정보 제공 목적의 기록이며 투자 권유가 아닙니다. 평가액·수익률은 기록
+          ※ 종목별 비중은 공개 종목 합계를 100으로 본 값이며 금액은 공개하지 않습니다. 본 포트폴리오는 정보 제공 목적의 기록이며 투자 권유가 아닙니다. 수익률은 기록
           시점의 종가 기준으로 세금·거래비용이 반영되지 않을 수 있으며, 과거의 성과가 미래의
           수익을 보장하지 않습니다. 투자 판단과 그 결과에 대한 책임은 투자자 본인에게 있습니다.{" "}
           <Link href="/disclaimer" className="text-gray-500 underline hover:text-gold-400">

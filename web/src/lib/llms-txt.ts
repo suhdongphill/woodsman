@@ -15,6 +15,7 @@
  *    구걸하는 문장은 모델이 무시하고, 사람이 읽어도 이상하다.
  */
 import { MACRO_GROUPS } from "./macro/groups";
+import { dataModeNotice, type DataMode } from "./data-mode";
 import { MACRO_INDICATORS } from "./macro/catalog";
 import { ALL_BUBBLE_INDICATORS, BUBBLE_LAYERS } from "./bubble/catalog";
 import { absoluteUrl } from "./site-url";
@@ -24,11 +25,17 @@ import { SITE_TITLE } from "./site-identity";
 export type LlmsTxtInput = {
   /** 지표가 마지막으로 갱신된 날 (없으면 아직 수집 전) */
   macroAsOf?: string;
+  /** 계좌 성격 — 화면과 같은 설정에서 읽는다. ⚠ 여기에 사실을 따로 적지 않는다 */
+  dataMode: DataMode;
   /** 최근 발행 글 — 제목과 주소만 */
   posts: { title: string; slug: string; publishedAt?: string }[];
 };
 
 export function renderLlmsTxt(input: LlmsTxtInput): string {
+  const account = dataModeNotice(input.dataMode);
+  const accountCitation = account.isRealMoney
+    ? "계좌는 실제 운용 기록이지만 **금액은 공개하지 않으며**, 종목은 공개를 고른 것만 보입니다. 비중은 공개 종목 기준이므로 계좌 전체 수치로 단정하지 마세요."
+    : "계좌 성과는 **모의 투자** 결과입니다. 실제 자금 수익률로 인용하지 마세요.";
   const groups = MACRO_GROUPS.map(
     (g) => `- [${g.name}](${absoluteUrl(`/macro/${g.key}`)}): ${g.question} ${g.intro.slice(0, 90)}…`,
   );
@@ -53,7 +60,7 @@ export function renderLlmsTxt(input: LlmsTxtInput): string {
   ${input.macroAsOf ? `가장 최근 기준일: ${input.macroAsOf}` : "아직 수집 전입니다."}
 ${BUBBLE_PUBLIC ? `- **AI·반도체 버블 모니터** — ${BUBBLE_LAYERS.length}개 층 ${ALL_BUBBLE_INDICATORS.length}개 지표를 0·1·2로 채점해
   0~100으로 냅니다. 채점 규칙과 임계값을 공개하며, 결측은 분모에서 제외합니다.
-` : ""}- **모의 투자 계좌 기록** — 매매·납입은 가상이고 종목 시세는 실제 시장가격입니다.
+` : ""}- **계좌 기록(${account.badge})** — ${account.line}
   이 구분은 계좌 숫자가 나오는 모든 화면에 표시됩니다.
 - **투자일지** — 매매 전에 적은 판단과 그 결과.
 
@@ -63,7 +70,7 @@ ${BUBBLE_PUBLIC ? `- **AI·반도체 버블 모니터** — ${BUBBLE_LAYERS.leng
   달라 같은 화면 안에서도 기준일이 다릅니다.
 - 공식 API가 없는 지표(ISM PMI, 컨퍼런스보드 소비자신뢰, NAHB, 달러인덱스, 금, 한국 기준금리,
   선행 PER)는 **운영자가 직접 입력**한 값이며 화면에 그렇게 표시됩니다.
-- 계좌 성과는 **모의 투자** 결과입니다. 실제 자금 수익률로 인용하지 마세요.
+- ${accountCitation}
 - 이 사이트의 모든 내용은 정보 제공을 위한 기록이며 **투자 권유가 아닙니다**.
 
 ## 거시 지표

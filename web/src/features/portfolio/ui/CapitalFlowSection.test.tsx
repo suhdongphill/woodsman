@@ -17,26 +17,20 @@ const SNAPSHOTS: AccountSnapshot[] = [
 ];
 
 describe("CapitalFlowSection", () => {
-  it("⚠ 스냅숏이 없어도 섹션과 제목이 남고, 「없다」고 적는다 — 0원으로 만들지 않는다", () => {
-    const html = renderToStaticMarkup(
-      <CapitalFlowSection snapshots={[]} rebalances={[]} perf={null} />,
-    );
-
-    expect(html).toContain("넣은 돈과 불어난 돈");
-    expect(html).toContain("아직 계좌 스냅숏이 없습니다");
-    // 없는 숫자를 0으로 그리지 않는다.
+  it("⚠ 스냅숏이 없어도 섹션과 제목이 남고, 0원으로 만들지 않는다", () => {
+    const html = renderToStaticMarkup(<CapitalFlowSection perf={null} />);
+    expect(html).toContain("수익률 기록");
+    expect(html).toContain("금액은 공개하지 않고");
     expect(html).not.toMatch(/0원|₩0/);
   });
 
-  it("스냅숏이 있으면 평가액·수익률과 기준일을 함께 낸다", () => {
+  it("⚠ 스냅숏이 있어도 금액을 내지 않는다 — 수익률과 기준일만", () => {
     const perf = summarizePerformance(SNAPSHOTS);
-    const html = renderToStaticMarkup(
-      <CapitalFlowSection snapshots={SNAPSHOTS} rebalances={[]} perf={perf} />,
-    );
-
-    expect(html).not.toContain("아직 계좌 스냅숏이 없습니다");
-    // ⚠ 날짜 없는 숫자는 실시간 시세로 읽힌다(운영지침 §5).
+    const html = renderToStaticMarkup(<CapitalFlowSection perf={perf} />);
     expect(html).toContain("기준");
-    expect(html).toContain("납입원금");
+    expect(html).toContain("수익률");
+    // 평가액 5,900,000 · 납입원금 5,500,000 · 손익 400,000이 어떤 꼴로도 나가면 안 된다.
+    expect(html).not.toMatch(/5,900,000|5,500,000|400,000|590만|550만|40만/);
+    expect(html).not.toContain("평가액");
   });
 });

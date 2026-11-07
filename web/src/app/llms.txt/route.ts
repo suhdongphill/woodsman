@@ -9,6 +9,7 @@ import { hasCanonicalDomain } from "@/lib/site-url";
 import { renderLlmsTxt } from "@/lib/llms-txt";
 import { loadPublishedPosts } from "@/features/posts/repository";
 import { loadMacroOverview } from "@/features/macro/service";
+import { getSiteBasics } from "@/lib/site-settings";
 
 /** ⚠ 정적 생성 금지 — 지표를 갱신하거나 글을 쓰면 이 목차도 따라 바뀌어야 한다. */
 export const dynamic = "force-dynamic";
@@ -19,10 +20,11 @@ export async function GET() {
   }
 
   try {
-    const [overview, posts] = await Promise.all([loadMacroOverview(), loadPublishedPosts(20)]);
+    const [overview, posts, basics] = await Promise.all([loadMacroOverview(), loadPublishedPosts(20), getSiteBasics()]);
 
     const body = renderLlmsTxt({
       macroAsOf: overview.asOf,
+      dataMode: basics.dataMode,
       posts: posts.map((p) => ({
         title: p.title,
         slug: p.slug,
