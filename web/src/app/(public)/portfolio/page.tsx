@@ -17,7 +17,7 @@ import { summarizeManualPrices } from "@/lib/manual-price";
 import { DataModeNotice } from "@/components/ui/DataModeNotice";
 import { getSiteBasics } from "@/lib/site-settings";
 import { loadPublishedJournal, loadSnapshots } from "@/features/journal/repository";
-import { loadPublishedHoldings, loadRebalances } from "@/features/portfolio/repository";
+import { loadPublishedHoldings, loadRebalances, loadAllHoldings } from "@/features/portfolio/repository";
 import { loadSectionPosts } from "@/features/posts/repository";
 import { SectionFrame } from "@/features/posts/ui/SectionFrame";
 import type { ModelHolding } from "@/lib/types";
@@ -28,6 +28,8 @@ import { loadUsdKrwRate } from "@/features/macro/fx-service";
 import { macroLede } from "@/lib/home-lede";
 import { blogLinkedTickers, buildReportIndex, publicReportHref, tickerKey } from "@/lib/report/link";
 import { outboundStockHref } from "@/lib/outbound";
+import { accountAllocationRows, accountHoldingWeights, CASH_ROW_KEY } from "@/lib/account-allocation";
+import { loadAccountAllocation } from "@/features/portfolio/account-allocation-repo";
 import { loadPublishedReportFiles } from "@/features/reports/file-repo";
 import {
   cashTargetPct,
@@ -64,6 +66,8 @@ export default async function PortfolioPage() {
     buckets,
     reportEntries,
     reportFiles,
+    accountAllocation,
+    allHoldings,
     macro,
   ] = await Promise.all([
     loadSnapshots(),
@@ -75,6 +79,8 @@ export default async function PortfolioPage() {
     loadBuckets(),
     loadReportLinkEntries(),
     loadPublishedReportFiles(),
+    loadAccountAllocation(),
+    loadAllHoldings(),
     loadMacroOverview(),
   ]);
 
@@ -94,7 +100,10 @@ export default async function PortfolioPage() {
     })),
     buckets,
   );
-  const fillPct = fillProgressPct(allocationRows);
+  // ⚠ 목표가 현금을 포함한 계좌 기준이므로 현재도 계좌 기준으로 맞춘다. 못 읽으면 공개 종목 기준이라고 화면이 밝힌다.
+  const accountRows = accountAllocation ? accountAllocationRows(buckets, accountAllocation, cashTargetPct(buckets)) : null;
+  const shownRows = accountRows ?? allocationRows;
+  const fillPct = fillProgressPct(shownRows);
   const targetPct = (key: string) =>
     allocationRows.find((r) => r.functionType === key)?.targetPct ?? 0;
 
@@ -117,7 +126,16 @@ export default async function PortfolioPage() {
     ...reportEntries,
   ]);
   const blogTickers = blogLinkedTickers([...reportEntries, ...reportFiles]);
-  const weights = holdingWeightsPct(published, usdKrw.rate);
+  // ⚠ 분모에 비공개 보유까지 넣되 결과에는 비율만 남는다. 증권사 잔고(bk_)만 센다.
+  const account = accountRows && accountAllocation
+    ? accountHoldingWeights(
+        allHoldings.filter((h) => h.id.startsWith("bk_") && (h.shares ?? 0) > 0),
+        new Set(published.map((h) => h.id)),
+        usdKrw.rate,
+        accountAllocation.cashPct,
+      )
+    : null;
+  const weights = account?.weights ?? holdingWeightsPct(published, usdKrw.rate);
   const cardProps = (h: ModelHolding) => ({
     weightPct: weights.get(h.id),
     reportHref: publicReportHref(h, reportIndex),
@@ -200,7 +218,13 @@ export default async function PortfolioPage() {
         {/* 목표 대비 현재 — 한 번에 완성되지 않는다는 사실을 그대로 */}
         {targetSet && (
           <AllocationProgress
-            rows={allocationRows}
+            rows={shownRows}
+            basis={
+              accountRows && accountAllocation
+                ? `계좌 전체 기준 · ${accountAllocation.asOf}`
+                : "계좌 비중을 읽지 못해 공개 종목 합계 기준으로 표시합니다. 목표와 기준이 다릅니다."
+            }
+            cashKey={CASH_ROW_KEY}
             buckets={buckets}
             fillPct={fillPct}
             usdKrw={usdKrw}
@@ -280,7 +304,7 @@ export default async function PortfolioPage() {
         </section>
 
         <p className="text-[11px] text-gray-600 leading-relaxed">
-          ※ 종목별 비중은 공개 종목 합계를 100으로 본 값이며 금액은 공개하지 않습니다. 본 포트폴리오는 정보 제공 목적의 기록이며 투자 권유가 아닙니다. 수익률은 기록
+          ※ {account ? `종목별 비중은 계좌 전체 기준이며, 공개 종목은 계좌의 ${account.publishedPct}%입니다.` : "종목별 비중은 공개 종목 합계를 100으로 본 값입니다."} 금액은 공개하지 않습니다. 본 포트폴리오는 정보 제공 목적의 기록이며 투자 권유가 아닙니다. 수익률은 기록
           시점의 종가 기준으로 세금·거래비용이 반영되지 않을 수 있으며, 과거의 성과가 미래의
           수익을 보장하지 않습니다. 투자 판단과 그 결과에 대한 책임은 투자자 본인에게 있습니다.{" "}
           <Link href="/disclaimer" className="text-gray-500 underline hover:text-gold-400">

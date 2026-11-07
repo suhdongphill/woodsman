@@ -1553,3 +1553,14 @@ model SectorEtfFlow {
 
   @@id([month, ticker])
 }
+
+/// 계좌 전체 기준 비율(2026-11-07) — 볼트 계산값. ⚠ 금액 칸을 만들지 않는다(lib/account-allocation.ts).
+model AccountAllocation {
+  /// 잔고 기준 시각
+  asOf       String @id
+  growthPct  Float
+  incomePct  Float
+  defensePct Float
+  cashPct    Float
+  updatedAt  String
+}

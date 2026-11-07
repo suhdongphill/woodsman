@@ -22,6 +22,8 @@ export function AllocationProgress({
   fillPct,
   usdKrw,
   className,
+  basis,
+  cashKey,
 }: {
   rows: AllocationRow[];
   /** 이름·색의 원본. ⚠ 관리자가 바꾼 이름을 화면이 그대로 쓴다 */
@@ -35,6 +37,10 @@ export function AllocationProgress({
    */
   usdKrw: UsdKrwRate;
   className?: string;
+  /** 현재 비중이 무엇을 분모로 한 값인가 — ⚠ 목표와 기준이 같은지 화면이 말한다 */
+  basis?: string;
+  /** 버킷이 아닌 현금 행의 키 */
+  cashKey?: string;
 }) {
   const maxScale = Math.max(100, ...rows.map((r) => Math.max(r.targetPct, r.currentPct)));
 
@@ -50,14 +56,18 @@ export function AllocationProgress({
           <span className="text-3xl font-bold tabular-nums text-ink">{fillPct}%</span>
           <span className="text-[12.5px] text-muted">구성 완료</span>
         </div>
+        {basis && <p className="-mt-3 mb-5 text-[11.5px] text-ink-3">{basis}</p>}
 
         <ul className="space-y-4">
           {rows.map((row) => {
-            const color = bucketColor(buckets, row.functionType);
-            const label = bucketName(buckets, row.functionType);
+            const isCash = row.functionType === cashKey;
+            const color = isCash ? "var(--w-flat)" : bucketColor(buckets, row.functionType);
+            const label = isCash ? "현금" : bucketName(buckets, row.functionType);
             const currentW = (row.currentPct / maxScale) * 100;
             const targetW = (row.targetPct / maxScale) * 100;
             const filled = row.gapPct >= 0;
+            // ⚠ 넘친 자리를 「채움」이라 하면 목표에 맞는 것처럼 읽힌다.
+            const gapLabel = row.gapPct > 0 ? `${row.gapPct}%p 초과` : row.gapPct === 0 ? "목표와 같음" : `${Math.abs(row.gapPct)}%p 남음`;
 
             return (
               <li key={row.functionType}>
@@ -74,7 +84,7 @@ export function AllocationProgress({
                     <span className="mx-1 text-gray-700">/</span>
                     목표 {row.targetPct}%
                     <span className={filled ? "ml-2 text-gray-600" : "ml-2 text-gold-500"}>
-                      {filled ? "채움" : `${Math.abs(row.gapPct)}%p 남음`}
+                      {gapLabel}
                     </span>
                   </span>
                 </div>
