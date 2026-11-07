@@ -491,7 +491,11 @@ rm s.json
 
 ⚠ **자동 지표에는 쓰지 않는다** — 다음 수집에서 덮이고 그 사이 화면이 두 값을 오간다.
 
-### 종목 보고서 파일·블로그 연결(`/admin/stocks/files`) (2026-11-07)
+### 주도주 최신화 요청(`/admin/leaders`) (2026-11-07)
+
+- 버튼 → D1 `LeaderRefreshRequest` → PC `refresh-leaders-on-request.ps1`(1시간마다 호출)이 계산·적재. ⚠ 계산은 PC에서만 돈다(볼트 자료). 꺼져 있으면 화면이 그렇게 말한다.
+
+### 종목 보고서 파일·블로그 연결(`/admin/stocks` 맨 위) (2026-11-07)
 
 - `StockReportFile` — 티커별 정화한 HTML·블로그 주소·초안/공개. 공개하면 포트폴리오 카드 · `/stocks` · `/stocks/<티커>`에 나간다. 구조화 보고서(`StockReport`)가 있으면 그것이 먼저다.
 - ⚠ 블로그에 같은 글이 있으면 canonical은 원문이고 사이트맵에서 뺀다. 블로그 링크는 `/go/stock-<티커>`로 잰다.

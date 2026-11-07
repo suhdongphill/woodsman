@@ -38,6 +38,8 @@ const MENU = [
   // 홈 유동성 카드 해석 팝업의 2부 — 점수는 사이트가, 사실·해석은 운영자가(2026-09-14).
   { href: "/admin/analysis", label: "그날의 분석", icon: FileTextIcon },
   { href: "/admin/stocks", label: "종목 보고서", icon: TrendingUpIcon },
+  // 판정 시각 확인 · 최신화 요청(계산은 운영자 PC, 2026-11-07)
+  { href: "/admin/leaders", label: "주도주 최신화", icon: TrendingUpIcon },
   { href: "/admin/posts", label: "콘텐츠", icon: FileTextIcon },
   // 원고(md·html)를 올리면 SNS 출처를 지우고 AI가 다듬어 초안 → 미리보기에서 공개(2026-10-31).
   { href: "/admin/briefing", label: "오늘의 브리핑", icon: FileTextIcon },

@@ -1526,3 +1526,19 @@ model StockReportFile {
 
   @@index([status, publishedAt])
 }
+
+/// 주도주 최신화 요청(2026-11-07) — 관리자 버튼이 넣고, 볼트 refresh-leaders-on-request.ps1이 집어 돌린다.
+model LeaderRefreshRequest {
+  id          String  @id
+  /// UTC ISO
+  requestedAt String
+  requestedBy String
+  /// REQUESTED | RUNNING | DONE | FAILED
+  status      String  @default("REQUESTED")
+  startedAt   String?
+  finishedAt  String?
+  /// 실패 이유 — 화면에 보인다
+  note        String?
+
+  @@index([status, requestedAt])
+}
