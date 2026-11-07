@@ -105,7 +105,7 @@ export function AdminSidebar() {
         </button>
       </div>
       {open && (
-        <div className="lg:hidden border-b border-border bg-card px-4 py-3">
+        <div className="lg:hidden max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-b border-border bg-card px-4 py-3">
           <Nav onNavigate={() => setOpen(false)} />
         </div>
       )}
@@ -118,8 +118,11 @@ export function AdminSidebar() {
             ADMIN
           </span>
         </div>
-        <Nav />
-        <div className="mt-auto pt-5 border-t border-border">
+        {/* ⚠ 메뉴가 화면보다 길면 이 안에서만 스크롤한다. min-h-0이 없으면 flex 자식이 줄지 않아 아래가 잘린다. */}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <Nav />
+        </div>
+        <div className="shrink-0 mt-3 pt-3 border-t border-border">
           <Link
             href="/"
             className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[13px] text-muted hover:text-ink hover:bg-cardHover transition-colors"
