@@ -4,7 +4,9 @@ import { AdminPageHeader, AdminShell } from "@/components/layout/AdminPageHeader
 import { Card, CardTitle } from "@/components/ui/Card";
 import { requireAdmin } from "@/lib/session";
 import { loadLeaderRuns } from "@/features/leaders/repository";
-import { loadRefreshRequests } from "@/features/leaders/refresh-repo";
+import { loadRefreshRequests, loadSectorFlows } from "@/features/leaders/refresh-repo";
+import { SectorFlowCard } from "@/features/leaders/ui/SectorFlowCard";
+import { buildSectorFlowView } from "@/lib/sector-flow";
 import { requestLeaderRefreshAction } from "@/features/leaders/refresh-actions";
 import { LEADER_STALE_DAYS, leaderAgeDays, refreshView, type RefreshStatus } from "@/lib/leaders/refresh";
 
@@ -24,7 +26,8 @@ const seoul = (iso?: string | null) =>
 /** 주도주 판정이 언제 것인지 보고, 다시 계산을 요청한다. 계산은 운영자 PC에서 돈다(`lib/leaders/refresh.ts`). */
 export default async function AdminLeadersPage() {
   await requireAdmin("/admin/leaders");
-  const [runs, requests] = await Promise.all([loadLeaderRuns(1), loadRefreshRequests(5)]);
+  const [runs, requests, flows] = await Promise.all([loadLeaderRuns(1), loadRefreshRequests(5), loadSectorFlows()]);
+  const flowView = buildSectorFlowView(flows.rows);
   const now = new Date();
   const collectedAt = runs[0]?.collectedAt;
   const age = leaderAgeDays(collectedAt, now);
@@ -67,6 +70,8 @@ export default async function AdminLeadersPage() {
           시세·상대강도는 새로 받고, 실적·EPS는 마지막 일일 수집 값을 씁니다.
         </p>
       </Card>
+
+      <SectorFlowCard asOf={flowView.asOf} items={flowView.items} failed={flows.failed} />
 
       <Card>
         <CardTitle>최근 요청</CardTitle>

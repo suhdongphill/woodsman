@@ -1542,3 +1542,14 @@ model LeaderRefreshRequest {
 
   @@index([status, requestedAt])
 }
+
+/// 섹터 ETF 월별 유입률(2026-11-07) — 볼트 record-rotation-watch.py가 싣는다. ⚠ 관리자 화면 전용(lib/sector-flow.ts).
+model SectorEtfFlow {
+  month     String
+  ticker    String
+  name      String
+  flowPct   Float
+  updatedAt String
+
+  @@id([month, ticker])
+}
