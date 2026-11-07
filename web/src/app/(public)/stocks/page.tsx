@@ -7,10 +7,6 @@ import { loadPublishedSummaries } from "@/features/reports/repository";
 import { loadPublishedReportFiles } from "@/features/reports/file-repo";
 import { Card } from "@/components/ui/Card";
 import Link from "next/link";
-import { loadSeriesMany } from "@/features/macro/repository";
-import { indicatorsByGroup } from "@/lib/macro/catalog";
-import { sectorStrength, type SectorStrength } from "@/lib/sector-strength";
-import { SectorLeaders } from "@/features/stocks/ui/SectorLeaders";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/stocks" },
@@ -28,26 +24,11 @@ export const dynamic = "force-dynamic";
  *    이제 **발행된 보고서만** 나온다. 비어 있으면 비어 있다고 적는다 —
  *    목업으로 채운 목록은 방문자에게 "이만큼 분석했다"는 거짓 신호를 준다.
  */
-/** ⚠ 시장 기준(SPY)의 키. 이 값이 없으면 상대강도를 내지 않는다 — 기준 없는 강함은 없다. */
-const BENCHMARK_KEY = "spx_etf";
-
 export default async function StocksPage() {
-  const leaders = indicatorsByGroup("leaders");
-  const [reports, reportFiles, series] = await Promise.all([
-    loadPublishedSummaries(),
-    loadPublishedReportFiles(),
-    loadSeriesMany(leaders.map((i) => i.key)),
-  ]);
+  const [reports, reportFiles] = await Promise.all([loadPublishedSummaries(), loadPublishedReportFiles()]);
 
   const structured = new Set(reports.map((r) => r.ticker));
   const files = reportFiles.filter((f) => f.hasHtml && !structured.has(f.ticker));
-
-  const benchmark = series.get(BENCHMARK_KEY);
-  const strengths: SectorStrength[] = leaders
-    // 기준(SPY)은 비교 대상이지 섹터가 아니다 — 표에 넣지 않는다.
-    .filter((i) => i.key !== BENCHMARK_KEY)
-    .map((i) => sectorStrength({ key: i.key, name: i.name, points: series.get(i.key) ?? [] }, benchmark))
-    .filter((s): s is SectorStrength => s !== null);
 
   return (
     <>
@@ -58,8 +39,13 @@ export default async function StocksPage() {
       />
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 sm:px-6 py-10">
-        {/* ⚠ 바람·조류(거시)를 읽었다면 파도가 어디서 일고 있는지가 여기 있다 */}
-        <SectorLeaders items={strengths} />
+        {/* 섹터 표는 주도주 화면으로 옮겼다(2026-11-07). 찾던 사람이 길을 잃지 않게 잇는다. */}
+        <p className="text-[13px] text-muted">
+          어느 섹터·어느 종목이 강한지는{" "}
+          <Link href="/leaders" className="text-gold-500 hover:text-gold-400">
+            주도주 화면 →
+          </Link>
+        </p>
 
         {reports.length + files.length === 0 ? (
           <EmptyState

@@ -9,13 +9,15 @@ import { LeaderChanges } from "@/features/leaders/ui/LeaderChanges";
 import { LayerMembers } from "@/features/leaders/ui/LayerMembers";
 import { LeaderFit } from "@/features/leaders/ui/LeaderFit";
 import { TistoryCta } from "@/features/site/ui/TistoryCta";
+import { SectorLeaders } from "@/features/stocks/ui/SectorLeaders";
+import { loadSectorStrengths } from "@/features/stocks/sector-service";
 import { cx } from "@/lib/format";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/leaders" },
   title: "주도주",
   description:
-    "AI 투자 흐름을 전력·반도체·연결·데이터센터·모델·피지컬 AI·한국 축 일곱 칸으로 나눠, 돈이 어느 칸으로 옮겨 갔는지와 실적·가격이 함께 강한 주도주를 매주 판정합니다.",
+    "시장 전체에서 어느 섹터가 강한지 본 뒤, AI 생태계의 일곱 칸(전력·반도체·연결·데이터센터·모델·피지컬 AI·한국 축)과 종목으로 좁혀 갑니다. 실적과 가격으로 판정합니다.",
 };
 
 /** ⚠ 정적 생성 금지 — 볼트가 새 판정을 실어도 화면이 안 바뀐다. */
@@ -25,22 +27,35 @@ export const dynamic = "force-dynamic";
  * 주도주 — 볼트 「주도주 모니터」를 포털로 옮긴 화면(2026-09-25). **조립만 한다.**
  * 판단은 `lib/leaders/view.ts`, 읽기는 `features/leaders/service.ts`.
  *
- * 순서(UI 권고): 모르는 것 → 한 문장·숫자 → **달라진 것** → 흐름 → 레이어별 종목 → 과거에 맞았나 → 방법.
+ * ⚠ 맨 위는 시장 전체 섹터 표다(2026-11-07 `/stocks`에서 옮김). 넓은 것 → 좁은 것 순서다. 표는 가격, 판정은 실적·가격이라
+ *    근거가 달라 **점수를 합치지 않는다.** 판정은 AI 생태계 안에서만 나온다 — 제목이 그 범위를 말한다.
+ *
+ * 판정 칸 순서(UI 권고): 모르는 것 → 한 문장·숫자 → **달라진 것** → 흐름 → 레이어별 종목 → 과거에 맞았나 → 방법.
  * 「달라진 것」을 앞에 둔 이유: 판정표는 매주 같은 모양이라, 다시 올 이유는 변화다.
  */
 export default async function LeadersPage() {
   const today = new Date().toISOString().slice(0, 10);
-  const result = await loadLeadersView(today);
+  const [result, sectors] = await Promise.all([loadLeadersView(today), loadSectorStrengths()]);
 
   return (
     <>
       <PageHeader
         eyebrow="LEADERS"
         title="주도주"
-        description="돈이 어느 칸으로 옮겨 갔는가 — 레이어별 자금 흐름 · 실적 가속 · 상대강도 · 수급. 실적과 가격이 함께 강한 종목만 주도주로 부릅니다."
+        description="시장 전체에서 어느 섹터가 강한지 본 뒤, AI 생태계 안의 칸과 종목으로 좁혀 갑니다."
       />
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-10 sm:px-6">
+        <SectorLeaders items={sectors.items} failed={sectors.failed} />
+
+        {/* ⚠ 「주도주 N곳」이 시장 전체 숫자로 읽히지 않게 범위를 먼저 말한다. */}
+        <div id="ai-ecosystem" className="scroll-mt-20 border-t border-border pt-10">
+          <h2 className="text-[17px] font-semibold tracking-tight text-ink">AI 생태계 — 주도주 판정</h2>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
+            AI 투자 흐름에 있는 일곱 칸의 종목만 판정합니다. 금융·헬스케어 같은 다른 섹터의 종목은 판정하지 않습니다.
+          </p>
+        </div>
+
         {result.state !== "ok" ? (
           <Card>
             <p className="text-[13px] text-muted">
@@ -106,7 +121,7 @@ export default async function LeadersPage() {
         )}
 
         <section className="rounded-2xl border border-border bg-card p-5 text-[12.5px] leading-relaxed text-muted">
-          <h2 className="text-[14px] font-semibold text-ink">이 화면이 판정하는 방법</h2>
+          <h2 className="text-[14px] font-semibold text-ink">AI 생태계를 판정하는 방법</h2>
           <p className="mt-2">
             ① 이익이 성장하는가(매출 YoY 15% 이상이고 가속이 꺾이지 않았거나, 가속이 5%p 넘게 붙었다) ② 가격이 벤치마크를
             앞서는가(3·6개월 상대강도 평균이 0보다 크다). 둘 다면 <strong className="text-ink">주도주</strong>, 성장만이면

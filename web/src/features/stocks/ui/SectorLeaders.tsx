@@ -5,9 +5,10 @@ import { LEADER_POSITION, rankByStrength, type SectorStrength } from "@/lib/sect
 
 /** ⚠ 보이는 문자열은 위쪽에 모은다 — 나중에 다국어를 넣을 때 여기만 본다. */
 const TEXT = {
-  heading: "주도주 섹터",
+  heading: "시장 전체 — 주도주 섹터",
   question: "지금 돈은 어느 섹터로 흐르고 있나",
-  empty: "아직 섹터 시세를 가져오지 않았습니다. 관리자 화면의 「자료 가져오기」를 먼저 돌리세요.",
+  empty: "아직 섹터 시세가 없습니다.",
+  failed: "섹터 시세를 불러오지 못했습니다. 아래 판정은 그대로 볼 수 있습니다.",
   colSector: "섹터",
   colPosition: "52주 위치",
   colRelative: "시장 대비",
@@ -17,11 +18,11 @@ const TEXT = {
   disclaimer:
     "⚠ 이 표는 자금 유입 통계가 아닙니다. 설정주식수·AUM 자료가 아니라 **가격이 만든 결과**(52주 고가 대비 위치와 시장 대비 초과 수익)입니다. 특정 종목의 매수·매도를 권하지 않습니다.",
   toPortfolio: "그래서 내 배분은 →",
-  toLeaders: "레이어별 주도주 판정 →",
+  toLeaders: "AI 생태계 판정으로 ↓",
 };
 
 /**
- * 주도주 섹터 프레임.
+ * 주도주 섹터 프레임. `/leaders` 맨 위 — 시장 전체 → AI 생태계 → 종목으로 좁혀 가는 첫 칸이다(2026-11-07 `/stocks`에서 옮김).
  *
  * ## 이 프레임이 주는 것 — **가져갈 한 문장**
  * "지금 돈은 어느 섹터로 흐르고 있나." 바람과 조류(거시)를 읽었다면,
@@ -37,11 +38,11 @@ const TEXT = {
  * 표만 보여주고 끝내지 않는다. 마지막 줄이 **"그래서 내 배분은"** 으로 잇는다 —
  * 다만 **권유가 아니라 연결**이다(운영지침 §5 · `/disclaimer`).
  */
-export function SectorLeaders({ items }: { items: SectorStrength[] }) {
+export function SectorLeaders({ items, failed = false }: { items: SectorStrength[]; failed?: boolean }) {
   if (items.length === 0) {
     return (
       <Card>
-        <p className="text-[13px] text-muted">{TEXT.empty}</p>
+        <p className="text-[13px] text-muted">{failed ? TEXT.failed : TEXT.empty}</p>
       </Card>
     );
   }
@@ -121,9 +122,9 @@ export function SectorLeaders({ items }: { items: SectorStrength[] }) {
 
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1">
         {/* 섹터 ETF는 넓은 그물이다 — 칸 안의 어느 종목이 실적·가격 모두 강한지는 주도주 화면이 판정한다 */}
-        <Link href="/leaders" className="text-[12.5px] text-gold-500 hover:text-gold-400">
+        <a href="#ai-ecosystem" className="text-[12.5px] text-gold-500 hover:text-gold-400">
           {TEXT.toLeaders}
-        </Link>
+        </a>
         <Link href="/portfolio" className="text-[12.5px] text-gold-500 hover:text-gold-400">
           {TEXT.toPortfolio}
         </Link>
