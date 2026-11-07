@@ -22,7 +22,7 @@ const button = "rounded-lg px-3.5 py-2 text-[12.5px] font-semibold";
 
 /** 미리보기 — 공개 화면과 **같은 컴포넌트**로 그린다. ⚠ 공개는 여기서 사람이 누른다. */
 export default async function AdminReportFilePreviewPage({ params }: Props) {
-  await requireAdmin("/admin/stocks/files");
+  await requireAdmin("/admin/stocks");
   const { ticker } = await params;
   const file = await findReportFile(decodeURIComponent(ticker));
   if (!file) notFound();
@@ -35,7 +35,7 @@ export default async function AdminReportFilePreviewPage({ params }: Props) {
       <Card className="mb-6">
         <div className="flex flex-wrap items-center gap-3">
           {file.status === "PUBLISHED" ? <Badge tone="emerald">공개 중</Badge> : <Badge tone="neutral">초안</Badge>}
-          <Link href="/admin/stocks/files" className="text-[12.5px] text-muted underline">
+          <Link href="/admin/stocks" className="text-[12.5px] text-muted underline">
             목록
           </Link>
           {file.blogUrl && (

@@ -6,6 +6,7 @@
  * ⚠ 저장은 초안이다. 공개는 미리보기를 보고 사람이 누른다.
  */
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/session";
 import { recordAdminLog } from "@/features/admin-log/repository";
 import {
@@ -20,9 +21,11 @@ import { deleteReportFile, findReportFile, saveReportFile, setReportFileStatus }
 import type { ReportFileFormState } from "./file-form-state";
 
 const ADMIN_PATH = "/admin/stocks/files";
+/** 올리기·목록이 있는 화면 */
+const LIST_PATH = "/admin/stocks";
 
 function revalidateAll(ticker: string) {
-  for (const path of ["/stocks", "/portfolio", ADMIN_PATH, "/sitemap.xml"]) revalidatePath(path);
+  for (const path of ["/stocks", "/portfolio", "/admin/stocks", "/sitemap.xml"]) revalidatePath(path);
   revalidatePath(`/stocks/${ticker}`);
   revalidatePath(`${ADMIN_PATH}/${ticker}`);
 }
@@ -33,7 +36,7 @@ export async function saveReportFileAction(
   _prev: ReportFileFormState,
   formData: FormData,
 ): Promise<ReportFileFormState> {
-  const admin = await requireAdmin(ADMIN_PATH);
+  const admin = await requireAdmin(LIST_PATH);
 
   const file = formData.get("file");
   const upload = file instanceof File && file.size > 0 ? file : null;
@@ -68,7 +71,7 @@ function tickerOf(formData: FormData): string {
 }
 
 export async function publishReportFileAction(formData: FormData): Promise<void> {
-  const admin = await requireAdmin(ADMIN_PATH);
+  const admin = await requireAdmin(LIST_PATH);
   const ticker = tickerOf(formData);
   if (!ticker) return;
   await setReportFileStatus(ticker, "PUBLISHED");
@@ -77,7 +80,7 @@ export async function publishReportFileAction(formData: FormData): Promise<void>
 }
 
 export async function unpublishReportFileAction(formData: FormData): Promise<void> {
-  const admin = await requireAdmin(ADMIN_PATH);
+  const admin = await requireAdmin(LIST_PATH);
   const ticker = tickerOf(formData);
   if (!ticker) return;
   await setReportFileStatus(ticker, "DRAFT");
@@ -86,10 +89,12 @@ export async function unpublishReportFileAction(formData: FormData): Promise<voi
 }
 
 export async function deleteReportFileAction(formData: FormData): Promise<void> {
-  const admin = await requireAdmin(ADMIN_PATH);
+  const admin = await requireAdmin(LIST_PATH);
   const ticker = tickerOf(formData);
   if (!ticker) return;
   await deleteReportFile(ticker);
   await recordAdminLog({ actor: admin.email, action: "report-file.delete", target: ticker });
   revalidateAll(ticker);
+  // 지운 행의 미리보기에 머물면 404다.
+  redirect(LIST_PATH);
 }

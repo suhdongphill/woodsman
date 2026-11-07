@@ -148,14 +148,15 @@ export type PublishedSummary = ReportSummary & {
  *    같은 판단을 질의에도 넣으면 두 곳이 언젠가 갈린다.
  */
 export async function loadReportLinkEntries(): Promise<ReportLinkEntry[]> {
-  const rows = await queryAll<{ ticker: string; name: string; status: string }>(
-    `SELECT ticker, name, status FROM StockReport ORDER BY ticker ASC`,
+  const rows = await queryAll<{ ticker: string; name: string; status: string; tistoryUrl: string | null }>(
+    `SELECT ticker, name, status, tistoryUrl FROM StockReport ORDER BY ticker ASC`,
   );
   return rows.map((r) => ({
     ticker: r.ticker,
     name: r.name,
     // ⚠ 모르는 값은 DRAFT로 본다. PUBLISHED로 보면 안 쓴 보고서가 공개 화면에 링크된다.
     status: r.status === "PUBLISHED" ? "PUBLISHED" : "DRAFT",
+    blogUrl: r.tistoryUrl,
   }));
 }
 

@@ -26,7 +26,7 @@ import { loadReportLinkEntries } from "@/features/reports/repository";
 import { loadMacroOverview } from "@/features/macro/service";
 import { loadUsdKrwRate } from "@/features/macro/fx-service";
 import { macroLede } from "@/lib/home-lede";
-import { buildReportIndex, publicReportHref, tickerKey } from "@/lib/report/link";
+import { blogLinkedTickers, buildReportIndex, publicReportHref, tickerKey } from "@/lib/report/link";
 import { outboundStockHref } from "@/lib/outbound";
 import { loadPublishedReportFiles } from "@/features/reports/file-repo";
 import {
@@ -116,12 +116,15 @@ export default async function PortfolioPage() {
     ...reportFiles.filter((f) => f.hasHtml).map((f) => ({ ticker: f.ticker, name: f.name, status: "PUBLISHED" as const })),
     ...reportEntries,
   ]);
-  const blogTickers = new Set(reportFiles.filter((f) => f.blogUrl).map((f) => tickerKey(f.ticker)));
+  const blogTickers = blogLinkedTickers([...reportEntries, ...reportFiles]);
   const weights = holdingWeightsPct(published, usdKrw.rate);
   const cardProps = (h: ModelHolding) => ({
     weightPct: weights.get(h.id),
     reportHref: publicReportHref(h, reportIndex),
-    blogHref: h.ticker && (h.blogUrl || blogTickers.has(tickerKey(h.ticker))) ? outboundStockHref(h.ticker) : undefined,
+    blogHref:
+      h.ticker && (h.blogUrl || blogTickers.has(tickerKey(h.ticker) ?? ""))
+        ? outboundStockHref(h.ticker.trim())
+        : undefined,
     bucketName: buckets.find((b) => b.key === h.functionType)?.name,
     bucketColor: buckets.find((b) => b.key === h.functionType)?.color,
   });

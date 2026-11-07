@@ -15,6 +15,7 @@
  * - ⚠ **숫자로 만들지 않는다.** `005930`을 숫자로 파싱하면 `5930`이 되어 종목이 바뀐다.
  * - **현금성 자리(CASH·BOND)는 잇지 않는다.** 보고서를 쓸 대상이 아니다.
  */
+import { isHttpUrl } from "./file";
 import type { ReportStatus } from "./types";
 
 /** 보고서 한 건의 최소 정보 — 링크를 걸지 말지 정하는 데 필요한 것만. */
@@ -23,6 +24,8 @@ export type ReportLinkEntry = {
   ticker: string;
   name: string;
   status: ReportStatus;
+  /** 티스토리 원문(있을 때) */
+  blogUrl?: string | null;
 };
 
 /** ⚠ 보고서를 쓰지 않는 자리. 대소문자를 무시하고 본다. */
@@ -48,6 +51,21 @@ export function buildReportIndex(entries: ReportLinkEntry[]): Map<string, Report
     index.set(key, entry);
   }
   return index;
+}
+
+/**
+ * 블로그 글로 갈 수 있는 티커들 — 카드가 `/go/stock-<티커>` 링크를 달지 정한다.
+ * ⚠ `/go`가 실제로 내주는 값만 센다(공개된 것 · http(s)). 어긋나면 카드 링크가 404로 간다.
+ */
+export function blogLinkedTickers(
+  entries: { ticker: string; status?: ReportStatus; blogUrl?: string | null }[],
+): Set<string> {
+  const tickers = new Set<string>();
+  for (const entry of entries) {
+    const key = tickerKey(entry.ticker);
+    if (key && entry.status === "PUBLISHED" && entry.blogUrl && isHttpUrl(entry.blogUrl)) tickers.add(key);
+  }
+  return tickers;
 }
 
 export type HoldingLike = {

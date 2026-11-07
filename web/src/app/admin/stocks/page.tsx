@@ -5,6 +5,9 @@ import { Card, CardTitle, EmptyState } from "@/components/ui/Card";
 import { requireAdmin } from "@/lib/session";
 import { loadReportSummaries } from "@/features/reports/repository";
 import { NewReportForm } from "@/features/reports/ui/NewReportForm";
+import { loadAllReportFiles, type ReportFileRow } from "@/features/reports/file-repo";
+import { ReportFileForm } from "@/features/reports/ui/ReportFileForm";
+import { ReportFileList } from "@/features/reports/ui/ReportFileList";
 import { classifyQuotaError } from "@/lib/quota";
 import { loadLastQuoteIngestAt } from "@/features/stocks/repository";
 import { FetchQuotesCard } from "@/features/stocks/ui/FetchQuotesCard";
@@ -27,11 +30,13 @@ export default async function AdminStocksPage() {
   let summaries: Awaited<ReturnType<typeof loadReportSummaries>> | null = null;
   let failure: string | undefined;
   let lastIngestAt: string | undefined;
+  let files: ReportFileRow[] = [];
 
   try {
-    [summaries, lastIngestAt] = await Promise.all([
+    [summaries, lastIngestAt, files] = await Promise.all([
       loadReportSummaries(),
       loadLastQuoteIngestAt(),
+      loadAllReportFiles(),
     ]);
   } catch (error) {
     // ⚠ "값이 없음"과 "읽지 못함"을 같은 화면으로 만들지 않는다.
@@ -55,28 +60,29 @@ export default async function AdminStocksPage() {
     <AdminShell>
       <AdminPageHeader
         title="종목 보고서"
-        description="13섹션 종목분석 보고서를 쓰고, 정직성 규율을 통과해야 발행합니다."
+        description="만들어 둔 보고서 HTML이나 블로그 글을 종목에 잇거나, 13섹션 보고서를 여기서 직접 씁니다. 공개하면 포트폴리오 종목 카드와 종목분석에 나옵니다."
         action={
-          <>
-            <Link
-              href="/admin/stocks/files"
-              className="rounded-lg bg-gold-500 px-3.5 py-2 text-[12.5px] font-semibold text-onAccent"
-            >
-              HTML·블로그 연결
-            </Link>
           <Link
             href="/admin/diagnostics"
-            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-ink"
+            className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:text-ink"
           >
             자가 진단
           </Link>
-          </>
         }
       />
 
       <div className="space-y-5">
+        {/* 이미 만든 보고서를 올리는 일이 가장 잦아 맨 위에 둔다. */}
         <Card>
-          <CardTitle>새 보고서</CardTitle>
+          <CardTitle>보고서 올리기 — HTML · 블로그</CardTitle>
+          <div className="mt-4">
+            <ReportFileForm />
+          </div>
+          <ReportFileList files={files} />
+        </Card>
+
+        <Card>
+          <CardTitle>새 보고서 직접 쓰기 — 13섹션</CardTitle>
           <NewReportForm />
         </Card>
 

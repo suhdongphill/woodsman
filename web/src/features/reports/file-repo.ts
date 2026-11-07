@@ -101,9 +101,9 @@ export async function deleteReportFile(ticker: string): Promise<void> {
 export async function findStockBlogUrl(ticker: string): Promise<string | null> {
   const row = await queryOne<{ report: string | null; file: string | null; holding: string | null }>(
     `SELECT
-       (SELECT tistoryUrl FROM StockReport WHERE ticker = ?1 AND status = 'PUBLISHED') AS report,
-       (SELECT blogUrl FROM StockReportFile WHERE ticker = UPPER(?1) AND status = 'PUBLISHED') AS file,
-       (SELECT blogUrl FROM ModelHolding WHERE UPPER(ticker) = UPPER(?1) AND published = 1 LIMIT 1) AS holding`,
+       (SELECT tistoryUrl FROM StockReport WHERE UPPER(TRIM(ticker)) = UPPER(TRIM(?1)) AND status = 'PUBLISHED' LIMIT 1) AS report,
+       (SELECT blogUrl FROM StockReportFile WHERE ticker = UPPER(TRIM(?1)) AND status = 'PUBLISHED') AS file,
+       (SELECT blogUrl FROM ModelHolding WHERE UPPER(TRIM(ticker)) = UPPER(TRIM(?1)) AND published = 1 LIMIT 1) AS holding`,
     [ticker],
   );
   return row ? pickStockBlogUrl(row.report, row.file, row.holding) : null;

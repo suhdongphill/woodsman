@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   adminReportLink,
+  blogLinkedTickers,
   buildReportIndex,
   findReportFor,
   isNonStock,
@@ -124,5 +125,25 @@ describe("adminReportLink", () => {
     const link = adminReportLink({ name: "예금" } as never, INDEX);
     expect(link.kind).toBe("none");
     if (link.kind === "none") expect(link.reason).toContain("티커");
+  });
+});
+
+describe("blogLinkedTickers", () => {
+  it("공개된 보고서·연결의 블로그만 센다 — 대소문자·공백을 맞춰서", () => {
+    const set = blogLinkedTickers([
+      { ticker: " nvda ", status: "PUBLISHED", blogUrl: "https://suhdp.tistory.com/1" },
+      { ticker: "005930", status: "PUBLISHED", blogUrl: "https://suhdp.tistory.com/2" },
+    ]);
+    expect(set.has("NVDA")).toBe(true);
+    expect(set.has("005930")).toBe(true);
+  });
+
+  it("⚠ 초안·빈 값·http(s) 아닌 주소는 세지 않는다 — /go가 404를 낸다", () => {
+    const set = blogLinkedTickers([
+      { ticker: "A", status: "DRAFT", blogUrl: "https://a.test" },
+      { ticker: "B", status: "PUBLISHED", blogUrl: null },
+      { ticker: "C", status: "PUBLISHED", blogUrl: "javascript:x" },
+    ]);
+    expect(set.size).toBe(0);
   });
 });
