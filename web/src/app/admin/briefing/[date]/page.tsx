@@ -34,6 +34,9 @@ export default async function AdminBriefingPreviewPage({ params }: Props) {
           <Link href="/admin/briefing" className="text-[12.5px] text-muted underline">
             목록
           </Link>
+          <Link href={`/admin/briefing/${date}/edit`} className={`${button} border border-gold-500 text-gold-500`}>
+            수정
+          </Link>
           {b.status === "PUBLISHED" ? (
             <>
               <Link href={`/briefing/${date}`} className="text-[12.5px] text-gold-500 underline">

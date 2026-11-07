@@ -16,3 +16,18 @@ export type BriefingUploadState = {
 };
 
 export const emptyBriefingUploadState: BriefingUploadState = {};
+
+/** 브리핑 수정 폼 상태. */
+export type BriefingEditState = {
+  error?: string;
+  /** 저장했다 */
+  saved?: boolean;
+  /** 고친 것이 없어 저장하지 않았다 */
+  unchanged?: boolean;
+  /** 글 전체에서 처음 나타난 숫자 — 잘못 쳤는지 사람이 한 번 더 본다 */
+  newNumbers?: string[];
+  /** 저장 뒤 기준 시각 — 다음 저장의 충돌 검사에 쓴다 */
+  updatedAt?: string;
+};
+
+export const emptyBriefingEditState: BriefingEditState = {};

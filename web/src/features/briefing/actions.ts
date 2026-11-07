@@ -1,7 +1,7 @@
 "use server";
 
 /**
- * 오늘의 브리핑 — 올리기(규칙 정리 → AI 다듬기 → 초안) · 공개 · 내리기 · 지우기.
+ * 오늘의 브리핑 — 올리기(규칙 정리 → AI 다듬기 → 초안) · 사람 수정 · 공개 · 내리기 · 지우기.
  *
  * ## 왜 세 단계인가 (운영자 10/31 「관리자 화면에서 올리면 AI로 재편집해서 등록」)
  * 1. **규칙**(`lib/briefing/article.ts`) — SNS 출처·채널 평가·내부 칸을 지운다. 매번 같은 결과.
@@ -24,8 +24,9 @@ import {
   parseBriefingMarkdown,
 } from "@/lib/briefing/article";
 import { applyRewrite, buildRewritePrompt, editableItems, parseRewriteResponse } from "@/lib/briefing/rewrite";
-import { deleteBriefing, saveBriefingDraft, setBriefingStatus } from "./repository";
-import type { BriefingUploadState } from "./form-state";
+import { applyHumanEdit, editorAfterHumanEdit, parseEditedArticle } from "@/lib/briefing/edit";
+import { deleteBriefing, findBriefing, saveBriefingDraft, saveBriefingEdit, setBriefingStatus } from "./repository";
+import type { BriefingEditState, BriefingUploadState } from "./form-state";
 
 /** 원고 크기 상한 — 정기분이 14KB(md)·46KB(html)다. 넉넉히 잡되 끝없이 받지는 않는다. */
 const MAX_BYTES = 512 * 1024;
@@ -35,6 +36,7 @@ function revalidateAll(date?: string) {
   if (date) {
     revalidatePath(`/briefing/${date}`);
     revalidatePath(`/admin/briefing/${date}`);
+    revalidatePath(`/admin/briefing/${date}/edit`);
   }
 }
 
@@ -125,6 +127,48 @@ export async function uploadBriefingAction(
 function dateOf(formData: FormData): string | null {
   const d = String(formData.get("date") ?? "");
   return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
+}
+
+const CONFLICT_MESSAGE =
+  "그사이 이 브리핑이 다른 곳에서 저장됐습니다. 덮어쓰지 않았습니다 — 고친 글을 복사해 두고 새로고침하세요.";
+
+/**
+ * 사람 수정 저장. AI를 다시 부르지 않고, 공개 상태도 그대로 둔다(`saveBriefingEdit`).
+ * ⚠ 관문은 올리기와 같다(`applyHumanEdit` → `articleProblems`).
+ */
+export async function editBriefingAction(_prev: BriefingEditState, formData: FormData): Promise<BriefingEditState> {
+  const admin = await requireAdmin("/admin/briefing");
+  const date = dateOf(formData);
+  if (!date) return { error: "날짜를 알 수 없습니다." };
+
+  const edited = parseEditedArticle(String(formData.get("article") ?? ""));
+  if (!edited) return { error: "고친 내용을 읽지 못해 저장하지 않았습니다. 새로고침 전에 고친 글을 복사해 두세요." };
+
+  const stored = await findBriefing(date);
+  if (!stored) return { error: `${date} 브리핑을 찾지 못했습니다. 그사이 지워졌을 수 있습니다.` };
+
+  const baseUpdatedAt = String(formData.get("baseUpdatedAt") ?? "");
+  if (baseUpdatedAt !== stored.updatedAt) return { error: CONFLICT_MESSAGE };
+
+  const outcome = applyHumanEdit(stored.article, edited);
+  if (!outcome.ok) return { error: outcome.problems.join(" · ") };
+  if (!outcome.changed) return { unchanged: true };
+
+  const updatedAt = await saveBriefingEdit({
+    article: outcome.article,
+    editor: editorAfterHumanEdit(stored.editor),
+    baseUpdatedAt,
+  });
+  if (!updatedAt) return { error: CONFLICT_MESSAGE };
+
+  await recordAdminLog({
+    actor: admin.email,
+    action: "briefing.edit",
+    target: date,
+    summary: `${stored.status === "PUBLISHED" ? "공개 중" : "초안"}${outcome.newNumbers.length ? ` · 새 숫자 ${outcome.newNumbers.slice(0, 10).join(", ")}` : ""}`,
+  });
+  revalidateAll(date);
+  return { saved: true, newNumbers: outcome.newNumbers, updatedAt };
 }
 
 export async function publishBriefingAction(formData: FormData): Promise<void> {

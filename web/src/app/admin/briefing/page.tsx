@@ -22,7 +22,7 @@ export default async function AdminBriefingPage() {
     <AdminShell>
       <AdminPageHeader
         title="오늘의 브리핑"
-        description="briefing 폴더의 원고(.md·.html)를 올리면 SNS 출처를 지우고 기사 문체로 다듬어 초안을 만듭니다. 미리보기에서 공개합니다."
+        description="briefing 폴더의 원고(.md·.html)를 올리면 SNS 출처를 지우고 기사 문체로 다듬어 초안을 만듭니다. 미리보기에서 공개합니다. 올린 뒤에는 「수정」에서 문장을 직접 고칩니다."
       />
 
       <Card className="mb-6">
@@ -49,6 +49,12 @@ export default async function AdminBriefingPage() {
                   {b.headline}
                 </Link>
                 <span className="shrink-0 text-[11px] text-ink-3">{b.editor}</span>
+                <Link
+                  href={`/admin/briefing/${b.date}/edit`}
+                  className="shrink-0 rounded-md border border-border px-2 py-1 text-[11.5px] text-ink hover:border-gold-500 hover:text-gold-500"
+                >
+                  수정
+                </Link>
               </li>
             ))}
           </ul>

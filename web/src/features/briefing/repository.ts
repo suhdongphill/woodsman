@@ -109,6 +109,32 @@ export async function saveBriefingDraft(input: {
   );
 }
 
+/**
+ * 사람이 고친 기사를 저장하고 새 `updatedAt`을 돌려준다.
+ * ⚠ **공개 상태는 건드리지 않는다** — 공개 중인 글의 오타를 고치려고 글을 내리지 않는다
+ * (다시 올리기와 다르다: 그쪽은 AI가 전부 다시 쓰므로 미리보기를 거쳐야 하고, 이쪽은 사람이 직접 고쳤다).
+ * ⚠ `baseUpdatedAt`이 다르면(다른 탭·재업로드가 먼저 저장) 쓰지 않고 `null` — 남의 저장을 조용히 덮지 않는다.
+ */
+export async function saveBriefingEdit(input: {
+  article: BriefingArticle;
+  editor: string;
+  baseUpdatedAt: string;
+}): Promise<string | null> {
+  const row = await queryOne<{ updatedAt: string }>(
+    `UPDATE Briefing SET headline = ?, article = ?, editor = ?, updatedAt = ?
+     WHERE date = ? AND updatedAt = ? RETURNING updatedAt`,
+    [
+      input.article.headline,
+      JSON.stringify(input.article),
+      input.editor,
+      new Date().toISOString(),
+      input.article.date,
+      input.baseUpdatedAt,
+    ],
+  );
+  return row ? row.updatedAt : null;
+}
+
 /** 공개 · 내리기. 처음 공개한 시각은 한 번만 적는다. */
 export async function setBriefingStatus(date: string, status: BriefingStatus): Promise<void> {
   const now = new Date().toISOString();
