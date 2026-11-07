@@ -3,7 +3,7 @@ import { clickDateKey, outboundDestinations, resolveOutbound } from "@/lib/outbo
 import { isBotUserAgent, isPrefetchRequest, normalizePath } from "@/lib/analytics";
 import { getSiteBasics } from "@/lib/site-settings";
 import { findPostBySlug } from "@/features/posts/repository";
-import { findPublishedTistoryUrl } from "@/features/reports/repository";
+import { findStockBlogUrl } from "@/features/reports/file-repo";
 import { recordClick } from "@/lib/outbound-repo";
 import { parseBlogTarget } from "@/lib/blog/tistory";
 import { findBlogEntryUrl } from "@/features/blog/repository";
@@ -50,7 +50,7 @@ export async function GET(
   // 종목 보고서 경유(stock-<ticker>)도 같은 규칙이다 — 저장해 둔 원문 URL로만 간다.
   // ⚠ 티커는 문자열로 다룬다. 숫자로 만지면 005930이 5930이 된다.
   const stockUrl = target.startsWith("stock-")
-    ? await findPublishedTistoryUrl(target.slice("stock-".length))
+    ? await findStockBlogUrl(target.slice("stock-".length))
     : null;
   // 블로그 글 목록 경유(blog-<번호>)도 같은 규칙이다 — 저장된 목록의 주소로만 간다(숨긴 글은 404).
   const blogId = parseBlogTarget(target);

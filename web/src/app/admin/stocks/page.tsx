@@ -57,12 +57,20 @@ export default async function AdminStocksPage() {
         title="종목 보고서"
         description="13섹션 종목분석 보고서를 쓰고, 정직성 규율을 통과해야 발행합니다."
         action={
+          <>
+            <Link
+              href="/admin/stocks/files"
+              className="rounded-lg bg-gold-500 px-3.5 py-2 text-[12.5px] font-semibold text-onAccent"
+            >
+              HTML·블로그 연결
+            </Link>
           <Link
             href="/admin/diagnostics"
             className="rounded-xl border border-border px-3 py-2 text-[12.5px] text-gray-300 transition-colors hover:border-gold-600/40 hover:text-ink"
           >
             자가 진단
           </Link>
+          </>
         }
       />
 

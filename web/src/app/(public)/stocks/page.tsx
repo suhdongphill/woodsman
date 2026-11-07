@@ -4,6 +4,9 @@ import { EmptyState } from "@/components/ui/Card";
 import { BarChartIcon } from "@/components/icons";
 import { ReportCard } from "@/features/reports/ui/ReportCard";
 import { loadPublishedSummaries } from "@/features/reports/repository";
+import { loadPublishedReportFiles } from "@/features/reports/file-repo";
+import { Card } from "@/components/ui/Card";
+import Link from "next/link";
 import { loadSeriesMany } from "@/features/macro/repository";
 import { indicatorsByGroup } from "@/lib/macro/catalog";
 import { sectorStrength, type SectorStrength } from "@/lib/sector-strength";
@@ -30,10 +33,14 @@ const BENCHMARK_KEY = "spx_etf";
 
 export default async function StocksPage() {
   const leaders = indicatorsByGroup("leaders");
-  const [reports, series] = await Promise.all([
+  const [reports, reportFiles, series] = await Promise.all([
     loadPublishedSummaries(),
+    loadPublishedReportFiles(),
     loadSeriesMany(leaders.map((i) => i.key)),
   ]);
+
+  const structured = new Set(reports.map((r) => r.ticker));
+  const files = reportFiles.filter((f) => f.hasHtml && !structured.has(f.ticker));
 
   const benchmark = series.get(BENCHMARK_KEY);
   const strengths: SectorStrength[] = leaders
@@ -54,7 +61,7 @@ export default async function StocksPage() {
         {/* ⚠ 바람·조류(거시)를 읽었다면 파도가 어디서 일고 있는지가 여기 있다 */}
         <SectorLeaders items={strengths} />
 
-        {reports.length === 0 ? (
+        {reports.length + files.length === 0 ? (
           <EmptyState
             icon={<BarChartIcon size={30} />}
             title="아직 발행한 보고서가 없습니다"
@@ -64,6 +71,15 @@ export default async function StocksPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {reports.map((r) => (
               <ReportCard key={r.ticker} report={r} />
+            ))}
+            {files.map((f) => (
+              <Link key={f.ticker} href={`/stocks/${encodeURIComponent(f.ticker)}`}>
+                <Card className="h-full hover:border-gold-600/40">
+                  <p className="text-[15px] font-semibold text-ink">{f.name}</p>
+                  <p className="mt-0.5 font-mono text-[11px] text-gray-500">{f.ticker}</p>
+                  <p className="mt-3 line-clamp-3 text-[12.5px] leading-relaxed text-muted">{f.headline}</p>
+                </Card>
+              </Link>
             ))}
           </div>
         )}

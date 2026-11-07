@@ -16,6 +16,7 @@ import { HoldingTagChips } from "./HoldingTagChips";
 export function HoldingCard({
   holding: h,
   reportHref,
+  blogHref,
   bucketName,
   bucketColor,
   weightPct,
@@ -26,6 +27,8 @@ export function HoldingCard({
   /** 관리자가 붙인 분류 이름·색 */
   bucketName?: string;
   bucketColor?: string;
+  /** 블로그 글이 있을 때만 온다(`/go` 경유) */
+  blogHref?: string;
   /** 공개 종목 합계 대비 비중(%). 값을 모르면 오지 않는다 */
   weightPct?: number;
 }) {
@@ -96,16 +99,26 @@ export function HoldingCard({
     </>
   );
 
-  const cls =
-    "block bg-card border border-border rounded-2xl p-5 card-hover hover:border-gold-600/40";
+  const hasLinks = reportHref || blogHref;
 
-  return reportHref ? (
-    <Link href={reportHref} className={cls}>
+  // ⚠ 링크가 둘일 수 있어 카드 전체를 링크로 두지 않는다 — 링크 안의 링크는 HTML이 아니다.
+  return (
+    <div className="flex flex-col bg-card border border-border rounded-2xl p-5 card-hover hover:border-gold-600/40">
       {body}
-      {/* ⚠ 링크가 걸린 카드와 아닌 카드가 겉으로 같으면 눌러 보고 알게 된다 */}
-      <span className="mt-3 block text-[11px] text-gold-400">분석 보고서 보기 →</span>
-    </Link>
-  ) : (
-    <div className={cls}>{body}</div>
+      {hasLinks && (
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[12px] font-medium text-gold-400">
+          {reportHref && (
+            <Link href={reportHref} className="hover:text-gold-500">
+              분석 보고서 보기 →
+            </Link>
+          )}
+          {blogHref && (
+            <a href={blogHref} target="_blank" rel="noopener noreferrer" className="hover:text-gold-500">
+              블로그 글 읽기 →
+            </a>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

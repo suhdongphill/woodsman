@@ -1506,3 +1506,23 @@ model Briefing {
 
   @@index([status, date])
 }
+
+/// 종목별 보고서 파일·블로그 연결(2026-11-07) — 만들어 둔 HTML이나 티스토리 글을 종목에 잇는다.
+model StockReportFile {
+  /// ⚠ 문자열로만 다룬다. 대문자로 맞춰 저장한다(lib/report/file.ts)
+  ticker      String   @id
+  name        String
+  headline    String
+  /// 정화한 본문. 블로그만 잇는 행은 NULL
+  html        String?
+  blogUrl     String?
+  sourceName  String?
+  /// DRAFT | PUBLISHED
+  status      String   @default("DRAFT")
+  /// UTC ISO — 처음 공개한 시각
+  publishedAt String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+
+  @@index([status, publishedAt])
+}

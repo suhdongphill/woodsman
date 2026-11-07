@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { loadPublishedSummaries } from "@/features/reports/repository";
+import { loadPublishedReportFiles } from "@/features/reports/file-repo";
 import { loadPublishedPosts } from "@/features/posts/repository";
 import { loadMaxDates } from "@/features/macro/repository";
 import { loadPublishedBriefings } from "@/features/briefing/repository";
@@ -18,10 +19,11 @@ import { latestOf, sitemapEntries } from "@/lib/sitemap";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [policy, posts, reports, maxDates, briefings] = await Promise.all([
+  const [policy, posts, reports, reportFiles, maxDates, briefings] = await Promise.all([
     getSitePolicy(),
     loadPublishedPosts(500),
     loadPublishedSummaries(200),
+    loadPublishedReportFiles(),
     loadMaxDates(),
     loadPublishedBriefings(400),
   ]);
@@ -29,7 +31,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries = sitemapEntries({
     // 자체 작성 글만 넣는다. 티스토리 원문 링크(source=TISTORY)는 원문이 정본이다.
     posts: posts.filter((p) => p.source === "SELF"),
-    reports,
+    // ⚠ 올린 HTML 중 블로그에 원문이 있는 것은 넣지 않는다 — canonical이 블로그다.
+    reports: [
+      ...reports,
+      ...reportFiles.filter((f) => f.hasHtml && !f.blogUrl && !reports.some((r) => r.ticker === f.ticker)),
+    ],
     macroGroups: MACRO_GROUPS.map((g) => g.key),
     // 지표가 마지막으로 갱신된 날. ⚠ 수집 전이면 `undefined`이고 lastmod가 안 붙는다.
     macroAsOf: latestOf(...maxDates.values()),

@@ -26,7 +26,9 @@ import { loadReportLinkEntries } from "@/features/reports/repository";
 import { loadMacroOverview } from "@/features/macro/service";
 import { loadUsdKrwRate } from "@/features/macro/fx-service";
 import { macroLede } from "@/lib/home-lede";
-import { buildReportIndex, publicReportHref } from "@/lib/report/link";
+import { buildReportIndex, publicReportHref, tickerKey } from "@/lib/report/link";
+import { outboundStockHref } from "@/lib/outbound";
+import { loadPublishedReportFiles } from "@/features/reports/file-repo";
 import {
   cashTargetPct,
   isBucketTargetSet,
@@ -61,6 +63,7 @@ export default async function PortfolioPage() {
     sectionPosts,
     buckets,
     reportEntries,
+    reportFiles,
     macro,
   ] = await Promise.all([
     loadSnapshots(),
@@ -71,6 +74,7 @@ export default async function PortfolioPage() {
     loadSectionPosts("PORTFOLIO", 5),
     loadBuckets(),
     loadReportLinkEntries(),
+    loadPublishedReportFiles(),
     loadMacroOverview(),
   ]);
 
@@ -107,11 +111,17 @@ export default async function PortfolioPage() {
 
   // ⚠ 보고서가 **발행돼 있을 때만** 카드에 링크를 건다. 전에는 티커만 있으면 걸어서
   //    발행본이 없는 종목이 전부 404로 갔다(`lib/report/link.ts`).
-  const reportIndex = buildReportIndex(reportEntries);
+  // ⚠ 올린 HTML을 앞에 둔다 — 같은 티커의 구조화 보고서가 초안이어도 공개 HTML로 가는 길이 막히지 않게.
+  const reportIndex = buildReportIndex([
+    ...reportFiles.filter((f) => f.hasHtml).map((f) => ({ ticker: f.ticker, name: f.name, status: "PUBLISHED" as const })),
+    ...reportEntries,
+  ]);
+  const blogTickers = new Set(reportFiles.filter((f) => f.blogUrl).map((f) => tickerKey(f.ticker)));
   const weights = holdingWeightsPct(published, usdKrw.rate);
   const cardProps = (h: ModelHolding) => ({
     weightPct: weights.get(h.id),
     reportHref: publicReportHref(h, reportIndex),
+    blogHref: h.ticker && (h.blogUrl || blogTickers.has(tickerKey(h.ticker))) ? outboundStockHref(h.ticker) : undefined,
     bucketName: buckets.find((b) => b.key === h.functionType)?.name,
     bucketColor: buckets.find((b) => b.key === h.functionType)?.color,
   });

@@ -11,6 +11,9 @@ import { ChevronRightIcon } from "@/components/icons";
 import { scoreCanslim } from "@/lib/canslim/score";
 import { outboundStockHref } from "@/lib/outbound";
 import { loadPublishedReport } from "@/features/reports/repository";
+import { findPublishedReportFile } from "@/features/reports/file-repo";
+import { ReportFileView } from "@/features/reports/ui/ReportFileView";
+import { canonicalFor } from "@/lib/report/file";
 import { loadContext } from "@/features/reports/context-repo";
 import { SiteContextCard } from "@/features/reports/ui/SiteContextCard";
 import { loadPublishedPosts } from "@/features/posts/repository";
@@ -36,7 +39,16 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { ticker } = await params;
   const report = await loadPublishedReport(ticker);
-  if (!report) return { title: "보고서를 찾을 수 없습니다" };
+  if (!report) {
+    const file = await findPublishedReportFile(ticker);
+    if (!file?.html) return { title: "보고서를 찾을 수 없습니다" };
+    return {
+      title: `${file.name} (${file.ticker}) 종목분석`,
+      description: file.headline,
+      // ⚠ 같은 글이 블로그에 있으면 원문이 canonical이다(CLAUDE.md §5).
+      alternates: { canonical: canonicalFor(file.ticker, file.blogUrl) },
+    };
+  }
 
   return {
     title: `${report.name} (${report.ticker}) 종목분석`,
@@ -48,7 +60,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function StockReportPage({ params }: Props) {
   const { ticker } = await params;
   const report = await loadPublishedReport(ticker);
-  if (!report) notFound();
+  if (!report) {
+    // 구조화 보고서가 없으면 올린 HTML을 본다. 블로그만 이은 종목은 이 화면이 없다(카드가 블로그로 바로 간다).
+    const file = await findPublishedReportFile(ticker);
+    if (!file?.html) notFound();
+    return (
+      <ReportFileView
+        ticker={file.ticker}
+        name={file.name}
+        html={file.html}
+        blogUrl={file.blogUrl}
+        publishedAt={file.publishedAt}
+      />
+    );
+  }
 
   const canslim = scoreCanslim(report.readings);
   // ⚠ 얼려 둔 스냅숏이다. 오늘 값으로 갱신하지 않는다 — 본문의 논지가 참조한 숫자다.
