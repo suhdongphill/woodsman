@@ -46,7 +46,7 @@ export default async function LeadersPage() {
       />
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-10 sm:px-6">
-        <SectorLeaders items={sectors.items} failed={sectors.failed} />
+        <SectorLeaders items={sectors.items} moves={sectors.moves} failed={sectors.failed} />
 
         {/* ⚠ 「주도주 N곳」이 시장 전체 숫자로 읽히지 않게 범위를 먼저 말한다. */}
         <div id="ai-ecosystem" className="scroll-mt-20 border-t border-border pt-10">

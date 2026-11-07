@@ -6,7 +6,9 @@ import {
   periodChangePct,
   positionInRange,
   rankByStrength,
+  sectorRankMoves,
   sectorStrength,
+  topChangeLine,
   type PricePoint,
   type SectorStrength,
 } from "./sector-strength";
@@ -101,5 +103,51 @@ describe("순위와 한 줄 결론", () => {
 
   it("⚠ 만들 수 없으면 null", () => {
     expect(leadersLede([])).toBeNull();
+  });
+});
+
+describe("sectorRankMoves", () => {
+  const days = 400;
+  const date = (i: number) => new Date(Date.UTC(2025, 0, 1 + i)).toISOString().slice(0, 10);
+  /** 앞쪽은 startRate, 뒤쪽 63일은 endRate로 오르는 시계열 */
+  const path = (startRate: number, endRate: number): PricePoint[] => {
+    let v = 100;
+    return Array.from({ length: days }, (_, i) => {
+      v *= 1 + (i < days - 63 ? startRate : endRate);
+      return { date: date(i), value: v };
+    });
+  };
+  const flat = path(0.0001, 0.0001);
+
+  it("⚠ 과거 순위는 그때까지의 값으로만 낸다 — 주도가 바뀐 것이 보인다", () => {
+    const inputs = [
+      { key: "old", name: "옛 주도", points: path(0.002, -0.01) },
+      { key: "new", name: "새 주도", points: path(0.0005, 0.02) },
+    ];
+    const moves = sectorRankMoves(inputs, flat);
+    expect(moves.get("old")).toEqual({ rankNow: 2, rankThen: 1 });
+    expect(moves.get("new")).toEqual({ rankNow: 1, rankThen: 2 });
+    const items = inputs.map((i) => sectorStrength(i, flat)!);
+    expect(topChangeLine(items, moves)).toBe("3개월 전 1위 옛 주도 → 지금 1위 새 주도");
+  });
+
+  it("1위가 그대로면 말하지 않는다", () => {
+    const inputs = [
+      { key: "a", name: "A", points: path(0.002, 0.002) },
+      { key: "b", name: "B", points: path(0.001, 0.001) },
+    ];
+    const moves = sectorRankMoves(inputs, flat);
+    expect(topChangeLine(inputs.map((i) => sectorStrength(i, flat)!), moves)).toBeNull();
+  });
+
+  it("⚠ 기준이 없거나 이력이 짧으면 순위 변화를 내지 않는다", () => {
+    expect(sectorRankMoves([{ key: "a", name: "A", points: flat }], undefined).size).toBe(0);
+    expect(sectorRankMoves([{ key: "a", name: "A", points: flat }], flat.slice(0, 10)).size).toBe(0);
+  });
+
+  it("⚠ 그때 값을 낼 수 없던 섹터의 과거 순위는 null이다", () => {
+    const young = flat.slice(-70); // 3개월 전엔 7일치뿐
+    const moves = sectorRankMoves([{ key: "young", name: "신생", points: young }], flat);
+    expect(moves.get("young")).toEqual({ rankNow: 1, rankThen: null });
   });
 });

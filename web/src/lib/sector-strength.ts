@@ -121,6 +121,50 @@ export function rankByStrength(items: SectorStrength[]): SectorStrength[] {
   });
 }
 
+/** 순위를 비교하는 간격 — 3개월(영업일 63일). */
+export const RANK_LAG_DAYS = 63;
+
+export type SectorRankMove = {
+  /** 간격 전 순위(1이 최강). 그때 값을 낼 수 없었으면 `null` */
+  rankThen: number | null;
+  rankNow: number;
+};
+
+/**
+ * 지금과 3개월 전의 순위 — **주도가 옮겨 가는지**를 본다(운영자 2026-11-07 「AI 다음 주도를 찾으려면 변화를 보여 줘야」).
+ * ⚠ 과거 순위는 그 시점까지의 값으로만 계산한다. 기록을 저장하지 않아도 가격 이력에서 다시 낼 수 있다.
+ * ⚠ 주도 교체를 **단정하지 않는다** — 화면은 순위가 움직였다는 사실만 적는다.
+ */
+export function sectorRankMoves(
+  inputs: { key: string; name: string; points: PricePoint[] }[],
+  benchmark: PricePoint[] | undefined,
+  lagDays = RANK_LAG_DAYS,
+): Map<string, SectorRankMove> {
+  const moves = new Map<string, SectorRankMove>();
+  if (!benchmark || benchmark.length <= lagDays) return moves;
+  const sortedBench = [...benchmark].sort((a, b) => a.date.localeCompare(b.date));
+  const cutoff = sortedBench[sortedBench.length - 1 - lagDays].date;
+  const benchThen = sortedBench.filter((p) => p.date <= cutoff);
+
+  const rankOf = (items: (SectorStrength | null)[]) =>
+    new Map(rankByStrength(items.filter((s): s is SectorStrength => s !== null)).map((s, i) => [s.key, i + 1]));
+
+  const now = rankOf(inputs.map((i) => sectorStrength(i, benchmark)));
+  const then = rankOf(inputs.map((i) => sectorStrength({ ...i, points: i.points.filter((p) => p.date <= cutoff) }, benchThen)));
+  for (const [key, rankNow] of now) moves.set(key, { rankNow, rankThen: then.get(key) ?? null });
+  return moves;
+}
+
+/** 1위가 바뀌었으면 그 사실 한 줄. 그대로거나 비교할 수 없으면 `null`. */
+export function topChangeLine(items: SectorStrength[], moves: Map<string, SectorRankMove>): string | null {
+  const nameOf = (rank: "rankNow" | "rankThen") =>
+    items.find((s) => moves.get(s.key)?.[rank] === 1)?.name;
+  const now = nameOf("rankNow");
+  const then = nameOf("rankThen");
+  if (!now || !then || now === then) return null;
+  return `3개월 전 1위 ${then} → 지금 1위 ${now}`;
+}
+
 /**
  * 한 줄 결론 — 방문자가 **가져갈 문장**이다.
  * ⚠ 만들 수 없으면 `null`. 없는 결론을 지어내지 않는다.

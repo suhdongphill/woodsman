@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { cx } from "@/lib/format";
-import { LEADER_POSITION, rankByStrength, type SectorStrength } from "@/lib/sector-strength";
+import { LEADER_POSITION, rankByStrength, topChangeLine, type SectorRankMove, type SectorStrength } from "@/lib/sector-strength";
 
 /** ⚠ 보이는 문자열은 위쪽에 모은다 — 나중에 다국어를 넣을 때 여기만 본다. */
 const TEXT = {
@@ -13,6 +13,7 @@ const TEXT = {
   colPosition: "52주 위치",
   colRelative: "시장 대비",
   colChange: "1년 수익률",
+  colMove: "3개월 순위 변화",
   leaderMark: "주도",
   /** ⚠ 이름을 정확히 붙인다 — 아래 주석 참고 */
   disclaimer:
@@ -38,7 +39,22 @@ const TEXT = {
  * 표만 보여주고 끝내지 않는다. 마지막 줄이 **"그래서 내 배분은"** 으로 잇는다 —
  * 다만 **권유가 아니라 연결**이다(운영지침 §5 · `/disclaimer`).
  */
-export function SectorLeaders({ items, failed = false }: { items: SectorStrength[]; failed?: boolean }) {
+function moveLabel(move: SectorRankMove | undefined): string {
+  if (!move || move.rankThen === null) return "—";
+  if (move.rankThen === move.rankNow) return "=";
+  return move.rankNow < move.rankThen ? `▲${move.rankThen - move.rankNow}` : `▼${move.rankNow - move.rankThen}`;
+}
+
+export function SectorLeaders({
+  items,
+  moves = new Map(),
+  failed = false,
+}: {
+  items: SectorStrength[];
+  /** 3개월 전과의 순위 변화 — 주도가 옮겨 가는지 본다 */
+  moves?: Map<string, SectorRankMove>;
+  failed?: boolean;
+}) {
   if (items.length === 0) {
     return (
       <Card>
@@ -49,6 +65,8 @@ export function SectorLeaders({ items, failed = false }: { items: SectorStrength
 
   const ranked = rankByStrength(items);
   const asOf = ranked[0]?.asOf;
+  // ⚠ 주도 교체라고 단정하지 않는다 — 순위가 움직였다는 사실만 적는다.
+  const topLine = topChangeLine(items, moves);
 
   return (
     <section>
@@ -57,7 +75,10 @@ export function SectorLeaders({ items, failed = false }: { items: SectorStrength
         {/* ⚠ 기준일을 항상 함께 낸다. 날짜 없는 숫자는 실시간으로 읽힌다 */}
         {asOf && <span className="text-[11px] text-ink-3">{asOf} 기준</span>}
       </div>
-      <p className="mb-4 text-[13px] text-muted">{TEXT.question}</p>
+      <p className="mb-4 text-[13px] text-muted">
+        {TEXT.question}
+        {topLine && <strong className="ml-2 font-medium text-ink">{topLine}</strong>}
+      </p>
 
       <Card padding="p-0">
         <div className="overflow-x-auto">
@@ -68,6 +89,7 @@ export function SectorLeaders({ items, failed = false }: { items: SectorStrength
                 <th className="px-4 py-2.5 text-right font-medium">{TEXT.colPosition}</th>
                 <th className="px-4 py-2.5 text-right font-medium">{TEXT.colRelative}</th>
                 <th className="px-4 py-2.5 text-right font-medium">{TEXT.colChange}</th>
+                <th className="px-4 py-2.5 text-right font-medium">{TEXT.colMove}</th>
               </tr>
             </thead>
             <tbody>
@@ -111,6 +133,8 @@ export function SectorLeaders({ items, failed = false }: { items: SectorStrength
                   <td className="px-4 py-2.5 text-right tabular-nums text-muted">
                     {`${s.changePct >= 0 ? "+" : ""}${s.changePct.toFixed(1)}%`}
                   </td>
+                  {/* ⚠ 등락색을 쓰지 않는다 — 수익이 아니라 순위다. */}
+                  <td className="px-4 py-2.5 text-right tabular-nums text-ink">{moveLabel(moves.get(s.key))}</td>
                 </tr>
               ))}
             </tbody>
