@@ -63,7 +63,7 @@ export function TistoryCta({
       >
         <div className="min-w-0">
           <p className="text-[11px] font-medium tracking-[0.12em] text-gold-400">
-            TISTORY · 블로그 원문
+            TISTORY · 블로그
           </p>
           <h3 className="mt-1.5 text-[15px] font-semibold leading-snug text-ink transition-colors group-hover:text-gold-400">
             {postTitle ?? headline ?? "티스토리 블로그에서 더 깊게 읽기"}

@@ -1,5 +1,5 @@
 import type { StoredNews } from "@/features/news/repository";
-import type { NewsSource } from "@/lib/news/feeds";
+import { NEWS_SOURCE_LABEL, type NewsSource } from "@/lib/news/feeds";
 import { seoulDay } from "@/lib/kst";
 
 /**
@@ -14,13 +14,8 @@ import { seoulDay } from "@/lib/kst";
  * - 기사를 점수로 바꾸지 않는다(원칙 ③). 파도는 「무슨 일이 있었나」까지다.
  * - 기사가 없어도 블록은 남는다 — 「다음 수집 뒤」라고 적는다.
  */
-const SOURCE_LABEL: Record<NewsSource, string> = {
-  FED_SPEECH: "연준 연설",
-  FED_MONETARY: "연준 보도자료",
-  FED_TESTIMONY: "의회 증언",
-  BLS_CPI: "미 노동통계국(BLS)",
-  MANUAL: "운영자",
-};
+// 출처 이름은 한 곳에서(`lib/news/feeds.NEWS_SOURCE_LABEL`) — 인사이트 글도 같은 이름을 쓴다
+const SOURCE_LABEL: Record<NewsSource, string> = NEWS_SOURCE_LABEL;
 
 export function WavesSection({ news }: { news: StoredNews[] }) {
   return (

@@ -41,9 +41,13 @@ export const DEFAULT_SITE_BASICS: SiteBasics = {
   tistoryBlogUrl: TISTORY_BLOG_URL,
   tistoryFeaturedUrl: TISTORY_FEATURED_URL,
   tistoryRssUrl: TISTORY_RSS_URL,
-  featuredTitle: "배당 캘린더로 현금흐름을 설계하기",
+  /**
+   * ⚠ 2026-11-14: 처음 넣은 예시 문구(「배당 캘린더로 현금흐름을 설계하기」)가 운영에 남아, 링크(/2 「WoodsMan의 투자원칙」)와
+   *    다른 글을 소개하고 있었다 — 애드센스 「콘텐츠를 잘못 표시」 위험. 블로그 소개로 바꾸고 연결도 블로그 첫 화면으로(운영자 승인).
+   */
+  featuredTitle: "거시경제와 기업분석 전문 블로그",
   featuredExcerpt:
-    "월별 배당 입금일을 달력에 깔면 인컴 포트폴리오의 빈 달이 보입니다. 그 빈 달을 어떻게 메웠는지 원문에 적었습니다.",
+    "금리·물가·유동성의 흐름과 기업분석을 주간 브리핑과 보고서로 깊게 씁니다. 포털의 숫자 뒤에 있는 해석은 블로그에서 이어집니다.",
   /**
    * ⚠ 2026-08-30: 계좌 이야기에서 **흐름 이야기로** 바꿨다.
    *

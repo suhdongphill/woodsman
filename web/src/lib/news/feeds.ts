@@ -14,6 +14,22 @@
  */
 
 export type NewsSource = "FED_SPEECH" | "FED_MONETARY" | "FED_TESTIMONY" | "BLS_CPI" | "MANUAL";
+
+/**
+ * 독자에게 보이는 출처 이름 — 화면·인사이트 글이 **이것만** 쓴다(2026-11-14: 인사이트 「참고한 자료」에 `BLS_CPI` 같은 내부 코드가 그대로 나갔다).
+ */
+export const NEWS_SOURCE_LABEL: Record<NewsSource, string> = {
+  FED_SPEECH: "연준 연설",
+  FED_MONETARY: "연준 보도자료",
+  FED_TESTIMONY: "의회 증언",
+  BLS_CPI: "미 노동통계국(BLS)",
+  MANUAL: "운영자",
+};
+
+/** 모르는 코드면 코드 대신 「기관 원문」 — 내부 이름을 독자에게 내보내지 않는다. */
+export function newsSourceLabel(source: string): string {
+  return (NEWS_SOURCE_LABEL as Record<string, string>)[source] ?? "기관 원문";
+}
 /** 홈 파도 분류 — 운영자 요청: 금리 · 물가(CPI) · 연준(FOMC·발언) · 유가 · 지정학 · 환율 */
 export type NewsCategory = "연준" | "물가" | "금리" | "유가" | "지정학" | "환율";
 

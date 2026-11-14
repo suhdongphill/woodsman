@@ -3,6 +3,7 @@ import { AdminPageHeader, AdminShell } from "@/components/layout/AdminPageHeader
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { requireAdmin } from "@/lib/session";
+import { PendingSubmit } from "@/components/ui/PendingSubmit";
 import { seoulDay, seoulTime } from "@/lib/kst";
 import { draftMainMarkdown, INSIGHT_PROMPT_VERSION, OPERATOR_NOTE_MIN } from "@/lib/insight/draft";
 import { countPublishedSince, loadInsightDrafts } from "@/features/insight/draft-repo";
@@ -51,9 +52,11 @@ export default async function AdminInsightDraftsPage() {
           초안 만들기 <span className="text-[12px] font-normal text-muted">· 이번 주 발행 {thisWeek}편(목표 2~3편)</span>
         </CardTitle>
         <form action={generateInsightDraftAction} className="mt-3">
-          <button type="submit" className="rounded-lg bg-gold-500 px-4 py-2 text-[13px] font-semibold text-onAccent">
-            오늘 재료로 초안 만들기
-          </button>
+          <PendingSubmit
+            label="오늘 재료로 초안 만들기"
+            pendingLabel="초안 만드는 중"
+            hint="재료(기사 · 블로그 · 브리핑 · 조류)를 모아 AI가 초안을 쓰고, 서버가 숫자·날짜·링크를 대조합니다. 대조에서 떨어지면 한 번 고쳐 씁니다. 보통 30초~2분 걸립니다 — 끝나면 아래 목록에 결과가 생깁니다."
+          />
         </form>
       </Card>
 
@@ -121,13 +124,12 @@ export default async function AdminInsightDraftsPage() {
                       >
                         저장만
                       </button>
-                      <button
-                        type="submit"
+                      <PendingSubmit
+                        label="저장하고 발행"
+                        pendingLabel="발행 중"
                         formAction={publishInsightDraftAction}
                         className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[12px] font-semibold text-white"
-                      >
-                        저장하고 발행
-                      </button>
+                      />
                     </div>
                   </form>
                 )}

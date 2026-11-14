@@ -3,6 +3,7 @@ import { AdminPageHeader, AdminShell } from "@/components/layout/AdminPageHeader
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { requireAdmin } from "@/lib/session";
+import { PendingSubmit } from "@/components/ui/PendingSubmit";
 import { buildFacts, COMMENTARY_PROMPT_VERSION } from "@/lib/gcrm/commentary";
 import { loadNarratives } from "@/features/gcrm/commentary-repo";
 import { loadResearch } from "@/features/research/repository";
@@ -41,9 +42,11 @@ export default async function AdminCommentaryPage() {
           최신 계산에 초안이나 승인된 해설이 있으면 다시 만들지 않습니다. 반려했거나 대조에 실패했으면 다시 만들 수 있습니다. 결과는 아래 목록과 활동 로그에 남습니다.
         </p>
         <form action={generateCommentaryAction} className="mt-3">
-          <button type="submit" className="rounded-lg bg-gold-500 px-4 py-2 text-[13px] font-semibold text-onAccent">
-            최신 계산으로 초안 만들기
-          </button>
+          <PendingSubmit
+            label="최신 계산으로 초안 만들기"
+            pendingLabel="초안 만드는 중"
+            hint="최신 GCRM 계산으로 사실표를 만들고, AI가 브리핑을 쓴 뒤 서버가 숫자를 대조합니다. 대조에서 떨어지면 한 번 고쳐 씁니다. 보통 20초~1분 30초 걸립니다."
+          />
         </form>
       </Card>
 

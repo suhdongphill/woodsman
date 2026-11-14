@@ -6,6 +6,7 @@ import { queryAll, queryOne, execute } from "@/lib/d1";
 import { seoulDay } from "@/lib/kst";
 import { buildFacts } from "@/lib/gcrm/commentary";
 import { visibleEntries } from "@/lib/blog/tistory";
+import { newsSourceLabel } from "@/lib/news/feeds";
 import type { InsightDraftBody, InsightInput } from "@/lib/insight/draft";
 import { loadLatestNews } from "@/features/news/repository";
 import { loadBlogEntries } from "@/features/blog/repository";
@@ -23,7 +24,7 @@ export async function loadInsightInput(): Promise<InsightInput> {
   const b = briefings[0];
   return {
     today: seoulDay(new Date().toISOString()),
-    news: news.map((n) => ({ id: n.id, source: n.source, title: n.title, url: n.url, publishedAt: n.publishedAt, summary: n.summary ?? null })),
+    news: news.map((n) => ({ id: n.id, source: newsSourceLabel(n.source), title: n.title, url: n.url, publishedAt: n.publishedAt, summary: n.summary ?? null })),
     blogs: visibleEntries(blogs)
       .slice(0, 6)
       .map((e) => ({ entryId: e.entryId, title: e.title, summary: e.summaryOverride ?? e.summary ?? null, publishedAt: e.publishedAt })),
