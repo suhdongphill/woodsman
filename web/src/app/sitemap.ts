@@ -4,6 +4,7 @@ import { loadPublishedReportFiles } from "@/features/reports/file-repo";
 import { loadPublishedPosts } from "@/features/posts/repository";
 import { loadMaxDates } from "@/features/macro/repository";
 import { loadPublishedBriefings } from "@/features/briefing/repository";
+import { loadPublishedJournal } from "@/features/journal/repository";
 import { absoluteUrl } from "@/lib/site-url";
 import { MACRO_GROUPS } from "@/lib/macro/groups";
 import { getSitePolicy } from "@/lib/site-settings";
@@ -19,13 +20,14 @@ import { latestOf, sitemapEntries } from "@/lib/sitemap";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [policy, posts, reports, reportFiles, maxDates, briefings] = await Promise.all([
+  const [policy, posts, reports, reportFiles, maxDates, briefings, journal] = await Promise.all([
     getSitePolicy(),
     loadPublishedPosts(500),
     loadPublishedSummaries(200),
     loadPublishedReportFiles(),
     loadMaxDates(),
     loadPublishedBriefings(400),
+    loadPublishedJournal(),
   ]);
 
   const entries = sitemapEntries({
@@ -41,6 +43,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     macroAsOf: latestOf(...maxDates.values()),
     communityEnabled: policy.communityEnabled,
     briefings: briefings.map((b) => b.date),
+    // ⚠ 빈 목록은 넣지 않는다(lib/sitemap.ts). /stocks 수는 그 화면과 같은 기준 — 구조화 보고서 + 그와 겹치지 않는 올린 HTML.
+    journalCount: journal.length,
+    stocksListingCount:
+      reports.length + reportFiles.filter((f) => f.hasHtml && !reports.some((r) => r.ticker === f.ticker)).length,
   });
 
   return entries.map((e) => ({

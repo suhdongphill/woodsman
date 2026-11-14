@@ -7,12 +7,23 @@ import { loadPublishedSummaries } from "@/features/reports/repository";
 import { loadPublishedReportFiles } from "@/features/reports/file-repo";
 import { Card } from "@/components/ui/Card";
 import Link from "next/link";
+import { emptyListingRobots } from "@/lib/sitemap";
 
-export const metadata: Metadata = {
-  alternates: { canonical: "/stocks" },
-  title: "종목분석",
-  description: "정직성 규율을 통과해 발행한 종목분석 보고서 목록입니다.",
-};
+/**
+ * ⚠ 보이는 보고서가 0이면 `noindex, follow`(2026-11-14) — 빈 목록을 색인해 달라고 하지 않는다.
+ *    세는 기준은 아래 화면과 같다(구조화 보고서 + 그와 겹치지 않는 올린 HTML). 사이트맵도 같은 기준(`app/sitemap.ts`).
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const [reports, reportFiles] = await Promise.all([loadPublishedSummaries(), loadPublishedReportFiles()]);
+  const structured = new Set(reports.map((r) => r.ticker));
+  const robots = emptyListingRobots(reports.length + reportFiles.filter((f) => f.hasHtml && !structured.has(f.ticker)).length);
+  return {
+    alternates: { canonical: "/stocks" },
+    title: "종목분석",
+    description: "정직성 규율을 통과해 발행한 종목분석 보고서 목록입니다.",
+    ...(robots ? { robots } : {}),
+  };
+}
 
 /** ⚠ 정적 생성 금지 — 발행 상태가 바뀌면 곧바로 반영돼야 한다. */
 export const dynamic = "force-dynamic";

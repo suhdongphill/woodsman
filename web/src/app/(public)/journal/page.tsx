@@ -11,13 +11,23 @@ import { summarizePerformance } from "@/lib/performance";
 import { DataModeNotice } from "@/components/ui/DataModeNotice";
 import { getSiteBasics } from "@/lib/site-settings";
 import { loadPublishedJournal, loadSnapshots } from "@/features/journal/repository";
+import { emptyListingRobots } from "@/lib/sitemap";
 
-export const metadata: Metadata = {
-  alternates: { canonical: "/journal" },
-  title: "투자일지",
-  description:
-    "매수·매도·리밸런싱을 언제 왜 했는지, 체결 수량과 단가까지 함께 남기는 기록입니다. 잘못된 판단도 지우지 않습니다.",
-};
+/**
+ * ⚠ 기록이 0건이면 `noindex, follow`(2026-11-14) — 「아직 기록이 없습니다」만 있는 쪽을 색인해 달라고 하지 않는다.
+ *    사이트맵도 같은 기준으로 뺀다(`lib/sitemap.ts`). 첫 기록이 공개되면 코드 수정 없이 풀린다.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const entries = await loadPublishedJournal();
+  const robots = emptyListingRobots(entries.length);
+  return {
+    alternates: { canonical: "/journal" },
+    title: "투자일지",
+    description:
+      "매수·매도·리밸런싱을 언제 왜 했는지, 체결 수량과 단가까지 함께 남기는 기록입니다. 잘못된 판단도 지우지 않습니다.",
+    ...(robots ? { robots } : {}),
+  };
+}
 
 /** ⚠ 정적 생성 금지 — 관리자가 일지를 올려도 화면이 안 바뀐다. */
 export const dynamic = "force-dynamic";

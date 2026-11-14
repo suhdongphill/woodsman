@@ -6,7 +6,7 @@
  *    **이 사이트의 lastmod를 통째로 무시한다** — 거짓말 하나가 진짜 신호까지 죽인다.
  */
 import { describe, expect, it } from "vitest";
-import { latestOf, sitemapEntries } from "./sitemap";
+import { emptyListingRobots, latestOf, sitemapEntries } from "./sitemap";
 
 const input = {
   posts: [
@@ -17,11 +17,28 @@ const input = {
   macroGroups: ["rates", "fx"],
   macroAsOf: "2026-08-31",
   communityEnabled: false,
+  journalCount: 1,
+  stocksListingCount: 1,
 };
 const find = (entries: ReturnType<typeof sitemapEntries>, path: string) =>
   entries.find((e) => e.path === path)!;
 
 describe("sitemapEntries", () => {
+  it("⚠ 빈 목록(투자일지 0 · 보고서 0)은 사이트맵에 넣지 않는다 — 생기면 코드 수정 없이 다시 들어간다", () => {
+    const empty = sitemapEntries({ ...input, journalCount: 0, stocksListingCount: 0 });
+    expect(empty.find((e) => e.path === "/journal")).toBeUndefined();
+    expect(empty.find((e) => e.path === "/stocks")).toBeUndefined();
+    const filled = sitemapEntries(input);
+    expect(find(filled, "/journal")).toBeDefined();
+    expect(find(filled, "/stocks")).toBeDefined();
+  });
+
+  it("빈 목록의 robots는 noindex·follow, 항목이 있으면 기본값 — 결측은 빈 것으로 본다", () => {
+    expect(emptyListingRobots(0)).toEqual({ index: false, follow: true });
+    expect(emptyListingRobots(Number.NaN)).toEqual({ index: false, follow: true });
+    expect(emptyListingRobots(3)).toBeUndefined();
+  });
+
   it("공개된 브리핑만 넣고, 목록의 lastmod는 가장 최근 브리핑 날짜", () => {
     const entries = sitemapEntries({ ...input, briefings: ["2026-10-30", "2026-10-31"] });
     expect(find(entries, "/briefing").lastModified).toBe("2026-10-31");
@@ -62,6 +79,8 @@ describe("sitemapEntries", () => {
       reports: [],
       macroGroups: [],
       communityEnabled: false,
+      journalCount: 0,
+      stocksListingCount: 0,
     });
     expect(find(entries, "/").lastModified).toBeUndefined();
   });

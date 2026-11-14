@@ -20,6 +20,13 @@
  * | `/macro*` | 있다 | 지표의 마지막 관측일 |
  * | `/` | 있다 | 위 셋 중 가장 최근 — 홈이 그 셋을 싣는다 |
  * | `/portfolio`·`/journal`·`/about`·`/privacy`·`/disclaimer`·`/board` | **없다** | 언제 바뀌었는지 모른다 |
+ *
+ * ## ⚠ 빈 목록은 넣지 않는다 (2026-11-14 · v3 첫 조각)
+ * 애드센스가 「가치가 별로 없는 콘텐츠」로 거절했다(2026-11). 그때 `/journal`(「아직 기록이 없습니다」)과
+ * `/stocks`(「아직 발행한 보고서가 없습니다」 · 본문 236자)가 사이트맵에 올라 있었다 — **빈 쪽을 색인해 달라고**
+ * 우리가 직접 요청한 셈이다. 그래서 목록에 실제 항목이 0이면 사이트맵에서 빼고, 페이지는 `noindex, follow`로 둔다
+ * (`emptyListingRobots`). ⚠ 페이지는 지우지 않는다 — 메뉴에서 그대로 열리고 「아직 없다」고 적는다(운영지침 §4).
+ * ⚠ 항목이 하나라도 생기면 **코드 수정 없이** 다시 들어간다. 심사 기간에만 켜는 분기가 아니다 — 사람과 검색엔진이 같은 화면을 본다.
  */
 import { BUBBLE_PUBLIC } from "./site-policy";
 
@@ -42,9 +49,22 @@ export type SitemapInput = {
   /** 지표의 마지막 관측일(YYYY-MM-DD). 수집 전이면 없다. */
   macroAsOf?: string;
   communityEnabled: boolean;
+  /** 공개된 투자일지 수. ⚠ 0이면 `/journal`을 넣지 않는다(빈 목록) */
+  journalCount: number;
+  /** `/stocks` 목록에 실제로 보이는 보고서 수(구조화 + 올린 HTML). ⚠ 0이면 `/stocks`를 넣지 않는다 */
+  stocksListingCount: number;
   /** 공개된 오늘의 브리핑 날짜들(YYYY-MM-DD). ⚠ 초안은 넣지 않는다 — 404를 색인 요청하게 된다. */
   briefings?: string[];
 };
+
+/**
+ * 목록 페이지의 robots — 항목이 0이면 `noindex, follow`, 있으면 기본값(`undefined`).
+ * ⚠ 사이트맵의 「빈 목록은 넣지 않는다」와 **같은 기준**이어야 한다. 사이트맵에서만 빼면 검색엔진이 링크로 찾아와 빈 쪽을 색인한다.
+ * ⚠ `follow`는 남긴다 — 빈 목록에도 다른 화면으로 가는 링크(주도주·블로그)가 있다.
+ */
+export function emptyListingRobots(count: number): { index: false; follow: true } | undefined {
+  return Number.isFinite(count) && count > 0 ? undefined : { index: false, follow: true };
+}
 
 /** 가장 최근 날짜. 전부 없으면 `undefined` — ⚠ 오늘로 메우지 않는다. */
 export function latestOf(...dates: (string | null | undefined)[]): string | undefined {
@@ -63,7 +83,8 @@ export function sitemapEntries(input: SitemapInput): SitemapEntry[] {
     { path: "/", lastModified: homeAt, priority: 1, changeFrequency: "daily" },
     // ⚠ 계좌 기록이 언제 바뀌었는지는 사이트맵이 모른다. 비워 둔다.
     { path: "/portfolio", priority: 0.9, changeFrequency: "weekly" },
-    { path: "/journal", priority: 0.9, changeFrequency: "weekly" },
+    // ⚠ 빈 목록은 색인을 요청하지 않는다(위 「빈 목록은 넣지 않는다」)
+    ...(input.journalCount > 0 ? [{ path: "/journal", priority: 0.9, changeFrequency: "weekly" as const }] : []),
     { path: "/insights", lastModified: latestPostAt, priority: 0.8, changeFrequency: "weekly" },
     // 거시 지표는 매주 갱신되는 고유 콘텐츠라 색인 우선순위를 높게 둔다.
     { path: "/macro", lastModified: input.macroAsOf, priority: 0.9, changeFrequency: "daily" },
@@ -81,7 +102,9 @@ export function sitemapEntries(input: SitemapInput): SitemapEntry[] {
     { path: "/blog", priority: 0.8, changeFrequency: "weekly" },
     // 오늘의 브리핑(2026-10-31) — 매일 아침 한 편.
     { path: "/briefing", lastModified: latestOf(...(input.briefings ?? [])), priority: 0.7, changeFrequency: "daily" },
-    { path: "/stocks", lastModified: latestReportAt, priority: 0.6, changeFrequency: "weekly" },
+    ...(input.stocksListingCount > 0
+      ? [{ path: "/stocks", lastModified: latestReportAt, priority: 0.6, changeFrequency: "weekly" as const }]
+      : []),
     { path: "/about", priority: 0.5, changeFrequency: "monthly" },
     { path: "/data-terms", priority: 0.3, changeFrequency: "monthly" },
     { path: "/disclaimer", priority: 0.3, changeFrequency: "monthly" },
