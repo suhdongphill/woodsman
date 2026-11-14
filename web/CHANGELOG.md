@@ -50,7 +50,12 @@
 - 못 재는 것: 애드센스 판정 효과는 이 조각 하나로 가릴 수 없다 — 재신청은 v3 조각들이 쌓이고 2~4주 뒤 Search Console 색인을 본 다음.
 
 ### 확인 (배포 뒤)
-- (배포 전)
+- 첫 push는 원격의 봇 커밋(rates.json 5건) 때문에 거절 → rebase(충돌 없음) 뒤 push. 코드 4d41450 + 문서 c989928이 한 run(43568793965)으로 배포 · success 2026-11-14T07:00:52Z.
+- ① 운영 `sitemap.xml` 45 → **43**, 빠진 것은 `/journal`·`/stocks` 둘뿐(배포 전 목록과 diff) — 맞음.
+- ② `/journal`·`/stocks` 200 + `<meta name="robots" content="noindex, follow">` · 대조로 `/portfolio`엔 robots 메타 없음 — 맞음.
+- 못 본 것: 티스토리 클릭(2주 뒤) · Search Console에서 두 쪽이 색인에서 빠지는 시점.
+
+기록: /admin/releases rel_20261114_empty_listing_noindex
 
 ## 2026-11-07 — `/portfolio` 현재 비중을 계좌 전체 기준으로 (현금 포함)
 
