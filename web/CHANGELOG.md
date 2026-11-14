@@ -33,7 +33,11 @@
 - 티스토리 클릭: 특정 글 대신 블로그 첫 화면으로 간다 — 클릭 수는 같은 자로 잰다(`/go`).
 
 ### 확인 (배포 뒤)
-- (배포 전)
+- f0e630b → success 2026-11-14T15:05:24Z. 운영 설정 `featuredTitle`·`featuredExcerpt`·`tistoryFeaturedUrl` 교체(`AdminLog site.basics`).
+- 운영 `/macro`: 새 제목 1 · 「배당 캘린더」 0 · 「블로그 원문」 0 · 홈 「배당 캘린더」 0 · `/go/tistory` → `https://suhdp.tistory.com/` — 맞음. 본문 끝 큰 카드 윗줄 「TISTORY · 원문 블로그」는 그대로(원문이 있는 블로그라는 뜻).
+- 함께 본 것(공개 화면 훑기): 홈에 「커버리지」 9곳(GLOBAL CAPITAL REGIME 칩) — 독자 말(「반영률」)로 바꿀 후보. /macro · /portfolio · /leaders · /insights · /briefing · /about · /journal에는 내부 코드·개발 흔적 0.
+
+기록: /admin/releases rel_20261114_labels_cta
 
 ---
 
