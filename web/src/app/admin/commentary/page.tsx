@@ -31,7 +31,7 @@ export default async function AdminCommentaryPage() {
     <AdminShell>
       <AdminPageHeader
         title="조류 해설"
-        description={`GCRM 최신 계산으로 AI가 초안을 쓰고, 서버가 모든 숫자를 사실표와 대조합니다. 통과한 초안만 「초안」이 되고, 운영자가 승인해야 공개 대상이 됩니다(프롬프트 ${COMMENTARY_PROMPT_VERSION}).`}
+        description={`GCRM 최신 계산으로 AI가 브리핑 초안(판정 · 본문 · 단서 · 다시 볼 조건 · 카드)을 쓰고, 서버가 모든 숫자를 사실표와 대조합니다. ⚠ 점수 방향(높을수록 좋은지)이 맞는지는 서버가 못 잡습니다 — 승인 전에 꼭 봐 주세요. 통과한 초안만 「초안」이 되고, 운영자가 승인해야 공개 대상이 됩니다(프롬프트 ${COMMENTARY_PROMPT_VERSION}).`}
       />
 
       <Card className="mb-6">
@@ -66,28 +66,40 @@ export default async function AdminCommentaryPage() {
                   <span>· 만든 시각 {n.createdAt.slice(0, 16).replace("T", " ")} UTC</span>
                 </div>
 
-                {n.body ? (
+                {n.body?.paragraphs ? (
                   <div className="mt-3 space-y-3 text-[13px] text-ink">
-                    <p className="leading-relaxed">{n.body.summary}</p>
+                    <p className="text-[14px] font-semibold">{n.body.verdict}</p>
+                    {n.body.paragraphs.map((p, i) => (
+                      <p key={i} className="leading-relaxed">
+                        {p}
+                      </p>
+                    ))}
                     <div>
-                      <p className="text-[11px] text-muted">수치 근거 — 오른쪽 값은 저장된 사실표</p>
-                      <ul className="mt-1 space-y-1">
-                        {n.body.evidence.map((e, i) => (
-                          <li key={i} className="text-[12.5px]">
-                            {e.text}
-                            <span className="ml-2 text-[11px] text-muted">
-                              {e.factIds.map((id) => `${facts.get(id)?.label ?? id}: ${facts.get(id)?.text ?? "?"}`).join(" · ")}
-                            </span>
-                          </li>
+                      <p className="text-[11px] font-semibold text-muted">단서</p>
+                      <p className="leading-relaxed text-[12.5px]">{n.body.caveat}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold text-muted">이렇게 되면 다시 봅니다</p>
+                      <ul className="list-disc pl-5 text-[12.5px]">
+                        {n.body.triggers.map((c) => (
+                          <li key={c}>{c}</li>
                         ))}
                       </ul>
                     </div>
-                    <p className="text-[12.5px] text-muted">{n.body.interpretation}</p>
-                    <ul className="list-disc pl-5 text-[12.5px]">
-                      {n.body.nextChecks.map((c) => (
-                        <li key={c}>{c}</li>
-                      ))}
-                    </ul>
+                    <details>
+                      <summary className="cursor-pointer text-[11.5px] text-muted">근거 숫자 — 저장된 사실표 값</summary>
+                      <ul className="mt-1 space-y-0.5 text-[12px]">
+                        {n.body.evidenceFactIds.map((id) => (
+                          <li key={id}>
+                            {facts.get(id)?.label ?? id}: <span className="text-ink">{facts.get(id)?.text ?? "?"}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                    <div className="rounded-lg border border-border bg-bg px-3 py-2">
+                      <p className="text-[11px] text-muted">카드(홈용)</p>
+                      <p className="text-[12.5px]">{n.body.card}</p>
+                    </div>
                     {n.body.researchIds.length > 0 && (
                       <ul className="text-[11.5px] text-muted">
                         {n.body.researchIds.map((id) => {
@@ -101,6 +113,17 @@ export default async function AdminCommentaryPage() {
                         })}
                       </ul>
                     )}
+                  </div>
+                ) : n.body ? (
+                  // v1 판(gcrm-commentary-v1) 초안 — 모양이 달라 요약·다음 확인만 보인다. ⚠ v2부터 공개 대상
+                  <div className="mt-3 space-y-2 text-[13px] text-ink">
+                    <p className="text-[11px] text-muted">이전 판({n.promptVersion}) — 요약만 표시</p>
+                    <p className="leading-relaxed">{(n.body as unknown as { summary?: string }).summary}</p>
+                    <ul className="list-disc pl-5 text-[12.5px]">
+                      {((n.body as unknown as { nextChecks?: string[] }).nextChecks ?? []).map((c) => (
+                        <li key={c}>{c}</li>
+                      ))}
+                    </ul>
                   </div>
                 ) : null}
 

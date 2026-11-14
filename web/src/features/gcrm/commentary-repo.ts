@@ -42,6 +42,8 @@ export async function loadCommentaryInput(): Promise<CommentaryInput | undefined
   const [prevRun, w4Run, research] = await Promise.all([runBefore(now.asOf), runOnOrBefore(fourWeeks), loadResearch()]);
   const [prevScores, w4Scores] = await Promise.all([tideScores(prevRun), tideScores(w4Run)]);
   const nameKo = new Map(GCRM_PILLARS.map((p) => [p.code, p.nameKo]));
+  // 방향(극성)은 설정 한 곳에서 — 프롬프트 내장표보다 우선한다(v2 1순위)
+  const polarity = new Map(GCRM_PILLARS.map((p) => [p.code, p.polarity]));
 
   const pillars = GCRM_CHIPS.map(({ pillar }) => {
     const row = now.pillars.find((p) => p.pillar === pillar && p.axis === HOME_AXIS);
@@ -50,6 +52,7 @@ export async function loadCommentaryInput(): Promise<CommentaryInput | undefined
       pillar,
       nameKo: nameKo.get(pillar) ?? pillar,
       axis: HOME_AXIS,
+      polarity: polarity.get(pillar) === "favorable" ? ("favorable" as const) : polarity.get(pillar) === "stress" ? ("stress" as const) : null,
       score,
       coverage: row?.coverage ?? null,
       status: row?.status ?? "MISSING",
