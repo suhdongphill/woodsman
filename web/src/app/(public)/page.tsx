@@ -14,6 +14,8 @@ import { JournalAndReports } from "@/features/home/ui/JournalAndReports";
 import { UpcomingCalendar } from "@/features/home/ui/UpcomingCalendar";
 import { TideSection } from "@/features/home/ui/TideSection";
 import { WavesSection } from "@/features/home/ui/WavesSection";
+import { TideCommentary } from "@/features/home/ui/TideCommentary";
+import { loadPublicCommentary } from "@/features/gcrm/commentary-repo";
 import { HomeBriefing } from "@/features/briefing/ui/HomeBriefing";
 import { loadPublishedBriefings } from "@/features/briefing/repository";
 import { loadLatestNews } from "@/features/news/repository";
@@ -148,6 +150,8 @@ export default async function HomePage() {
   );
   // Global Capital Regime 줄 — ⚠ 2026-09-25부터 GCRM v2(운영자 결정). 조류 카드(v1)와 따로 읽는다.
   const gcrm = await gcrmHomeSnapshots();
+  // 조류 해설(2026-11-14) — 승인된 것 · 최신 계산과 같은 기준일만. 못 읽으면 undefined(블록만 빠진다)
+  const commentary = await loadPublicCommentary();
 
   const perf = summarizePerformance(snapshots);
   const tides = new Map(TIDE_KEYS.map((key) => [key, buildTide(storedScores, key, seoulDay(new Date().toISOString()))]));
@@ -213,6 +217,7 @@ export default async function HomePage() {
           tides.get("global_liquidity")?.past4?.value,
         )}
         analysis={latestAnalysis}
+        commentary={commentary ? <TideCommentary c={commentary} /> : undefined}
       />
     ),
     blogShowcase: <BlogShowcase recent={blogAll.slice(0, 10)} popular={popularEntries(blogAll, 5)} total={blogAll.length} />,

@@ -273,6 +273,7 @@ export function TideSection({
   rates,
   liquidity,
   analysis,
+  commentary,
 }: {
   tides: Map<string, TideReading>;
   /** ⚠ 없으면 버블 카드를 싣지 않는다 — 공개 여부는 `site-policy.ts` `BUBBLE_PUBLIC` */
@@ -282,6 +283,8 @@ export function TideSection({
   liquidity?: LiquidityCardView;
   /** 가장 최근 「그날의 분석」 */
   analysis?: LiquidityAnalysis | null;
+  /** ⭐ 2026-11-14: 승인된 조류 해설(최신 계산과 같은 기준일일 때만) — 블록 맨 위. 없으면 그리지 않는다 */
+  commentary?: ReactNode;
 }) {
   const empty = (key: string): TideReading => tides.get(key) ?? { scoreKey: key, dir4: "unknown", dir13: "unknown", pastRecomputed: false, stale: false };
   return (
@@ -294,6 +297,7 @@ export function TideSection({
           몇 달 단위의 흐름입니다. 이번 주의 움직임은 위 「지금 부는 바람」에서 봅니다. 점수는 프로그램이 규칙대로 계산하며 예측이 아닙니다.
         </p>
       </div>
+      {commentary}
       <div className={`grid gap-3 md:grid-cols-2 ${bubble ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}>
         <ScoreCard
           reading={empty("global_liquidity")}

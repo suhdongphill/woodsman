@@ -7,6 +7,7 @@ import { buildFacts, COMMENTARY_PROMPT_VERSION } from "@/lib/gcrm/commentary";
 import { loadNarratives } from "@/features/gcrm/commentary-repo";
 import { loadResearch } from "@/features/research/repository";
 import { decideCommentaryAction, generateCommentaryAction } from "@/features/gcrm/commentary-actions";
+import { seoulDay, seoulTime } from "@/lib/kst";
 
 export const metadata: Metadata = { title: "조류 해설" };
 export const dynamic = "force-dynamic";
@@ -63,7 +64,7 @@ export default async function AdminCommentaryPage() {
                   <span>· 모델 {n.modelVersion}</span>
                   <span>· 판정 {n.facts?.regimeLabel ?? "자료 없음"}</span>
                   <span>· {n.editor}</span>
-                  <span>· 만든 시각 {n.createdAt.slice(0, 16).replace("T", " ")} UTC</span>
+                  <span>· 만든 시각 {seoulDay(n.createdAt)} {seoulTime(n.createdAt)} KST</span>
                 </div>
 
                 {n.body?.paragraphs ? (
@@ -158,7 +159,7 @@ export default async function AdminCommentaryPage() {
                 )}
                 {n.decidedAt && (
                   <p className="mt-2 text-[11px] text-muted">
-                    {n.decidedAt.slice(0, 16).replace("T", " ")} UTC · {n.decidedBy}
+                    {seoulDay(n.decidedAt)} {seoulTime(n.decidedAt)} KST · {n.decidedBy}
                   </p>
                 )}
               </Card>

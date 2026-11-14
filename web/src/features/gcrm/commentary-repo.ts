@@ -9,7 +9,7 @@ import { GCRM_CHIPS, HOME_AXIS } from "@/lib/gcrm/home-frame";
 import { compareValue, type CommentaryBody, type CommentaryInput } from "@/lib/gcrm/commentary";
 import { loadResearch } from "@/features/research/repository";
 import { gcrmCurrent } from "./service";
-import { loadRunResult, type StoredRun } from "./repository";
+import { latestRun, loadRunResult, type StoredRun } from "./repository";
 
 async function runBefore(asOf: string): Promise<StoredRun | undefined> {
   return (
@@ -185,4 +185,51 @@ export async function decideNarrative(id: string, status: "APPROVED" | "REJECTED
     id,
   ]);
   return true;
+}
+
+export type PublicCommentary = {
+  asOf: string;
+  modelVersion: string;
+  regimeLabel: string | null;
+  decidedAt: string | null;
+  body: CommentaryBody;
+  facts: CommentaryInput;
+  research: { id: string; title: string; url: string; limit: string | null }[];
+};
+
+/**
+ * 홈 「조류」 맨 위에 걸 해설 — **승인된 것 · 최신 run과 같은 것 · v2 모양**만(운영지침 §4 「GCRM 해설 공개 순서」).
+ * ⚠ 최신 계산에 승인된 해설이 없으면 undefined — 지난 기준일의 해설을 오늘 점수 위에 붙이지 않는다.
+ * ⚠ 읽기 실패로 홈을 죽이지 않는다(로그만 남기고 블록을 뺀다).
+ */
+export async function loadPublicCommentary(): Promise<PublicCommentary | undefined> {
+  try {
+    const run = await latestRun();
+    if (!run) return undefined;
+    const row = await queryOne<DbNarrative>(
+      `SELECT * FROM GcrmNarrative WHERE runId = ? AND status = 'APPROVED' ORDER BY decidedAt DESC LIMIT 1`,
+      [run.runId],
+    );
+    if (!row) return undefined;
+    const n = fromDb(row);
+    const body = n.body;
+    if (!body?.paragraphs || !body.card) return undefined; // v1 모양은 공개하지 않는다
+    const research = body.researchIds.length
+      ? (await loadResearch())
+          .filter((r) => body.researchIds.includes(r.id))
+          .map((r) => ({ id: r.id, title: r.title, url: r.url, limit: r.limit }))
+      : [];
+    return {
+      asOf: n.asOf,
+      modelVersion: n.modelVersion,
+      regimeLabel: n.facts?.regimeLabel ?? null,
+      decidedAt: n.decidedAt,
+      body,
+      facts: n.facts,
+      research,
+    };
+  } catch (error) {
+    console.error("[gcrm-commentary] 홈 해설을 읽지 못했다 — 블록을 뺀다", error);
+    return undefined;
+  }
 }
