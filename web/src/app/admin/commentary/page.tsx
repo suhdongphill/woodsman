@@ -138,19 +138,23 @@ export default async function AdminCommentaryPage() {
                 )}
 
                 {n.status === "DRAFT" && (
-                  <form action={decideCommentaryAction} className="mt-4 flex gap-2">
-                    <input type="hidden" name="id" value={n.id} />
-                    <button
-                      name="decision"
-                      value="APPROVED"
-                      className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[12px] font-semibold text-white"
-                    >
-                      승인
-                    </button>
-                    <button name="decision" value="REJECTED" className="rounded-lg border border-border px-3 py-1.5 text-[12px] text-ink">
-                      반려
-                    </button>
-                  </form>
+                  // ⚠ 승인·반려는 **폼을 따로** 두고 숨은 값으로 보낸다 — 한 폼의 두 버튼 값이 오지 않아 승인이 반려로 저장된 사고(2026-11-14)
+                  <div className="mt-4 flex gap-2">
+                    <form action={decideCommentaryAction}>
+                      <input type="hidden" name="id" value={n.id} />
+                      <input type="hidden" name="decision" value="APPROVED" />
+                      <button type="submit" className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[12px] font-semibold text-white">
+                        승인
+                      </button>
+                    </form>
+                    <form action={decideCommentaryAction}>
+                      <input type="hidden" name="id" value={n.id} />
+                      <input type="hidden" name="decision" value="REJECTED" />
+                      <button type="submit" className="rounded-lg border border-border px-3 py-1.5 text-[12px] text-ink">
+                        반려
+                      </button>
+                    </form>
+                  </div>
                 )}
                 {n.decidedAt && (
                   <p className="mt-2 text-[11px] text-muted">

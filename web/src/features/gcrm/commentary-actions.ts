@@ -95,7 +95,19 @@ export async function generateCommentaryAction(): Promise<void> {
 export async function decideCommentaryAction(formData: FormData): Promise<void> {
   const admin = await requireAdmin("/admin/commentary");
   const id = String(formData.get("id") ?? "");
-  const decision = formData.get("decision") === "APPROVED" ? "APPROVED" : "REJECTED";
+  const raw = formData.get("decision");
+  /**
+   * ⚠ 2026-11-14 사고: 승인·반려를 한 폼의 두 버튼(`name="decision"`)으로 보냈는데 누른 버튼의 값이 오지 않았고,
+   *    값이 없으면 REJECTED로 치던 기본값 때문에 **승인을 눌렀는데 반려로 저장됐다.** 이제 폼을 나눠 숨은 값으로 보내고,
+   *    값이 둘 중 하나가 아니면 **아무것도 바꾸지 않는다**(결정을 기본값으로 만들지 않는다).
+   */
+  if (raw !== "APPROVED" && raw !== "REJECTED") {
+    console.error("[gcrm-commentary] 결정 값이 없거나 이상하다 — 바꾸지 않는다", raw);
+    await recordAdminLog({ actor: admin.email, action: "gcrm.commentary.decide-invalid", target: id, summary: `decision=${String(raw)}` });
+    revalidatePath("/admin/commentary");
+    return;
+  }
+  const decision = raw;
   const ok = await decideNarrative(id, decision, admin.email ?? "(알 수 없음)");
   await recordAdminLog({
     actor: admin.email,
