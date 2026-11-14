@@ -22,7 +22,9 @@
 - 다음에 모든 제공자가 실패하면 메시지에 「후보에서 빠진 제공자 — Anthropic Claude: 이 제공자의 월 토큰 상한을 넘겼습니다 …」가 함께 보인다.
 
 ### 확인 (배포 뒤)
-- (배포 전)
+- 6bfd246 → success 2026-11-14T14:39:14Z.
+
+기록: /admin/releases rel_20261114_ai_blocked_reason
 
 ---
 
