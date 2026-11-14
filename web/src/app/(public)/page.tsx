@@ -195,7 +195,8 @@ export default async function HomePage() {
       // ⚠ 2026-11-14: 오늘의 바람 한 줄(macroLede)은 홈 히어로에서 뺐다 — 바로 아래 바람 띠가 맡는다(HeroSection 주석)
       <HeroSection heroTitle={basics.heroTitle} heroSubtitle={basics.heroSubtitle} />
     ),
-    macroStrip: <MacroStrip indicators={macro.headlines} frame={<CapitalRegimeFrame frame={regimeFrame} />} />,
+    // ⚠ 2026-11-14(밤): GLOBAL CAPITAL REGIME(조류 축) 카드는 조류 블록으로 옮겼다 — 바람 띠는 지표만
+    macroStrip: <MacroStrip indicators={macro.headlines} />,
     waves: <WavesSection news={latestNews} />,
     // ⚠ 보일지는 visibleHomeBlocks가 정했다(최신 공개 브리핑이 3일 안일 때만)
     dailyBriefing: latestBriefing ? <HomeBriefing briefing={latestBriefing} /> : null,
@@ -218,6 +219,7 @@ export default async function HomePage() {
         )}
         analysis={latestAnalysis}
         commentary={commentary ? <TideCommentary c={commentary} /> : undefined}
+        frame={<CapitalRegimeFrame frame={regimeFrame} />}
       />
     ),
     blogShowcase: <BlogShowcase recent={blogAll.slice(0, 10)} popular={popularEntries(blogAll, 5)} total={blogAll.length} />,

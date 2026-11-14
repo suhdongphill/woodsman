@@ -33,9 +33,9 @@ describe("홈 블록", () => {
     expect(blocks).not.toContain("homePosts");
     expect(blocks).toEqual([
       "hero",
+      "tide",
       "macroStrip",
       "dailyBriefing",
-      "tide",
       "waves",
       "blogShowcase",
       "latestInsights",
@@ -56,21 +56,22 @@ describe("홈 블록", () => {
     expect(HOME_BLOCKS).not.toContain("capitalFlow" as never);
   });
 
-  it("⚠ 거시 스트립은 히어로 바로 다음이다 — 3초 안에 '지금 무슨 바람인가'를 준다", () => {
+  it("⭐ 조류가 히어로 바로 다음 · 바람이 그다음 (운영자 「조류를 최상단으로」 2026-11-14 · 전: 바람이 히어로 다음)", () => {
     const blocks = visibleHomeBlocks(content());
-    expect(blocks[1]).toBe("macroStrip");
+    expect(blocks[1]).toBe("tide");
+    expect(blocks[2]).toBe("macroStrip");
     expect(blocks.indexOf("macroStrip")).toBeLessThan(blocks.indexOf("latestInsights"));
   });
 
-  it("⭐ 바람 → 브리핑 → 조류 → 파도 → 블로그 (운영자 결정 2026-11-14 · 전: 바람 → 파도 → 브리핑 → 조류, 2026-09-14)", () => {
+  it("⭐ 조류 → 바람 → 브리핑 → 파도 → 블로그 (2026-11-14 밤 · 전: 바람 → 브리핑 → 조류 → 파도)", () => {
     const blocks = visibleHomeBlocks(content());
+    expect(blocks[blocks.indexOf("tide") + 1]).toBe("macroStrip");
     expect(blocks[blocks.indexOf("macroStrip") + 1]).toBe("dailyBriefing");
-    expect(blocks[blocks.indexOf("dailyBriefing") + 1]).toBe("tide");
-    expect(blocks[blocks.indexOf("tide") + 1]).toBe("waves");
+    expect(blocks[blocks.indexOf("dailyBriefing") + 1]).toBe("waves");
     expect(blocks[blocks.indexOf("waves") + 1]).toBe("blogShowcase");
-    // 브리핑이 3일보다 오래되면 빠지고 바람 → 조류 → 파도
+    // 브리핑이 3일보다 오래되면 빠지고 바람 → 파도
     const noBriefing = visibleHomeBlocks(content({ briefingFresh: false }));
-    expect(noBriefing[noBriefing.indexOf("macroStrip") + 1]).toBe("tide");
+    expect(noBriefing[noBriefing.indexOf("macroStrip") + 1]).toBe("waves");
     // ⚠ 점수·기사가 없어도 블록은 빠지지 않는다 — 없다고 적는다
     const empty = visibleHomeBlocks(content({ homePostCount: 0, upcomingEventCount: 0 }));
     expect(empty).toContain("tide");
