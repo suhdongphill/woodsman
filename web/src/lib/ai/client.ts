@@ -421,5 +421,10 @@ export async function runAiTask(input: {
     }
   }
 
-  return { ok: false, reason: "모든 제공자가 실패했습니다.", attempts };
+  /**
+   * ⚠ 2026-11-14: 후보에서 **빠진** 제공자도 함께 말한다. 그날 Anthropic이 월 토큰 상한으로 빠졌는데
+   *    메시지에는 시도한 세 곳의 실패만 있어, 운영자가 「키가 없나」로 읽었다(조용한 실패).
+   */
+  const skipped = blocked.map((b) => `${b.providerLabel}: ${b.reason}`).join(" · ");
+  return { ok: false, reason: `모든 제공자가 실패했습니다.${skipped ? ` 후보에서 빠진 제공자 — ${skipped}` : ""}`, attempts };
 }
