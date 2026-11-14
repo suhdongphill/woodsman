@@ -29,7 +29,11 @@
 - 못 본 것: 로컬에서 화면을 띄워 보지 않았다(운영 HTML로 확인 · 390px 눈 확인은 운영자).
 
 ### 확인 (배포 뒤)
-- (배포 전)
+- 9a62fa2 → success 2026-11-14T08:53:18Z. 그 뒤 운영 D1 `SiteConfig.heroTitle` = 새 문장 · `heroSubtitle` = NULL · `AdminLog site.basics`(actor 「Claude Code (운영자 요청 2026-11-14)」).
+- 운영 홈 HTML: `<h1>`부터 「지금 부는 바람」까지의 글자가 **제목 한 문장뿐** · 「세 기능으로 자산을」은 `<footer>`에만 · 「일기예보를 보고 우산을」 0 · `/about` 푸터에도 블로그 소개 — 가설 맞음.
+- 못 본 것: 휴대폰 폭 눈 확인 · 클릭(2주 뒤, 11/14 홈 윗부분 한 덩어리).
+
+기록: /admin/releases rel_20261114_hero_one_line
 
 ---
 
