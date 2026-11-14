@@ -1564,3 +1564,68 @@ model AccountAllocation {
   cashPct    Float
   updatedAt  String
 }
+
+/// 연구 라이브러리(2026-11-14 · v3) — GCRM 개선 후보의 근거 연구. ⚠ 관리자 전용 · 운영 점수에 쓰는 경로 없음.
+/// 원문 칸은 가져오기 파일(Research Lab JSON) 그대로. 가져오기는 항상 검증 후보(CANDIDATE)로 시작한다.
+model ResearchPaper {
+  /// Research Lab id 그대로(예: R-001, R-20261113-BIS1394)
+  id            String  @id
+  title         String
+  source        String
+  /// 연구 발행일 YYYY-MM-DD — ⚠ 포털 등록일(registeredAt)과 다르다
+  publishedDate String
+  url           String
+  /// 비교용 정규화 URL(lib/research/import.normalizeUrl)
+  urlNorm       String
+  doi           String?
+  topic         String?
+  /// Research Lab 원래 값(Current · Wind · Wave)
+  layer         String
+  /// 포털 시간축 tide | wind | wave
+  horizon       String
+  fact          String?
+  method        String?
+  limitText     String?
+  interpret     String?
+  hypothesis    String?
+  mapping       String?
+  candidate     String?
+  testPlan      String?
+  counter       String?
+  /// lib/research/import.VERIFY_STATUSES
+  verifyStatus  String  @default("CANDIDATE")
+  verifyNote    String?
+  verifyAt      String?
+  /// UTC ISO — 포털에 처음 들어온 시각
+  registeredAt  String
+  updatedAt     String
+
+  @@index([urlNorm])
+  @@index([doi])
+}
+
+/// Research Lab의 탐색 배치 기록 — ⚠ 비공개 검토 기록. 공개 화면에 그리지 않는다.
+model ResearchBatch {
+  id         String  @id
+  date       String
+  cadence    String?
+  summary    String?
+  importedAt String
+}
+
+/// 가져오기 이력 — 파일에 있던 baseline·notes는 여기 보존만 한다(운영 산식에 쓰지 않는다 · 공개하지 않는다).
+model ResearchImport {
+  id            String @id
+  at            String
+  actor         String
+  fileName      String
+  schemaVersion Int
+  baseline      String?
+  notes         String?
+  inserted      Int
+  updated       Int
+  unchanged     Int
+  conflicts     Int
+  /// 충돌 목록 JSON [{id, withId, reason}]
+  conflictJson  String?
+}
