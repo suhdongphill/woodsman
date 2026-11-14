@@ -62,7 +62,7 @@ export default async function AdminCommentaryPage() {
                   <Badge tone={st.tone}>{st.label}</Badge>
                   <span>기준일 {n.asOf}</span>
                   <span>· 모델 {n.modelVersion}</span>
-                  <span>· 판정 {n.facts?.regimeLabel ?? "자료 없음"}</span>
+                  <span>· 국면 {n.facts?.regimeLabel ?? "자료 없음"}</span>
                   <span>· {n.editor}</span>
                   <span>· 만든 시각 {seoulDay(n.createdAt)} {seoulTime(n.createdAt)} KST</span>
                 </div>

@@ -18,7 +18,7 @@ export function TideCommentary({ c }: { c: PublicCommentary }) {
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-ink-3">
         <span className="font-semibold text-ink">조류 해설</span>
         <span>· 기준일 {c.asOf}</span>
-        <span>· 판정 {c.regimeLabel ?? "자료 없음"}</span>
+        <span>· 국면 {c.regimeLabel ?? "자료 없음"}</span>
         <span>· 모델 {c.modelVersion}</span>
         <span className="rounded-full border border-border px-2 py-0.5">모델 백테스트 전 · 해석은 참고</span>
         <span className="rounded-full border border-border px-2 py-0.5">
