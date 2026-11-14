@@ -47,6 +47,8 @@ const MENU = [
   { href: "/admin/posts", label: "콘텐츠", icon: FileTextIcon },
   // 원고(md·html)를 올리면 SNS 출처를 지우고 AI가 다듬어 초안 → 미리보기에서 공개(2026-10-31).
   { href: "/admin/briefing", label: "오늘의 브리핑", icon: FileTextIcon },
+  // 인사이트 AI 초안 — 재료로 초안 → 대조 → 운영자 편집·「Woodsman의 시각」 → 발행(2026-11-14 · 주 2~3편).
+  { href: "/admin/insight-drafts", label: "인사이트 초안", icon: FileTextIcon },
   // 티스토리 글 목록(2026-09-27) — 매일 자동 수집 · 숨기기 · 요약 고쳐 쓰기.
   { href: "/admin/blog", label: "블로그 글 목록", icon: RssIcon },
   { href: "/admin/comments", label: "댓글 · 정책", icon: MessageIcon },

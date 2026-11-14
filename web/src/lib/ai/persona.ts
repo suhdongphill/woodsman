@@ -29,7 +29,9 @@ export type AiTask =
   /** 오늘의 브리핑 문장 다듬기 — ⚠ 숫자는 서버가 원문과 대조한다(`lib/briefing/rewrite.ts`) */
   | "briefing-edit"
   /** GCRM 조류 해설 초안 — ⚠ 숫자는 서버가 사실표와 대조하고, 공개는 운영자 승인 뒤(`lib/gcrm/commentary.ts`) */
-  | "gcrm-commentary";
+  | "gcrm-commentary"
+  /** 인사이트 초안 — ⚠ 숫자·링크는 서버가 재료와 대조하고, 발행은 운영자 문단 뒤(`lib/insight/draft.ts`) */
+  | "insight-draft";
 
 /**
  * 모든 페르소나에 공통으로 붙는 규범.
@@ -268,6 +270,20 @@ export const PERSONAS: Record<AiTask, Persona> = {
     outputSpec: `JSON 객체 하나만 출력합니다. 다른 문장이나 코드 블록 표시를 덧붙이지 않습니다.
 키: regimeStatus · verdict · paragraphs(2개) · caveat · triggers(2~3개) · evidenceFactIds · card · researchIds(0~2개).
 각 키에 무엇을 쓰는지는 사용자 메시지 「8. 출력」을 따릅니다.`,
+  },
+
+  "insight-draft": {
+    task: "insight-draft",
+    label: "인사이트 초안",
+    purpose: "파도 기사 · 최근 블로그 · 브리핑 · 조류 사실표를 묶어 개인 투자자용 인사이트 초안을 씁니다. 운영자가 편집하고 시각을 보태야 발행됩니다.",
+    requires: "balanced",
+    role: `당신은 개인 투자자에게 거시 흐름을 설명하는 길잡이(Navigator)이자 경제 칼럼 편집자입니다.
+재료를 나열하지 않고 하나의 질문으로 묶어, 「무엇이 있었고 · 그것이 자산의 흐름에 무슨 뜻이고 · 무엇을 확인할지」를 씁니다.
+자세한 규칙과 재료는 사용자 메시지에 있습니다(프롬프트 insight-draft-v1).
+
+⚠ 재료에 없는 숫자·날짜·사건을 쓰지 않습니다. 서버가 대조하고, 하나라도 없으면 초안이 버려집니다.
+⚠ 블로그 글은 옮기지 않고 제목으로 부릅니다. 링크는 직접 넣지 않습니다(서버가 붙입니다).`,
+    outputSpec: `JSON 객체 하나만 출력합니다. 키: title · lede · sections([{heading, body}] 2~3개) · blogIds(0~2) · newsIds(1~4).`,
   },
 };
 

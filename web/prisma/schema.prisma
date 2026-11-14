@@ -1658,3 +1658,29 @@ model GcrmNarrative {
   @@index([runId, promptVersion])
   @@index([status, asOf])
 }
+
+/// 인사이트 AI 초안(2026-11-14 · v3) — 재료(파도·블로그·브리핑·조류) → AI 초안 → 대조 → 운영자 편집 + 「Woodsman의 시각」 → 발행(Post).
+/// ⚠ 운영자 문단 없이 발행하지 않는다. 초안은 추가만 한다(상태·편집 칸만 바뀐다).
+model InsightDraft {
+  id            String  @id
+  createdAt     String
+  promptVersion String
+  /// DRAFT | PUBLISHED | REJECTED | FAILED
+  status        String
+  /// InsightDraftBody JSON(통과했을 때만)
+  body          String?
+  /// 재료 스냅숏 JSON(InsightInput)
+  input         String
+  editor        String
+  problems      String?
+  /// 운영자가 고친 제목·본문·문단
+  editedTitle   String?
+  editedMain    String?
+  operatorNote  String?
+  /// 발행된 Post id
+  postId        String?
+  decidedAt     String?
+  decidedBy     String?
+
+  @@index([status, createdAt])
+}
