@@ -47,7 +47,10 @@
 - 티스토리 클릭에는 영향이 없어야 한다(관리자 화면만).
 
 ### 확인 (배포 뒤)
-- (배포 전)
+- e1bfda7 → success 2026-11-14T08:33:28Z. 운영 D1에 `ResearchPaper`·`ResearchBatch`·`ResearchImport` 생성 확인 · 연구 0행(아직 안 올림) · 홈 200.
+- 못 본 것: 운영자의 JSON 업로드(11편·검증 후보·배치 3) · 다시 올렸을 때 「그대로 11」 · 관리자 화면 눈 확인(로그인 필요 — Claude는 관리자 화면을 열지 않는다).
+
+기록: /admin/releases rel_20261114_research_library
 
 ---
 
