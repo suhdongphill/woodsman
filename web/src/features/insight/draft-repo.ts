@@ -12,10 +12,10 @@ import { loadBlogEntries } from "@/features/blog/repository";
 import { loadPublishedBriefings } from "@/features/briefing/repository";
 import { loadCommentaryInput } from "@/features/gcrm/commentary-repo";
 
-/** 재료: 최근 기사 12건 · 최근 블로그 8편 · 최신 공개 브리핑 · 조류 사실표. ⚠ 하나를 못 읽어도 나머지로 만든다(빈 재료는 빈 배열 + 로그). */
+/** 재료: 최근 기사 8건 · 최근 블로그 6편 · 최신 공개 브리핑 · 조류 사실표. ⚠ 하나를 못 읽어도 나머지로 만든다(빈 재료는 빈 배열 + 로그). */
 export async function loadInsightInput(): Promise<InsightInput> {
   const [news, blogs, briefings, commentary] = await Promise.all([
-    loadLatestNews(12).catch((e) => (console.error("[insight] 기사를 못 읽었다", e), [])),
+    loadLatestNews(8).catch((e) => (console.error("[insight] 기사를 못 읽었다", e), [])),
     loadBlogEntries().catch((e) => (console.error("[insight] 블로그를 못 읽었다", e), [])),
     loadPublishedBriefings(1).catch((e) => (console.error("[insight] 브리핑을 못 읽었다", e), [])),
     loadCommentaryInput().catch((e) => (console.error("[insight] 조류 사실표를 못 만들었다", e), undefined)),
@@ -25,10 +25,11 @@ export async function loadInsightInput(): Promise<InsightInput> {
     today: seoulDay(new Date().toISOString()),
     news: news.map((n) => ({ id: n.id, source: n.source, title: n.title, url: n.url, publishedAt: n.publishedAt, summary: n.summary ?? null })),
     blogs: visibleEntries(blogs)
-      .slice(0, 8)
+      .slice(0, 6)
       .map((e) => ({ entryId: e.entryId, title: e.title, summary: e.summaryOverride ?? e.summary ?? null, publishedAt: e.publishedAt })),
     briefing: b ? { date: b.date, headline: b.headline, summary: b.article.summary } : undefined,
-    facts: commentary ? buildFacts(commentary) : [],
+    // 조류는 핵심만(방향 · 점수 · 수준 · 4주 비교) — 40줄 전부를 넣으면 프롬프트가 길어져 시간 제한에 걸렸다(2026-11-14 추정)
+    facts: commentary ? buildFacts(commentary).filter((f) => /\.(polarity|score|level|w4)$/.test(f.id) || f.id.startsWith("regime.")) : [],
   };
 }
 

@@ -55,7 +55,7 @@ export async function generateCommentaryAction(): Promise<void> {
 
   const first = await call(prompt);
   if (!first.ok) {
-    await saveNarrative({ input, promptVersion: COMMENTARY_PROMPT_VERSION, status: "FAILED", editor: "ai:—", problems: [first.reason] });
+    await saveNarrative({ input, promptVersion: COMMENTARY_PROMPT_VERSION, status: "FAILED", editor: "ai:—", problems: [first.reason, ...first.attempts.map((a) => `${a.providerLabel}(${a.modelId}): ${a.error ?? "실패"}`)] });
   } else {
     // ⚠ 사용량은 성공했을 때 반드시 센다 — 안 세면 월 상한이 걸리지 않는다.
     await recordAiUsage(first.result.apiKeyEnv, first.result.usage.inputTokens + first.result.usage.outputTokens);

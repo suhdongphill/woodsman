@@ -42,12 +42,13 @@ export async function generateInsightDraftAction(): Promise<void> {
       env,
       usage,
       global: { tokensUsedThisMonth: config.tokensUsedThisMonth, globalMonthlyTokenCap: config.globalMonthlyTokenCap },
-      maxTokens: 3_000,
+      // 2026-11-14: 3,000 → 2,500 — 첫 시도가 「모든 제공자가 실패」(Sonnet 60초 제한 추정). 목표 분량(900~1,600자)에 넉넉하다
+      maxTokens: 2_500,
     });
 
   const first = await call(prompt);
   if (!first.ok) {
-    await saveInsightDraft({ input, promptVersion: INSIGHT_PROMPT_VERSION, status: "FAILED", editor: "ai:—", problems: [first.reason] });
+    await saveInsightDraft({ input, promptVersion: INSIGHT_PROMPT_VERSION, status: "FAILED", editor: "ai:—", problems: [first.reason, ...first.attempts.map((a) => `${a.providerLabel}(${a.modelId}): ${a.error ?? "실패"}`)] });
   } else {
     await recordAiUsage(first.result.apiKeyEnv, first.result.usage.inputTokens + first.result.usage.outputTokens);
     let verdict = verifyInsightDraft(first.result.text, input);
