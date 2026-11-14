@@ -38,7 +38,10 @@
 - 티스토리 클릭: 발행 글의 블로그 링크로 늘 수 있다(글이 생긴 뒤).
 
 ### 확인 (배포 뒤)
-- (배포 전)
+- b8c2c1b → success 2026-11-14T14:18:30Z · 운영 D1 `InsightDraft` 생성 · 홈·/insights 200.
+- 못 본 것: 첫 초안 · 첫 발행(운영자).
+
+기록: /admin/releases rel_20261114_insight_drafts
 
 ---
 
