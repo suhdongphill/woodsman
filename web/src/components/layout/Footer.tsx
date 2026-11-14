@@ -40,13 +40,12 @@ export async function Footer({ showCommunity = false }: { showCommunity?: boolea
               <span className="text-sm font-bold text-ink">Woodsman</span>
             </div>
             {/*
-              ⚠ 2026-11-14 맞바꿈(운영자): 이 자리에 있던 「성장·인컴·방어 세 기능으로 …」는 홈 히어로 부제(운영 설정)로 올라갔다.
-              같은 문장이 홈에서 두 번 보이지 않게, 히어로에 있던 문장을 여기로 내렸다.
+              ⚠ 2026-11-14: 한 번 맞바꿨다가(히어로 부제와 중복) 히어로가 한 문장으로 바뀌면서 **되돌렸다**(운영자 「블로그 소개로 되돌림」).
+              「개인 투자 블로그」 소개는 사이트가 무엇인지 말하는 문장이라 사이트 어디엔가 남아야 한다 — 그 자리가 푸터다.
             */}
             <p className="text-xs text-muted mt-3 leading-relaxed">
-              금리·물가·유동성이 어느 쪽으로 부는지 먼저 읽고, 그 흐름에 포트폴리오를 어떻게 맞췄는지
-              그대로 남깁니다. 일기예보를 보고 우산을 챙기듯, 누가 방향을 알려주기 전에 지표를 직접 읽는
-              자리입니다.
+              성장·인컴·방어 세 기능으로 자산을 나누고, 매달의 납입과 판단을 기록으로 남기는
+              개인 투자 블로그입니다. 운용 중인 포트폴리오의 구성과 비중을 공개합니다.
             </p>
             <p className="text-[11px] text-gray-600 mt-3 leading-relaxed">
               본 사이트의 모든 콘텐츠는 <strong className="text-gray-500">정보 제공 목적</strong>

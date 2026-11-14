@@ -33,7 +33,6 @@ import { isBriefingFresh, visibleHomeBlocks, type HomeBlock } from "@/lib/home-l
 import { loadBlogEntries } from "@/features/blog/repository";
 import { BlogShowcase } from "@/features/blog/ui/BlogShowcase";
 import { popularEntries, visibleEntries } from "@/lib/blog/tistory";
-import { macroLede } from "@/lib/home-lede";
 import { summarizePerformance } from "@/lib/performance";
 import { getSiteBasics } from "@/lib/site-settings";
 import { loadPublishedJournal, loadSnapshots } from "@/features/journal/repository";
@@ -189,11 +188,8 @@ export default async function HomePage() {
    */
   const rendered: Record<HomeBlock, ReactNode> = {
     hero: (
-      <HeroSection
-        heroTitle={basics.heroTitle}
-        heroSubtitle={basics.heroSubtitle}
-        lede={macroLede({ empty: macro.empty, summary: macro.summary, asOf: macro.asOf })}
-      />
+      // ⚠ 2026-11-14: 오늘의 바람 한 줄(macroLede)은 홈 히어로에서 뺐다 — 바로 아래 바람 띠가 맡는다(HeroSection 주석)
+      <HeroSection heroTitle={basics.heroTitle} heroSubtitle={basics.heroSubtitle} />
     ),
     macroStrip: <MacroStrip indicators={macro.headlines} frame={<CapitalRegimeFrame frame={regimeFrame} />} />,
     waves: <WavesSection news={latestNews} />,

@@ -2,7 +2,18 @@
 import { keepGlossTogether } from "@/lib/format";
 
 /**
- * 첫 화면 — 문구 + 오늘의 바람 한 줄.
+ * 첫 화면 — **한 문장**(2026-11-14 운영자 · v3).
+ *
+ * ## ⚠ 2026-11-14: 세 줄 → 한 문장
+ * 운영자 「삭제하는 것은 어떨까요 · 투자자에게 … 설명하면서 Navigator가 되겠습니다」. 제목(「파도가 아니라 바람과 조류를 봅니다」) ·
+ * 오늘의 바람 한 줄(「침체 신호 안정 · 지표 5개 종합」) · 부제(「성장·인컴·방어 …」)를 지우고 운영 설정의 제목 한 문장만 둔다.
+ * - 오늘의 바람 한 줄은 뺐다 — 바로 아래 「지금 부는 바람」 띠가 같은 것을 더 자세히 보인다(`macroLede`는 `/portfolio`가 계속 쓴다).
+ * - 부제는 **비어 있으면 그리지 않는다.** 기본값이 빈 문자열이고, 관리자가 설정에 넣으면 다시 보인다(admin이 유연하게).
+ * - 「개인 투자 블로그」 소개 문장은 푸터로 돌아갔다(정체성 문장이 사이트에서 사라지지 않게).
+ * - 표현: 「항해사」 대신 「설명하는 길잡이」 — 고지(투자 권유·자문 아님)와 부딪히지 않게(운영자 선택).
+ * 아래 옛 기록은 판단 기록으로 남긴다.
+ *
+ * ## (옛) 첫 화면 — 문구 + 오늘의 바람 한 줄
  *
  * ## ⚠ 2026-10-31: 버튼 둘(「지금 시장 읽기」·「블로그에서 이어 읽기」)과 숫자 셋(기록 개월·투자일지·리밸런싱)을 뺐다
  * 운영자 결정(「이 부분도 제거」 · 「운영원칙은 개선을 위해 재정립하면 된다」). 메뉴에 같은 길이 있고,
@@ -28,16 +39,7 @@ import { keepGlossTogether } from "@/lib/format";
  * ⚠ 「블로그에서 이어 읽기」는 **반드시 `/go/…` 경유**다. 주소를 직접 걸면 나가는 클릭이
  *    안 세지고, 그러면 이 사이트의 1순위 지표가 빈다(2026-08-25 결정).
  */
-export function HeroSection({
-  heroTitle,
-  heroSubtitle,
-  lede,
-}: {
-  heroTitle: string;
-  heroSubtitle: string;
-  /** 오늘의 바람 한 줄. ⚠ 값이 없으면 null이고, 그때는 줄 자체를 그리지 않는다 */
-  lede: string | null;
-}) {
+export function HeroSection({ heroTitle, heroSubtitle }: { heroTitle: string; heroSubtitle: string }) {
   return (
     <section className="relative overflow-hidden border-b border-border">
       <div
@@ -58,14 +60,10 @@ export function HeroSection({
             {keepGlossTogether(heroTitle)}
           </h1>
 
-          {/* 오늘의 바람 — 값이 없으면 이 줄은 아예 없다(지어내지 않는다). */}
-          {lede && (
-            <p className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card/70 px-3.5 py-2 text-[12.5px] text-gray-300 backdrop-blur">
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
-              {typeof lede === "string" ? keepGlossTogether(lede) : lede}
-            </p>
+          {/* 부제 — 비어 있으면 그리지 않는다(2026-11-14 · 기본값 빈 문자열). */}
+          {heroSubtitle.trim() && (
+            <p className="mt-4 text-[15px] text-muted leading-relaxed max-w-xl">{keepGlossTogether(heroSubtitle)}</p>
           )}
-          <p className="mt-4 text-[15px] text-muted leading-relaxed max-w-xl">{keepGlossTogether(heroSubtitle)}</p>
         </div>
       </div>
     </section>
