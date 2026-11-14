@@ -35,6 +35,8 @@ const MENU = [
   { href: "/admin/bubble", label: "버블 모니터", icon: BotIcon },
   // GCRM 개선 후보의 근거 연구 · 검증 기록(2026-11-14). ⚠ 운영 점수에 쓰는 경로 없음.
   { href: "/admin/research", label: "연구 라이브러리", icon: FileTextIcon },
+  // GCRM 조류 해설 — AI 초안 → 숫자 대조 → 운영자 승인(2026-11-14).
+  { href: "/admin/commentary", label: "조류 해설", icon: BotIcon },
   // 홈 「파도」 — 연준·CPI는 자동, 유가·지정학은 여기서 올린다(2026-09-14).
   { href: "/admin/news", label: "파도 기사", icon: RssIcon },
   // 홈 유동성 카드 해석 팝업의 2부 — 점수는 사이트가, 사실·해석은 운영자가(2026-09-14).
