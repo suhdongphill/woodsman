@@ -23,7 +23,10 @@
 - 공개 화면 변화 없음.
 
 ### 확인 (배포 뒤)
-- (배포 전)
+- 72ca851 → success 2026-11-14T10:40:42Z. 그 뒤 초안 `gn_2026-11-14_2026-11-14T10:31:55.852Z`를 REJECTED → **DRAFT**로 되돌림(`AdminLog gcrm.commentary.restore`).
+- 못 본 것: 운영자의 다음 승인 클릭이 APPROVED로 남는지.
+
+기록: /admin/releases rel_20261114_commentary_decide_fix
 
 ---
 
