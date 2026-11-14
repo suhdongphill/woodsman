@@ -16,6 +16,7 @@
 - **원인**: 키는 모두 있다. **Anthropic이 시도되지 않았다** — 운영 D1 `AiProvider` Anthropic `tokensUsedThisMonth` 200,374 ≥ `monthlyTokenCap` 200,000 → 라우팅이 「월 토큰 상한을 넘겼습니다」로 뺐다(CLAUDE.md §6 안전장치). 오늘 조류 해설 여러 번(고쳐 쓰기 포함) + 매일 브리핑 다듬기가 합쳐졌다. 무료 제공자(Groq · Gemini · OpenRouter)는 이 작업의 요구 급(balanced)에 맞는 모델이 없어 후보가 아니다. 앞 조각의 「Sonnet 60초 제한」 추정은 **틀렸다**.
 - **고침**: `runAiTask` 실패 메시지에 **후보에서 빠진 제공자와 이유**를 붙인다 — 이번엔 「Anthropic: 월 토큰 상한」이 안 보여 운영자가 키 문제로 읽었다.
 - **운영자 결정 대기**: Anthropic 월 상한 올리기(`/admin/ai`) · 크레딧 없는 OpenAI·DeepSeek와 404인 NVIDIA를 끌지(매번 실패 시도로 시간만 쓴다).
+- **운영자 결정(같은 날)**: Anthropic 크레딧 결제 · 「월 상한도 올려 주세요」 → 운영 D1 `AiProvider` Anthropic `monthlyTokenCap` **200,000 → 1,000,000**(`AdminLog ai.provider.cap` · actor 「Claude Code (운영자 요청)」). 2주 사용량을 본 뒤 조정한다. OpenAI·DeepSeek·NVIDIA는 켜진 채로 둔다(끌지는 운영자 결정 대기).
 - 사용량 어림(근거: 이번 달 기록이 아니라 설정값 · 확인 필요): 조류 해설 1회 입력 수천~1만 토큰대 + 출력 상한 2,000(실패 시 ×2) · 인사이트 출력 상한 2,500(×2) · 브리핑 다듬기 출력 상한 12,000. 매일 해설 + 주 2~3편 인사이트 + 매일 브리핑이면 20만은 모자란다.
 
 ### 배포 전 가설
