@@ -5,6 +5,14 @@ name: Deploy to Cloudflare Workers
 on:
   push:
     branches: [main]
+    # ⚠ 2026-11-14: 기록만 바꾼 push(문서·CHANGELOG·스킬)는 배포하지 않는다.
+    #   그날 기록 커밋이 배포를 한 번 더 돌려, 운영자가 열어 둔 관리자 화면(옛 빌드)에서 「승인」이
+    #   client-side exception으로 죽었다(옛 화면이 찾는 스크립트가 새 배포에서 사라짐). 앱이 읽는 .md는 없다(확인).
+    #   ⚠ 코드와 문서를 함께 바꾼 push는 그대로 배포된다(모든 파일이 아래에 걸릴 때만 건너뛴다).
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - ".claude/**"
   # 대시보드에서 손으로 한 번 돌리고 싶을 때
   workflow_dispatch:
 

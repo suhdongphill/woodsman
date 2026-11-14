@@ -131,10 +131,13 @@ export async function loadNarratives(limit = 30): Promise<NarrativeRow[]> {
   return rows.map(fromDb);
 }
 
-/** 같은 run·프롬프트 판에 살아 있는(실패가 아닌) 초안이 있나 — 중복 생성 방지. */
+/**
+ * 같은 run·프롬프트 판에 살아 있는 초안(DRAFT·APPROVED)이 있나 — 중복 생성·중복 발행 방지.
+ * ⚠ 2026-11-14: 반려(REJECTED)는 막지 않는다 — 처음엔 막았더니 반려한 뒤 같은 계산으로 다시 쓸 길이 없었다. 실패(FAILED)도 막지 않는다.
+ */
 export async function liveNarrativeFor(runId: string, promptVersion: string): Promise<NarrativeRow | undefined> {
   const row = await queryOne<DbNarrative>(
-    `SELECT * FROM GcrmNarrative WHERE runId = ? AND promptVersion = ? AND status != 'FAILED' ORDER BY createdAt DESC LIMIT 1`,
+    `SELECT * FROM GcrmNarrative WHERE runId = ? AND promptVersion = ? AND status IN ('DRAFT', 'APPROVED') ORDER BY createdAt DESC LIMIT 1`,
     [runId, promptVersion],
   );
   return row ? fromDb(row) : undefined;

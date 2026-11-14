@@ -307,6 +307,32 @@ export function briefLength(b: Pick<CommentaryBody, "verdict" | "paragraphs" | "
   return [b.verdict, ...b.paragraphs, b.caveat, ...b.triggers].join("").length;
 }
 
+/** 문단당 데이터 숫자 상한 — 문서는 2~3개. 「점」「%」이 붙은 숫자만 센다(「4주 전」 같은 기간은 세지 않는다). */
+export const PARAGRAPH_NUMBER_MAX = 4;
+export function dataNumberCount(text: string): number {
+  return (text.match(/\d+(?:\.\d+)?\s*(점|%)/g) ?? []).length;
+}
+
+/** 「52점에서 62점으로 10점 올랐습니다.」처럼 점수 변화로 끝나는 문장(문서 규칙 6-3). */
+const SCORE_ENDING = /\d+\s*점\s*(?:올랐|내렸|상승했|하락했|높아졌|낮아졌)습니다[.。]?(?=\s|$)/;
+
+/**
+ * 조건(triggers)의 숫자는 **그 조건이 부르는 항목의 사실**이어야 한다.
+ * 2026-11-14 첫 v2 초안: 「유동성이 … 50점 아래에 머물면」 — 50은 달러 네트워크 점수였다(사실표 어딘가에 있어 전역 대조는 통과).
+ * 항목 이름이 하나도 없으면 전역 대조에 맡긴다.
+ */
+export function triggerStrayNumbers(trigger: string, input: CommentaryInput, facts: CommentaryFact[]): string[] {
+  const named = input.pillars.filter((p) => trigger.includes(p.nameKo) || trigger.includes(p.nameKo.replace(/ 지배력$/, "")));
+  if (named.length === 0) return [];
+  const own = facts.filter((f) => named.some((p) => f.id.startsWith(`${p.pillar}.`)));
+  const { numbers } = allowedTokens(own, TERM_NUMBERS);
+  const out: string[] = [];
+  for (const n of trigger.replace(/\d{4}-\d{2}-\d{2}/g, " ").match(/[+-]?\d+(?:\.\d+)?/g) ?? []) {
+    if (!numbers.has(Math.abs(Number(n)))) out.push(n);
+  }
+  return [...new Set(out)];
+}
+
 /** 길이 관문 — 문서는 600~900자. 조금 넘친 것까지 버리지 않도록 여유를 둔다(실패는 크게 벗어난 것만). */
 export const BRIEF_MIN = 400;
 export const BRIEF_MAX = 1000;
@@ -374,6 +400,20 @@ export function verifyCommentary(
     const internal = t.match(INTERNAL_TERMS);
     if (internal) problems.push(`내부 용어: 「${internal[0]}」`);
   }
+  // v2 규칙을 서버에서도 — 2026-11-14 첫 v2 초안에서 셋 다 새어 나왔다
+  for (const [i, p] of paragraphs.entries()) {
+    const n = dataNumberCount(p);
+    if (n > PARAGRAPH_NUMBER_MAX) problems.push(`본문 ${i + 1}문단에 숫자가 ${n}개 — 문단당 2~3개(최대 ${PARAGRAPH_NUMBER_MAX})`);
+  }
+  for (const t of texts) {
+    const end = t.match(SCORE_ENDING);
+    if (end) problems.push(`「~점 올랐/내렸습니다」로 끝나는 문장: 「${end[0].trim()}」`);
+  }
+  for (const t of triggers) {
+    const stray = triggerStrayNumbers(t, input, facts);
+    if (stray.length) problems.push(`조건의 기준선이 그 항목의 사실이 아닙니다: ${stray.join(", ")} — 「${t.slice(0, 40)}」`);
+  }
+
   if (strayNumbers.size) problems.push(`사실표에 없는 숫자: ${[...strayNumbers].join(", ")}`);
   if (strayDates.size) problems.push(`사실표에 없는 날짜: ${[...strayDates].join(", ")}`);
   if (strayFractions.size) problems.push(`사실표에 없는 분수: ${[...strayFractions].join(", ")}`);

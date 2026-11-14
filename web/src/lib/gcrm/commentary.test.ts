@@ -178,3 +178,25 @@ describe("compareValue", () => {
     expect(compareValue({ asOf: "d", modelVersion: "v2", score: 50 }, "v2")).toEqual({ kind: "value", asOf: "d", score: 50 });
   });
 });
+
+describe("v2 서버 관문 보강 (2026-11-14 첫 v2 초안에서 새어 나온 셋)", () => {
+  it("⚠ 조건의 기준선이 다른 항목의 숫자면 실패 — 「유동성이 … 64점 아래」(64는 엔진 온도 4주 전 값)", () => {
+    const r = verifyCommentary(
+      JSON.stringify({ ...good, triggers: [good.triggers[0], "유동성이 64점 아래에 머물면, 우호적 반전으로 보지 않습니다."] }),
+      input(),
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.problems.join(" | ")).toMatch(/조건의 기준선이 그 항목의 사실이 아닙니다: 64/);
+  });
+
+  it("⚠ 문단에 데이터 숫자가 너무 많으면 실패 · 「~점 내렸습니다」로 끝나면 실패", () => {
+    const crowded = "유동성 47점, 52점, 44점입니다. 엔진 온도 71점, 64점입니다. 반영률 71%와 90%입니다. 셋째 문장입니다.";
+    const r = verifyCommentary(JSON.stringify({ ...good, paragraphs: [crowded, para2] }), input());
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.problems.join(" | ")).toMatch(/1문단에 숫자가 7개/);
+    const ending = para1.replace("소폭 내려왔습니다.", "5점 내렸습니다.");
+    const r2 = verifyCommentary(JSON.stringify({ ...good, paragraphs: [ending, para2] }), input());
+    expect(r2.ok).toBe(false);
+    if (!r2.ok) expect(r2.problems.join(" | ")).toMatch(/점 올랐\/내렸습니다/);
+  });
+});

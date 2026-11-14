@@ -19,6 +19,7 @@ description: 배포가 성공하면 그 배포의 가설을 `/admin/releases`(�
 - main push → **Deploy to Cloudflare Workers 성공을 확인한 직후.** 실패한 배포는 기록하지 않는다.
 - 사용자가 요청할 때.
 - ⚠ 커밋만 하고 push 안 한 것은 배포가 아니다. 기록하지 않는다.
+- ⚠ 2026-11-14부터 **기록만 바꾼 push(docs/** · *.md · .claude/**)는 배포 run이 생기지 않는다**(`deploy.yml` paths-ignore). 기록 커밋을 올린 뒤 배포를 기다리지 않는다.
 
 ## 절차
 

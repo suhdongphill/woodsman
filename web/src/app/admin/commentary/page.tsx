@@ -37,7 +37,7 @@ export default async function AdminCommentaryPage() {
       <Card className="mb-6">
         <CardTitle>초안 만들기</CardTitle>
         <p className="mt-2 text-[12px] text-muted">
-          최신 run에 이미 초안·승인·반려가 있으면 다시 만들지 않습니다(대조 실패는 다시 시도할 수 있습니다). 결과는 아래 목록과 활동 로그에 남습니다.
+          최신 계산에 초안이나 승인된 해설이 있으면 다시 만들지 않습니다. 반려했거나 대조에 실패했으면 다시 만들 수 있습니다. 결과는 아래 목록과 활동 로그에 남습니다.
         </p>
         <form action={generateCommentaryAction} className="mt-3">
           <button type="submit" className="rounded-lg bg-gold-500 px-4 py-2 text-[13px] font-semibold text-onAccent">
