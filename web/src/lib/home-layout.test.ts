@@ -34,9 +34,9 @@ describe("홈 블록", () => {
     expect(blocks).toEqual([
       "hero",
       "macroStrip",
-      "waves",
       "dailyBriefing",
       "tide",
+      "waves",
       "blogShowcase",
       "latestInsights",
       "macro",
@@ -62,14 +62,15 @@ describe("홈 블록", () => {
     expect(blocks.indexOf("macroStrip")).toBeLessThan(blocks.indexOf("latestInsights"));
   });
 
-  it("⭐ 바람 → 파도 → 조류 — 가까운 시간부터 먼 시간으로(운영자 결정 2026-09-14 · 원칙 ⑤ 층을 섞지 않는다)", () => {
+  it("⭐ 바람 → 브리핑 → 조류 → 파도 → 블로그 (운영자 결정 2026-11-14 · 전: 바람 → 파도 → 브리핑 → 조류, 2026-09-14)", () => {
     const blocks = visibleHomeBlocks(content());
-    expect(blocks[blocks.indexOf("macroStrip") + 1]).toBe("waves");
-    // 오늘의 브리핑(2026-10-31)은 파도와 같은 「오늘」 층 — 파도 바로 아래, 조류 위
-    expect(blocks[blocks.indexOf("waves") + 1]).toBe("dailyBriefing");
+    expect(blocks[blocks.indexOf("macroStrip") + 1]).toBe("dailyBriefing");
     expect(blocks[blocks.indexOf("dailyBriefing") + 1]).toBe("tide");
+    expect(blocks[blocks.indexOf("tide") + 1]).toBe("waves");
+    expect(blocks[blocks.indexOf("waves") + 1]).toBe("blogShowcase");
+    // 브리핑이 3일보다 오래되면 빠지고 바람 → 조류 → 파도
     const noBriefing = visibleHomeBlocks(content({ briefingFresh: false }));
-    expect(noBriefing[noBriefing.indexOf("waves") + 1]).toBe("tide");
+    expect(noBriefing[noBriefing.indexOf("macroStrip") + 1]).toBe("tide");
     // ⚠ 점수·기사가 없어도 블록은 빠지지 않는다 — 없다고 적는다
     const empty = visibleHomeBlocks(content({ homePostCount: 0, upcomingEventCount: 0 }));
     expect(empty).toContain("tide");
@@ -99,9 +100,9 @@ describe("홈 블록", () => {
     expect(hasBlock(visibleHomeBlocks(content({ homePostCount: 0 })), "homePosts")).toBe(false);
   });
 
-  it("블로그는 조류 바로 아래 · 인사이트 위 (2026-09-27)", () => {
+  it("블로그는 파도 바로 아래 · 인사이트 위 (2026-11-14 · 전: 조류 바로 아래 2026-09-27)", () => {
     const blocks = visibleHomeBlocks(content());
-    expect(blocks.indexOf("blogShowcase")).toBe(blocks.indexOf("tide") + 1);
+    expect(blocks.indexOf("blogShowcase")).toBe(blocks.indexOf("waves") + 1);
     expect(blocks.indexOf("blogShowcase")).toBeLessThan(blocks.indexOf("latestInsights"));
   });
 
