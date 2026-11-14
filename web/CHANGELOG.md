@@ -18,7 +18,9 @@
 - **배포 전 가설**: 다음 초안은 DRAFT/대조 실패로 끝나고, 또 제공자 실패면 화면에 「Anthropic Claude(claude-sonnet-5): 제한 시간을 넘겼습니다」처럼 실제 사유가 보인다.
 
 ### 확인 (배포 뒤)
-- (배포 전)
+- 5d4c872 → success 2026-11-14T14:28:51Z. 못 본 것: 다음 초안 결과(운영자).
+
+기록: /admin/releases rel_20261114_ai_fail_detail
 
 ---
 
