@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   briefLength,
   buildCommentaryPrompt,
+  buildRepairPrompt,
   buildFacts,
   compareValue,
   serverNotes,
@@ -198,5 +199,16 @@ describe("v2 서버 관문 보강 (2026-11-14 첫 v2 초안에서 새어 나온 
     const r2 = verifyCommentary(JSON.stringify({ ...good, paragraphs: [ending, para2] }), input());
     expect(r2.ok).toBe(false);
     if (!r2.ok) expect(r2.problems.join(" | ")).toMatch(/점 올랐\/내렸습니다/);
+  });
+});
+
+describe("고쳐 쓰기 프롬프트", () => {
+  it("첫 프롬프트 + 문제 목록 + 이전 초안을 함께 준다 · 규칙은 그대로", () => {
+    const orig = buildCommentaryPrompt(input());
+    const p = buildRepairPrompt(orig, '{"verdict":"x"}', ["본문 1문단에 숫자가 6개"]);
+    expect(p.startsWith(orig)).toBe(true);
+    expect(p).toContain("본문 1문단에 숫자가 6개");
+    expect(p).toContain('{"verdict":"x"}');
+    expect(orig).toContain("최대 3개");
   });
 });

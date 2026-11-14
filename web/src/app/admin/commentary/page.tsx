@@ -128,9 +128,11 @@ export default async function AdminCommentaryPage() {
                 ) : null}
 
                 {n.problems.length > 0 && (
-                  <ul className="mt-3 list-disc pl-5 text-[12px] text-red-400">
+                  <ul className={`mt-3 list-disc pl-5 text-[12px] ${n.status === "FAILED" ? "text-red-400" : "text-muted"}`}>
                     {n.problems.map((p) => (
-                      <li key={p}>{p}</li>
+                      <li key={p} className="whitespace-pre-wrap break-words">
+                        {p}
+                      </li>
                     ))}
                   </ul>
                 )}

@@ -14,7 +14,7 @@ import { runAiTask } from "@/lib/ai/client";
 import { loadAiConfig, loadProviderUsage, loadTaskModes, recordAiUsage } from "@/features/ai/repository";
 import { resolveApiEnv } from "@/features/ai/credentials";
 import { recordAdminLog } from "@/features/admin-log/repository";
-import { buildCommentaryPrompt, COMMENTARY_PROMPT_VERSION, verifyCommentary } from "@/lib/gcrm/commentary";
+import { buildCommentaryPrompt, buildRepairPrompt, COMMENTARY_PROMPT_VERSION, verifyCommentary } from "@/lib/gcrm/commentary";
 import { decideNarrative, liveNarrativeFor, loadCommentaryInput, saveNarrative } from "./commentary-repo";
 
 export async function generateCommentaryAction(): Promise<void> {
@@ -41,29 +41,51 @@ export async function generateCommentaryAction(): Promise<void> {
   }
 
   const [usage, config, env, modes] = await Promise.all([loadProviderUsage(), loadAiConfig(), resolveApiEnv(), loadTaskModes()]);
-  const run = await runAiTask({
-    task: "gcrm-commentary",
-    mode: modes["gcrm-commentary"],
-    user: buildCommentaryPrompt(input),
-    env,
-    usage,
-    global: { tokensUsedThisMonth: config.tokensUsedThisMonth, globalMonthlyTokenCap: config.globalMonthlyTokenCap },
-    maxTokens: 2_000,
-  });
+  const prompt = buildCommentaryPrompt(input);
+  const call = (user: string) =>
+    runAiTask({
+      task: "gcrm-commentary",
+      mode: modes["gcrm-commentary"],
+      user,
+      env,
+      usage,
+      global: { tokensUsedThisMonth: config.tokensUsedThisMonth, globalMonthlyTokenCap: config.globalMonthlyTokenCap },
+      maxTokens: 2_000,
+    });
 
-  if (!run.ok) {
-    await saveNarrative({ input, promptVersion: COMMENTARY_PROMPT_VERSION, status: "FAILED", editor: "ai:—", problems: [run.reason] });
+  const first = await call(prompt);
+  if (!first.ok) {
+    await saveNarrative({ input, promptVersion: COMMENTARY_PROMPT_VERSION, status: "FAILED", editor: "ai:—", problems: [first.reason] });
   } else {
     // ⚠ 사용량은 성공했을 때 반드시 센다 — 안 세면 월 상한이 걸리지 않는다.
-    await recordAiUsage(run.result.apiKeyEnv, run.result.usage.inputTokens + run.result.usage.outputTokens);
-    const verdict = verifyCommentary(run.result.text, input);
+    await recordAiUsage(first.result.apiKeyEnv, first.result.usage.inputTokens + first.result.usage.outputTokens);
+    let verdict = verifyCommentary(first.result.text, input);
+    let text = first.result.text;
+    let editor = `ai:${first.result.modelId}`;
+    const firstProblems = verdict.ok ? [] : verdict.problems;
+
+    // 한 번만 고쳐 쓴다 — 같은 대조를 다시 지난다(2026-11-14)
+    if (!verdict.ok) {
+      const second = await call(buildRepairPrompt(prompt, first.result.text, verdict.problems));
+      if (second.ok) {
+        await recordAiUsage(second.result.apiKeyEnv, second.result.usage.inputTokens + second.result.usage.outputTokens);
+        verdict = verifyCommentary(second.result.text, input);
+        text = second.result.text;
+        editor = `ai:${second.result.modelId} · 고쳐 씀 1회`;
+      }
+    }
+
     await saveNarrative({
       input,
       promptVersion: COMMENTARY_PROMPT_VERSION,
       status: verdict.ok ? "DRAFT" : "FAILED",
       body: verdict.ok ? verdict.body : undefined,
-      editor: `ai:${run.result.modelId}`,
-      problems: verdict.ok ? [] : verdict.problems,
+      editor,
+      problems: verdict.ok
+        ? firstProblems.length
+          ? [`(첫 시도에서 고친 것) ${firstProblems.join(" · ")}`]
+          : []
+        : [...verdict.problems, ...(firstProblems.length && editor.includes("고쳐 씀") ? [`(첫 시도) ${firstProblems.join(" · ")}`] : []), `AI 원문(앞부분): ${text.slice(0, 1500)}`],
     });
   }
   await recordAdminLog({ actor: admin.email, action: "gcrm.commentary.generate", target: input.runId, summary: `기준일 ${input.asOf}` });
