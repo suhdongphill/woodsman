@@ -138,6 +138,8 @@ export function MacroStrip({ indicators, frame }: { indicators: IndicatorView[];
               {open.indicator.sourceLabel}
             </span>
           </p>
+          {/* ⭐ 전년비 공백 안내(2026-11-15) — 값을 채우지 않고 이유만 말한다 */}
+          {open.gapNote && <p className="mt-1.5 text-[11.5px] leading-relaxed text-amber-300/90">ⓘ {open.gapNote}</p>}
           {/* ⚠ 카탈로그 설명글은 `**강조**`를 품고 있다. 그대로 그리면 화면에 별표가 보인다 —
               2026-08-31에 실제로 그랬다(홈이 유일하게 `Emphasis`를 안 쓰고 있었다). */}
           <p className="mt-2.5 text-[12.5px] leading-relaxed text-muted">

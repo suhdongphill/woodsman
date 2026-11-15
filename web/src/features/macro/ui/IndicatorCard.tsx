@@ -60,6 +60,8 @@ export function IndicatorCard({ view }: { view: IndicatorView }) {
             <span>{indicator.sourceLabel}</span>
             <FreshnessBadge freshness={view.freshness} />
           </p>
+          {/* ⭐ 전년비 공백 안내(2026-11-15) — 값을 채우지 않고 이유만 말한다 */}
+          {view.gapNote && <p className="mt-1 text-[11px] leading-relaxed text-amber-300/90">ⓘ {view.gapNote}</p>}
         </div>
         {indicator.signal ? (
           <SignalPill status={view.status} />

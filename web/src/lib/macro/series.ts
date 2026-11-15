@@ -159,3 +159,22 @@ export function chartBaseline(
 export function tailPoints(points: SeriesPoint[], count: number): SeriesPoint[] {
   return count >= points.length ? points : points.slice(points.length - count);
 }
+
+/**
+ * ⭐ 전년비를 못 낸 최신 달의 이유(2026-11-15 운영자 요청 「CPI 공백 안내」).
+ *
+ * 왜: 원자료에는 2026-10 CPI가 들어왔는데 띠는 「2026-09-01 기준」이었다. **2025-10 CPI가 비어 있어서**(2025 미국 정부 셧다운 —
+ *   FRED CPIAUCSL 2025-10-01 공란, 2026-11-15 확인) 2026-10의 짝이 없다. 9월분을 보이는 것이 정직하지만, 이유를 말하지 않으면
+ *   「10월이 나왔는데 왜 9월인가」로 읽힌다.
+ * ⚠ 값을 채우지 않는다(보간 금지). 이유만 문장으로 돌려준다. 원자료가 최신 변환점보다 새롭지 않으면 null(정상일 때 조용하다).
+ */
+export function yoyGapNote(raw: SeriesPoint[], tf: MacroTransform): string | null {
+  if (tf !== "yoy" || raw.length === 0) return null;
+  const rawLast = latestPoint(raw);
+  const shown = latestPoint(applyTransform(raw, tf));
+  if (!rawLast || (shown && shown.date >= rawLast.date)) return null;
+  const base = yearBefore(rawLast.date);
+  const prev = raw.find((p) => p.date === base);
+  if (prev && prev.value !== 0) return null; // 다른 이유(허용 오차 등) — 지어내지 않는다
+  return `원자료는 ${rawLast.date}분까지 있지만 1년 전(${base}) 값이 원출처에 없어 그 달의 전년비는 계산하지 않았습니다. 값을 채우지 않고 ${shown?.date ?? "이전"}분을 보여 드립니다.`;
+}

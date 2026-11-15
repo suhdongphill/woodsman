@@ -22,6 +22,7 @@ import {
   formatIndicatorValue,
   latestPoint,
   type SeriesPoint,
+  yoyGapNote,
 } from "@/lib/macro/series";
 import { judgeSignal, summarizeRecession, type RecessionSummary, type SignalStatus } from "@/lib/macro/signal";
 import { estimateFedHike, type FedHikeResult } from "@/lib/macro/fedhike";
@@ -67,6 +68,8 @@ export type IndicatorView = {
   freshness: MacroFreshness;
   /** 홈 바람 띠의 지연 꼬리표(일간은 영업일 2일 초과 · 그 밖은 기존 판정). 정상이면 null — `stripDelayLabel` */
   stripDelay: string | null;
+  /** 전년비를 못 낸 최신 달의 이유(작년 같은 달 원자료 공백 등). 정상이면 null — `yoyGapNote` */
+  gapNote: string | null;
 };
 
 /**
@@ -138,6 +141,7 @@ function buildView(
      */
     freshness,
     stripDelay: stripDelayLabel(indicator.freq, freshness, now),
+    gapNote: yoyGapNote(raw ?? [], indicator.transform),
   };
 }
 
