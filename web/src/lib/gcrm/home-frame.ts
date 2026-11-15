@@ -32,11 +32,12 @@ import { coverageText } from "@/lib/public-terms";
  *   (용어 사전 `gcrm-liquidity` · `portal-liquidity-score`).
  * ⚠ 「GCRM 유동성 **축**」이라고 쓰지 않는다 — GCRM에서 축은 조류·바람·파도이고 유동성은 **기둥**이다. 이 카드 머리에
  *   「조류(1~12개월) 축」이 이미 적혀 있어 「유동성 축」은 두 번째 혼동을 만든다.
- * ⚠ 접두어는 유동성에만 붙인다 — 쌍둥이 값이 있는 것은 유동성뿐이다. 여섯 칩 모두에 붙이면 모바일에서 잡음만 는다.
+ * ⚠ 접두어는 쌍둥이 값이 있는 것(유동성 · 엔진 온도, 2026-11-15)에만 붙인다. 여섯 칩 모두에 붙이면 모바일에서 잡음만 는다.
  */
 export const GCRM_CHIPS = [
   { pillar: "liquidity", label: "GCRM 유동성" },
-  { pillar: "engine_heat", label: "엔진 온도" },
+  // ⚠ 「GCRM 엔진 온도」(2026-11-15) — 아래 조류의 포털 「경기 엔진 온도」와 다른 모델이다. 유동성과 같은 이유로 접두어를 붙인다.
+  { pillar: "engine_heat", label: "GCRM 엔진 온도" },
   { pillar: "market_risk", label: "시장위험·지정학" },
   { pillar: "risk_transmission", label: "위험 전이" },
   { pillar: "rate_absorption", label: "금리 감내력" },

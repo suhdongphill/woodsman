@@ -39,6 +39,8 @@ export function levelWord(score: number): string {
 
 export type TideGuide = {
   title: string;
+  /** 어느 모형인가 — 쌍둥이 값이 있는 카드에만(2026-11-15 엔진 온도). 제목 옆 작은 꼬리표 */
+  model?: string;
   /** 어떻게 보나 — 무엇을 재는 숫자인가 */
   how: string;
   /** 어떻게 판단하나 — 조건형 */
@@ -61,6 +63,8 @@ export const TIDE_GUIDES: Partial<Record<ScoreKey, TideGuide>> = {
   },
   engine_heat: {
     title: "경기 엔진 온도",
+    // ⚠ 홈 GCRM 칩 「GCRM 엔진 온도」와 다른 모델(2026-11-15) — 용어집 `portal-engine-heat` · `gcrm-engine`
+    model: "포털 모형",
     how: "근원 물가 · 생산자물가 · 임금 · 단위노동비용 · 에너지 · 기대인플레 · 실질금리를 각자 지난 10년에 대어 합칩니다. 50이 평소입니다.",
     judge:
       "높을수록 경제가 뜨겁습니다. 높은 온도가 이어지면 금리가 내려오기 어려운 쪽으로, 온도가 식으면 금리 부담이 줄어드는 쪽으로 읽습니다.",

@@ -185,6 +185,32 @@ export const GLOSSARY: GlossaryEntry[] = [
     sourceLabel: "Woodsman 정의 (표준 지표가 아닙니다) · GCRM 2.0",
     own: true,
   },
+  /**
+   * ⭐ 두 엔진 온도(2026-11-15 운영자 지시) — 홈에 「GCRM 엔진 온도」(72)와 「경기 엔진 온도」(52)가 함께 나와 같은 지표처럼 읽혔다.
+   * 홈 GCRM 카드의 「엔진 온도 차이 →」가 `gcrm-engine`으로 온다. ⚠ 슬러그는 바꾸지 않는다.
+   * 근거: v1 `lib/scores/config.ts` engine_heat(§30) · `inputs.ts` · `normalize.ts`(10년 · 강건 z) / v2 `lib/gcrm/config/pillars.ts` engine_heat ·
+   *       `config/model.ts`(20년 · 조류 창 M1 .35 · M3 .30 · M6 .20 · M12 .15) · `horizon.ts`.
+   */
+  {
+    term: "경기 엔진 온도",
+    slug: "portal-engine-heat",
+    aka: ["Engine Heat", "포털 엔진 온도"],
+    short: "물가 압력 계기 여덟 개를 각자 지난 10년의 평소에 대어 0~100으로 합친 점수입니다. 50이 평소입니다.",
+    role:
+      "홈 「조류」의 포털 모형 카드입니다. 입력: 근원 소비자물가(Core CPI) 15% · 근원 개인소비지출 물가(Core PCE) 15% · 생산자물가(PPI) 10% · 임금 10% · 단위노동비용(ULC) 10% · 에너지(브렌트·천연가스의 91일 변화) 15% · 기대인플레이션(손익분기 인플레이션 10년·5년) 10% · 실질금리(10년) 5%. 각 지표는 **지난 10년**의 중앙값·흩어짐(강건 z점수)으로 잰 **수준 70%**에 최근 변화(모멘텀) 30%를 더합니다. 매일 06:00 수집 뒤 다시 계산합니다. ⚠ 「GCRM 엔진 온도」와 **다른 모델**입니다.",
+    sourceLabel: "Woodsman 정의 (표준 지표가 아닙니다) · 점수계산명세 v1.0 §30",
+    own: true,
+  },
+  {
+    term: "GCRM 엔진 온도",
+    slug: "gcrm-engine",
+    aka: ["GCRM engine heat pillar"],
+    short: "GCRM 2.0의 엔진 온도 기둥을 조류(1~12개월) 축으로 읽은 점수입니다. 지표를 20년 백분위로 잽니다.",
+    role:
+      "홈 GCRM 카드의 칩입니다. 계기와 가중치는 「경기 엔진 온도」와 같지만(에너지에 WTI 포함 · AI 자원 열기 10%는 자료가 없어 빠짐) ① 기준 기간: **20년 백분위**(percentile) vs 10년 강건 z점수 ② 시간 창: 최근 **1·3·6·12개월 평균**을 과거 같은 길이 구간들과 견준 백분위를 합성(35·30·20·15%) vs 수준 70% + 최근 변화 30% ③ 발행 규칙: 반영률 60% 미만이면 점수를 내지 않음 — 이 셋이 다릅니다. 계산 주기는 둘 다 매일 06:00입니다. 두 숫자가 다르면 **틀린 것이 아니라 다른 질문**입니다(최근 1~12개월 평균이 20년 역사에서 어디쯤인가 vs 지금 값이 10년 평소에서 얼마나 떨어졌고 어느 쪽으로 움직이나).",
+    sourceLabel: "Woodsman 정의 (표준 지표가 아닙니다) · GCRM 2.0",
+    own: true,
+  },
 ];
 
 const BY_TERM = new Map<string, GlossaryEntry>();
