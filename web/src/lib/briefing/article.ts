@@ -20,6 +20,7 @@
  * ## 화면에 HTML을 꽂지 않는다
  * 결과는 **구조(JSON)** 다. 화면은 React로 그린다 — 원고에 섞인 HTML이 그대로 실릴 길이 없다.
  */
+import { realNameResidue } from "@/lib/site-owner";
 
 export type BriefingBlock =
   | { t: "p"; text: string }
@@ -194,6 +195,8 @@ export function parseBriefingMarkdown(md: string, date: string): BriefingArticle
   /** 지금 소제목 상태 — drop이면 다음 소제목까지 버린다 */
   let sub: "keep" | "drop" | "watch" = "keep";
   let fence: Fence | null = null;
+  /** 「## 한 줄」 소제목 다음 문단은 제목이다(2026-11-15) */
+  let headlineNext = false;
   let para: string[] = [];
   let table: string[][] = [];
   let list: string[] = [];
@@ -205,6 +208,11 @@ export function parseBriefingMarkdown(md: string, date: string): BriefingArticle
     if (para.length === 0) return;
     const raw = para.join(" ");
     para = [];
+    if (headlineNext) {
+      headlineNext = false;
+      if (!article.headline) article.headline = journalize(raw);
+      return;
+    }
     if (/^H\d+(·H\d+)*\s*—/.test(raw)) return; // 「H2·H3·H4 — 새 단서가 없습니다」 같은 내부 줄
     const kept = filterParagraph(raw);
     if (!kept) return;
@@ -298,6 +306,12 @@ export function parseBriefingMarkdown(md: string, date: string): BriefingArticle
       continue;
     }
 
+    if (/^#{2,3} /.test(line) && ONELINE_LABEL.test(line.replace(/^#+\s*/, "").trim())) {
+      // 마크다운 원고의 「## 한 줄」·「### 한 줄 요약」 — 다음 문단이 제목이다(울타리 :::oneline과 같은 뜻)
+      flushAll();
+      headlineNext = true;
+      continue;
+    }
     if (/^## /.test(line)) {
       flushAll();
       const title = line.slice(3).trim();
@@ -366,6 +380,9 @@ export function parseBriefingMarkdown(md: string, date: string): BriefingArticle
 // ─── HTML 원고 ────────────────────────────────────────────
 
 /** 기사 칸 이름 — HTML에서는 소제목이 굵은 글씨 문단으로 온다. 이 이름이면 소제목으로 본다. */
+/** 제목 칸 이름표 — 「한 줄」·「한 줄 요약」(2026-11-15) */
+const ONELINE_LABEL = /^한\s?줄(\s?요약)?$/;
+
 const SUB_LABELS =
   /^(핵심|타당성 · .+|데스크 대조|글의 방향|투자 방향|확인할 것|사실 충돌|역할 조정 제안.*|H\d+\(.+\)|H-후보)$/;
 
@@ -415,6 +432,13 @@ export function briefingHtmlToMarkdown(html: string): string {
     const text = textOf(m[2]);
     if (!text) continue;
 
+    // ⭐ 제목 칸 이름표(2026-11-15) — 「한 줄 요약」 문단만 알아보다가, 원고가 「한 줄」 소제목(h2)으로 바뀌자 제목을 놓쳤다.
+    //    소제목이든 문단이든 「한 줄」·「한 줄 요약」이면 다음 문단을 제목으로 쓴다.
+    if (ONELINE_LABEL.test(text)) {
+      closeSummary();
+      pending = "oneline";
+      continue;
+    }
     if (tag === "h2") {
       closeSummary();
       pending = null;
@@ -429,10 +453,6 @@ export function briefingHtmlToMarkdown(html: string): string {
     }
     if (tag === "li") {
       out.push(`- ${text}`);
-      continue;
-    }
-    if (text === "한 줄 요약") {
-      pending = "oneline";
       continue;
     }
     if (text === "3줄 요약") {
@@ -510,6 +530,9 @@ export function articleProblems(article: BriefingArticle): string[] {
   if (article.sections.length === 0) problems.push("본문 절을 하나도 찾지 못했습니다.");
   const residue = snsResidue(article);
   if (residue.length) problems.push(`SNS 흔적이 남았습니다: ${residue.slice(0, 3).join(" / ")}`);
+  // ⚠ 운영자 실명(2026-11-15) — 공개 화면은 필명만. 실명은 /privacy 한 곳(`lib/site-owner`).
+  const names = realNameResidue(articleText(article));
+  if (names.length) problems.push(`운영자 실명이 남았습니다(공개 화면은 필명 Woodsman만): ${names.slice(0, 3).join(" / ")}`);
   return problems;
 }
 

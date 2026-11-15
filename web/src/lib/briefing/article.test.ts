@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { OWNER_REAL_NAME } from "@/lib/site-owner";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -143,5 +144,30 @@ describe("관문", () => {
   it("파일 이름에서 날짜", () => {
     expect(dateFromFileName("2026-10-31.md")).toBe("2026-10-31");
     expect(dateFromFileName("brief.md")).toBeNull();
+  });
+});
+
+describe("2026-11-15 원고 모양 — 「한 줄」 소제목 · 운영자 실명", () => {
+  const html = `<p>주말 점검 · 2026-11-15</p>
+<h2>한 줄</h2><p>주말 유가는 금요일 정산가 그대로이고, 새 변수는 해상 피격 주장입니다.</p>
+<h2>1. 유가</h2><p>브렌트 1월물은 금요일 정산가 95.84달러입니다.</p>`;
+
+  it("⭐ 「한 줄」 소제목(h2) 다음 문단을 제목으로 쓴다", () => {
+    const a = parseBriefingMarkdown(briefingHtmlToMarkdown(html), "2026-11-15");
+    expect(a.headline).toContain("금요일 정산가");
+    expect(a.sections.map((s) => s.title)).not.toContain("한 줄");
+    expect(articleProblems(a)).toEqual([]);
+  });
+
+  it("마크다운의 「## 한 줄 요약」도 같다", () => {
+    const a = parseBriefingMarkdown("## 한 줄 요약\n\n제목 문장입니다.\n\n## 1. 본문\n\n본문 문장입니다.\n", "2026-11-15");
+    expect(a.headline).toBe("제목 문장입니다.");
+    expect(a.sections).toHaveLength(1);
+  });
+
+  it("⚠ 운영자 실명이 남으면 저장하지 않는다(공개 화면은 필명만)", () => {
+    const withName = html.replace("<h2>1. 유가</h2>", `<h2>1. 유가</h2><p>${OWNER_REAL_NAME.slice(1)}님 질문에 답한 자료입니다.</p>`);
+    const a = parseBriefingMarkdown(briefingHtmlToMarkdown(withName), "2026-11-15");
+    expect(articleProblems(a).join(" ")).toContain("운영자 실명");
   });
 });

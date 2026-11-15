@@ -1,3 +1,4 @@
+import { OWNER_REAL_NAME } from "@/lib/site-owner";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PolicyList, PolicyPage, PolicySection } from "@/components/layout/PolicyPage";
@@ -134,7 +135,7 @@ export default async function PrivacyPage() {
       <PolicySection title="7. 개인정보 보호 책임자">
         <PolicyList
           items={[
-            "책임자 · 서동필 (Woodsman 운영자)",
+            `책임자 · ${OWNER_REAL_NAME} (Woodsman 운영자)`,
             <>
               연락처 · <span className="text-gold-400">{contactEmail}</span>
             </>,
