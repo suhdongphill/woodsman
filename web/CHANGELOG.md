@@ -30,6 +30,7 @@
 기록: /admin/releases rel_20261115_coverage_term
 
 ### Always Use HTTPS (운영자가 대시보드에서 켬)
+- Search Console 사이트맵(운영자가 화면을 붙여 줌 · 11/15): `https://…/sitemap.xml` 제출 2026-11-01 · 마지막 읽음 11-11 · **성공 · 발견 41**(지금 사이트맵은 44 — 다음 읽기에서 늘 것). 옛 `http://…/sitemap.xml`(2013 제출 · 2015 읽음 · 가져올 수 없음)은 아직 남아 있다 → 삭제 권고.
 - 확인 10:24Z: `curl -I http://portfolio-solutions.net/` → **301** · `/macro?x=1` → `Location: https://portfolio-solutions.net/macro?x=1`(경로·쿼리 유지). 11/1~11/14엔 200이었다.
 
 ---
