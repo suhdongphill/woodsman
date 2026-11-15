@@ -18,6 +18,9 @@ on:
     # 20:30 UTC = 05:30 KST — 재무부. ⭐ 워커의 06:00 KST 전체 수집 **직전**이라,
     # 그 수집 뒤 점수 계산에 재무부 값이 들어간다.
     - cron: "30 20 * * MON-FRI"
+    # 23:30 UTC = 08:30 KST — ⭐ 재무부 수익률 곡선 최신분(2026-11-15). 재무부는 미국 장 마감 뒤에 그날 곡선을 고시해
+    # 05:30 KST 실행 때는 전날까지만 있다. 이 실행이 그날 10년물을 FRED보다 하루 먼저 띠에 올린다(MSPD·입찰은 같은 값이라 다시 써도 무해).
+    - cron: "30 23 * * MON-FRI"
   workflow_dispatch:
     inputs:
       job:
@@ -38,6 +41,7 @@ jobs:
     # 20:00 스케줄에는 돌지 않는다(그때는 금리 허브만).
     if: >-
       github.event.schedule == '30 20 * * MON-FRI' ||
+      github.event.schedule == '30 23 * * MON-FRI' ||
       (github.event_name == 'workflow_dispatch' && contains(fromJSON('["both","treasury"]'), inputs.job))
     defaults:
       run:

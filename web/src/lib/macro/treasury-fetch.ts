@@ -38,9 +38,9 @@ export const TREASURY_SOURCE_IDS = [
   "auction10y:high_yield",
 ] as const;
 
-async function fetchWithTimeout(url: string): Promise<Response> {
+async function fetchWithTimeout(url: string, timeoutMs = FETCH_TIMEOUT_MS): Promise<Response> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(url, {
       signal: controller.signal,
@@ -185,4 +185,56 @@ export async function fetchTreasury(sourceId: string, from: string): Promise<Ser
     return series;
   }
   throw new Error(`재무부 소스 ID를 모릅니다: ${sourceId}`);
+}
+
+/**
+ * ⭐ 재무부 「Daily Treasury Par Yield Curve Rates」 — 최신 날짜를 FRED보다 먼저 받는다(2026-11-15 외부 지시문 ⑤).
+ *
+ * 왜: 11/15에 재무부는 11/13 10년물(5.15%)을 고시했는데 FRED DGS10은 11/12(5.10%)에 머물렀다 — 수집 실패가 아니라 FRED가 늦다.
+ * ⚠ **지표 정의(`ust10y` = FRED DGS10)는 바꾸지 않는다** — GCRM 설정 검사가 레지스트리 출처를 대조하고(`gcrm/config/validate.ts`),
+ *   바꾸면 GCRM 설정 해시가 달라진다. 대신 `treasury-daily.mjs`가 **FRED에 아직 없는 날짜만** 이 값으로 먼저 채운다.
+ *   DGS10은 같은 재무부 곡선을 옮긴 값이라 숫자가 같고, FRED가 그 날짜를 받으면 같은 값으로 덮인다(다르면 L1에 수정으로 남는다).
+ * ⚠ Worker에서는 treasury.gov가 막혀(525) GitHub Actions에서만 부른다.
+ */
+const YIELD_CURVE_CSV = (year: number) =>
+  `https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/${year}/all?type=daily_treasury_yield_curve&field_tdr_date_value=${year}&page&_format=csv`;
+
+/** CSV(「Date,"1 Mo",…,"10 Yr",…」 · 날짜 MM/DD/YYYY · 최신이 위) → 오래된 순 점. 빈 칸은 건너뛴다(채우지 않는다). */
+export function parseYieldCurveCsv(csv: string, column: string): SeriesPoint[] {
+  const lines = csv.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const head = lines[0].split(",").map((h) => h.replace(/"/g, "").trim());
+  const col = head.indexOf(column);
+  if (col < 0) throw new Error(`재무부 수익률 곡선에 「${column}」 열이 없습니다(열: ${head.join(", ")})`);
+  const out: SeriesPoint[] = [];
+  for (const line of lines.slice(1)) {
+    const cells = line.split(",");
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec((cells[0] ?? "").trim());
+    const v = Number((cells[col] ?? "").trim());
+    if (!m || !(cells[col] ?? "").trim() || !Number.isFinite(v)) continue;
+    out.push({ date: `${m[3]}-${m[1]}-${m[2]}`, value: v });
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** 올해(1월 초면 작년까지) 곡선에서 한 만기 열. */
+export async function fetchTreasuryParYield(column: string, now = new Date()): Promise<SeriesPoint[]> {
+  const year = now.getUTCFullYear();
+  const years = now.getUTCMonth() === 0 && now.getUTCDate() <= 10 ? [year - 1, year] : [year];
+  const out: SeriesPoint[] = [];
+  for (const y of years) {
+    // ⚠ 1년치 CSV는 느리다(20초 제한에서 끊겼다 · 2026-11-15 드라이런) — 60초 · 한 번 더
+    let res: Response | undefined;
+    for (let attempt = 1; attempt <= 2 && !res?.ok; attempt++) {
+      try {
+        res = await fetchWithTimeout(YIELD_CURVE_CSV(y), 60_000);
+      } catch (error) {
+        console.error(`[treasury] 수익률 곡선 ${y} 받기 실패 (${attempt}회)`, error);
+        if (attempt === 2) throw error;
+      }
+    }
+    if (!res || !res.ok) throw new Error(`재무부 수익률 곡선 ${y} 응답 ${res?.status ?? "없음"}`);
+    out.push(...parseYieldCurveCsv(await res.text(), column));
+  }
+  return out;
 }

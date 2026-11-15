@@ -27,7 +27,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const { MACRO_INDICATORS } = await import("../src/lib/macro/catalog.ts");
-const { fetchTreasury } = await import("../src/lib/macro/treasury-fetch.ts");
+const { fetchTreasury, fetchTreasuryParYield } = await import("../src/lib/macro/treasury-fetch.ts");
 const { diffObservations } = await import("../src/lib/macro/vintage.ts");
 
 const args = new Set(process.argv.slice(2));
@@ -224,6 +224,41 @@ for (const indicator of indicators) {
     console.error(`  ✗ ${label} — ${message}`);
     failCount += 1;
     detail.push({ key: indicator.key, ok: false, error: message });
+  }
+}
+
+/**
+ * ⭐ FRED보다 먼저 — 재무부 「Daily Treasury Par Yield Curve Rates」로 **D1에 아직 없는 최신 날짜만** 채운다(2026-11-15 외부 지시문 ⑤).
+ * 왜: 11/15에 재무부는 11/13 10년물을 고시했는데 FRED DGS10은 11/12에 머물러 홈 띠가 하루 늦었다.
+ * ⚠ 지표 정의(`ust10y` = FRED DGS10)는 그대로다 — GCRM 설정 해시를 건드리지 않으려고. FRED가 그 날짜를 받으면 같은 값으로 덮인다
+ *   (DGS10은 같은 재무부 곡선이다 · 다르면 L1에 수정으로 남는다). 과거 날짜는 건드리지 않는다.
+ */
+const EARLY_ARRIVALS = [{ key: "ust10y", column: "10 Yr" }];
+for (const e of EARLY_ARRIVALS) {
+  const label = `${e.key}(재무부 곡선 ${e.column} · 최신분)`;
+  try {
+    const points = await fetchTreasuryParYield(e.column);
+    const latestRaw = dryRun ? undefined : rowsOf(d1Query(`SELECT MAX(date) AS latest FROM MacroPoint WHERE seriesKey = ${sqlStr(e.key)}`))[0]?.latest;
+    const latest = latestRaw ? String(latestRaw).slice(0, 10) : undefined;
+    const newer = points.filter((p) => !latest || p.date > latest);
+    console.log(`  ✓ ${label} — 재무부 최신 ${points.at(-1)?.date ?? "없음"} · D1 최신 ${latest ?? "(dry-run)"} · 새로 쓸 날짜 ${newer.length}`);
+    okCount += 1;
+    if (dryRun) {
+      detail.push({ key: label, ok: true, points: points.length, latestTreasury: points.at(-1)?.date, dryRun: true });
+      continue;
+    }
+    if (newer.length) {
+      const vintageDate = new Date().toISOString().slice(0, 10);
+      recordObservations(e.key, "TREASURY", newer, vintageDate);
+      upsertPoints(e.key, "TREASURY", newer);
+      addedPoints += newer.length;
+    }
+    detail.push({ key: label, ok: true, points: newer.length, latestTreasury: points.at(-1)?.date, latestBefore: latest });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`  ✗ ${label} — ${message}`);
+    failCount += 1;
+    detail.push({ key: label, ok: false, error: message });
   }
 }
 
