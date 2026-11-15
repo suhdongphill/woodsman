@@ -108,13 +108,13 @@ export function CapitalRegimeFrame({ frame }: { frame: RegimeFrame }) {
            툴팁이 아니라 **늘 보이는 한 줄**이다: 터치 화면엔 hover가 없고, 숨긴 설명은 찾기 어렵다(접근성은 설계로 푼다).
       */}
       <p className="mt-2 text-[11px] leading-relaxed text-ink-3 [word-break:keep-all]">
-        GCRM 유동성 · GCRM 엔진 온도는 아래 조류의 「포털 유동성 점수」 · 「경기 엔진 온도」와 다른 모델입니다.{" "}
+        GCRM 유동성 · GCRM 물가 압력은 아래 조류의 「포털 유동성 점수」 · 「포털 물가 압력 점수」와 다른 모델입니다.{" "}
         <Link href="/macro/glossary#gcrm-liquidity" className="text-gold-500 underline-offset-2 hover:underline">
           유동성 차이 →
         </Link>{" "}
         {/* ⭐ 엔진 온도도 같은 방식(2026-11-15 운영자 지시) — 72와 52가 같은 지표의 두 값처럼 읽혔다 */}
         <Link href="/macro/glossary#gcrm-engine" className="text-gold-500 underline-offset-2 hover:underline">
-          엔진 온도 차이 →
+          물가 압력 차이 →
         </Link>
       </p>
 

@@ -26,7 +26,7 @@ export const REGIME_CHIP_KEYS = [
 
 export const REGIME_CHIP_LABEL: Record<(typeof REGIME_CHIP_KEYS)[number], string> = {
   global_liquidity: "유동성",
-  engine_heat: "엔진 온도",
+  engine_heat: "물가 압력",
   market_risk_geopolitical: "시장위험·지정학",
   risk_transmission: "위험 전달",
   rate_absorption: "금리 흡수력",

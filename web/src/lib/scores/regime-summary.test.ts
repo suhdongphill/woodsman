@@ -67,7 +67,7 @@ describe("한 줄 요약", () => {
   it("발행된 점수만 숫자로 말한다", () => {
     const s = frame().summary;
     expect(s).toContain("유동성 46");
-    expect(s).toContain("엔진 온도 53");
+    expect(s).toContain("물가 압력 53");
   });
 
   it("⭐ 미발행 점수의 숫자를 문장에 넣지 않는다 — 이름만 「준비 중」으로", () => {
@@ -86,7 +86,7 @@ describe("한 줄 요약", () => {
       ["engine_heat", reading("engine_heat", 52.9, "OK", 90, "up")],
     ]);
     const s = buildRegimeFrame(m).summary;
-    expect(s).toContain("엔진 온도 53(평소 수준 · 4주 오르는 쪽)");
+    expect(s).toContain("물가 압력 53(평소 수준 · 4주 오르는 쪽)");
     expect(s).toContain("유동성 46(평소 수준)");
     expect(s).not.toContain("유동성 46(평소 수준 · 4주");
   });

@@ -95,6 +95,27 @@ try {
   if (!h?.n) warn("포트폴리오", "운영 포트폴리오(ModelHolding bk_ 행)가 0행 — 볼트 잔고가 사이트에 안 실렸다(apply-portfolio.ps1)");
   else ok("포트폴리오", `bk_ 행 ${h.n} · 공개 ${h.pub ?? 0} · 마지막 갱신 ${h.u}`);
 
+  /**
+   * ⭐ ISM 제조업 PMI 매달 리마인드(2026-11-15 운영자 요청). ISM은 FRED가 배포하지 않아 **수동 입력**이다 —
+   *   9/5 뒤로 아무도 안 넣어 준칙 입력이 8/1에 멈춰 있었다(홈 「입력 지연」 배지 · CHANGELOG 11/15).
+   *   ISM은 매달 **첫 영업일**(미 동부 10:00)에 전달 값을 낸다. 첫 영업일 + 2일(한국시각)이 지나도 전달 값이 없으면 알린다.
+   *   공휴일은 세지 않는다(1/1 같은 날은 2일 여유가 덮는다).
+   */
+  {
+    const [ism] = d1("SELECT strftime('%Y-%m-%d', MAX(date)) d FROM MacroPoint WHERE seriesKey='ism_mfg'");
+    const kst = new Date(Date.now() + 9 * 3_600_000);
+    const y = kst.getUTCFullYear();
+    const mo = kst.getUTCMonth();
+    let first = new Date(Date.UTC(y, mo, 1));
+    while (first.getUTCDay() === 0 || first.getUTCDay() === 6) first = new Date(first.getTime() + 86_400_000);
+    const due = new Date(first.getTime() + 2 * 86_400_000);
+    const prev = new Date(Date.UTC(y, mo - 1, 1)).toISOString().slice(0, 10);
+    const latest = ism[0]?.d;
+    if (kst >= due && (!latest || latest < prev))
+      warn("ISM", `ISM 제조업 PMI ${prev.slice(0, 7)} 값이 아직 없다(마지막 ${latest ?? "없음"}) — 발표(${first.toISOString().slice(0, 10)}) 뒤 입력 필요 · 「ISM 입력해 줘」`);
+    else ok("ISM", `마지막 ${latest} · 다음 발표는 다음 달 첫 영업일`);
+  }
+
   // 볼트와 대조
   const leadersFile = `${VAULT}/_data/leaders.json`;
   if (existsSync(leadersFile)) {

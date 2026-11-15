@@ -1,6 +1,6 @@
 ---
 name: system-check
-description: Woodsman 시스템을 **자동으로** 점검하고 어색한 것만 알린다 — 공개 화면 응답 · 마지막 배포 · 06:00 예약 수집(실패한 지표까지) · GCRM run · 블로그 수집 · 볼트(Investor)↔운영 대조(주도주 · 증권사 잔고 · 적재 SQL 신선도) · push 안 한 커밋. `web/scripts/system-check.mjs`를 돌린다(읽기만). 사용자가 "/system-check", "시스템 점검", "상태 점검", "잘 돌고 있나"라고 할 때, 그리고 **세션을 시작할 때(이어서 할 일을 볼 때) · main에 push한 배포가 성공한 뒤 · 작업을 끝내기 전에 자동으로** 사용한다.
+description: Woodsman 시스템을 **자동으로** 점검하고 어색한 것만 알린다 — 공개 화면 응답 · 마지막 배포 · 06:00 예약 수집(실패한 지표까지) · GCRM run · 블로그 수집 · ISM 제조업 PMI 매달 입력(첫 영업일 + 2일) · 볼트(Investor)↔운영 대조(주도주 · 증권사 잔고 · 적재 SQL 신선도) · push 안 한 커밋. `web/scripts/system-check.mjs`를 돌린다(읽기만). 사용자가 "/system-check", "시스템 점검", "상태 점검", "잘 돌고 있나"라고 할 때, 그리고 **세션을 시작할 때(이어서 할 일을 볼 때) · main에 push한 배포가 성공한 뒤 · 작업을 끝내기 전에 자동으로** 사용한다.
 ---
 
 # system-check — 묻기 전에 점검하고, 어색한 것만 말한다

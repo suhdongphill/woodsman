@@ -19,3 +19,17 @@ export const COVERAGE_HINT = "설계한 지표 가운데 지금 자료가 들어
 export function coverageText(pct: number): string {
   return `${COVERAGE_LABEL} ${Math.round(pct)}%`;
 }
+
+/**
+ * ⭐ 공개 화면의 기둥 이름(2026-11-15 운영자 승인 「GCRM 물가 압력」·「포털 물가 압력 점수」).
+ * 「엔진 온도」라는 비유보다 무엇을 재는지(근원 물가·임금·에너지·기대인플레) 바로 보이게.
+ * ⚠ GCRM 설정의 `nameKo`(`gcrm/config/pillars.ts`)는 **바꾸지 않는다** — 설정 해시에 들어가 축 이력·run 연결이 흔들린다.
+ *   공개 문장을 만드는 곳(홈 칩 · AI 해설 사실표)이 이 표로 바꿔 끼운다.
+ */
+export const PUBLIC_PILLAR_NAMES: Record<string, string> = {
+  engine_heat: "물가 압력",
+};
+
+export function publicPillarName(code: string, nameKo: string): string {
+  return PUBLIC_PILLAR_NAMES[code] ?? nameKo;
+}

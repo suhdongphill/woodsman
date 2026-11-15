@@ -36,8 +36,8 @@ import { coverageText } from "@/lib/public-terms";
  */
 export const GCRM_CHIPS = [
   { pillar: "liquidity", label: "GCRM 유동성" },
-  // ⚠ 「GCRM 엔진 온도」(2026-11-15) — 아래 조류의 포털 「경기 엔진 온도」와 다른 모델이다. 유동성과 같은 이유로 접두어를 붙인다.
-  { pillar: "engine_heat", label: "GCRM 엔진 온도" },
+  // ⚠ 「GCRM 물가 압력」(2026-11-15 운영자 승인 · 옛 「엔진 온도」) — 아래 조류의 「포털 물가 압력 점수」와 다른 모델. 유동성과 같은 이유로 접두어.
+  { pillar: "engine_heat", label: "GCRM 물가 압력" },
   { pillar: "market_risk", label: "시장위험·지정학" },
   { pillar: "risk_transmission", label: "위험 전이" },
   { pillar: "rate_absorption", label: "금리 감내력" },

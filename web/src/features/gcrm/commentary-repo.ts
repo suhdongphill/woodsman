@@ -3,6 +3,7 @@
  * ⚠ `GcrmNarrative`는 추가만 한다. 승인·반려는 상태 칸만 바꾼다(본문은 고치지 않는다).
  * ⚠ 운영 GCRM 표(`GcrmRun`·축·기둥 점수)는 **읽기만** 한다.
  */
+import { publicPillarName } from "@/lib/public-terms";
 import { queryAll, queryOne, execute } from "@/lib/d1";
 import { GCRM_PILLARS } from "@/lib/gcrm/config/pillars";
 import { GCRM_CHIPS, HOME_AXIS } from "@/lib/gcrm/home-frame";
@@ -41,7 +42,8 @@ export async function loadCommentaryInput(): Promise<CommentaryInput | undefined
   const fourWeeks = new Date(Date.parse(`${now.asOf}T00:00:00Z`) - 28 * 86_400_000).toISOString().slice(0, 10);
   const [prevRun, w4Run, research] = await Promise.all([runBefore(now.asOf), runOnOrBefore(fourWeeks), loadResearch()]);
   const [prevScores, w4Scores] = await Promise.all([tideScores(prevRun), tideScores(w4Run)]);
-  const nameKo = new Map(GCRM_PILLARS.map((p) => [p.code, p.nameKo]));
+  // ⚠ 공개 이름으로(2026-11-15 「물가 압력」) — 설정의 nameKo는 해시 때문에 그대로 둔다(`lib/public-terms`)
+  const nameKo = new Map(GCRM_PILLARS.map((p) => [p.code, publicPillarName(p.code, p.nameKo)]));
   // 방향(극성)은 설정 한 곳에서 — 프롬프트 내장표보다 우선한다(v2 1순위)
   const polarity = new Map(GCRM_PILLARS.map((p) => [p.code, p.polarity]));
 

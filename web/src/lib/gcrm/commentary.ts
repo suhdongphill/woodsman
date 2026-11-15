@@ -24,7 +24,8 @@
 import { DIRECTION } from "./config/model";
 import { levelWord } from "../scores/tide";
 
-export const COMMENTARY_PROMPT_VERSION = "gcrm-commentary-v2";
+/** v3(2026-11-15): 기둥 공개 이름 「엔진 온도」 → 「물가 압력」(사실표·용어 설명) */
+export const COMMENTARY_PROMPT_VERSION = "gcrm-commentary-v3";
 
 export type CompareValue =
   | { kind: "value"; asOf: string; score: number }
@@ -253,7 +254,7 @@ WoodsMan 포털에 「글로벌 자본 레짐 모니터」의 오늘 결과를 �
 기둥·발행·커버리지·INSUFFICIENT라는 말은 쓰지 않습니다(반영률 · 「자료가 모자라 점수를 내지 않았습니다」).
 레짐 확정 아님 → 「아직 국면이 바뀌었다고 보지 않습니다」.
 설명은 글 전체에서 최대 두 항목, 첫 등장에만: 위험 전이 — 한 곳의 충격이 다른 시장으로 옮겨붙는 정도 /
-금리 감내력 — 지금 금리를 경제와 기업이 버틸 수 있는지 / 엔진 온도 — 경기가 과열 쪽인지 식는 쪽인지 /
+금리 감내력 — 지금 금리를 경제와 기업이 버틸 수 있는지 / 물가 압력 — 근원 물가·임금·에너지 압력이 뜨거운 쪽인지 식는 쪽인지 /
 달러 네트워크 지배력 — 달러가 세계 자금에서 갖는 영향력. 목록에 없는 항목은 이름만.
 
 == 8. 출력 — JSON 하나 ==

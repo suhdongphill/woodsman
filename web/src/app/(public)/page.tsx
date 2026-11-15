@@ -77,7 +77,7 @@ export const metadata: Metadata = {
 /** ⚠ 정적 생성 금지 — 기록을 올려도 홈이 안 바뀐다. */
 export const dynamic = "force-dynamic";
 
-/** 홈 「조류」가 읽는 점수 — GLS · 그 하위 계기 · 경기 엔진 온도 */
+/** 홈 「조류」가 읽는 점수 — GLS · 그 하위 계기 · 포털 물가 압력 점수 */
 /**
  * 홈이 한 번에 읽어 오는 점수 키.
  * ⚠ 조류 카드와 Global Capital Regime 프레임이 **같은 행**을 나눠 쓴다(개발요구서 G1) —

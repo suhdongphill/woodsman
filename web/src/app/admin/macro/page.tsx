@@ -239,7 +239,7 @@ export default async function AdminMacroPage() {
             </p>
           ))}
           <p className="text-muted">
-            수집이 끝나면 점수(유동성 · 경기 엔진 온도 등)도 자동으로 다시 계산됩니다 — 「자료 가져오기」를 눌러도 같습니다.
+            수집이 끝나면 점수(유동성 · 포털 물가 압력 점수 등)도 자동으로 다시 계산됩니다 — 「자료 가져오기」를 눌러도 같습니다.
           </p>
           <p className="text-muted">
             시크릿:{" "}
