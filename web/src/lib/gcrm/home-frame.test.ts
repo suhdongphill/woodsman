@@ -32,9 +32,9 @@ describe("홈 GCRM 줄 (v2)", () => {
     expect(f.regimeLabel).toBe("판정 보류");
   });
 
-  it("⚠ 자료 부족은 「준비 중」이 아니라 이유와 커버리지로 적는다", () => {
+  it("⚠ 자료 부족은 「준비 중」이 아니라 이유와 반영률로 적는다", () => {
     const f = buildGcrmFrame(now);
-    expect(f.chips[4].pendingReason).toBe("자료 부족 · 커버리지 40%");
+    expect(f.chips[4].pendingReason).toBe("자료 부족 · 반영률 40%");
     expect(f.summary).toContain("금리 감내력·달러 네트워크는 자료 부족으로 발행하지 않음");
     expect(f.summary).not.toContain("준비 중");
   });

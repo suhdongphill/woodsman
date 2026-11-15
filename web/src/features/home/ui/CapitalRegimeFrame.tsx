@@ -3,6 +3,7 @@ import type { RegimeFrame } from "@/lib/scores/regime-summary";
 import { MODEL_VERSION } from "@/lib/scores/config";
 import type { TideDirection } from "@/lib/scores/tide";
 import { asOfStamp } from "@/lib/format";
+import { COVERAGE_HINT, coverageText } from "@/lib/public-terms";
 
 /**
  * 홈 「지금 부는 바람」 타이틀 **바로 아래**의 Global Capital Regime 프레임 (개발요구서 G1).
@@ -88,8 +89,10 @@ export function CapitalRegimeFrame({ frame }: { frame: RegimeFrame }) {
                     {ARROW[chip.dir4]} {DIRECTION_WORD[chip.dir4]}
                   </span>
                   {chip.coverage !== undefined && (
-                    // ⚠ 숫자만 두면 무엇의 %인지 모른다(「비교 없음 71%」) — 조류 카드와 같은 말 「커버리지」를 붙인다
-                    <span className="ml-1 tabular-nums text-ink-3">커버리지 {Math.round(chip.coverage)}%</span>
+                    // ⚠ 숫자만 두면 무엇의 %인지 모른다(「비교 없음 71%」) — 조류 카드·AI 해설과 같은 말 「반영률」(lib/public-terms)
+                    <span className="ml-1 tabular-nums text-ink-3" title={COVERAGE_HINT}>
+                      {coverageText(chip.coverage)}
+                    </span>
                   )}
                   {/* 🟡는 색이 아니라 글자로도 말한다 */}
                   {chip.lowConfidence && <span className="ml-1 text-gold-500">🟡 낮은 신뢰</span>}

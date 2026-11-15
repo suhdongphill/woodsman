@@ -10,6 +10,25 @@
 
 ---
 
+## 2026-11-15 — 공개 화면 「커버리지」 → 「반영률」 · Always Use HTTPS 켜짐
+
+### 용어(`lib/public-terms` 새 순수 모듈)
+- **왜**: 홈은 「커버리지 71%」, 조류 AI 해설은 같은 숫자를 「반영률」이라 불렀다(`gcrm/commentary.ts` 프롬프트가 「커버리지」를 내부 용어로 금지). 같은 숫자가 독자에게 두 이름으로 보였다.
+- 대조(운영 홈 HTML · 11/15): 출처 4곳 — GCRM 칩(`CapitalRegimeFrame`) · 칩 자료 부족 사유(`gcrm/home-frame`) · 조류 카드 머리줄(`TideSection`) · **유동성 대화창 빠짐 사유**(`scores/engine` missingReason — 계획 때 못 보고 대조에서 찾음). /macro · /leaders · /portfolio · /insights에는 0.
+- 문구는 `COVERAGE_LABEL`·`coverageText()` 한 곳 · 숫자에 마우스를 올리면 뜻(`COVERAGE_HINT`: 설계한 지표 가운데 자료가 들어와 점수에 반영된 비율, 가중치 기준).
+- ⚠ 테스트(`public-terms.test.ts`)가 위 5개 파일의 코드(주석 제외)에 「커버리지」가 다시 들어오면 깨진다.
+- 그대로 둔 것: 변수명 `coverage` · 관리자 화면 · 설계 문서 · GCRM `regime.blocked`(관리자). 유동성 대화창 사유의 「발행 기준 미달」, 홈 요약의 「발행하지 않음」도 내부 말이다 → 다음 후보(이번엔 한 가지만).
+- 설계서 `docs/설계_홈_섹션계획.md` v1.1.
+
+### 배포 전 가설
+- 운영 홈 HTML에 「커버리지」 0 · 「반영률」 있음(칩 · 조류 카드). 유동성 대화창 사유는 **저장된 점수 상세를 읽으면 다음 06:00 계산 뒤에** 바뀐다(확인 대상).
+- 클릭 지표로는 효과를 잴 수 없는 변경이다 — 결과는 「운영 화면 확인」으로만 적는다.
+
+### Always Use HTTPS (운영자가 대시보드에서 켬)
+- 확인 10:24Z: `curl -I http://portfolio-solutions.net/` → **301** · `/macro?x=1` → `Location: https://portfolio-solutions.net/macro?x=1`(경로·쿼리 유지). 11/1~11/14엔 200이었다.
+
+---
+
 ## 2026-11-15 — 첫 인사이트 오타 정정 · 연구 볼트(D:\Woodsman\Research) 신설
 
 ### 인사이트 오타(`/insights/insight-2026-11-14` 「Woodsman의 시각」 운영자 문단)

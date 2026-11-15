@@ -4,12 +4,12 @@
  * ## 왜 바꿨나
  * 이 줄은 v1 점수 저장소(`ScoreValue`)를 읽고 있었다. v1에는 위험 전달·금리 흡수력·달러 역설의 **정의가 없어**
  * 세 칸이 9/16부터 「준비 중」으로 떠 있었다. 그런데 매일 06:00 도는 GCRM v2(9/20 운영 배포)는 이 기둥들을 이미 계산한다 —
- * 위험 전이는 발행(OK), 금리 감내력·달러 네트워크는 **자료 부족**(커버리지 40% · 발행선 60%).
+ * 위험 전이는 발행(OK), 금리 감내력·달러 네트워크는 **자료 부족**(반영률 40% · 발행선 60%).
  * 운영자가 「v2로 통일」을 골랐다(v1 유지 + 빈칸만 v2 섞기 안 대신).
  *
  * ## ⚠ 이 파일이 지키는 것
  * - **조류(tide, 1~12개월) 축**의 기둥 값을 쓴다 — GCRM 종합 가중이 가장 큰 축(core 0.5, `config/model.ts`).
- * - `INSUFFICIENT`는 0이 아니다. 「자료 부족 · 커버리지 N%」로 **이유를 적는다**(「준비 중」은 이유가 아니다).
+ * - `INSUFFICIENT`는 0이 아니다. 「자료 부족 · 반영률 N%」(11/15 「커버리지」에서 바꿈 · `lib/public-terms`)로 **이유를 적는다**(「준비 중」은 이유가 아니다).
  * - 방향은 약 4주 전 run과 비교하되 불감대(`DIRECTION.deadband.tide`) 안이면 보합. 비교할 run이 없으면 「비교 없음」.
  * - 매수·매도 표현 없음 — 상태 서술까지(regime-summary와 같은 규범).
  * - ⚠ 바로 아래 조류 카드(v1)와 숫자가 다를 수 있다 — 운영자가 알고 고른 것이다(다음 조각에서 조류 카드도 v2로 옮긴다).
@@ -22,6 +22,7 @@ import {
   type RegimeChip,
   type RegimeFrame,
 } from "@/lib/scores/regime-summary";
+import { coverageText } from "@/lib/public-terms";
 
 /**
  * 홈 칩 — 순서가 화면 순서다. 이름은 v2 기둥 이름을 줄인 것(v1의 「위험 전달」·「금리 흡수력」·「달러 역설」 대신).
@@ -42,7 +43,7 @@ export const GCRM_CHIPS = [
   { pillar: "dollar_network", label: "달러 네트워크" },
 ] as const;
 
-/** 🟡 낮은 신뢰 — v1과 같은 선(커버리지 60~80%, `lib/scores/composite.ts`). 60% 아래는 GCRM이 발행하지 않는다. */
+/** 🟡 낮은 신뢰 — v1과 같은 선(반영률 60~80%, `lib/scores/composite.ts`). 60% 아래는 GCRM이 발행하지 않는다. */
 export const LOW_CONFIDENCE_BELOW = 0.8;
 
 export const HOME_AXIS = "tide" as const;
@@ -97,7 +98,7 @@ export function buildGcrmFrame(current: GcrmSnapshot, earlier?: GcrmSnapshot): R
       coverage: ok ? cov : undefined,
       lowConfidence: ok && row!.coverage < LOW_CONFIDENCE_BELOW,
       dir4: ok ? direction(row!.scoreRaw as number, pick(compare, pillar)?.scoreRaw) : "unknown",
-      pendingReason: row ? `자료 부족 · 커버리지 ${cov}%` : "아직 계산 전",
+      pendingReason: row ? `자료 부족 · ${coverageText(cov as number)}` : "아직 계산 전",
     };
   });
 

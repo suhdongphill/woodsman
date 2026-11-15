@@ -20,6 +20,7 @@ import { levelScore } from "./normalize";
 import { momentumScore } from "./momentum";
 import { SCORE_INPUTS, type ComponentSource } from "./inputs";
 import { SCORE_MEASURES, type IndicatorMeasure } from "./measures";
+import { coverageText } from "../public-terms";
 
 export type SeriesInput = { points: SeriesPoint[]; freq: ReleaseFreq };
 
@@ -134,7 +135,8 @@ export function computeScore(
       const sub = computeScore(src.score, series, asOf, cache);
       result.subScore = src.score;
       if (sub.state === "DO_NOT_PUBLISH" || sub.score === undefined) {
-        result.missingReason = `하위 점수 ${sub.label}이 발행 기준 미달(커버리지 ${sub.coverage}%)`;
+        // ⚠ 홈 유동성 대화창에 그대로 나간다 — 공개 용어는 `lib/public-terms`(2026-11-15)
+        result.missingReason = `하위 점수 ${sub.label}이 발행 기준 미달(${coverageText(sub.coverage)})`;
       } else {
         result.score = sub.score;
       }
