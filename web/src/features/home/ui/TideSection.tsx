@@ -7,6 +7,7 @@ import type { LiquidityCardView } from "@/lib/scores/summary";
 import { LiquidityDialog, type LiquidityAnalysis } from "./LiquidityDialog";
 import type { FedFuturesGap, FedFuturesResult } from "@/lib/macro/fedfutures";
 import { formatProbability, type FedHikeResult } from "@/lib/macro/fedhike";
+import { inputLagLabel, type LaggingInput } from "@/lib/macro/input-lag";
 import {
   BUBBLE_GUIDE,
   RATE_GUIDE,
@@ -179,6 +180,8 @@ export type RateDirection = {
   futuresGap?: FedFuturesGap;
   hike?: FedHikeResult;
   hikeAsOf?: string;
+  /** 준칙 입력 가운데 늦었거나 없는 것 — 「입력 지연」 배지와 펼침(2026-11-15) */
+  hikeLagging?: LaggingInput[];
 };
 
 /**
@@ -205,6 +208,34 @@ function FuturesGapNote({ gap }: { gap?: FedFuturesGap }) {
         </p>
       )}
     </>
+  );
+}
+
+/**
+ * 준칙 입력 지연(2026-11-15) — 침체 신호 카드와 같은 신선도 판정·같은 배지 색(▲ 호박 = 값이 낡음).
+ * ⚠ 정상이면 아무것도 그리지 않는다. 늦은 입력은 이름·마지막 관측·사유를 적고, 값은 채우지 않는다.
+ */
+function InputLag({ lagging }: { lagging: LaggingInput[] }) {
+  const label = inputLagLabel(lagging);
+  if (!label) return null;
+  return (
+    <details className="mt-1.5 text-[11.5px]">
+      <summary className="cursor-pointer list-none">
+        <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10.5px] font-medium text-amber-300">
+          <span aria-hidden="true">▲</span>
+          {label}
+        </span>
+        <span className="ml-1.5 text-ink-3">준칙 확률은 늦은 입력을 그대로 쓴 값입니다 — 어떤 입력인지 보기</span>
+      </summary>
+      <ul className="mt-1.5 space-y-1 text-ink-3">
+        {lagging.map((l) => (
+          <li key={l.key}>
+            <span className="text-ink">{l.name}</span> · 마지막 관측 {l.asOf ?? "없음"} · {l.reason}
+            {l.source === "MANUAL" ? " · 수동 입력 지표 — 관리자 화면에서 새 값을 넣어야 갱신됩니다" : ""}
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
 
@@ -252,10 +283,13 @@ function RateCard({ rates }: { rates: RateDirection }) {
       )}
 
       {h ? (
-        <p className="mt-2 border-t border-border/60 pt-2 text-[12px] text-ink">
-          준칙이 처방하는 것: 인상 {formatProbability(h.hike)} · 동결 {formatProbability(h.hold)} · 인하 {formatProbability(h.cut)}
-          <span className="text-ink-3"> ({h.biasLabel}{rates.hikeAsOf ? ` · 가장 오래된 입력 ${rates.hikeAsOf}` : ""})</span>
-        </p>
+        <div className="mt-2 border-t border-border/60 pt-2">
+          <p className="text-[12px] text-ink">
+            준칙이 처방하는 것: 인상 {formatProbability(h.hike)} · 동결 {formatProbability(h.hold)} · 인하 {formatProbability(h.cut)}
+            <span className="text-ink-3"> ({h.biasLabel}{rates.hikeAsOf ? ` · 가장 오래된 입력 ${rates.hikeAsOf}` : ""})</span>
+          </p>
+          <InputLag lagging={rates.hikeLagging ?? []} />
+        </div>
       ) : (
         <p className="mt-2 border-t border-border/60 pt-2 text-[12px] text-muted">준칙 계산에 필요한 지표(근원 PCE·기준금리·실업률)가 아직 없습니다.</p>
       )}

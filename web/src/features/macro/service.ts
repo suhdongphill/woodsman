@@ -43,6 +43,7 @@ import {
   type MacroHealth,
 } from "@/lib/macro/freshness";
 import { loadRecentPoints, loadSeriesMany, loadSeriesMeta, type SeriesMeta } from "./repository";
+import { laggingInputs, type LaggingInput } from "@/lib/macro/input-lag";
 
 export type IndicatorView = {
   indicator: MacroIndicator;
@@ -164,6 +165,8 @@ export type MacroOverview = {
   fedHike?: FedHikeResult;
   /** 인상확률 계산에 쓴 값들의 기준일 중 가장 오래된 것 — "얼마나 묵은 판단인가" */
   fedHikeAsOf?: string;
+  /** 준칙 입력 가운데 늦었거나 없는 것(정상이면 빈 배열) */
+  fedHikeLagging: LaggingInput[];
   /**
    * 선물 내재 정책금리 — **시장이 거는 것**. `fedHike`(모형이 처방하는 것)와 짝이다.
    * ⚠ 선물 시세·현재 금리·FOMC 일정 중 하나라도 없으면 undefined다. 지어내지 않는다.
@@ -242,6 +245,13 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
     .map((key) => views.get(key)?.asOf)
     .filter((d): d is string => !!d);
   const fedHikeAsOf = fedHikeDates.length ? fedHikeDates.slice().sort()[0] : undefined;
+  /** ⭐ 늦은 입력(2026-11-15) — 지표마다의 신선도 판정으로. 카드가 「입력 지연」 배지와 펼침에 쓴다(`lib/macro/input-lag`). */
+  const fedHikeLagging = laggingInputs(
+    Object.values(FED_HIKE_KEYS).flatMap((key) => {
+      const v = views.get(key);
+      return v ? [{ key, name: v.indicator.name, source: v.indicator.source, asOf: v.asOf, freshness: v.freshness }] : [];
+    }),
+  );
 
   /**
    * 선물 내재 정책금리.
@@ -299,6 +309,7 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
     health: summarizeHealth([...views.values()].map((v) => v.freshness)),
     fedHike,
     fedHikeAsOf: fedHike ? fedHikeAsOf : undefined,
+    fedHikeLagging: fedHike ? fedHikeLagging : [],
     fedFutures,
     fedFuturesAsOf: fedFutures ? zq?.asOf : undefined,
     fedFuturesGap: fedFuturesGapInfo,
