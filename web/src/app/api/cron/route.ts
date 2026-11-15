@@ -20,6 +20,7 @@ import { revalidatePath } from "next/cache";
 import {
   CRON_HEADER,
   allSucceeded,
+  commentaryJobResult,
   cronSummary,
   isAuthorizedCron,
   planForCron,
@@ -30,6 +31,7 @@ import { ingestMacro } from "@/features/macro/ingest";
 import { ingestQuotes } from "@/features/stocks/ingest";
 import { loadReportSummaries } from "@/features/reports/repository";
 import { computeAndSaveGcrm, gcrmToday } from "@/features/gcrm/compute";
+import { generateCommentaryDraft } from "@/features/gcrm/commentary-service";
 import { syncBlog } from "@/features/blog/sync";
 
 export const runtime = "nodejs";
@@ -122,10 +124,19 @@ async function runBlog(): Promise<CronJobResult> {
   };
 }
 
+/**
+ * 조류 해설 **초안**(2026-11-15 운영자 「자동으로 만들어 주세요」) — 관리자 버튼과 같은 함수.
+ * ⚠ 공개하지 않는다. 운영자가 /admin/commentary에서 승인해야 홈에 나온다.
+ */
+async function runCommentary(): Promise<CronJobResult> {
+  return commentaryJobResult(await generateCommentaryDraft("예약 작업 06:00"));
+}
+
 const RUNNERS: Record<CronJob, () => Promise<CronJobResult>> = {
   macro: runMacro,
   quotes: runQuotes,
   gcrm: runGcrm,
+  commentary: runCommentary,
   blog: runBlog,
 };
 

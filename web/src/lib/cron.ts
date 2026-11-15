@@ -35,13 +35,17 @@ export const CRON_SECRET_MIN_LENGTH = 32;
  *    `gcrm`은 **반드시 `macro` 뒤**다 — 그날 수집한 값으로 계산해야 한다.
  *    앞에 두면 **어제 값으로 오늘 점수를 내고**, 그게 축 이력에 그대로 박힌다.
  *
+ *    `commentary`(조류 해설 **초안**, 2026-11-15)는 **반드시 `gcrm` 바로 뒤**다 — 그날 run으로 써야 한다.
+ *    앞에 두면 어제 run으로 초안을 쓰고, 「같은 run에 초안이 있으면 건너뛴다」 규칙 때문에 오늘 것은 안 생긴다.
+ *    ⚠ 초안만 만든다. 공개는 운영자 승인뿐이다(운영지침 §4).
+ *
  *    `blog`(티스토리 글 목록, 2026-09-27)은 **맨 뒤**다 — 점수와 무관하고, 바깥 블로그가 느리거나 막혀도
  *    거시 수집·GCRM은 이미 끝나 있어야 한다.
  */
-export type CronJob = "macro" | "quotes" | "gcrm" | "blog";
+export type CronJob = "macro" | "quotes" | "gcrm" | "commentary" | "blog";
 
 /** ⚠ 새 작업을 더하면 여기에도 넣는다 — 모르는 스케줄일 때 돌아가는 목록이다. */
-export const ALL_CRON_JOBS: readonly CronJob[] = ["macro", "quotes", "gcrm", "blog"];
+export const ALL_CRON_JOBS: readonly CronJob[] = ["macro", "quotes", "gcrm", "commentary", "blog"];
 
 export type CronPlanEntry = {
   /** Cloudflare cron 표현식(UTC). */
@@ -123,6 +127,25 @@ export function isAuthorizedCron(
   if (given.length === 0) return false;
 
   return equalsInConstantTime(given, key);
+}
+
+/**
+ * 조류 해설 초안 작업의 결과를 예약 작업 한 줄로(2026-11-15).
+ * - DRAFT: 성공(새 초안 1) · SKIP_EXISTING: 성공(이미 있음 — 버튼으로 먼저 만들었거나 다시 돈 날)
+ * - FAILED: ⚠ 실패로 남긴다 — AI가 실패했거나 숫자 대조를 못 지났다. 시스템 점검이 잡아야 운영자가 안다.
+ * - SKIP_NO_RUN: ⚠ 실패 — GCRM run을 못 읽었다(앞 작업이 실패한 날). 「조용히 건너뜀」이 되면 안 된다.
+ */
+export function commentaryJobResult(o: { outcome: string; reason?: string }): CronJobResult {
+  switch (o.outcome) {
+    case "DRAFT":
+      return { job: "commentary", ok: true, okCount: 1, failCount: 0, addedPoints: 1 };
+    case "SKIP_EXISTING":
+      return { job: "commentary", ok: true, okCount: 0, failCount: 0, addedPoints: 0 };
+    case "FAILED":
+      return { job: "commentary", ok: false, error: `초안 실패 — ${o.reason ?? "이유 불명"}` };
+    default:
+      return { job: "commentary", ok: false, error: "GCRM run을 읽지 못해 초안을 만들지 않았다" };
+  }
 }
 
 export type CronJobResult = {

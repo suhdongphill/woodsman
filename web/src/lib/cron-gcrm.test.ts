@@ -6,7 +6,7 @@
  * 이 파일은 그 사실이 다시 조용히 생기지 않게 막는다.
  */
 import { describe, it, expect } from "vitest";
-import { ALL_CRON_JOBS, CRON_PLAN, planForCron } from "./cron";
+import { ALL_CRON_JOBS, CRON_PLAN, commentaryJobResult, planForCron } from "./cron";
 
 describe("GCRM 축 점수 저장 스케줄", () => {
   it("★ 매일 수집에 gcrm이 들어 있다 — 안 들어 있으면 축 이력이 하루도 안 쌓인다", () => {
@@ -35,5 +35,26 @@ describe("GCRM 축 점수 저장 스케줄", () => {
   it("⚠ gcrm을 하루에 두 번 돌리는 일정이 없다", () => {
     const withGcrm = CRON_PLAN.filter((p) => p.jobs.includes("gcrm"));
     expect(withGcrm).toHaveLength(1);
+  });
+});
+
+describe("조류 해설 초안 작업(2026-11-15)", () => {
+  it("⚠ gcrm 바로 뒤에 돈다 — 그날 run으로 초안을 쓴다", () => {
+    const i = ALL_CRON_JOBS.indexOf("gcrm");
+    expect(ALL_CRON_JOBS[i + 1]).toBe("commentary");
+    expect(planForCron("0 21 * * *").jobs).toContain("commentary");
+  });
+
+  it("평일 22:00 재수집에는 넣지 않는다 — run이 새로 생기지 않는다", () => {
+    expect(planForCron("0 13 * * MON-FRI").jobs).not.toContain("commentary");
+  });
+
+  it("결과: 초안·이미 있음은 성공, 실패·run 없음은 ⚠ 실패로 남긴다", () => {
+    expect(commentaryJobResult({ outcome: "DRAFT" }).ok).toBe(true);
+    expect(commentaryJobResult({ outcome: "SKIP_EXISTING" }).ok).toBe(true);
+    const failed = commentaryJobResult({ outcome: "FAILED", reason: "월 상한" });
+    expect(failed.ok).toBe(false);
+    expect(failed.error).toContain("월 상한");
+    expect(commentaryJobResult({ outcome: "SKIP_NO_RUN" }).ok).toBe(false);
   });
 });

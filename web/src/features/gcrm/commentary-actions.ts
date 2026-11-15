@@ -3,6 +3,7 @@
 /**
  * GCRM 조류 해설 — 초안 만들기 · 승인 · 반려(2026-11-14 · v3).
  *
+ * (초안 만들기는 `commentary-service.ts` — 06:00 예약 작업도 같은 함수를 부른다.)
  * 흐름: 최신 run의 저장값 → 사실표 → AI 초안 → **서버 숫자 대조**(`verifyCommentary`) → DRAFT(통과) 또는 FAILED(사유와 함께).
  * ⚠ 공개는 운영자가 승인한 것만(운영지침 §4 「GCRM 해설 공개 순서」 · 운영자 「b로」). 이 파일은 공개 화면을 바꾸지 않는다.
  * ⚠ 같은 run·같은 프롬프트 판에 살아 있는 초안이 있으면 다시 만들지 않는다(중복 발행 방지). 실패는 다시 시도할 수 있다.
@@ -10,85 +11,14 @@
  */
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/session";
-import { runAiTask } from "@/lib/ai/client";
-import { loadAiConfig, loadProviderUsage, loadTaskModes, recordAiUsage } from "@/features/ai/repository";
-import { resolveApiEnv } from "@/features/ai/credentials";
 import { recordAdminLog } from "@/features/admin-log/repository";
-import { buildCommentaryPrompt, buildRepairPrompt, COMMENTARY_PROMPT_VERSION, verifyCommentary } from "@/lib/gcrm/commentary";
-import { decideNarrative, liveNarrativeFor, loadCommentaryInput, saveNarrative } from "./commentary-repo";
+import { decideNarrative } from "./commentary-repo";
+import { generateCommentaryDraft } from "./commentary-service";
 
+/** ⚠ 만드는 일은 `commentary-service`가 한다 — 06:00 예약 작업과 같은 함수(2026-11-15). 여기는 권한과 화면 갱신만. */
 export async function generateCommentaryAction(): Promise<void> {
   const admin = await requireAdmin("/admin/commentary");
-  const input = await loadCommentaryInput().catch((error) => {
-    console.error("[gcrm-commentary] 입력을 만들지 못했다", error);
-    return undefined;
-  });
-  if (!input) {
-    await recordAdminLog({ actor: admin.email, action: "gcrm.commentary.skip", summary: "GCRM run을 읽지 못해 초안을 만들지 않았다" });
-    revalidatePath("/admin/commentary");
-    return;
-  }
-  const live = await liveNarrativeFor(input.runId, COMMENTARY_PROMPT_VERSION);
-  if (live) {
-    await recordAdminLog({
-      actor: admin.email,
-      action: "gcrm.commentary.skip",
-      target: input.runId,
-      summary: `같은 run·프롬프트 판에 ${live.status} 초안이 있어 다시 만들지 않았다`,
-    });
-    revalidatePath("/admin/commentary");
-    return;
-  }
-
-  const [usage, config, env, modes] = await Promise.all([loadProviderUsage(), loadAiConfig(), resolveApiEnv(), loadTaskModes()]);
-  const prompt = buildCommentaryPrompt(input);
-  const call = (user: string) =>
-    runAiTask({
-      task: "gcrm-commentary",
-      mode: modes["gcrm-commentary"],
-      user,
-      env,
-      usage,
-      global: { tokensUsedThisMonth: config.tokensUsedThisMonth, globalMonthlyTokenCap: config.globalMonthlyTokenCap },
-      maxTokens: 2_000,
-    });
-
-  const first = await call(prompt);
-  if (!first.ok) {
-    await saveNarrative({ input, promptVersion: COMMENTARY_PROMPT_VERSION, status: "FAILED", editor: "ai:—", problems: [first.reason, ...first.attempts.map((a) => `${a.providerLabel}(${a.modelId}): ${a.error ?? "실패"}`)] });
-  } else {
-    // ⚠ 사용량은 성공했을 때 반드시 센다 — 안 세면 월 상한이 걸리지 않는다.
-    await recordAiUsage(first.result.apiKeyEnv, first.result.usage.inputTokens + first.result.usage.outputTokens);
-    let verdict = verifyCommentary(first.result.text, input);
-    let text = first.result.text;
-    let editor = `ai:${first.result.modelId}`;
-    const firstProblems = verdict.ok ? [] : verdict.problems;
-
-    // 한 번만 고쳐 쓴다 — 같은 대조를 다시 지난다(2026-11-14)
-    if (!verdict.ok) {
-      const second = await call(buildRepairPrompt(prompt, first.result.text, verdict.problems));
-      if (second.ok) {
-        await recordAiUsage(second.result.apiKeyEnv, second.result.usage.inputTokens + second.result.usage.outputTokens);
-        verdict = verifyCommentary(second.result.text, input);
-        text = second.result.text;
-        editor = `ai:${second.result.modelId} · 고쳐 씀 1회`;
-      }
-    }
-
-    await saveNarrative({
-      input,
-      promptVersion: COMMENTARY_PROMPT_VERSION,
-      status: verdict.ok ? "DRAFT" : "FAILED",
-      body: verdict.ok ? verdict.body : undefined,
-      editor,
-      problems: verdict.ok
-        ? firstProblems.length
-          ? [`(첫 시도에서 고친 것) ${firstProblems.join(" · ")}`]
-          : []
-        : [...verdict.problems, ...(firstProblems.length && editor.includes("고쳐 씀") ? [`(첫 시도) ${firstProblems.join(" · ")}`] : []), `AI 원문(앞부분): ${text.slice(0, 1500)}`],
-    });
-  }
-  await recordAdminLog({ actor: admin.email, action: "gcrm.commentary.generate", target: input.runId, summary: `기준일 ${input.asOf}` });
+  await generateCommentaryDraft(admin.email ?? "(관리자)");
   revalidatePath("/admin/commentary");
 }
 
