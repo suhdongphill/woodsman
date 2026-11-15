@@ -12,6 +12,7 @@
  * ⚠ 이 파일은 async 함수만 export한다(상태 타입은 `form-state.ts`).
  */
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/session";
 import { runAiTask } from "@/lib/ai/client";
 import { loadAiConfig, loadProviderUsage, loadTaskModes, recordAiUsage } from "@/features/ai/repository";
@@ -196,4 +197,9 @@ export async function deleteBriefingAction(formData: FormData): Promise<void> {
   await deleteBriefing(date);
   await recordAdminLog({ actor: admin.email, action: "briefing.delete", target: date });
   revalidateAll(date);
+  /**
+   * ⚠ 지운 뒤에는 목록으로 보낸다(2026-11-15). 버튼은 그 날짜의 상세 화면에 있어서, 그대로 두면 서버가 방금 지운
+   *   날짜의 화면을 다시 그리다 「찾을 수 없음(404)」을 띄웠다 — 삭제는 됐는데 실패처럼 보였다.
+   */
+  redirect("/admin/briefing");
 }
