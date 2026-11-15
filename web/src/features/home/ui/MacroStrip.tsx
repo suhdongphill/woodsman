@@ -114,6 +114,13 @@ export function MacroStrip({ indicators, frame }: { indicators: IndicatorView[];
               <span className="mt-0.5 block whitespace-nowrap text-[10px] text-ink-3">
                 {view.asOf ? `${view.asOf} ${TEXT.asOfSuffix}` : TEXT.collecting}
               </span>
+              {/* ⭐ 지연 꼬리표(2026-11-15) — 일간 영업일 2일 초과 · 그 밖은 기한초과. 정상이면 안 그린다. 색만으로 말하지 않는다(▲ 글자) */}
+              {view.stripDelay && (
+                <span className="mt-1 inline-flex w-fit items-center gap-1 rounded border border-amber-500/40 bg-amber-500/10 px-1 text-[10px] text-amber-300">
+                  <span aria-hidden="true">▲</span>
+                  {view.stripDelay}
+                </span>
+              )}
             </button>
           );
         })}

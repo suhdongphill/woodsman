@@ -38,6 +38,7 @@ import { buildOverlay, type OverlayMode, type OverlayResult } from "@/lib/macro/
 import {
   healthNotice,
   judgeFreshness,
+  stripDelayLabel,
   summarizeHealth,
   type MacroFreshness,
   type MacroHealth,
@@ -64,6 +65,8 @@ export type IndicatorView = {
    *    (볼트 사양서 §0).
    */
   freshness: MacroFreshness;
+  /** 홈 바람 띠의 지연 꼬리표(일간은 영업일 2일 초과 · 그 밖은 기존 판정). 정상이면 null — `stripDelayLabel` */
+  stripDelay: string | null;
 };
 
 /**
@@ -108,6 +111,14 @@ function buildView(
   const last = latestPoint(points);
   const change = changeFromPrevious(points);
 
+  const freshness = judgeFreshness({
+    asOf: meta?.asOf ?? last?.date,
+    fetchedAt: meta?.fetchedAt,
+    freq: indicator.freq,
+    staleDays: indicator.staleDays,
+    manual: indicator.source === "MANUAL",
+    now,
+  });
   return {
     indicator,
     value: last?.value,
@@ -125,14 +136,8 @@ function buildView(
      *    점이 버려져 마지막 점이 뒤로 밀릴 수 있는데, 그걸 기준일로 쓰면 실제보다
      *    낡아 보인다. 화면에 보이는 값의 날짜(`asOf`)와는 다른 질문이다.
      */
-    freshness: judgeFreshness({
-      asOf: meta?.asOf ?? last?.date,
-      fetchedAt: meta?.fetchedAt,
-      freq: indicator.freq,
-      staleDays: indicator.staleDays,
-      manual: indicator.source === "MANUAL",
-      now,
-    }),
+    freshness,
+    stripDelay: stripDelayLabel(indicator.freq, freshness, now),
   };
 }
 
@@ -174,6 +179,8 @@ export type MacroOverview = {
   fedFutures?: FedFuturesResult;
   /** 선물 시세일 — 이 계산이 언제 값인지 */
   fedFuturesAsOf?: string;
+  /** 선물 값을 받은 시각(ISO) — 카드의 「수집」 표시와 인용 문구(2026-11-15) */
+  fedFuturesFetchedAt?: string;
   /** `fedFutures`가 없을 때 그 이유 */
   fedFuturesGap?: FedFuturesGap;
   /**
@@ -312,6 +319,7 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
     fedHikeLagging: fedHike ? fedHikeLagging : [],
     fedFutures,
     fedFuturesAsOf: fedFutures ? zq?.asOf : undefined,
+    fedFuturesFetchedAt: fedFutures ? zq?.freshness.fetchedAt : undefined,
     fedFuturesGap: fedFuturesGapInfo,
   };
 }

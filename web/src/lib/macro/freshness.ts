@@ -230,3 +230,35 @@ export function healthNotice(h: MacroHealth): string | null {
   if (bits.length === 0) return null;
   return `${h.total}개 중 ${bits.join(" · ")}`;
 }
+
+/**
+ * ⭐ 홈 「지금 부는 바람」 띠의 지연 표시(2026-11-15 운영자 결정 「영업일 2일 초과」).
+ *
+ * 왜: 띠는 날짜만 보여 주고 신선도를 전혀 쓰지 않았다. 미 국채 10년이 FRED 기준 11/12에 머문 동안 재무부는 11/13을 고시했다.
+ * ⚠ 일간 지표는 **영업일**로 센다 — FRED는 평소 1영업일 늦고 주말엔 금요일 값이 최신이다. 「하루 이상」이면 거의 매일 거짓 경보다.
+ *   기준일 다음 날부터 오늘(미국 날짜 ≈ UTC − 14시간)까지의 평일 수가 2를 넘으면 지연. 공휴일은 세지 않는다(평일로 센다 — 보수적).
+ * ⚠ 주간·월간·분기는 기존 판정(`freshnessBadge` — 발표 주기 + 지표별 `staleDays`) 그대로.
+ * 정상이면 null — 정상일 때는 조용하다.
+ */
+export const STRIP_DAILY_MAX_BUSINESS_DAYS = 2;
+
+export function weekdaysAfter(asOf: string, today: string): number {
+  let n = 0;
+  const end = Date.parse(`${today}T00:00:00Z`);
+  for (let t = Date.parse(`${asOf}T00:00:00Z`) + 86_400_000; t <= end; t += 86_400_000) {
+    const d = new Date(t).getUTCDay();
+    if (d !== 0 && d !== 6) n++;
+  }
+  return n;
+}
+
+export function stripDelayLabel(freq: ReleaseFreq, f: MacroFreshness, now: Date): string | null {
+  if (f.missing || !f.asOf) return null;
+  if (freq === "d") {
+    if (f.stalled) return `수집 끊김 ${f.stalledDays}일`;
+    const usToday = new Date(now.getTime() - 14 * 3_600_000).toISOString().slice(0, 10);
+    const lag = weekdaysAfter(f.asOf.slice(0, 10), usToday);
+    return lag > STRIP_DAILY_MAX_BUSINESS_DAYS ? `지연 ${lag}영업일` : null;
+  }
+  return freshnessBadge(f);
+}

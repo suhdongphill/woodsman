@@ -1,4 +1,4 @@
-import { asOfStamp } from "@/lib/format";
+import { asOfStamp, formatKstStamp } from "@/lib/format";
 import { COVERAGE_HINT, coverageText } from "@/lib/public-terms";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -8,6 +8,8 @@ import { LiquidityDialog, type LiquidityAnalysis } from "./LiquidityDialog";
 import type { FedFuturesGap, FedFuturesResult } from "@/lib/macro/fedfutures";
 import { formatProbability, type FedHikeResult } from "@/lib/macro/fedhike";
 import { inputLagLabel, type LaggingInput } from "@/lib/macro/input-lag";
+import { fedFuturesCitation } from "@/lib/macro/fed-citation";
+import { CopyCitation } from "./CopyCitation";
 import {
   BUBBLE_GUIDE,
   RATE_GUIDE,
@@ -181,6 +183,8 @@ function BubbleCard({ score }: { score: BubbleScore }) {
 export type RateDirection = {
   futures?: FedFuturesResult;
   futuresAsOf?: string;
+  /** 선물 값을 받은 시각(ISO) — 「수집」 표시·인용 문구(2026-11-15) */
+  futuresFetchedAt?: string;
   /** `futures`가 없을 때 그 이유 — ⚠ 「수집 전」 하나로 뭉치지 않는다(2026-10-31) */
   futuresGap?: FedFuturesGap;
   hike?: FedHikeResult;
@@ -257,7 +261,7 @@ function RateCard({ rates }: { rates: RateDirection }) {
         <h3 className="text-[13px] font-semibold text-ink">{RATE_GUIDE.title}</h3>
         <span className="text-[10.5px] text-ink-3">
           {f
-            ? `${rates.futuresAsOf ?? "?"} 선물 · ${f.contractMonth} 계약`
+            ? `선물 관측 ${rates.futuresAsOf ?? "?"} · ${f.contractMonth} 계약`
             : g && g.reason !== "no-quote"
               ? `${g.quoteDate} 선물 · ${g.contractMonth} 계약`
               : "시장 내재 값 수집 전"}
@@ -276,6 +280,28 @@ function RateCard({ rates }: { rates: RateDirection }) {
             {f.solved
               ? `시장이 거는 것: 현재 ${f.currentRate.toFixed(2)}% → 회의 뒤 ${f.rateAfter.toFixed(2)}% (계약월 평균 ${f.impliedAvg.toFixed(2)}%에서 풂)`
               : `시장이 거는 것: 현재 ${f.currentRate.toFixed(2)}% → 계약월 평균 ${f.impliedAvg.toFixed(2)}%`}
+          </p>
+          {/* ⭐ 관측일·수집 시각·인용 복사(2026-11-15) — 기준일이 다른 값(11/12 118% · 11/13 110%)이 글에 섞여 돌았다 */}
+          <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-[10.5px] text-ink-3">
+            <span>
+              선물 관측 {rates.futuresAsOf ?? "?"}
+              {formatKstStamp(rates.futuresFetchedAt) ? ` · 수집 ${formatKstStamp(rates.futuresFetchedAt)}` : ""}
+            </span>
+            {rates.futuresAsOf && (
+              <CopyCitation
+                text={fedFuturesCitation({
+                  observedOn: rates.futuresAsOf,
+                  contractMonth: f.contractMonth,
+                  meeting: f.meeting,
+                  singleMeeting: f.singleMeeting,
+                  dir,
+                  sharePct: Number((share * 100).toFixed(0)),
+                  currentRate: f.currentRate,
+                  rateAfter: f.solved ? f.rateAfter : undefined,
+                  fetchedAt: rates.futuresFetchedAt,
+                })}
+              />
+            )}
           </p>
           {f.assumedFlat.length > 0 && (
             <p className="mt-1 text-[10.5px] text-ink-3">

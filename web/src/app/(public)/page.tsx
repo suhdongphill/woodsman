@@ -208,6 +208,7 @@ export default async function HomePage() {
         rates={{
           futures: macro.fedFutures,
           futuresAsOf: macro.fedFuturesAsOf,
+          futuresFetchedAt: macro.fedFuturesFetchedAt,
           futuresGap: macro.fedFuturesGap,
           hike: macro.fedHike,
           hikeAsOf: macro.fedHikeAsOf,
