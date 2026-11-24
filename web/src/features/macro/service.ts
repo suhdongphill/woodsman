@@ -174,6 +174,8 @@ export type MacroOverview = {
   fedHike?: FedHikeResult;
   /** 인상확률 계산에 쓴 값들의 기준일 중 가장 오래된 것 — "얼마나 묵은 판단인가" */
   fedHikeAsOf?: string;
+  /** ⭐ 그 기준일을 잡고 있는 지표 이름(2026-11-24) — 「왜 9월 기준이지?」에 화면이 바로 답하게 */
+  fedHikeAsOfBy: string[];
   /** 준칙 입력 가운데 늦었거나 없는 것(정상이면 빈 배열) */
   fedHikeLagging: LaggingInput[];
   /**
@@ -256,6 +258,12 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
     .map((key) => views.get(key)?.asOf)
     .filter((d): d is string => !!d);
   const fedHikeAsOf = fedHikeDates.length ? fedHikeDates.slice().sort()[0] : undefined;
+  const fedHikeAsOfBy = fedHikeAsOf
+    ? Object.values(FED_HIKE_KEYS).flatMap((key) => {
+        const v = views.get(key);
+        return v?.asOf === fedHikeAsOf ? [v.indicator.name] : [];
+      })
+    : [];
   /** ⭐ 늦은 입력(2026-11-15) — 지표마다의 신선도 판정으로. 카드가 「입력 지연」 배지와 펼침에 쓴다(`lib/macro/input-lag`). */
   const fedHikeLagging = laggingInputs(
     Object.values(FED_HIKE_KEYS).flatMap((key) => {
@@ -320,6 +328,7 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
     health: summarizeHealth([...views.values()].map((v) => v.freshness)),
     fedHike,
     fedHikeAsOf: fedHike ? fedHikeAsOf : undefined,
+    fedHikeAsOfBy: fedHike ? fedHikeAsOfBy : [],
     fedHikeLagging: fedHike ? fedHikeLagging : [],
     fedFutures,
     fedFuturesAsOf: fedFutures ? zq?.asOf : undefined,

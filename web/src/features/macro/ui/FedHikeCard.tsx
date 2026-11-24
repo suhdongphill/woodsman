@@ -75,7 +75,16 @@ function Adjustment({
   );
 }
 
-export function FedHikeCard({ result, asOf }: { result: FedHikeResult; asOf?: string }) {
+export function FedHikeCard({
+  result,
+  asOf,
+  asOfBy = [],
+}: {
+  result: FedHikeResult;
+  asOf?: string;
+  /** 기준일을 잡고 있는 투입 지표 이름 — 독자가 「왜 이 날짜인가」를 바로 알게 */
+  asOfBy?: string[];
+}) {
   const top = Math.max(result.hike, result.hold, result.cut);
   const sign = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}`;
 
@@ -88,7 +97,11 @@ export function FedHikeCard({ result, asOf }: { result: FedHikeResult; asOf?: st
           🏦 정책 편향 {result.biasLabel}
         </span>
         <span className="text-[11px] text-gray-500">
-          {asOf ? `${asOf} 기준(가장 오래된 투입 지표)` : "수집 전"}
+          {asOf
+            ? asOfBy.length
+              ? `${asOf} 기준 · 가장 오래된 투입 지표: ${asOfBy.join(", ")}`
+              : `${asOf} 기준(가장 오래된 투입 지표)`
+            : "수집 전"}
         </span>
       </div>
 

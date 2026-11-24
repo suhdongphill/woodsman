@@ -101,7 +101,11 @@ export default async function MacroHubPage() {
             <h2 id="fedhike-heading" className="sr-only">
               연준 정책금리 방향
             </h2>
-            <FedHikeCard result={overview.fedHike} asOf={overview.fedHikeAsOf} />
+            <FedHikeCard
+              result={overview.fedHike}
+              asOf={overview.fedHikeAsOf}
+              asOfBy={overview.fedHikeAsOfBy}
+            />
           </section>
         )}
 
