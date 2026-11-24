@@ -263,7 +263,11 @@ export const sector: MacroSector = {
     },
     {
       key: "term_premium",
-      name: "10년 텀 프리미엄 (ACM)",
+      /**
+       * ⚠ 2026-11-24 정정: 이 시리즈는 **연준 이사회 Kim–Wright(2005) 모형**이다(FRED THREEFYTP10 원문 「Kim and Wright Term Premium」).
+       *   9월부터 「ACM(뉴욕 연준)」이라고 잘못 불렀다 — 두 모형은 값이 다르다. 데이터는 그대로, 이름만 바로잡는다.
+       */
+      name: "10년 텀 프리미엄 (Kim–Wright)",
       group: "rates",
       source: "FRED",
       sourceId: "THREEFYTP10",
@@ -273,14 +277,14 @@ export const sector: MacroSector = {
       freq: "d",
       staleDays: 14,
       staleWhy:
-        "NY연준 ACM 모형 추정치. 일별 계열이지만 FRED 반영이 며칠~한 주 지연된다.",
+        "연준 이사회 Kim–Wright 모형 추정치. 일별 계열이지만 FRED 반영이 며칠~한 주 지연된다.",
       unit: "%p",
       decimals: 2,
       url: FRED("THREEFYTP10"),
-      sourceLabel: "FRED · THREEFYTP10 (뉴욕 연준 ACM)",
+      sourceLabel: "FRED · THREEFYTP10 (연준 이사회 Kim–Wright 모형)",
       what: "10년을 오래 들고 있는 값으로 투자자가 요구하는 웃돈입니다. 10년물 금리에서 '앞으로의 단기금리 기대'를 빼고 남은 몫입니다.",
       why: "장기금리가 오를 때 그게 경기 기대 때문인지, 그냥 국채를 들고 있기 싫어서인지를 가릅니다. 재정적자·국채 발행 이야기가 나오면 여기가 먼저 움직입니다.",
-      read: "마이너스에서 플러스로 올라오는 구간은 '장기채가 예전만큼 안전하게 여겨지지 않는다'는 뜻으로 읽습니다. 추정치라 수정될 수 있습니다.",
+      read: "마이너스에서 플러스로 올라오는 구간은 '장기채가 예전만큼 안전하게 여겨지지 않는다'는 뜻으로 읽습니다. 추정치라 수정될 수 있고, 모형마다 값이 다릅니다(뉴욕 연준 ACM 모형과는 다른 숫자).",
       order: 10,
     },
     {

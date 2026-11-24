@@ -1,3 +1,4 @@
+import { publicIndicatorName } from "@/lib/public-terms";
 /**
  * GCRM v2 — 계산 파이프라인 (명세 §2-2). **순수 함수.** DB·환경 의존 없음.
  *
@@ -372,7 +373,7 @@ export function explainPillar(result: PipelineResult, pillar: string, axis: Axis
     /** 기여도 내림차순 */
     contributions: r.contributions.map((c) => ({
       indicator: c.indicator,
-      nameKo: GCRM_INDICATOR_BY_CODE.get(c.indicator)?.nameKo ?? c.indicator,
+      nameKo: publicIndicatorName(c.indicator, GCRM_INDICATOR_BY_CODE.get(c.indicator)?.nameKo ?? c.indicator),
       path: c.path,
       score: c.score,
       effWeight: c.effWeight,
@@ -382,7 +383,7 @@ export function explainPillar(result: PipelineResult, pillar: string, axis: Axis
     /** ⚠ 제외된 지표와 사유 */
     excluded: r.excluded.map((e) => ({
       indicator: e.indicator,
-      nameKo: e.indicator ? (GCRM_INDICATOR_BY_CODE.get(e.indicator)?.nameKo ?? e.indicator) : null,
+      nameKo: e.indicator ? publicIndicatorName(e.indicator, GCRM_INDICATOR_BY_CODE.get(e.indicator)?.nameKo ?? e.indicator) : null,
       path: e.path,
       kind: e.kind,
       weight: e.presenceWeight,

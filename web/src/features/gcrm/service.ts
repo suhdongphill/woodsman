@@ -1,3 +1,4 @@
+import { publicIndicatorName } from "@/lib/public-terms";
 /**
  * GCRM 읽기 서비스 — 라우트가 조립만 하도록 판단을 여기 모은다.
  *
@@ -110,7 +111,7 @@ export async function gcrmIndicator(code: string, asOf?: string) {
     ok: true as const,
     asOf: run.asOf,
     code,
-    nameKo: def.nameKo,
+    nameKo: publicIndicatorName(code, def.nameKo),
     series: def.series,
     source: def.source,
     seriesId: def.seriesId ?? null,

@@ -10,6 +10,24 @@
 
 ---
 
+## 2026-11-24 — 이름 정정: 10년 텀 프리미엄 「ACM」 → 「Kim–Wright」
+
+### 왜 · 근거
+- 운영자가 붙여 준 「물가 압력 보강」 요청서(instruction-check 대조)에서 시작. FRED `THREEFYTP10` 원문 제목 「**Kim and Wright** Term Premium on a 10 Year Zero Coupon Bond」 · 출처 연준 이사회 — 사이트는 「10년 텀 프리미엄 (ACM)」·「뉴욕 연준 ACM」이라 불렀다. ACM(Adrian–Crump–Moench)은 뉴욕 연준의 **다른 모형**이고 값도 다르다.
+- ⚠ 데이터는 맞고 이름만 틀렸다. 숫자·점수 무변경.
+
+### 무엇을
+- `sectors/rates.ts` 지표 이름·출처 표기·staleWhy·읽는 법(「ACM과는 다른 숫자」) · `glossary.ts` 출처 링크를 연준 이사회 Kim–Wright 페이지로(200 확인).
+- ⚠ GCRM 설정 `indicators.ts`의 `nameKo`는 **그대로**(설정 해시 → run 이력) — `public-terms` `PUBLIC_INDICATOR_NAMES`로 바꿔 끼운다(지표 상세 `gcrm/service.ts` · 설명 `gcrm/pipeline.ts`). 11/15 기둥 이름과 같은 방식.
+
+### 배포 전 가설
+- /macro·/macro/rates 카드 「10년 텀 프리미엄 (Kim–Wright)」 · 출처 「연준 이사회 Kim–Wright 모형」 · 용어집 링크 federalreserve.gov. 값 무변경. 티스토리 클릭 영향 없음.
+
+### 확인 (배포 뒤)
+- (배포 뒤 적는다)
+
+---
+
 ## 2026-11-24 — 지표 추가: 미국 연방기금 목표 범위 상단(DFEDTARU)
 
 ### 왜 · 근거

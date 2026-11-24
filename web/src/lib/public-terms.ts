@@ -33,3 +33,15 @@ export const PUBLIC_PILLAR_NAMES: Record<string, string> = {
 export function publicPillarName(code: string, nameKo: string): string {
   return PUBLIC_PILLAR_NAMES[code] ?? nameKo;
 }
+
+/**
+ * ⭐ 공개 화면의 GCRM 지표 이름(2026-11-24). `gcrm/config/indicators.ts`의 `nameKo`는 설정 해시에 들어가므로 **바꾸지 않고** 여기서 바꿔 끼운다.
+ * - term_premium: THREEFYTP10은 Kim–Wright(연준 이사회) 모형인데 설정 이름이 「ACM」이었다(FRED 원문 대조).
+ */
+export const PUBLIC_INDICATOR_NAMES: Record<string, string> = {
+  term_premium: "10년 텀 프리미엄 (Kim–Wright)",
+};
+
+export function publicIndicatorName(code: string, nameKo: string): string {
+  return PUBLIC_INDICATOR_NAMES[code] ?? nameKo;
+}

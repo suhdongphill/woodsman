@@ -120,8 +120,9 @@ export const GLOSSARY: GlossaryEntry[] = [
     aka: ["term premium", "텀 프리미엄"],
     short: "돈을 오래 빌려주는 위험을 감수하는 값으로 요구하는 추가 금리입니다.",
     role: "장기금리가 오를 때 그것이 「경기가 좋아서」인지 「위험이 커져서」인지를 가릅니다. 여기가 벌어지면 자본 조달 비용이 이유 없이 비싸집니다.",
-    url: "https://www.newyorkfed.org/research/data_indicators/term-premia-tabs",
-    sourceLabel: "뉴욕 연준 ACM 기간 프리미엄",
+    /** ⚠ 2026-11-24: 사이트 값은 Kim–Wright(연준 이사회)다 — 출처 링크도 같은 모형으로(예전엔 ACM 페이지) */
+    url: "https://www.federalreserve.gov/data/three-factor-nominal-term-structure-model.htm",
+    sourceLabel: "연준 이사회 Kim–Wright 기간 프리미엄",
     checked: "2026-09-13",
     checkMethod: "status",
   },
