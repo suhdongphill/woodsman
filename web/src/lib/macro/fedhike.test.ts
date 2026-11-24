@@ -21,12 +21,14 @@ describe("연준 인상확률 — 볼트 스크립트와 같은 숫자", () => {
   it("2026-08-11 대시보드 값을 그대로 재현한다", () => {
     const r = estimateFedHike(VAULT_2026_08_11)!;
 
-    expect(r.prescribedRate).toBeCloseTo(4.55, 2); // i_star
-    expect(r.gap).toBeCloseTo(0.92, 2);
-    expect(r.adjustedGap).toBeCloseTo(1.01, 2); // adj_gap
-    expect(r.hike).toBeCloseTo(0.355, 3);
-    expect(r.hold).toBeCloseTo(0.623, 3);
-    expect(r.cut).toBeCloseTo(0.022, 3);
+    // ⚠ 2026-11-24 r* 0.5 → 1.2(SEP 장기 3.2 − 2). 옛 대시보드 값(4.55·0.92·1.01·35.5%)에서 처방금리가 +0.7 옮겨 간 값이다.
+    //   볼트 `fed-hike-prob.py`도 같은 날 1.2로 바꿨다 — 다음 대시보드 갱신부터 이 숫자와 같아야 한다.
+    expect(r.prescribedRate).toBeCloseTo(5.25, 2); // i_star
+    expect(r.gap).toBeCloseTo(1.62, 2);
+    expect(r.adjustedGap).toBeCloseTo(1.715, 3); // adj_gap
+    expect(r.hike).toBeCloseTo(0.6246, 3);
+    expect(r.hold).toBeCloseTo(0.368, 3);
+    expect(r.cut).toBeCloseTo(0.0074, 3);
     expect(r.biasLabel).toBe("매파(인상 편향)");
   });
 
@@ -92,8 +94,8 @@ describe("방향", () => {
   });
 
   it("처방갭이 0 근처면 중립이고 동결이 가장 크다", () => {
-    // i* = 0.5 + π + 0.5(π−2) + 0.5·0 이므로 π=2, u=4.2면 i*=2.5
-    const r = estimateFedHike({ corePce: 2, fedFunds: 2.5, unrate: 4.2 })!;
+    // i* = r*(1.2) + π + 0.5(π−2) + 0.5·0 이므로 π=2, u=4.2면 i*=3.2
+    const r = estimateFedHike({ corePce: 2, fedFunds: 3.2, unrate: 4.2 })!;
     expect(r.bias).toBe("neutral");
     expect(r.hold).toBeGreaterThan(r.hike);
     expect(r.hold).toBeGreaterThan(r.cut);
@@ -123,8 +125,8 @@ describe("문장·표기", () => {
     const r = estimateFedHike(VAULT_2026_08_11)!;
     const s = fedHikeSentence(r, "2026-08-11");
     expect(s).toContain("2026-08-11");
-    expect(s).toContain("4.55%");
-    expect(s).toContain("35.5%");
+    expect(s).toContain("5.25%");
+    expect(s).toContain("62.5%");
     expect(s).toContain("매파");
   });
 
