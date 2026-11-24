@@ -11,7 +11,7 @@
 import { Card } from "@/components/ui/Card";
 import { Emphasis } from "@/components/ui/Emphasis";
 import { cx } from "@/lib/format";
-import { chartBaseline, formatIndicatorValue } from "@/lib/macro/series";
+import { chartBaseline, formatIndicatorValue, shortObsDate } from "@/lib/macro/series";
 import type { IndicatorView } from "../service";
 import { SeriesChart } from "./SeriesChart";
 import { SignalPill } from "./SignalPill";
@@ -155,12 +155,19 @@ export function IndicatorRow({ view }: { view: IndicatorView }) {
   const collected = view.value !== undefined;
   // 판정 지표는 배지가 이미 '○ 미수집'이라고 말한다 — 같은 말을 두 번 쓰지 않는다.
   const hasPill = !!view.indicator.signal;
+  const obs = shortObsDate(view.asOf, view.indicator.freq, new Date().toISOString().slice(0, 10));
 
   return (
     <div className="flex items-center justify-between gap-3 py-1.5">
       <span className="min-w-0 truncate text-[12.5px] text-gray-400">{view.indicator.name}</span>
       <span className="flex shrink-0 items-center gap-2">
         <FreshnessBadge freshness={view.freshness} />
+        {/* ⭐ 2026-11-24 관측일 — 수집 시각이 아니라 원자료 날짜. 「기한 초과」는 옆 배지가 말한다 */}
+        {collected && obs && (
+          <span className="text-[10.5px] tabular-nums text-gray-600" title={`관측일 ${view.asOf}`}>
+            {obs}
+          </span>
+        )}
         {collected ? (
           <span
             className={cx(

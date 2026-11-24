@@ -178,3 +178,15 @@ export function yoyGapNote(raw: SeriesPoint[], tf: MacroTransform): string | nul
   if (prev && prev.value !== 0) return null; // 다른 이유(허용 오차 등) — 지어내지 않는다
   return `원자료는 ${rawLast.date}분까지 있지만 1년 전(${base}) 값이 원출처에 없어 그 달의 전년비는 계산하지 않았습니다. 값을 채우지 않고 ${shown?.date ?? "이전"}분을 보여 드립니다.`;
 }
+
+/**
+ * ⭐ 목록 한 줄에 붙이는 짧은 관측일(2026-11-24 · 요약 행에 기준일이 없다는 지적).
+ * - 월·분기·연 단위 → 「2026-09」(그 달 1일이라는 날짜는 관측 「달」의 표기일 뿐이라 일을 떼어낸다).
+ * - 일·주 단위 → 올해면 「11-20」, 아니면 「2025-11-20」.
+ * ⚠ 수집 시각이 아니라 **원자료의 관측일**(`asOf`)이다.
+ */
+export function shortObsDate(asOf: string | undefined, freq: string, today: string): string | undefined {
+  if (!asOf) return undefined;
+  if (freq === "m" || freq === "q" || freq === "a" || freq === "y") return asOf.slice(0, 7);
+  return asOf.slice(0, 4) === today.slice(0, 4) ? asOf.slice(5, 10) : asOf.slice(0, 10);
+}
