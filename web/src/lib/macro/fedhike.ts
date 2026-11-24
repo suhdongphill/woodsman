@@ -192,6 +192,26 @@ export function estimateFedHike(input: FedHikeInput): FedHikeResult | undefined 
   };
 }
 
+/**
+ * 인상 확률이 동결 확률을 처음 앞서는 압력지수(%p) — 화면이 「동결이 기본값인 모형」임을 숫자로 말하려고 쓴다(2026-11-24).
+ * ⚠ 손으로 적은 상수가 아니라 위 로지스틱 계수에서 **이분법으로 푼다** — 계수를 바꾸면 화면 문구도 같이 바뀐다.
+ */
+export function hikeOverHoldThreshold(): number {
+  const diff = (x: number) => {
+    const hike = logistic(A0 + B * x);
+    const cut = logistic(A0 - B * x);
+    return hike - Math.max(0, 1 - hike - cut);
+  };
+  let lo = 0;
+  let hi = 10;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if (diff(mid) > 0) hi = mid;
+    else lo = mid;
+  }
+  return hi;
+}
+
 /** 화면에 그대로 쓰는 백분율 문자열. */
 export function formatProbability(p: number): string {
   return `${(p * 100).toFixed(1)}%`;

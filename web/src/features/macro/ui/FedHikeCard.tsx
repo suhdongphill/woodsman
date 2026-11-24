@@ -12,7 +12,7 @@
  */
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
-import { formatProbability, type FedHikeResult } from "@/lib/macro/fedhike";
+import { formatProbability, hikeOverHoldThreshold, type FedHikeResult } from "@/lib/macro/fedhike";
 
 const BIAS_STYLE: Record<FedHikeResult["bias"], string> = {
   hawkish: "border-red-500/30 bg-red-500/10 text-red-300",
@@ -120,6 +120,14 @@ export function FedHikeCard({
         <Bar label="인하" value={result.cut} emphasis={result.cut === top} />
       </ul>
 
+      {/* ⭐ 2026-11-24 — 「FedWatch는 인상인데 왜 동결?」에 확률 바로 아래에서 답한다 */}
+      <p className="mt-3 text-[12px] leading-relaxed text-gray-400">
+        이 모형은 <strong className="text-gray-300">경제 지표만</strong> 봅니다. 연준 위원 발언·점도표·시장 기대는
+        넣지 않고, 압력이 크지 않으면 동결이 기본값입니다. 인상이 동결을 앞서려면 보정 후 압력지수가 약{" "}
+        <strong className="text-gray-300">+{hikeOverHoldThreshold().toFixed(1)}%p</strong>를 넘어야 합니다(지금{" "}
+        {sign(result.adjustedGap)}%p). 시장이 실제로 거는 확률은 아래 「시장이 거는 것」 카드에 있습니다.
+      </p>
+
       <dl className="mt-4 grid gap-2 text-[11.5px] text-gray-500 sm:grid-cols-3">
         <Adjustment
           label="비용압력(매파)"
@@ -153,8 +161,9 @@ export function FedHikeCard({
 
       <p className="mt-4 text-[11.5px] leading-relaxed text-gray-600">
         ※ 테일러(1993) 준칙에 오쿤 근사 산출갭을 넣고, 기대인플레·비용압력·성장·심리로 보정한 뒤
-        확률로 편 값입니다. <strong>계수는 문헌 표준값으로 보정한 것이지 회귀로 적합한 것이
-        아니며, 아래 「시장이 거는 것」 카드(연방기금 선물 내재)와는 다른 숫자입니다.</strong>{" "}
+        확률로 편 값입니다. <strong>처방금리 식은 문헌 그대로지만, 압력지수를 확률로 펴는 계수(압력 0에서 인상 10%,
+        +1%p에서 35%)는 회귀로 적합한 값이 아니라 정해 둔 값이며 근거를 다시 확인하고 있습니다. 아래 「시장이 거는
+        것」 카드(연방기금 선물 내재)와는 다른 숫자입니다.</strong>{" "}
         방향과 상대 비교로만 읽어 주세요. 여기서 내는 것은 상태 표시까지입니다.{" "}
         <Link href="/disclaimer" className="underline hover:text-gold-400">
           투자 판단 책임 고지

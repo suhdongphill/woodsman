@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { estimateFedHike, fedHikeSentence, formatProbability } from "./fedhike";
+import { estimateFedHike, fedHikeSentence, formatProbability, hikeOverHoldThreshold } from "./fedhike";
 
 /**
  * ⚠ 이 값은 볼트 대시보드(`02_Macro/매크로 지표 대시보드.html`)의 2026-08-11 `fedhike` 블록이다.
@@ -136,5 +136,13 @@ describe("문장·표기", () => {
   it("백분율은 소수 한 자리", () => {
     expect(formatProbability(0.3554)).toBe("35.5%");
     expect(formatProbability(1)).toBe("100.0%");
+  });
+});
+
+describe("hikeOverHoldThreshold", () => {
+  it("인상이 동결을 처음 앞서는 압력지수 — 현행 계수로 약 +1.39%p", () => {
+    const x = hikeOverHoldThreshold();
+    expect(x).toBeGreaterThan(1.3);
+    expect(x).toBeLessThan(1.45);
   });
 });
