@@ -212,6 +212,7 @@ export default async function HomePage() {
           futuresGap: macro.fedFuturesGap,
           hike: macro.fedHike,
           hikeAsOf: macro.fedHikeAsOf,
+          hikeAsOfBy: macro.fedHikeAsOfBy,
           hikeLagging: macro.fedHikeLagging,
         }}
         // ⚠ 저장 행 → 한 줄 요약 · 계기 표는 lib/scores/summary.ts가 만든다(라우트는 조립만)

@@ -189,6 +189,8 @@ export type RateDirection = {
   futuresGap?: FedFuturesGap;
   hike?: FedHikeResult;
   hikeAsOf?: string;
+  /** 그 기준일을 잡고 있는 투입 지표 이름(2026-11-24) — 「왜 이 날짜인가」 */
+  hikeAsOfBy?: string[];
   /** 준칙 입력 가운데 늦었거나 없는 것 — 「입력 지연」 배지와 펼침(2026-11-15) */
   hikeLagging?: LaggingInput[];
 };
@@ -317,7 +319,11 @@ function RateCard({ rates }: { rates: RateDirection }) {
         <div className="mt-2 border-t border-border/60 pt-2">
           <p className="text-[12px] text-ink">
             준칙이 처방하는 것: 인상 {formatProbability(h.hike)} · 동결 {formatProbability(h.hold)} · 인하 {formatProbability(h.cut)}
-            <span className="text-ink-3"> ({h.biasLabel}{rates.hikeAsOf ? ` · 가장 오래된 입력 ${rates.hikeAsOf}` : ""})</span>
+            <span className="text-ink-3"> ({h.biasLabel}{rates.hikeAsOf
+              ? rates.hikeAsOfBy?.length
+                ? ` · 가장 오래된 입력: ${rates.hikeAsOfBy.join(", ")}, ${rates.hikeAsOf}`
+                : ` · 가장 오래된 입력 ${rates.hikeAsOf}`
+              : ""})</span>
           </p>
           <InputLag lagging={rates.hikeLagging ?? []} />
         </div>
