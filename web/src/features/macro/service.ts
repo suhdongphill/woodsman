@@ -48,6 +48,7 @@ import {
 import { loadRecentPoints, loadSeries, loadSeriesMany, loadSeriesMeta, type SeriesMeta } from "./repository";
 import { laggingInputs, type LaggingInput } from "@/lib/macro/input-lag";
 import { decomposeYield, type YieldDecomp } from "@/lib/macro/yield-decomp";
+import { computePassThrough, type PassThrough } from "@/lib/macro/oil-passthrough";
 
 export type IndicatorView = {
   indicator: MacroIndicator;
@@ -490,3 +491,34 @@ export async function loadMacroOverlay(input: {
 }
 
 export { MACRO_GROUPS };
+
+/**
+ * ⭐ 유가 전가 점검표(2026-11-25 · ⑤-3) — 물가 묶음 상세에서만 부른다.
+ * 일간 현물은 1년+ 마진 평균·전년비를 위해 약 400점, 주간 소매는 60점, 월간 CPI는 15점.
+ * ⚠ 계산은 `lib/macro/oil-passthrough.ts` 한 곳 — 여기서는 읽어 넘기기만 한다.
+ */
+export async function loadOilPassThrough(): Promise<PassThrough> {
+  const [crude, gasSpot, dieselSpot, jetSpot, gasRetail, dieselRetail, cpiGasoline, cpiAirfare, cpiTransportSvc] =
+    await Promise.all([
+      loadSeries("wti", 400),
+      loadSeries("gasoline_spot_gulf", 400),
+      loadSeries("diesel_spot_gulf", 400),
+      loadSeries("jet_fuel_gulf", 400),
+      loadSeries("gasoline_retail", 60),
+      loadSeries("diesel_retail", 60),
+      loadSeries("cpi_gasoline_yoy", 15),
+      loadSeries("cpi_airfare_yoy", 15),
+      loadSeries("cpi_transport_svc_yoy", 15),
+    ]);
+  return computePassThrough({
+    crude,
+    gasSpot,
+    dieselSpot,
+    jetSpot,
+    gasRetail,
+    dieselRetail,
+    cpiGasoline,
+    cpiAirfare,
+    cpiTransportSvc,
+  });
+}

@@ -11,7 +11,8 @@ import { AdSlot } from "@/components/analytics/AdSlot";
 import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { IndicatorCard } from "@/features/macro/ui/IndicatorCard";
 import { HealthNotice } from "@/features/macro/ui/Freshness";
-import { loadMacroGroup } from "@/features/macro/service";
+import { loadMacroGroup, loadOilPassThrough } from "@/features/macro/service";
+import { OilPassThroughCard } from "@/features/macro/ui/OilPassThroughCard";
 import { findMacroGroup, type MacroGroupKey } from "@/lib/macro/groups";
 import { indicatorsByGroup } from "@/lib/macro/catalog";
 import { breadcrumbJsonLd, datasetJsonLd, faqJsonLd } from "@/lib/seo";
@@ -63,7 +64,11 @@ export default async function MacroGroupPage({ params }: Props) {
   const detail = await loadMacroGroup(key as MacroGroupKey);
   if (!detail) notFound();
 
-  const [basics] = await Promise.all([getSiteBasics()]);
+  // ⭐ 유가 전가 점검표(2026-11-25 · ⑤-3)는 물가 묶음에만 — 다른 묶음은 읽지 않는다
+  const [basics, passThrough] = await Promise.all([
+    getSiteBasics(),
+    detail.group.key === "inflation" ? loadOilPassThrough() : Promise.resolve(undefined),
+  ]);
   const { group, items, prev, next } = detail;
 
   return (
@@ -127,6 +132,9 @@ export default async function MacroGroupPage({ params }: Props) {
 
         {/* ⚠ 문제가 없으면 렌더되지 않는다 */}
         <HealthNotice health={detail.health} />
+
+        {/* ⭐ 물가 묶음 맨 위 — 「유가가 내렸는데 물가는 언제 따라오나」(⑤-3). 기준일이 없으면 그리지 않는다 */}
+        {passThrough?.asOf && <OilPassThroughCard result={passThrough} />}
 
         {/* 지표 목록 — 카드 하나가 지표 하나 */}
         <div className="space-y-5">
