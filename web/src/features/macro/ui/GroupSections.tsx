@@ -85,7 +85,7 @@ export function GroupSections({
                 href={`#sec-${s.key}`}
                 className="inline-block rounded-full border border-border px-3 py-1 text-gray-300 hover:border-gold-600/40 hover:text-gold-400"
               >
-                {i + 1}. {s.title}
+                {i + 1}. {s.chip}
               </a>
             </li>
           ))}

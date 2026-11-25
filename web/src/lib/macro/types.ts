@@ -57,6 +57,8 @@ export type MacroGroupSection = {
   key: string;
   /** 섹션 질문(제목) */
   title: string;
+  /** 바로가기 칩의 짧은 이름 — 칩 여섯이 데스크톱 한 줄에 들어가게(2026-11-25 육안 확인: 긴 제목은 넘쳤다) */
+  chip: string;
   /** 한 줄 설명 */
   note?: string;
   /** 이 섹션의 지표 키 — 화면 순서 그대로 */

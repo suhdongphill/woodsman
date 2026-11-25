@@ -29,18 +29,21 @@ export const sector: MacroSector = {
       sections: [
         {
           key: "level",
+          chip: "지금 수준",
           title: "지금 어디까지 왔나",
           note: "연준 목표 2%와 비교하는 대표 물가 넷. 정책 판단은 근원 PCE가 기준입니다.",
           keys: ["cpi_yoy", "core_cpi_yoy", "pce_yoy", "core_pce_yoy"],
         },
         {
           key: "breadth",
+          chip: "퍼짐",
           title: "넓게 퍼졌나, 몇 품목 탓인가",
           note: "튀는 품목을 걸러낸 기저 물가. 근원보다 낮으면 소수 품목 탓, 비슷하면 넓게 퍼진 것입니다.",
           keys: ["cpi_median_yoy", "pce_trimmed_yoy", "cpi_sticky_core_yoy"],
         },
         {
           key: "items",
+          chip: "품목",
           title: "어디서 오나 — 품목",
           note: "서비스(임금이 원료)와 주거(1년 늦게 따라옴), 상품(공급망·관세)을 나눠 봅니다.",
           keys: [
@@ -58,6 +61,7 @@ export const sector: MacroSector = {
         },
         {
           key: "oil",
+          chip: "유가",
           title: "유가는 얼마나 넘어오나",
           note: "원유 → 도매 → 주유소 → 소비자물가. 맨 위 점검표가 단계마다 얼마나 따라왔는지 보여 줍니다.",
           keys: [
@@ -73,12 +77,14 @@ export const sector: MacroSector = {
         },
         {
           key: "pipeline",
+          chip: "앞단 압력",
           title: "앞으로 넘어올 압력",
           note: "생산자·수입 가격과 임금 — 소비자물가보다 먼저 움직이는 원가입니다.",
           keys: ["ppi_final_demand_yoy", "ppi_yoy", "import_price_yoy", "import_price_ex_fuel_yoy", "eci_wages_yoy"],
         },
         {
           key: "expectations",
+          chip: "기대",
           title: "기대가 풀리나",
           note: "채권시장과 가계가 앞으로의 물가를 몇 %로 보는지. 기대가 굳으면 물가는 스스로 버팁니다.",
           keys: ["infl_exp_5y", "infl_exp_5y5y", "umich_infl_exp_1y"],
