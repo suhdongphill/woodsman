@@ -42,7 +42,7 @@ export function IndicatorCard({ view }: { view: IndicatorView }) {
   const format = (v: number) => formatIndicatorValue(indicator, v);
 
   return (
-    <Card className="scroll-mt-24" padding="p-5 sm:p-6">
+    <Card className="scroll-mt-32" padding="p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           {/* h3: 그룹 상세의 h1(그룹명) 아래 단계 */}

@@ -12,12 +12,12 @@ import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { IndicatorCard } from "@/features/macro/ui/IndicatorCard";
 import { HealthNotice } from "@/features/macro/ui/Freshness";
 import { loadMacroGroup, loadOilPassThrough } from "@/features/macro/service";
-import { OilPassThroughCard } from "@/features/macro/ui/OilPassThroughCard";
+import { GroupSections } from "@/features/macro/ui/GroupSections";
 import { findMacroGroup, type MacroGroupKey } from "@/lib/macro/groups";
 import { indicatorsByGroup } from "@/lib/macro/catalog";
 import { breadcrumbJsonLd, datasetJsonLd, faqJsonLd } from "@/lib/seo";
 import { getSiteBasics } from "@/lib/site-settings";
-import { stripEmphasis } from "@/lib/format";
+import { objectParticle, stripEmphasis } from "@/lib/format";
 
 type Props = { params: Promise<{ group: string }> };
 
@@ -133,19 +133,28 @@ export default async function MacroGroupPage({ params }: Props) {
         {/* ⚠ 문제가 없으면 렌더되지 않는다 */}
         <HealthNotice health={detail.health} />
 
-        {/* ⭐ 물가 묶음 맨 위 — 「유가가 내렸는데 물가는 언제 따라오나」(⑤-3). 기준일이 없으면 그리지 않는다 */}
-        {passThrough?.asOf && <OilPassThroughCard result={passThrough} />}
-
-        {/* 지표 목록 — 카드 하나가 지표 하나 */}
-        <div className="space-y-5">
-          {items.map((view) => (
-            <IndicatorCard key={view.indicator.key} view={view} />
-          ))}
-        </div>
+        {/*
+          ⭐ 섹션이 정의된 묶음(2026-11-25 물가 압력 ⑥)은 계기판 + 질문별 섹션. 유가 점검표는 「유가」 섹션 맨 위로 옮겼다.
+          그 밖의 묶음은 지금처럼 카드 하나가 지표 하나인 한 줄 목록.
+        */}
+        {group.sections ? (
+          <GroupSections
+            group={group}
+            items={items}
+            passThrough={passThrough}
+            today={new Date().toISOString().slice(0, 10)}
+          />
+        ) : (
+          <div className="space-y-5">
+            {items.map((view) => (
+              <IndicatorCard key={view.indicator.key} view={view} />
+            ))}
+          </div>
+        )}
 
         {/* 블로그로 — 광고보다 위 */}
         <TistoryCta
-          headline={`${group.name}를 실제 판단에 어떻게 썼는지 블로그에 적었습니다`}
+          headline={`${group.name}${objectParticle(group.name)} 실제 판단에 어떻게 썼는지 블로그에 적었습니다`}
           postTitle={basics.featuredTitle}
           postExcerpt={basics.featuredExcerpt}
         />

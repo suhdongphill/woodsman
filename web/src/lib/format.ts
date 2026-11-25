@@ -168,3 +168,16 @@ export function stripEmphasis(text: string): string {
       .replace(/\*+/g, "")
   );
 }
+
+/**
+ * 목적격 조사 「을/를」 — 이름 끝 글자의 받침으로 고른다(2026-11-25).
+ * 왜: 묶음 상세의 블로그 안내가 `${group.name}를`로 박혀 「고용를」「환율를」「유동성를」처럼 7개 묶음에서 틀리게 나왔다.
+ * 끝 글자가 한글이 아니면(괄호·영문) 「을(를)」 — 틀린 조사를 고르느니 둘 다 적는다.
+ */
+export function objectParticle(word: string): "을" | "를" | "을(를)" {
+  const last = word.trim().at(-1);
+  if (!last) return "을(를)";
+  const code = last.charCodeAt(0);
+  if (code < 0xac00 || code > 0xd7a3) return "을(를)";
+  return (code - 0xac00) % 28 === 0 ? "를" : "을";
+}

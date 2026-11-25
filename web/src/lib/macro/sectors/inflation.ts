@@ -10,12 +10,81 @@ import { FRED_URL as FRED, type MacroSector } from "../types";
 export const sector: MacroSector = {
   group: {
       key: "inflation",
-      name: "물가",
+      /**
+       * ⚠ 2026-11-25 「물가」 → 「물가 압력」(운영자 결정 · ⑥). 홈 「포털 물가 압력 점수」·조류 기둥 이름과 같은 말로 잇는다.
+       *   주소 키(`inflation`)는 그대로.
+       */
+      name: "물가 압력",
       emoji: "📊",
-      question: "돈의 값어치가 깎이고 있나?",
+      question: "물가가 어디서 오고, 앞으로 더 오나?",
       intro:
         "물가가 오르면 같은 돈으로 살 수 있는 것이 줄고, 중앙은행은 금리를 올려 대응합니다. 그래서 물가 지표는 '금리가 어디로 갈까'를 먼저 알려주는 신호입니다. 미국 연준의 목표는 2%이고, 식품·에너지를 뺀 근원 물가가 추세를 더 잘 보여줍니다.",
       order: 4,
+      /** ⭐ 2026-11-25 ⑥ 계기판 — 지금 수준(근원 둘) · 최근 속도(슈퍼코어·중위) · 기대(5y5y) · 유가(주유소) */
+      dashboard: ["core_pce_yoy", "core_cpi_yoy", "pce_supercore_yoy", "cpi_median_yoy", "infl_exp_5y5y", "gasoline_retail"],
+      /**
+       * ⭐ 2026-11-25 ⑥ 질문별 섹션(운영자 「권고대로」 · 진짜 탭이 아니라 바로가기 — 섹션끼리 비교하며 읽는 화면이라 가리지 않는다).
+       * ⚠ 모든 지표가 정확히 한 번 — `validateSectors`가 검사한다.
+       */
+      sections: [
+        {
+          key: "level",
+          title: "지금 어디까지 왔나",
+          note: "연준 목표 2%와 비교하는 대표 물가 넷. 정책 판단은 근원 PCE가 기준입니다.",
+          keys: ["cpi_yoy", "core_cpi_yoy", "pce_yoy", "core_pce_yoy"],
+        },
+        {
+          key: "breadth",
+          title: "넓게 퍼졌나, 몇 품목 탓인가",
+          note: "튀는 품목을 걸러낸 기저 물가. 근원보다 낮으면 소수 품목 탓, 비슷하면 넓게 퍼진 것입니다.",
+          keys: ["cpi_median_yoy", "pce_trimmed_yoy", "cpi_sticky_core_yoy"],
+        },
+        {
+          key: "items",
+          title: "어디서 오나 — 품목",
+          note: "서비스(임금이 원료)와 주거(1년 늦게 따라옴), 상품(공급망·관세)을 나눠 봅니다.",
+          keys: [
+            "cpi_svc_ex_energy_yoy",
+            "pce_supercore_yoy",
+            "cpi_svc_ex_rent_yoy",
+            "cpi_shelter_yoy",
+            "cpi_rent_yoy",
+            "cpi_oer_yoy",
+            "cpi_medical_svc_yoy",
+            "cpi_transport_svc_yoy",
+            "cpi_airfare_yoy",
+            "cpi_core_goods_yoy",
+          ],
+        },
+        {
+          key: "oil",
+          title: "유가는 얼마나 넘어오나",
+          note: "원유 → 도매 → 주유소 → 소비자물가. 맨 위 점검표가 단계마다 얼마나 따라왔는지 보여 줍니다.",
+          keys: [
+            "cpi_energy_yoy",
+            "cpi_gasoline_yoy",
+            "gasoline_retail",
+            "diesel_retail",
+            "gasoline_spot_gulf",
+            "diesel_spot_gulf",
+            "jet_fuel_gulf",
+          ],
+          extra: "oil-passthrough",
+        },
+        {
+          key: "pipeline",
+          title: "앞으로 넘어올 압력",
+          note: "생산자·수입 가격과 임금 — 소비자물가보다 먼저 움직이는 원가입니다.",
+          keys: ["ppi_final_demand_yoy", "ppi_yoy", "import_price_yoy", "import_price_ex_fuel_yoy", "eci_wages_yoy"],
+        },
+        {
+          key: "expectations",
+          title: "기대가 풀리나",
+          note: "채권시장과 가계가 앞으로의 물가를 몇 %로 보는지. 기대가 굳으면 물가는 스스로 버팁니다.",
+          keys: ["infl_exp_5y", "infl_exp_5y5y", "umich_infl_exp_1y"],
+          extra: "yield-decomp-link",
+        },
+      ],
     },
   indicators: [
     {

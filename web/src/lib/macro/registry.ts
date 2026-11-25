@@ -65,6 +65,26 @@ export const MACRO_INDICATORS: MacroIndicator[] = MACRO_SECTORS.flatMap((s) => s
  */
 export function validateSectors(sectors: MacroSector[] = MACRO_SECTORS): string[] {
   const problems: string[] = [];
+  /**
+   * ⭐ 섹션·계기판 게이트(2026-11-25 · ⑥). 섹션이 있는 묶음은 모든 지표가 정확히 한 섹션에 — 빠지면 화면에서 조용히 사라지고,
+   *   두 번이면 같은 카드가 두 번 나온다. 계기판 키도 그 묶음 안에 있어야 한다.
+   */
+  for (const s of sectors) {
+    const own = new Set(s.indicators.map((i) => i.key));
+    if (s.group.sections) {
+      const seen = new Map<string, number>();
+      for (const sec of s.group.sections) for (const k of sec.keys) seen.set(k, (seen.get(k) ?? 0) + 1);
+      for (const k of own) if (!seen.has(k)) problems.push(`${s.group.key}: 지표 ${k}가 어느 섹션에도 없다`);
+      for (const [k, n] of seen) {
+        if (!own.has(k)) problems.push(`${s.group.key}: 섹션에 없는 지표 ${k}`);
+        if (n > 1) problems.push(`${s.group.key}: 지표 ${k}가 섹션 ${n}곳에 있다`);
+      }
+    }
+    if (s.group.dashboard) {
+      if (s.group.dashboard.length > 6) problems.push(`${s.group.key}: 계기판은 6개까지`);
+      for (const k of s.group.dashboard) if (!own.has(k)) problems.push(`${s.group.key}: 계기판에 없는 지표 ${k}`);
+    }
+  }
   const seenGroups = new Set<string>();
   const seenOrders = new Set<number>();
   const seenKeys = new Set<string>();

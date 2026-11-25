@@ -42,6 +42,27 @@ export type MacroGroup = {
   /** 초보자용 한 문단. 검색 결과에 노출되는 설명이기도 하다(SEO). */
   intro: string;
   order: number;
+  /**
+   * ⭐ 긴 묶음을 질문별 섹션으로 나눈다(2026-11-25 · 물가 압력 탭 ⑥). 없으면 지금처럼 한 줄 목록.
+   * ⚠ 섹션이 있으면 묶음의 **모든 지표가 정확히 한 섹션**에 들어가야 한다(`validateSectors`) — 새 지표를 넣고 섹션을 잊으면
+   *   화면에서 조용히 사라진다.
+   */
+  sections?: MacroGroupSection[];
+  /** ⭐ 맨 위 계기판 타일(지표 키 · 최대 6개) — 값 · 3개월 연율(있으면) · 기준일 */
+  dashboard?: string[];
+};
+
+export type MacroGroupSection = {
+  /** 앵커 id(`sec-<key>`) — 영문 고정 */
+  key: string;
+  /** 섹션 질문(제목) */
+  title: string;
+  /** 한 줄 설명 */
+  note?: string;
+  /** 이 섹션의 지표 키 — 화면 순서 그대로 */
+  keys: string[];
+  /** 섹션에 붙는 계산 카드·링크(지표가 아닌 것) */
+  extra?: "oil-passthrough" | "yield-decomp-link";
 };
 
 /**
