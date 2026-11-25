@@ -45,6 +45,16 @@ import {
 const HISTORY_START = "1990-01-01";
 /** 이미 쌓여 있을 때 받는 구간(일). 통계 수정본까지 다시 받으려면 넉넉해야 한다. */
 const REFRESH_DAYS = 500;
+/**
+ * ⚠ 월·분기 계열은 **3년 + 여유**를 받는다(2026-11-25). 되감아 쓰는 창(`rewriteBackDays`)보다 짧게 받으면
+ *   되감기를 늘려도 쓸 값이 없다.
+ */
+const REFRESH_DAYS_SLOW = 1200;
+
+/** 이 빈도의 계열을 다시 받을 때 몇 일 전부터 받나. */
+function refreshDays(freq: MacroIndicator["freq"]): number {
+  return freq === "m" || freq === "q" ? REFRESH_DAYS_SLOW : REFRESH_DAYS;
+}
 
 const FETCH_TIMEOUT_MS = 20_000;
 
@@ -234,7 +244,7 @@ async function fetchIndicator(
   if (!indicator.sourceId) throw new Error("소스 ID가 없습니다(수동 지표)");
 
   if (indicator.source === "FRED") {
-    return fetchFred(indicator.sourceId, hasHistory ? daysAgo(REFRESH_DAYS) : HISTORY_START);
+    return fetchFred(indicator.sourceId, hasHistory ? daysAgo(refreshDays(indicator.freq)) : HISTORY_START);
   }
   if (indicator.source === "YAHOO") {
     if (indicator.frontContract) return fetchFrontContract(indicator.sourceId, !hasHistory);
@@ -248,14 +258,14 @@ async function fetchIndicator(
       indicator.sourceId,
       indicator.freq,
       ecosKey,
-      hasHistory ? daysAgo(REFRESH_DAYS) : HISTORY_START,
+      hasHistory ? daysAgo(refreshDays(indicator.freq)) : HISTORY_START,
     );
   }
   if (indicator.source === "TREASURY") {
     return fetchTreasury(indicator.sourceId, hasHistory ? daysAgo(REFRESH_DAYS) : HISTORY_START);
   }
   if (indicator.source === "IMF") {
-    return fetchImf(indicator.sourceId, hasHistory ? daysAgo(REFRESH_DAYS) : HISTORY_START);
+    return fetchImf(indicator.sourceId, hasHistory ? daysAgo(refreshDays(indicator.freq)) : HISTORY_START);
   }
   if (indicator.source === "DEFILLAMA") {
     return fetchDefiLlama(indicator.sourceId, hasHistory ? daysAgo(REFRESH_DAYS) : HISTORY_START);
@@ -263,13 +273,24 @@ async function fetchIndicator(
   throw new Error(`알 수 없는 출처: ${indicator.source}`);
 }
 
-/** 이미 가진 마지막 기준일에서 며칠까지 되돌려 다시 쓸 것인가. */
+/** 이미 가진 마지막 기준일에서 며칠까지 되돌려 다시 쓸 것인가 — 일·주간 계열. */
 const REWRITE_BACK_DAYS = 60;
+/**
+ * ⚠ 월·분기 계열은 **3년**(2026-11-25 사고 · 운영자 결정). 60일로는 BEA 연간 수정(매년 9월 · 몇 해를 거슬러 고친다)이
+ *   영원히 안 들어왔다 — 근원 PCE 2024-09 이후 21개월이 FRED와 달라, 6개월 연율이 +2.4%(실제 +2.9%)로 나왔다.
+ *   월간 계열 하나에 36점이라 매일 다시 써도 부담이 작다. 일·주간은 점이 많아 60일 그대로.
+ */
+const REWRITE_BACK_DAYS_SLOW = 3 * 366;
+
+/** 빈도별 되감기 일수. */
+export function rewriteBackDays(freq: MacroIndicator["freq"] | undefined): number {
+  return freq === "m" || freq === "q" ? REWRITE_BACK_DAYS_SLOW : REWRITE_BACK_DAYS;
+}
 
 /**
  * 무엇을 쓸지 고른다.
  *
- * 처음이면 전부. 이미 있으면 **마지막 기준일에서 60일 전부터**만 쓴다.
+ * 처음이면 전부. 이미 있으면 **마지막 기준일에서 60일 전부터**만 쓴다(월·분기는 3년 — `rewriteBackDays`).
  * 60일을 되감는 이유: 고용·물가 통계는 발표 뒤 한두 번 수정된다. 새로 생긴 점만 쓰면
  * 옛 값이 영원히 틀린 채로 남는다. 반대로 전 구간을 매번 다시 쓰면 한 번 수집에 3분이
  * 넘게 걸린다(실제로 그랬다). 그 사이를 60일로 잡았다.
@@ -277,10 +298,11 @@ const REWRITE_BACK_DAYS = 60;
 export function pointsToWrite(
   points: SeriesPoint[],
   known: string | undefined,
+  freq?: MacroIndicator["freq"],
 ): { toWrite: SeriesPoint[]; added: number } {
   if (!known) return { toWrite: points, added: points.length };
 
-  const from = new Date(Date.parse(`${known}T00:00:00.000Z`) - REWRITE_BACK_DAYS * 86_400_000)
+  const from = new Date(Date.parse(`${known}T00:00:00.000Z`) - rewriteBackDays(freq) * 86_400_000)
     .toISOString()
     .slice(0, 10);
 
@@ -372,7 +394,7 @@ export async function ingestMacro(
     for (const item of fetched) {
       if (!item) continue;
       try {
-        const { toWrite, added } = pointsToWrite(item.points, item.known);
+        const { toWrite, added } = pointsToWrite(item.points, item.known, item.indicator.freq);
         /**
          * ⚠ **L1 먼저, L2는 그다음.** L2(`MacroPoint`)는 덮어쓰므로, L1에 남기기 전에 덮으면 수정 전 값이 사라진다.
          *   L1 저장이 실패하면 이 지표를 실패로 기록하고 L2도 건드리지 않는다 — 이력이 조용히 뒤처지지 않게.
