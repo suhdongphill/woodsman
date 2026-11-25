@@ -105,6 +105,7 @@ export default async function MacroHubPage() {
               result={overview.fedHike}
               asOf={overview.fedHikeAsOf}
               asOfBy={overview.fedHikeAsOfBy}
+              lastMeeting={overview.fedHikeLastMeeting}
             />
           </section>
         )}

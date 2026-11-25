@@ -1,137 +1,128 @@
 import { describe, expect, it } from "vitest";
-import { estimateFedHike, fedHikeSentence, formatProbability, hikeOverHoldThreshold } from "./fedhike";
+import {
+  estimateFedHike,
+  fedHikeSentence,
+  formatProbability,
+  hikeOverHoldThreshold,
+  lastMeetingDecision,
+} from "./fedhike";
 
 /**
- * ⚠ 이 값은 볼트 대시보드(`02_Macro/매크로 지표 대시보드.html`)의 2026-08-11 `fedhike` 블록이다.
- * 같은 투입값을 넣으면 같은 숫자가 나와야 한다 — **한 사건에 두 숫자가 나오면 둘 다 못 믿는다.**
- * 이 테스트가 깨졌다면 식을 고친 것이므로 볼트 스크립트도 같이 고쳐야 한다.
+ * ⚠ 2026-11-25 현재값 — `docs/연구_테일러준칙_계수근거_2026-11-24.md` 「현재 값 대입」과 볼트 `fed-hike-prob.py`가
+ * 같은 투입값에서 같은 숫자를 내야 한다(한 사건에 두 숫자 금지). 이 테스트가 깨졌다면 식을 고친 것 — 볼트도 같이.
+ * 손계산: R* = 1.2 + 3.107 + 0.5·1.107 + (4.2 − 4.1) = 4.9605 · 중간값 3.875 · x = 1.0855
+ *         xb = 0.38395·1.0855 = 0.41677 · 인하 L(−1.7640 − 0.4168) = 10.15% · 인상 1 − L(2.4364 − 0.4168) = 11.71%
  */
-const VAULT_2026_08_11 = {
-  corePce: 3.3,
-  fedFunds: 3.63,
-  unrate: 4.1,
-  ism: 55.6,
-  umcsent: 49.5,
-  breakeven5y: 2.25,
-  ppiYoy: 10.1,
-  wti: 81.96,
-};
+const NOW_2026_11 = { corePce: 3.107, targetUpper: 4.0, unrate: 4.1, lastDecision: 0 as const };
 
-describe("연준 인상확률 — 볼트 스크립트와 같은 숫자", () => {
-  it("2026-08-11 대시보드 값을 그대로 재현한다", () => {
-    const r = estimateFedHike(VAULT_2026_08_11)!;
-
-    // ⚠ 2026-11-24 r* 0.5 → 1.2(SEP 장기 3.2 − 2). 옛 대시보드 값(4.55·0.92·1.01·35.5%)에서 처방금리가 +0.7 옮겨 간 값이다.
-    //   볼트 `fed-hike-prob.py`도 같은 날 1.2로 바꿨다 — 다음 대시보드 갱신부터 이 숫자와 같아야 한다.
-    expect(r.prescribedRate).toBeCloseTo(5.25, 2); // i_star
-    expect(r.gap).toBeCloseTo(1.62, 2);
-    expect(r.adjustedGap).toBeCloseTo(1.715, 3); // adj_gap
-    expect(r.hike).toBeCloseTo(0.6246, 3);
-    expect(r.hold).toBeCloseTo(0.368, 3);
-    expect(r.cut).toBeCloseTo(0.0074, 3);
-    expect(r.biasLabel).toBe("매파(인상 편향)");
+describe("연준 방향 확률 — 과거 추정 모형(S2)", () => {
+  it("2026-11 현재값을 재현한다", () => {
+    const r = estimateFedHike(NOW_2026_11)!;
+    expect(r.prescribedRate).toBeCloseTo(4.9605, 3);
+    expect(r.policyRate).toBeCloseTo(3.875, 10);
+    expect(r.gap).toBeCloseTo(1.0855, 3);
+    expect(r.hike).toBeCloseTo(0.1171, 3);
+    expect(r.cut).toBeCloseTo(0.1015, 3);
+    expect(r.hold).toBeCloseTo(0.7814, 3);
+    // 인상 − 인하 1.6%p → 경계 10%p 안 → 중립(라벨이 막대와 같은 말을 한다)
+    expect(r.bias).toBe("neutral");
   });
 
   it("확률 셋의 합은 1이다", () => {
-    const r = estimateFedHike(VAULT_2026_08_11)!;
+    const r = estimateFedHike(NOW_2026_11)!;
     expect(r.hike + r.hold + r.cut).toBeCloseTo(1, 10);
   });
 
-  it("보정 내역을 따로 낸다 — 왜 그 숫자인지 화면이 보여줄 수 있게", () => {
-    const r = estimateFedHike(VAULT_2026_08_11)!;
-    expect(r.adjustments.costPush).toBeCloseTo(0.3, 3); // PPI 10.1(+0.2) + BEI 2.25(+0.1)
-    expect(r.adjustments.growth).toBe(0); // ISM 55.6 → 50 위라 차감 없음
-    expect(r.adjustments.sentiment).toBeCloseTo(0.205, 3); // (70−49.5)×0.01
+  it("직전 회의가 인상이었으면 인상 확률이 크게 오른다(관성)", () => {
+    const held = estimateFedHike(NOW_2026_11)!;
+    const hiked = estimateFedHike({ ...NOW_2026_11, lastDecision: 1 })!;
+    expect(hiked.hike).toBeGreaterThan(0.55); // 연구 문서 「만약 직전이 인상이었다면」 59.6%(u* 차이로 소폭 다름)
+    expect(hiked.hike).toBeGreaterThan(held.hike * 4);
+    expect(hiked.bias).toBe("hawkish");
+  });
+
+  it("직전 회의가 인하였으면 인하 쪽으로 기운다", () => {
+    const r = estimateFedHike({ ...NOW_2026_11, lastDecision: -1 })!;
+    expect(r.cut).toBeGreaterThan(r.hike);
+    expect(r.bias).toBe("dovish");
   });
 });
 
 describe("결측 처리", () => {
-  it("⚠ 필수 셋 중 하나라도 없으면 계산하지 않는다", () => {
-    expect(estimateFedHike({ fedFunds: 3.63, unrate: 4.1 })).toBeUndefined();
-    expect(estimateFedHike({ corePce: 3.3, unrate: 4.1 })).toBeUndefined();
-    expect(estimateFedHike({ corePce: 3.3, fedFunds: 3.63 })).toBeUndefined();
+  it("⚠ 필수 넷 중 하나라도 없으면 계산하지 않는다", () => {
+    expect(estimateFedHike({ targetUpper: 4, unrate: 4.1, lastDecision: 0 })).toBeUndefined();
+    expect(estimateFedHike({ corePce: 3.1, unrate: 4.1, lastDecision: 0 })).toBeUndefined();
+    expect(estimateFedHike({ corePce: 3.1, targetUpper: 4, lastDecision: 0 })).toBeUndefined();
+    expect(estimateFedHike({ corePce: 3.1, targetUpper: 4, unrate: 4.1 })).toBeUndefined();
     expect(estimateFedHike({})).toBeUndefined();
   });
 
-  it("필수 셋만 있어도 계산하고, 빠진 보정 지표를 목록으로 남긴다", () => {
-    const r = estimateFedHike({ corePce: 3.3, fedFunds: 3.63, unrate: 4.1 })!;
-    expect(r.adjustedGap).toBeCloseTo(r.gap, 10); // 보정이 하나도 안 붙는다
-    expect(r.missingOptional).toHaveLength(5);
-    expect(r.usedOptional).toHaveLength(0);
-  });
-
-  it("⚠ '보정이 0'과 '보정을 못 했다'를 구분한다", () => {
-    // ISM 55.6은 재 봤더니 차감이 0인 경우 — 값이 없어 건너뛴 것과 다르다.
-    const measured = estimateFedHike({ ...VAULT_2026_08_11 })!;
-    expect(measured.adjustments.growth).toBe(0);
-    expect(measured.adjustmentsApplied.growth).toBe(true);
-
-    const skipped = estimateFedHike({ corePce: 3.3, fedFunds: 3.63, unrate: 4.1 })!;
-    expect(skipped.adjustments.growth).toBe(0);
-    expect(skipped.adjustmentsApplied.growth).toBe(false);
-    expect(skipped.adjustmentsApplied.costPush).toBe(false);
-    expect(skipped.adjustmentsApplied.sentiment).toBe(false);
-  });
-
   it("NaN은 값이 없는 것으로 본다", () => {
-    expect(estimateFedHike({ corePce: Number.NaN, fedFunds: 3.63, unrate: 4.1 })).toBeUndefined();
+    expect(estimateFedHike({ ...NOW_2026_11, corePce: Number.NaN })).toBeUndefined();
   });
 });
 
 describe("방향", () => {
-  it("정책이 처방보다 완화적이면 인상 확률이 인하보다 높다", () => {
-    const r = estimateFedHike({ corePce: 4, fedFunds: 1, unrate: 4.2 })!;
+  it("처방갭이 크게 +면 인상이 인하보다 높다", () => {
+    const r = estimateFedHike({ corePce: 5, targetUpper: 1, unrate: 4.2, lastDecision: 0 })!;
     expect(r.gap).toBeGreaterThan(0);
     expect(r.hike).toBeGreaterThan(r.cut);
-    expect(r.bias).toBe("hawkish");
   });
 
-  it("정책이 처방보다 긴축적이면 인하 확률이 인상보다 높다", () => {
-    const r = estimateFedHike({ corePce: 1.5, fedFunds: 5.5, unrate: 4.2 })!;
+  it("처방갭이 크게 −면 인하가 인상보다 높다", () => {
+    const r = estimateFedHike({ corePce: 1.5, targetUpper: 6, unrate: 4.2, lastDecision: 0 })!;
     expect(r.gap).toBeLessThan(0);
     expect(r.cut).toBeGreaterThan(r.hike);
     expect(r.bias).toBe("dovish");
   });
 
-  it("처방갭이 0 근처면 중립이고 동결이 가장 크다", () => {
-    // i* = r*(1.2) + π + 0.5(π−2) + 0.5·0 이므로 π=2, u=4.2면 i*=3.2
-    const r = estimateFedHike({ corePce: 2, fedFunds: 3.2, unrate: 4.2 })!;
-    expect(r.bias).toBe("neutral");
-    expect(r.hold).toBeGreaterThan(r.hike);
-    expect(r.hold).toBeGreaterThan(r.cut);
-  });
-
   it("실업률이 자연실업률보다 높으면 처방금리가 내려간다(오쿤 근사)", () => {
-    const tight = estimateFedHike({ corePce: 3, fedFunds: 3, unrate: 3.2 })!;
-    const slack = estimateFedHike({ corePce: 3, fedFunds: 3, unrate: 5.2 })!;
+    const tight = estimateFedHike({ ...NOW_2026_11, unrate: 3.2 })!;
+    const slack = estimateFedHike({ ...NOW_2026_11, unrate: 5.2 })!;
     expect(slack.prescribedRate).toBeLessThan(tight.prescribedRate);
   });
+});
 
-  it("심리가 무너지면 압력지수가 비둘기 쪽으로 밀린다", () => {
-    const base = estimateFedHike({ corePce: 3.3, fedFunds: 3.63, unrate: 4.1, umcsent: 90 })!;
-    const weak = estimateFedHike({ corePce: 3.3, fedFunds: 3.63, unrate: 4.1, umcsent: 40 })!;
-    expect(weak.adjustedGap).toBeLessThan(base.adjustedGap);
-    expect(weak.adjustments.sentiment).toBeCloseTo(0.3, 3); // 상한 0.40에 걸리기 전
+describe("lastMeetingDecision — 회의 전날 vs +3일", () => {
+  const pts = (pairs: [string, number][]) => pairs.map(([date, value]) => ({ date, value }));
+
+  it("목표 상단이 그대로면 동결", () => {
+    expect(lastMeetingDecision(pts([["2026-10-27", 4], ["2026-10-29", 4], ["2026-11-24", 4]]), "2026-10-28")).toBe(0);
   });
 
-  it("심리 보정에는 상한이 있다 — 한 지표가 판정을 통째로 끌고 가지 않게", () => {
-    const r = estimateFedHike({ corePce: 3.3, fedFunds: 3.63, unrate: 4.1, umcsent: 10 })!;
-    expect(r.adjustments.sentiment).toBe(0.4);
+  it("오르면 인상 · 내리면 인하", () => {
+    expect(lastMeetingDecision(pts([["2026-09-15", 3.75], ["2026-09-17", 4]]), "2026-09-16")).toBe(1);
+    expect(lastMeetingDecision(pts([["2026-09-15", 4.25], ["2026-09-17", 4]]), "2026-09-16")).toBe(-1);
+  });
+
+  it("+3일 뒤의 변화는 그 회의 결정이 아니다", () => {
+    expect(lastMeetingDecision(pts([["2026-10-27", 4], ["2026-10-29", 4], ["2026-11-05", 4.25]]), "2026-10-28")).toBe(0);
+  });
+
+  it("⚠ 회의 뒤 관측이 아직 없으면 모른다 — 「동결」로 읽지 않는다", () => {
+    expect(lastMeetingDecision(pts([["2026-10-27", 4], ["2026-10-28", 4]]), "2026-10-28")).toBeUndefined();
+    expect(lastMeetingDecision(pts([["2026-10-29", 4]]), "2026-10-28")).toBeUndefined();
+    expect(lastMeetingDecision([], "2026-10-28")).toBeUndefined();
+  });
+
+  it("순서가 섞여 들어와도 같다", () => {
+    expect(lastMeetingDecision(pts([["2026-09-17", 4], ["2026-09-15", 3.75]]), "2026-09-16")).toBe(1);
   });
 });
 
 describe("문장·표기", () => {
-  it("한 문장 요약에 숫자와 기준일이 함께 들어간다", () => {
-    const r = estimateFedHike(VAULT_2026_08_11)!;
-    const s = fedHikeSentence(r, "2026-08-11");
-    expect(s).toContain("2026-08-11");
-    expect(s).toContain("5.25%");
-    expect(s).toContain("62.5%");
-    expect(s).toContain("매파");
+  it("한 문장 요약에 숫자·기준일·직전 결정이 함께 들어간다", () => {
+    const s = fedHikeSentence(estimateFedHike(NOW_2026_11)!, "2026-11-25");
+    expect(s).toContain("2026-11-25");
+    expect(s).toContain("4.96%");
+    expect(s).toContain("3.875%");
+    expect(s).toContain("직전 회의 결정(동결)");
+    expect(s).toContain("11.7%");
+    expect(s).toContain("중립");
   });
 
   it("⚠ 요약 문장이 매매 지시로 넘어가지 않는다", () => {
-    const s = fedHikeSentence(estimateFedHike(VAULT_2026_08_11)!, "2026-08-11");
+    const s = fedHikeSentence(estimateFedHike(NOW_2026_11)!, "2026-11-25");
     expect(s).not.toMatch(/매수|매도|사세요|파세요|추천/);
   });
 
@@ -142,9 +133,14 @@ describe("문장·표기", () => {
 });
 
 describe("hikeOverHoldThreshold", () => {
-  it("인상이 동결을 처음 앞서는 압력지수 — 현행 계수로 약 +1.39%p", () => {
-    const x = hikeOverHoldThreshold();
-    expect(x).toBeGreaterThan(1.3);
-    expect(x).toBeLessThan(1.45);
+  it("직전 동결이면 인상이 동결을 앞서는 처방갭은 크다(동결이 기본값)", () => {
+    const x = hikeOverHoldThreshold(0);
+    // 1 − L(a2 − βx) = L(a2 − βx) − L(a1 − βx) 근방 — 손으로 푼 값 약 +7.2%p
+    expect(x).toBeGreaterThan(6);
+    expect(x).toBeLessThan(8.5);
+  });
+
+  it("직전이 인상이면 문턱이 크게 낮아진다", () => {
+    expect(hikeOverHoldThreshold(1)).toBeLessThan(hikeOverHoldThreshold(0) - 5);
   });
 });

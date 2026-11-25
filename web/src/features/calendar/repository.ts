@@ -4,7 +4,7 @@
  * ⚠ 판단(지났나·평가가 붙었나·무엇을 먼저 쓸까)은 여기 없다.
  *    `src/lib/macro-calendar.ts`(순수 함수 + 테스트)가 한다.
  */
-import { execute, queryAll } from "@/lib/d1";
+import { execute, queryAll, queryOne } from "@/lib/d1";
 import type { CalendarEvent } from "@/lib/macro-calendar";
 
 type Row = {
@@ -63,6 +63,20 @@ export async function loadFomcDecisionDates(fromDate: string): Promise<string[]>
     [`${fromDate}T00:00:00.000Z`],
   );
   return rows.map((r) => r.at.slice(0, 10));
+}
+
+/**
+ * 오늘 **이전** 마지막 FOMC 결정일(YYYY-MM-DD) — 준칙 확률의 「직전 회의 결정」 입력(2026-11-25).
+ * ⚠ 오늘 회의는 넣지 않는다 — 발표 전이면 결정이 아직 없다. 없으면 undefined(부르는 쪽이 남긴다).
+ */
+export async function loadLastFomcDecisionDate(beforeDate: string): Promise<string | undefined> {
+  const row = await queryOne<{ at: string }>(
+    `SELECT at FROM MacroEvent
+      WHERE kind = 'CENTRAL_BANK' AND title LIKE '%FOMC%' AND at < ?
+      ORDER BY at DESC LIMIT 1`,
+    [`${beforeDate}T00:00:00.000Z`],
+  );
+  return row?.at.slice(0, 10);
 }
 
 export async function createEvent(input: {

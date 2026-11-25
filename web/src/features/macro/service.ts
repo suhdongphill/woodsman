@@ -25,7 +25,7 @@ import {
   yoyGapNote,
 } from "@/lib/macro/series";
 import { judgeSignal, summarizeRecession, type RecessionSummary, type SignalStatus } from "@/lib/macro/signal";
-import { estimateFedHike, type FedHikeResult } from "@/lib/macro/fedhike";
+import { estimateFedHike, lastMeetingDecision, type FedHikeResult } from "@/lib/macro/fedhike";
 import {
   fedFuturesGap,
   impliedFromFutures,
@@ -33,7 +33,7 @@ import {
   nextMonthOf,
   type FedFuturesResult,
 } from "@/lib/macro/fedfutures";
-import { loadFomcDecisionDates } from "@/features/calendar/repository";
+import { loadFomcDecisionDates, loadLastFomcDecisionDate } from "@/features/calendar/repository";
 import { computeCapitalSpreads, type CapitalSpreads } from "@/lib/macro/capital";
 import { buildOverlay, type OverlayMode, type OverlayResult } from "@/lib/macro/overlay";
 import {
@@ -44,7 +44,7 @@ import {
   type MacroFreshness,
   type MacroHealth,
 } from "@/lib/macro/freshness";
-import { loadRecentPoints, loadSeriesMany, loadSeriesMeta, type SeriesMeta } from "./repository";
+import { loadRecentPoints, loadSeries, loadSeriesMany, loadSeriesMeta, type SeriesMeta } from "./repository";
 import { laggingInputs, type LaggingInput } from "@/lib/macro/input-lag";
 
 export type IndicatorView = {
@@ -178,6 +178,8 @@ export type MacroOverview = {
   fedHikeAsOfBy: string[];
   /** 준칙 입력 가운데 늦었거나 없는 것(정상이면 빈 배열) */
   fedHikeLagging: LaggingInput[];
+  /** 확률에 넣은 직전 정례회의 날짜(결정 발표일) */
+  fedHikeLastMeeting?: string;
   /**
    * 선물 내재 정책금리 — **시장이 거는 것**. `fedHike`(모형이 처방하는 것)와 짝이다.
    * ⚠ 선물 시세·현재 금리·FOMC 일정 중 하나라도 없으면 undefined다. 지어내지 않는다.
@@ -202,14 +204,12 @@ export type MacroOverview = {
  */
 const FED_HIKE_KEYS = {
   corePce: "core_pce_yoy",
-  fedFunds: "fed_funds",
+  /** ⚠ 2026-11-25부터 목표 범위 상단(DFEDTARU). 월평균 실효금리(fed_funds)가 아니다 — 확률 계수를 이 정의로 추정했다. */
+  targetUpper: "fed_target_upper",
   unrate: "unrate",
-  ism: "ism_mfg",
-  umcsent: "umcsent",
-  breakeven5y: "infl_exp_5y",
-  ppiYoy: "ppi_yoy",
-  wti: "wti",
 } as const;
+/** 직전 회의 결정을 가리려고 읽는 목표 상단 일간 점 수 — 정례회의 간격(최대 약 8주)보다 넉넉하게. */
+const TARGET_HISTORY_POINTS = 120;
 
 /**
  * 홈·허브가 쓰는 요약.
@@ -220,10 +220,13 @@ const FED_HIKE_KEYS = {
 export async function loadMacroOverview(): Promise<MacroOverview> {
   const now = new Date();
   // FOMC 일정은 선물 내재금리의 입력이다. 같은 왕복에서 받아 온다.
-  const [recent, meta, fomc] = await Promise.all([
+  const today = now.toISOString().slice(0, 10);
+  const [recent, meta, fomc, lastFomc, targetHistory] = await Promise.all([
     loadRecentPoints(),
     loadSeriesMeta(),
-    loadFomcDecisionDates(now.toISOString().slice(0, 10)),
+    loadFomcDecisionDates(today),
+    loadLastFomcDecisionDate(today),
+    loadSeries(FED_HIKE_KEYS.targetUpper, TARGET_HISTORY_POINTS),
   ]);
 
   const views = new Map<string, IndicatorView>();
@@ -247,11 +250,20 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
   const dates = [...views.values()].map((v) => v.asOf).filter((d): d is string => !!d);
   const asOf = dates.length ? dates.slice().sort().reverse()[0] : undefined;
 
-  const fedHike = estimateFedHike(
-    Object.fromEntries(
-      Object.entries(FED_HIKE_KEYS).map(([field, key]) => [field, views.get(key)?.value]),
-    ),
-  );
+  /**
+   * ⭐ 직전 정례회의 결정(2026-11-25) — 과거 추정 모형에서 가장 설명력이 큰 입력이다.
+   * ⚠ 못 가리면 확률을 내지 않는다(동결로 채우지 않는다) — 그리고 **남긴다**(조용한 실패 금지).
+   */
+  const lastDecision = lastFomc ? lastMeetingDecision(targetHistory, lastFomc) : undefined;
+  if (lastDecision === undefined) {
+    console.error(
+      `[macro] 준칙 확률: 직전 FOMC 결정을 가리지 못했다 — 회의 ${lastFomc ?? "(캘린더에 지난 FOMC 없음)"} · 목표 상단 점 ${targetHistory.length}개(마지막 ${targetHistory.at(-1)?.date ?? "-"})`,
+    );
+  }
+  const fedHike = estimateFedHike({
+    ...Object.fromEntries(Object.entries(FED_HIKE_KEYS).map(([field, key]) => [field, views.get(key)?.value])),
+    lastDecision,
+  });
   // ⚠ 가장 최근이 아니라 **가장 오래된** 기준일을 쓴다. 한 지표만 오늘 것이어도
   //    "오늘 기준"이라고 적으면 묵은 판단을 새 것으로 보이게 한다.
   const fedHikeDates = Object.values(FED_HIKE_KEYS)
@@ -330,6 +342,7 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
     fedHikeAsOf: fedHike ? fedHikeAsOf : undefined,
     fedHikeAsOfBy: fedHike ? fedHikeAsOfBy : [],
     fedHikeLagging: fedHike ? fedHikeLagging : [],
+    fedHikeLastMeeting: fedHike ? lastFomc : undefined,
     fedFutures,
     fedFuturesAsOf: fedFutures ? zq?.asOf : undefined,
     fedFuturesFetchedAt: fedFutures ? zq?.freshness.fetchedAt : undefined,

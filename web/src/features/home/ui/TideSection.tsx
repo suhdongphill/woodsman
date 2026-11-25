@@ -328,7 +328,7 @@ function RateCard({ rates }: { rates: RateDirection }) {
           <InputLag lagging={rates.hikeLagging ?? []} />
         </div>
       ) : (
-        <p className="mt-2 border-t border-border/60 pt-2 text-[12px] text-muted">준칙 계산에 필요한 지표(근원 PCE·기준금리·실업률)가 아직 없습니다.</p>
+        <p className="mt-2 border-t border-border/60 pt-2 text-[12px] text-muted">준칙 계산에 필요한 값(근원 PCE·목표 범위·실업률·직전 FOMC 결정)이 아직 없습니다.</p>
       )}
 
       <Guide how={RATE_GUIDE.how} judge={RATE_GUIDE.judge} />
