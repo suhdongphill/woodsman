@@ -288,6 +288,32 @@ export const sector: MacroSector = {
       order: 10,
     },
     {
+      /**
+       * ⭐ 2026-11-25 10년물 분해(⑤-2) — Kim–Wright 모형이 맞춘 10년 금리. 「기대 단기금리 평균 = 이 값 − 텀 프리미엄」을
+       *   읽을 때 계산한다(`lib/macro/yield-decomp.ts`). FRED 원문 확인: THREEFY10 「Fitted Yield on a 10 Year Zero Coupon Bond」
+       *   · 연준 이사회 · 11/25 최신 2026-11-20(4.9522). 텀 프리미엄과 같은 모형·같은 날짜라 짝이 맞는다.
+       */
+      key: "kw_fitted10",
+      name: "10년 적합 금리 (Kim–Wright)",
+      group: "rates",
+      source: "FRED",
+      sourceId: "THREEFY10",
+      transform: "level",
+      layer: "L2",
+      type: "level",
+      freq: "d",
+      staleDays: 14,
+      staleWhy: "연준 이사회 Kim–Wright 모형 추정치. 텀 프리미엄과 같이 FRED 반영이 며칠~한 주 지연된다.",
+      unit: "%",
+      decimals: 2,
+      url: FRED("THREEFY10"),
+      sourceLabel: "FRED · THREEFY10 (연준 이사회 Kim–Wright 모형 적합 10년 무이표 금리)",
+      what: "Kim–Wright 모형이 국채 금리 곡선에 맞춰 계산한 10년 금리입니다. 실제 10년물(DGS10)과 비슷하지만 같은 값은 아닙니다.",
+      why: "이 값에서 텀 프리미엄을 빼면 「시장이 예상하는 앞으로 10년 평균 단기금리」가 나옵니다. 장기금리 움직임이 정책 기대 때문인지 위험 보상 때문인지 가르는 데 씁니다.",
+      read: "이 값 자체보다 텀 프리미엄과의 차이(기대 단기금리)가 핵심입니다. /macro의 「10년물 분해」 카드에서 함께 보세요.",
+      order: 18,
+    },
+    {
       key: "ig_spread",
       name: "투자적격 회사채 스프레드",
       group: "rates",

@@ -47,6 +47,7 @@ import {
 } from "@/lib/macro/freshness";
 import { loadRecentPoints, loadSeries, loadSeriesMany, loadSeriesMeta, type SeriesMeta } from "./repository";
 import { laggingInputs, type LaggingInput } from "@/lib/macro/input-lag";
+import { decomposeYield, type YieldDecomp } from "@/lib/macro/yield-decomp";
 
 export type IndicatorView = {
   indicator: MacroIndicator;
@@ -203,6 +204,8 @@ export type MacroOverview = {
   fedFuturesFetchedAt?: string;
   /** `fedFutures`가 없을 때 그 이유 */
   fedFuturesGap?: FedFuturesGap;
+  /** ⭐ 10년물 분해(시장: 실질+기대인플레 · 모형: 기대 단기금리+텀 프리미엄). 성분이 비면 그 분해는 없다 */
+  yieldDecomp: YieldDecomp;
   /**
    * ⭐ 자본 엔진의 두 격차 — 「생산성이 버는 것 vs 돈값」과 「성장 vs 이자」.
    * ⚠ 여기서 한 번만 계산한다. 화면마다 따로 계산하면 같은 질문에 다른 답이 나온다.
@@ -220,6 +223,12 @@ const FED_HIKE_KEYS = {
   targetUpper: "fed_target_upper",
   unrate: "unrate",
 } as const;
+/**
+ * ⭐ 10년물 분해(2026-11-25 · ⑤-2)에 읽는 계열 — 순서가 `decomposeYield` 입력 순서다.
+ * ⚠ 3개월 비교에 일간 약 65영업일 + 여유. 주말에도 값이 있는 계열(Kim–Wright)도 있어 넉넉히.
+ */
+const YIELD_DECOMP_KEYS = ["ust10y", "real10", "bei10", "kw_fitted10", "term_premium"] as const;
+const YIELD_DECOMP_POINTS = 160;
 /** 직전 회의 결정을 가리려고 읽는 목표 상단 일간 점 수 — 정례회의 간격(최대 약 8주)보다 넉넉하게. */
 const TARGET_HISTORY_POINTS = 120;
 
@@ -233,12 +242,13 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
   const now = new Date();
   // FOMC 일정은 선물 내재금리의 입력이다. 같은 왕복에서 받아 온다.
   const today = now.toISOString().slice(0, 10);
-  const [recent, meta, fomc, lastFomc, targetHistory] = await Promise.all([
+  const [recent, meta, fomc, lastFomc, targetHistory, yieldSeries] = await Promise.all([
     loadRecentPoints(),
     loadSeriesMeta(),
     loadFomcDecisionDates(today),
     loadLastFomcDecisionDate(today),
     loadSeries(FED_HIKE_KEYS.targetUpper, TARGET_HISTORY_POINTS),
+    Promise.all(YIELD_DECOMP_KEYS.map((k) => loadSeries(k, YIELD_DECOMP_POINTS))),
   ]);
 
   const views = new Map<string, IndicatorView>();
@@ -356,6 +366,13 @@ export async function loadMacroOverview(): Promise<MacroOverview> {
     fedHikeLagging: fedHike ? fedHikeLagging : [],
     fedHikeLastMeeting: fedHike ? lastFomc : undefined,
     fedFutures,
+    yieldDecomp: decomposeYield({
+      nominal: yieldSeries[0],
+      real: yieldSeries[1],
+      bei: yieldSeries[2],
+      kwFitted: yieldSeries[3],
+      kwTermPremium: yieldSeries[4],
+    }),
     fedFuturesAsOf: fedFutures ? zq?.asOf : undefined,
     fedFuturesFetchedAt: fedFutures ? zq?.freshness.fetchedAt : undefined,
     fedFuturesGap: fedFuturesGapInfo,

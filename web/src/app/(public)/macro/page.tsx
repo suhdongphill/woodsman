@@ -9,6 +9,7 @@ import { TistoryCta } from "@/features/site/ui/TistoryCta";
 import { RecessionBoard } from "@/features/macro/ui/RecessionBoard";
 import { CapitalEngineCard } from "@/features/macro/ui/CapitalEngineCard";
 import { FedFuturesCard } from "@/features/macro/ui/FedFuturesCard";
+import { YieldDecompCard } from "@/features/macro/ui/YieldDecompCard";
 import { FedHikeCard } from "@/features/macro/ui/FedHikeCard";
 import { GroupCard } from "@/features/macro/ui/GroupCard";
 import { HealthNotice } from "@/features/macro/ui/Freshness";
@@ -120,6 +121,16 @@ export default async function MacroHubPage() {
               선물 내재 정책금리 (시장 기대)
             </h2>
             <FedFuturesCard result={overview.fedFutures} asOf={overview.fedFuturesAsOf} />
+          </section>
+        )}
+
+        {/* ①-4 ⭐ 2026-11-25 — 단기(정책금리 방향) 다음에 장기(10년물이 왜). 성분이 하나도 없으면 카드를 그리지 않는다 */}
+        {(overview.yieldDecomp.market || overview.yieldDecomp.model) && (
+          <section aria-labelledby="yielddecomp-heading">
+            <h2 id="yielddecomp-heading" className="sr-only">
+              10년물 국채 금리 분해
+            </h2>
+            <YieldDecompCard result={overview.yieldDecomp} />
           </section>
         )}
 
