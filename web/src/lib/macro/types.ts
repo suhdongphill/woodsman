@@ -159,6 +159,11 @@ export type MacroIndicator = {
   staleDays?: number;
   /** 예외의 근거. 기관의 실제 릴리스 일정이어야 한다 — 못 대면 과최적화다. */
   staleWhy?: string;
+  /**
+   * ⭐ 카드에 3·6개월 연율을 한 줄 더 보인다(2026-11-25 · `series.ts` `annualizedChange`).
+   * ⚠ 월간 **지수** 원값 + `transform: "yoy"`인 지표만 — 이미 %인 계열에 걸면 틀린 숫자가 된다(`validateSectors`가 막는다).
+   */
+  annualized?: boolean;
   /** 값 뒤에 붙는 단위 */
   unit: string;
   decimals: number;

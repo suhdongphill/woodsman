@@ -84,6 +84,27 @@ export function IndicatorCard({ view }: { view: IndicatorView }) {
         <ChangeNote view={view} />
       </div>
 
+      {/*
+        ⭐ 3·6개월 연율(2026-11-25) — 전년비 바로 아래. 「최근 몇 달 빨라졌나·느려졌나」를 같은 카드에서 비교하게.
+        ⚠ 기준 달을 같이 적는다 — 전년비(위)와 기준 달이 다를 수 있다(2025-10 셧다운 결측 때문에 전년비는 한 달 앞 값).
+      */}
+      {view.annualized && (
+        <p className="mt-1.5 text-[12px] tabular-nums text-gray-400">
+          {view.annualized.m3 !== undefined && (
+            <>
+              3개월 연율 <strong className="text-gray-300">{formatIndicatorValue(indicator, view.annualized.m3)}</strong>
+            </>
+          )}
+          {view.annualized.m3 !== undefined && view.annualized.m6 !== undefined && " · "}
+          {view.annualized.m6 !== undefined && (
+            <>
+              6개월 연율 <strong className="text-gray-300">{formatIndicatorValue(indicator, view.annualized.m6)}</strong>
+            </>
+          )}
+          <span className="text-gray-500"> ({view.annualized.asOf.slice(0, 7)}까지)</span>
+        </p>
+      )}
+
       {indicator.stateDependency && <StateDependencyNote text={indicator.stateDependency} />}
 
       {indicator.signal && (

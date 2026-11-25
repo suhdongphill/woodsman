@@ -124,6 +124,10 @@ export function validateSectors(sectors: MacroSector[] = MACRO_SECTORS): string[
       } else if (i.derived) {
         problems.push(`${i.key}: 파생이 아닌데 합성 규칙(derived)이 있다`);
       }
+      // ⚠ 연율은 월간 지수 원값에서만 뜻이 있다 — %로 오는 계열·파생·분기 계열에 걸면 조용히 틀린 숫자가 된다.
+      if (i.annualized && (i.transform !== "yoy" || i.freq !== "m" || i.source === "DERIVED" || i.source === "MANUAL")) {
+        problems.push(`${i.key}: 연율(annualized)은 월간 지수(transform yoy · freq m · 자동 수집)에만 붙인다`);
+      }
       if (!/^https:\/\//.test(i.url)) problems.push(`${i.key}: 출처 링크가 없다`);
       if (!i.what || !i.why || !i.read) problems.push(`${i.key}: 초보자 설명(3줄)이 비었다`);
 

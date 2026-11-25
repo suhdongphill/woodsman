@@ -190,3 +190,26 @@ export function shortObsDate(asOf: string | undefined, freq: string, today: stri
   if (freq === "m" || freq === "q" || freq === "a" || freq === "y") return asOf.slice(0, 7);
   return asOf.slice(0, 4) === today.slice(0, 4) ? asOf.slice(5, 10) : asOf.slice(0, 10);
 }
+
+/**
+ * ⭐ 3·6개월 연율(2026-11-25 · 물가 분해 ⑤-1) — 「최근 몇 달의 속도」. 전년비는 1년 전 기저에 끌려 늦게 돌아서므로
+ *   연준·시장은 최근 3·6개월 변화를 연율로 함께 본다.
+ *   식: ((P_t / P_{t−k})^(12/k) − 1) × 100 — 월간 **지수** 원값(계절조정)에서 한 번만 계산한다(원값 저장 · 읽을 때 변환).
+ * ⚠ P_t는 원자료의 **마지막 달**, P_{t−k}는 **정확히 k개월 전 달**이어야 한다. 그 달이 비어 있으면(2025-10 셧다운 등)
+ *   이웃 달로 대신하지 않고 undefined — 지어내지 않는다.
+ * ⚠ 이미 %인 계열(절사평균·끈적한 물가)에 쓰면 틀린 숫자가 된다 — 카탈로그 게이트가 `transform: "yoy"`인 지표만 허용한다.
+ */
+export function annualizedChange(
+  raw: SeriesPoint[],
+  months: 3 | 6,
+): { value: number; asOf: string; base: string } | undefined {
+  const last = latestPoint(raw);
+  if (!last) return undefined;
+  const y = Number(last.date.slice(0, 4));
+  const m = Number(last.date.slice(5, 7));
+  const idx = y * 12 + (m - 1) - months;
+  const base = `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, "0")}${last.date.slice(7)}`;
+  const prev = raw.find((p) => p.date === base);
+  if (!prev || !(prev.value > 0) || !(last.value > 0)) return undefined;
+  return { value: ((last.value / prev.value) ** (12 / months) - 1) * 100, asOf: last.date, base };
+}

@@ -23,6 +23,7 @@ import {
   latestPoint,
   type SeriesPoint,
   yoyGapNote,
+  annualizedChange,
 } from "@/lib/macro/series";
 import { judgeSignal, summarizeRecession, type RecessionSummary, type SignalStatus } from "@/lib/macro/signal";
 import { estimateFedHike, lastMeetingDecision, type FedHikeResult } from "@/lib/macro/fedhike";
@@ -70,6 +71,8 @@ export type IndicatorView = {
   stripDelay: string | null;
   /** 전년비를 못 낸 최신 달의 이유(작년 같은 달 원자료 공백 등). 정상이면 null — `yoyGapNote` */
   gapNote: string | null;
+  /** ⭐ 3·6개월 연율(카탈로그 `annualized` 지표만 · 원자료 마지막 달 기준). 못 내면 그 칸이 없다 */
+  annualized?: { m3?: number; m6?: number; asOf: string };
 };
 
 /**
@@ -142,7 +145,16 @@ function buildView(
     freshness,
     stripDelay: stripDelayLabel(indicator.freq, freshness, now),
     gapNote: yoyGapNote(raw ?? [], indicator.transform),
+    annualized: indicator.annualized ? annualizedView(raw ?? []) : undefined,
   };
+}
+
+/** 3·6개월 연율 묶음 — 둘 다 못 내면 undefined(빈 줄을 그리지 않는다). 기준 달은 둘이 같다(원자료 마지막 달). */
+function annualizedView(raw: SeriesPoint[]): IndicatorView["annualized"] {
+  const m3 = annualizedChange(raw, 3);
+  const m6 = annualizedChange(raw, 6);
+  const asOf = m3?.asOf ?? m6?.asOf;
+  return asOf ? { m3: m3?.value, m6: m6?.value, asOf } : undefined;
 }
 
 export type MacroOverview = {
