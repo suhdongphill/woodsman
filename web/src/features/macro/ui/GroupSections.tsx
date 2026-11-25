@@ -24,14 +24,20 @@ function DashboardTile({ view, today }: { view: IndicatorView; today: string }) 
       className="block rounded-xl border border-border bg-bg px-3 py-2.5 transition-colors hover:border-gold-600/40"
     >
       <span className="block truncate text-[11.5px] text-gray-500">{indicator.name}</span>
-      <span className="mt-0.5 block text-[20px] font-bold tabular-nums text-ink">{view.display}</span>
+      <span className="mt-0.5 block text-[20px] font-bold tabular-nums text-ink">
+        {view.value === undefined ? <span className="text-[14px] font-normal text-gray-500">수집 전</span> : view.display}
+        {date && <span className="ml-1.5 text-[11px] font-normal text-gray-500">{date}</span>}
+      </span>
+      {/*
+        ⚠ 날짜를 값마다 붙인다 — 전년비와 연율은 기준 달이 다를 수 있다(2025-10 셧다운 결측: CPI 전년비는 9월, 연율은 10월까지).
+        한 줄에 날짜 하나만 두면 연율이 전년비 날짜로 읽힌다(11/25 배포 확인에서 잡았다).
+      */}
       <span className="block text-[11px] tabular-nums text-gray-500">
         {view.annualized?.m3 !== undefined
-          ? `3개월 연율 ${formatIndicatorValue(indicator, view.annualized.m3)}`
+          ? `3개월 연율 ${formatIndicatorValue(indicator, view.annualized.m3)} (${view.annualized.asOf.slice(0, 7)}까지)`
           : view.changeDisplay
             ? `직전 대비 ${view.changeDisplay}`
             : " "}
-        {date ? ` · ${date}` : ""}
       </span>
     </a>
   );
