@@ -3,7 +3,7 @@ import { HOME_BLOCKS, hasBlock, isBriefingFresh, visibleHomeBlocks, type HomeCon
 
 /** 「전부 있는 홈」이 기본값이고, 테스트는 없애 볼 것만 적는다. */
 function content(over: Partial<HomeContent> = {}): HomeContent {
-  return { homePostCount: 3, upcomingEventCount: 2, blogEntryCount: 23, briefingFresh: true, ...over };
+  return { homePostCount: 3, upcomingEventCount: 2, blogEntryCount: 23, briefingCount: 7, ...over };
 }
 
 describe("홈 블록", () => {
@@ -69,8 +69,8 @@ describe("홈 블록", () => {
     expect(blocks[blocks.indexOf("macroStrip") + 1]).toBe("dailyBriefing");
     expect(blocks[blocks.indexOf("dailyBriefing") + 1]).toBe("waves");
     expect(blocks[blocks.indexOf("waves") + 1]).toBe("blogShowcase");
-    // 브리핑이 3일보다 오래되면 빠지고 바람 → 파도
-    const noBriefing = visibleHomeBlocks(content({ briefingFresh: false }));
+    // 공개 브리핑이 하나도 없으면 빠지고 바람 → 파도(오래된 것만 있으면 목록으로 남는다 — 2026-11-28)
+    const noBriefing = visibleHomeBlocks(content({ briefingCount: 0 }));
     expect(noBriefing[noBriefing.indexOf("macroStrip") + 1]).toBe("waves");
     // ⚠ 점수·기사가 없어도 블록은 빠지지 않는다 — 없다고 적는다
     const empty = visibleHomeBlocks(content({ homePostCount: 0, upcomingEventCount: 0 }));
@@ -107,8 +107,9 @@ describe("홈 블록", () => {
     expect(blocks.indexOf("blogShowcase")).toBeLessThan(blocks.indexOf("latestInsights"));
   });
 
-  it("⚠ 브리핑이 없거나 3일보다 오래됐으면 홈에서 뺀다 — 지난 글을 「오늘의」로 보이지 않게", () => {
-    expect(visibleHomeBlocks(content({ briefingFresh: false }))).not.toContain("dailyBriefing");
+  it("⚠ 브리핑이 없으면 블록을 뺀다 · 오래된 것만 있으면 블록은 남는다(큰 카드는 home-digest가 뺀다 · 2026-11-28)", () => {
+    expect(visibleHomeBlocks(content({ briefingCount: 0 }))).not.toContain("dailyBriefing");
+    expect(visibleHomeBlocks(content({ briefingCount: 3 }))).toContain("dailyBriefing");
     expect(isBriefingFresh("2026-10-31", "2026-10-31")).toBe(true);
     expect(isBriefingFresh("2026-10-31", "2026-11-03")).toBe(true); // 토요일분이 월요일까지
     expect(isBriefingFresh("2026-10-31", "2026-11-04")).toBe(false);

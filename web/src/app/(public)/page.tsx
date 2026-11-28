@@ -31,7 +31,8 @@ import { REGIME_CHIP_KEYS } from "@/lib/scores/regime-summary";
 import { buildGcrmFrame } from "@/lib/gcrm/home-frame";
 import { gcrmHomeSnapshots } from "@/features/gcrm/service";
 import { CapitalRegimeFrame } from "@/features/home/ui/CapitalRegimeFrame";
-import { isBriefingFresh, visibleHomeBlocks, type HomeBlock } from "@/lib/home-layout";
+import { visibleHomeBlocks, type HomeBlock } from "@/lib/home-layout";
+import { HOME_BRIEFING_COUNT, homeBriefingDigest } from "@/lib/briefing/home-digest";
 import { loadBlogEntries } from "@/features/blog/repository";
 import { BlogShowcase } from "@/features/blog/ui/BlogShowcase";
 import { popularEntries, visibleEntries } from "@/lib/blog/tistory";
@@ -136,7 +137,7 @@ export default async function HomePage() {
     // 유동성 카드 해석 팝업의 2부 — 가장 최근 「그날의 분석」
     loadLatestAnalysis(),
     // 오늘의 브리핑 — 최신 공개 1편(못 읽으면 빈 목록 + console.error · 블록만 빠진다)
-    loadPublishedBriefings(1),
+    loadPublishedBriefings(HOME_BRIEFING_COUNT),
   ]);
   /**
    * 블로그 글 목록 — ⚠ 보조 콘텐츠라 읽기 실패로 **홈 전체를 죽이지 않는다.** 대신 로그를 남기고 블록만 뺀다.
@@ -174,9 +175,9 @@ export default async function HomePage() {
     limit: Number.MAX_SAFE_INTEGER,
   }).length;
 
-  const latestBriefing = briefings[0];
+  const briefingDigest = homeBriefingDigest(briefings, today);
   const blocks = visibleHomeBlocks({
-    briefingFresh: isBriefingFresh(latestBriefing?.date, today),
+    briefingCount: briefings.length,
     homePostCount: homePosts.length,
     upcomingEventCount: homeEvents.length,
     blogEntryCount: blogAll.length,
@@ -198,8 +199,8 @@ export default async function HomePage() {
     // ⚠ 2026-11-14(밤): GLOBAL CAPITAL REGIME(조류 축) 카드는 조류 블록으로 옮겼다 — 바람 띠는 지표만
     macroStrip: <MacroStrip indicators={macro.headlines} />,
     waves: <WavesSection news={latestNews} />,
-    // ⚠ 보일지는 visibleHomeBlocks가 정했다(최신 공개 브리핑이 3일 안일 때만)
-    dailyBriefing: latestBriefing ? <HomeBriefing briefing={latestBriefing} /> : null,
+    // ⚠ 보일지는 visibleHomeBlocks(한 편이라도 있으면), 큰 카드를 올릴지는 homeBriefingDigest(최신이 3일 안)가 정했다
+    dailyBriefing: briefingDigest ? <HomeBriefing digest={briefingDigest} /> : null,
     tide: (
       <TideSection
         tides={tides}

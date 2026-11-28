@@ -39,7 +39,8 @@ export const HOME_BLOCKS = [
    * 오늘의 브리핑 — 최신 공개 브리핑의 제목 · 3줄 요약(2026-10-31 운영자 「오늘의 기사 바로 아래에 홈에도」).
    * ⭐ 2026-11-14: 바람 **바로 아래**(파도가 블로그 앞으로 내려가서). 포털이 매일 쓰는 원문이라 첫 스크롤에 둔다.
    * (전: 파도 바로 아래, 조류 위 — 파도는 기관 원문 목록, 브리핑은 그 사건들을 엮은 해설)
-   * ⚠ 최신 브리핑이 `BRIEFING_FRESH_DAYS`보다 오래됐거나 없으면 그리지 않는다 — 지난 글을 「오늘의」로 보이지 않게.
+   * ⚠ 최신 브리핑이 `BRIEFING_FRESH_DAYS`보다 오래됐으면 「오늘의」 큰 카드는 빼고 「최근 브리핑」 목록만 — 지난 글을 「오늘의」로 보이지 않게.
+   *    공개 브리핑이 하나도 없을 때만 블록을 그리지 않는다(2026-11-28 · `lib/briefing/home-digest`).
    */
   "dailyBriefing",
   /**
@@ -104,8 +105,12 @@ export type HomeContent = {
   upcomingEventCount: number;
   /** 공개 중인 블로그 글 수(`BlogEntry`, 숨김 제외). 못 읽었으면 0 */
   blogEntryCount: number;
-  /** 최신 공개 브리핑이 아직 「오늘의」라고 부를 만한가(`isBriefingFresh`). 없거나 못 읽었으면 false */
-  briefingFresh: boolean;
+  /**
+   * 홈에 올릴 공개 브리핑 수(`lib/briefing/home-digest` · 최대 7). 없거나 못 읽었으면 0.
+   * ⭐ 2026-11-28: 블록이 보이는 조건은 「싱싱함」이 아니라 「한 편이라도 있음」 — 오래됐으면 큰 카드만 빠지고
+   *    최근 브리핑 목록은 남는다(운영자 결정). 싱싱함 판단은 `homeBriefingDigest`가 한다.
+   */
+  briefingCount: number;
 };
 
 /**
@@ -147,7 +152,7 @@ export function visibleHomeBlocks(content: HomeContent): HomeBlock[] {
       case "blogShowcase":
         return content.blogEntryCount > 0;
       case "dailyBriefing":
-        return content.briefingFresh;
+        return content.briefingCount > 0;
       /**
        * ⚠ 계좌 띠는 **스냅숏이 없어도 그린다.** 값이 없으면 띠를 빼는 게 아니라
        *    "아직 없다"고 적는다 — 빈 칸을 0원으로 만들지 않는다(2026-08-30, Step 2).
