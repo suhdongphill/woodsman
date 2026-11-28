@@ -101,6 +101,11 @@ export function OilPassThroughCard({ result }: { result: PassThrough }) {
               {s.upstream ? `${s.upstream.label} ${pct(s.upstream.yoy)}` : "—"}
               <span className="text-gray-500"> → </span>
               {s.cpi ? `${s.cpi.label} ${pct(s.cpi.yoy)} (${s.cpi.month})` : "—"}
+              {s.cpi?.skipped && (
+                <span className="mt-0.5 block text-[11px] text-gray-500">
+                  {s.cpi.skipped}분은 1년 전 값이 원출처에 없어 전년비를 계산하지 않았습니다 — {s.cpi.month}분을 보여 드립니다.
+                </span>
+              )}
             </dd>
           </div>
         ))}

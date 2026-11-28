@@ -59,7 +59,7 @@ export type PassThrough = {
   /** 최신 CPI 휘발유 전월비(%) */
   cpiGasolineMom?: { month: string; value: number };
   /** 2차 전가 — 전년비(%) 나란히, 판정 없음 */
-  secondRound: { pair: string; upstream?: { label: string; yoy: number }; cpi?: { label: string; month: string; yoy: number } }[];
+  secondRound: { pair: string; upstream?: { label: string; yoy: number }; cpi?: { label: string; month: string; yoy: number; skipped?: string } }[];
   sentence?: string;
 };
 
@@ -88,12 +88,23 @@ export function passRate(up: number | undefined, down: number | undefined): Pass
   return { kind: "rate", value: down / up };
 }
 
-function yoyLatest(pts: PtPoint[]): { month: string; yoy: number } | undefined {
+/**
+ * 최신 달부터 거슬러 올라가 **1년 전 값이 있는** 가장 최근 달의 전년비.
+ * ⚠ 최신 달의 1년 전이 원출처에 없으면(2025-10 셧다운 결측) 그 달을 건너뛰고 `skipped`에 남긴다 —
+ * 값을 채우지 않고, 화면이 「왜 이 달인지」를 말하게 한다(지표 카드 `yoyGapNote`와 같은 처리).
+ */
+export function yoyLatest(pts: PtPoint[]): { month: string; yoy: number; skipped?: string } | undefined {
   const s = sorted(pts);
   const last = s.at(-1);
-  if (!last) return undefined;
-  const prev = at(s, `${Number(last.date.slice(0, 4)) - 1}${last.date.slice(4)}`);
-  return prev ? { month: last.date.slice(0, 7), yoy: (last.value / prev - 1) * 100 } : undefined;
+  for (let i = s.length - 1; i >= 0; i--) {
+    const p = s[i];
+    const prev = at(s, `${Number(p.date.slice(0, 4)) - 1}${p.date.slice(4)}`);
+    if (prev === undefined || prev === 0) continue;
+    const month = p.date.slice(0, 7);
+    const yoy = (p.value / prev - 1) * 100;
+    return p === last ? { month, yoy } : { month, yoy, skipped: last!.date.slice(0, 7) };
+  }
+  return undefined;
 }
 
 export function computePassThrough(input: PassThroughInput, weeks: number[] = [4, 13]): PassThrough {
@@ -212,12 +223,12 @@ export function computePassThrough(input: PassThroughInput, weeks: number[] = [4
     {
       pair: "항공유 → 항공료",
       upstream: jy === undefined ? undefined : { label: "항공유 현물", yoy: jy },
-      cpi: air && { label: "CPI 항공료", month: air.month, yoy: air.yoy },
+      cpi: air && { label: "CPI 항공료", ...air },
     },
     {
       pair: "경유 → 운송 서비스",
       upstream: dy === undefined ? undefined : { label: "경유 소매", yoy: dy },
-      cpi: trans && { label: "CPI 운송 서비스", month: trans.month, yoy: trans.yoy },
+      cpi: trans && { label: "CPI 운송 서비스", ...trans },
     },
   ];
 

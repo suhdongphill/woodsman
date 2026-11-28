@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computePassThrough, passRate, passSentence, type PassThroughInput, type PtPoint } from "./oil-passthrough";
+import { computePassThrough, passRate, passSentence, yoyLatest, type PassThroughInput, type PtPoint } from "./oil-passthrough";
 
 /** 날짜 n일 뒤 */
 const add = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
@@ -105,6 +105,25 @@ describe("computePassThrough", () => {
     expect(r.secondRound[0].cpi).toMatchObject({ label: "CPI 항공료", month: "2026-10", yoy: expect.closeTo(10, 6) });
     expect(r.secondRound[0].upstream?.label).toBe("항공유 현물");
     expect(r.secondRound[1].cpi?.yoy).toBeCloseTo(2, 6);
+  });
+
+  it("⚠ 최신 달의 1년 전 값이 없으면 직전 달로 내려가고 건너뛴 달을 남긴다(채우지 않는다)", () => {
+    const pts = [
+      { date: "2025-08-01", value: 100 },
+      { date: "2025-09-01", value: 100 },
+      // 2025-10 결측(셧다운)
+      { date: "2026-08-01", value: 110 },
+      { date: "2026-09-01", value: 120 },
+      { date: "2026-10-01", value: 130 },
+    ];
+    expect(yoyLatest(pts)).toEqual({ month: "2026-09", yoy: expect.closeTo(20, 6), skipped: "2026-10" });
+    const r = computePassThrough({ ...base(), cpiAirfare: pts });
+    expect(r.secondRound[0].cpi).toMatchObject({ month: "2026-09", skipped: "2026-10" });
+  });
+
+  it("1년 전 값이 하나도 없으면 없음 · 최신 달이 되면 skipped 없음", () => {
+    expect(yoyLatest([{ date: "2026-10-01", value: 1 }])).toBeUndefined();
+    expect(yoyLatest([{ date: "2025-10-01", value: 100 }, { date: "2026-10-01", value: 105 }])).toEqual({ month: "2026-10", yoy: expect.closeTo(5, 6) });
   });
 
   it("⚠ 소매가가 비면 기준일이 없고 표도 비운다(부분 표 금지)", () => {
